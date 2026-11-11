@@ -44,6 +44,8 @@ Advisor\AdviceLoader.lua
 # Data packs
 Data\Registry.lua
 Data\Macros_Hunter.lua
+Data\Macros_Priest.lua
+Data\Macros_Mage.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\MacroEngine.lua

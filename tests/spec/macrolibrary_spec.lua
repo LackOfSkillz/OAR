@@ -103,3 +103,24 @@ T.describe("macro export and import", function()
     T.no(ns2.MacroLibrary:Import(s:sub(1, #s - 5)))
   end)
 end)
+
+T.describe("class packs", function()
+  T.it("priest and mage packs validate and show only on those classes", function()
+    local g = mock.new({ class = "PRIEST" })
+    local ns = g:loadAddon()
+    g:login()
+    local n = 0
+    for _, e in ipairs(ns.MacroLibrary:Entries()) do
+      T.ok(e.class == "PRIEST" or e.class == "ALL", e.id)
+      if e.class == "PRIEST" then n = n + 1 end
+      T.eq(ns.MacroEngine.Errors(ns.MacroEngine.Fill(e.body, { FOOD = "x", DRINK = "y", MOUNT = "z" })), 0, e.id)
+    end
+    T.ok(n >= 8)
+    local g2 = mock.new({ class = "MAGE" })
+    local ns2 = g2:loadAddon()
+    g2:login()
+    local m = 0
+    for _, e in ipairs(ns2.MacroLibrary:Entries()) do if e.class == "MAGE" then m = m + 1 end end
+    T.ok(m >= 8)
+  end)
+end)
