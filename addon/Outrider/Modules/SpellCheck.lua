@@ -6,8 +6,10 @@
 -- and Add. Clicking a suggestion swaps the word in the box; nothing is ever
 -- sent: Enter stays Gary's.
 -- Not checked: slash commands (lines starting with "/"), links, words under
--- 3 letters, ALL-CAPS (LFG, WTS), words with digits, a capitalized word in
--- the middle of a sentence (usually a name), and the word still being typed.
+-- 3 letters, ALL-CAPS (LFG, WTS), words with digits, and the word still
+-- being typed (it is checked once Gary pauses for a second). Capitalized
+-- words are checked too (Gary reported "Hello Wolrd" was missed); names of
+-- people in chat are known, and Add teaches any other name.
 -- Known extras: Gary's own words (/ride spell add <word>, or Add), common
 -- game chat slang, the names of people talking in chat, and any word seen
 -- in other people's chat 3 times (learned per session).
@@ -74,23 +76,19 @@ function M:Known(word)
   return false
 end
 
--- { {word, s, e} } unknown finished words in text
-function M:Check(text)
+-- { {word, s, e} } unknown words in text; the last word only when
+-- includeLast (Gary paused typing) or it is followed by a space/punctuation.
+function M:Check(text, includeLast)
   local out = {}
   if type(text) ~= "string" or text == "" or text:sub(1, 1) == "/" or C.IsSecret(text) then return out end
   if not self:Load() then return out end
   -- blank out links and color codes so positions stay the same
   local clean = text:gsub("|H.-|h.-|h", function(s) return string.rep(" ", #s) end)
   clean = clean:gsub("|c%x%x%x%x%x%x%x%x", function(s) return string.rep(" ", #s) end):gsub("|r", "  ")
-  local sentenceStart = true
   for s, word, e in clean:gmatch("()([%a][%a'%-]*)()") do
-    local finished = e <= #clean
-    local prev = clean:sub(1, s - 1):match("(%S)%s*$")
-    if prev and prev:match("[%.!%?]") then sentenceStart = true end
-    local skip = #word < 3 or word:match("%u%u") or not finished
-      or (word:match("^%u") and not sentenceStart)
+    local finished = includeLast or e <= #clean
+    local skip = #word < 3 or word:match("%u%u") or not finished or clean:sub(e, e):match("%d")
     if not skip and not self:Known(word) then out[#out + 1] = { word = word, s = s, e = e - 1 } end
-    sentenceStart = false
   end
   return out
 end
@@ -153,8 +151,8 @@ function M:Strip()
   return f
 end
 
-function M:Update(edit)
-  local misses = self:Check(edit:GetText())
+function M:Update(edit, includeLast)
+  local misses = self:Check(edit:GetText(), includeLast)
   local f = self:Strip()
   local miss = misses[1]
   if not miss then f:Hide() return misses end
@@ -176,7 +174,7 @@ function M:Update(edit)
   add:SetScript("OnClick", function()
     M:Settings().words[norm(miss.word)] = true
     M:Info("spell check: added '%s'", norm(miss.word))
-    M:Update(edit)
+    M:Update(edit, true)
   end)
   f:Show()
   return misses
@@ -207,8 +205,14 @@ function M:OnEnable()
       edit:HookScript("OnTextChanged", function(box, user)
         if not M.enabled or user == false then return end
         ns.Throttle("spellcheck", 0.3, function() ns.Safe("SpellCheck:update", M.Update, M, box) end)
+        -- after a 1 s pause, check the last word too
+        if M.pause then M.pause:Cancel() end
+        M.pause = ns.Timer.After(1, function() M.pause = nil ns.Safe("SpellCheck:pause", M.Update, M, box, true) end, "spellcheck:pause")
       end)
-      edit:HookScript("OnEditFocusLost", function() if M.strip then M.strip:Hide() end end)
+      edit:HookScript("OnEditFocusLost", function()
+        if M.pause then M.pause:Cancel() M.pause = nil end
+        if M.strip then M.strip:Hide() end
+      end)
       edit:HookScript("OnHide", function() if M.strip then M.strip:Hide() end end)
     end
   end

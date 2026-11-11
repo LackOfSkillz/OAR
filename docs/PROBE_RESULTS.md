@@ -93,3 +93,7 @@ Probe 2026-11-11 11:09 (build 70888): 78 present, 21 missing. The client is a mo
 | nameplate1 (out of and in combat) | yes | yes | normal, family Bear | 2026-11-11: nameplate reads work in combat too |
 
 Combat timing: `PLAYER_REGEN_DISABLED` fires while `InCombatLockdown()` is still false (2026-11-11). Protected changes made inside that handler still go through; checks that need lockdown wait a moment.
+
+## Events missing on Forever (2026-11-11, Gary login screenshot)
+
+- `TABARD_FRAME_OPENED` and `PETITION_VENDOR_SHOW` cannot be registered (RegisterEvent errors). POICapture learns tabard vendors and guild masters from gossip titles instead; the warning now goes to the log only.

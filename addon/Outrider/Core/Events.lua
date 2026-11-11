@@ -56,7 +56,7 @@ function Events:On(event, owner, fn)
     self.handlers[event] = list
     if not isInternal(event) then
       local ok = pcall(frame.RegisterEvent, frame, event)
-      if not ok and ns.Log then ns.Log:Warn("events", "cannot register %s on this client", event) end
+      if not ok and ns.Log then ns.Log:Info("events", "cannot register %s on this client (feature off)", event) end
     end
   end
   local h = { owner = owner, ownerName = type(owner) == "table" and owner.name or tostring(owner), fn = fn }
