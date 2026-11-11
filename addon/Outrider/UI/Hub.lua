@@ -13,7 +13,7 @@ local Hub = { name = "hub", tabs = {}, byId = {} }
 ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
-local MAX_ROWS = 14
+local MAX_ROWS = 18 -- visible module rows; the list scrolls with the mouse wheel
 local W, H = 600, 480
 
 local L = {
@@ -151,14 +151,17 @@ Hub:AddTab("modules", L.modules, function(p)
         if not ok then ns.Print("%s: %s", mod.name, err) end
         p:Refresh()
       end)
-    row:SetPoint("TOPLEFT", 0, -24 - (i - 1) * 22)
+    row:SetPoint("TOPLEFT", 0, -24 - (i - 1) * 21)
     row:SetWidth(W - 40)
     p.rows[i] = row
   end
+  p:EnableMouseWheel(true)
+  p:SetScript("OnMouseWheel", function(self, delta) self.offset = (self.offset or 0) - delta * 3 self:Refresh() end)
   function p:Refresh()
     local status = ns.Modules:Status()
+    self.offset = math.max(0, math.min(self.offset or 0, #status - #self.rows))
     for i, row in ipairs(self.rows) do
-      local s = status[i]
+      local s = status[i + (self.offset or 0)]
       if s then
         row.mod = ns.Modules:Get(s.name)
         row.label:SetText(s.title)

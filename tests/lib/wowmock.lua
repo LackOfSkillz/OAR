@@ -359,7 +359,11 @@ function M.new(opts)
   end
   base.UnitClassification = function(unit) return game.units and game.units[unit] and game.units[unit].classification or "normal" end
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
-  base.GetMoney = function() return player.money end
+  base.GetMoney = function() return game.money or player.money end
+  base.C_AuctionHouse = {
+    GetBrowseResults = function() return game.browse or {} end,
+    GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
+  }
   base.GetInventoryItemLink = function(_, slot)
     if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
     if slot == 0 and (game.ammo or opts.ammo) then return "|cffffffff|Hitem:2512::::::::24:::::|h[Rough Arrow]|h|r" end
@@ -414,7 +418,7 @@ function M.new(opts)
   base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
   base.C_Item.GetItemInfo = function(id)
     local it = game.items and game.items[id]
-    if it then return it.name, nil, 1, 1, it.reqLevel or 0 end
+    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, nil, nil, it.sell or 0 end
   end
   base.C_Item.GetItemInfoInstant = function(id)
     return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
