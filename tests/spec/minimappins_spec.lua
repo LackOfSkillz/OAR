@@ -71,7 +71,7 @@ T.describe("minimap pins direction", function()
     M:Update()
     local _, _, _, x1, y1 = M.used[1]:GetPoint(1)
     T.ok(x1 > 0 and y1 > 0, "up and to the right")
-    game.opts.x, game.opts.y = 0.48, 0.35 -- walk half way toward it
+    game.opts.x, game.opts.y = 0.47, 0.36 -- walk a quarter of the way toward it (still outside the clear centre)
     M:Update()
     local _, _, _, x2, y2 = M.used[1]:GetPoint(1)
     T.ok(x2 > 0 and x2 < x1 and y2 > 0 and y2 < y1, "closer to the centre")

@@ -5,6 +5,11 @@
 -- C_Minimap.GetViewRadius (zoom/indoor aware) and, when the minimap rotates
 -- (CVar rotateMinimap), the player's facing. Updates 5x per second only
 -- while moving, plus on zoom change and new places. Dots are plain textures.
+-- Kept readable (Gary: "the minimap is so busy I can't see which direction
+-- I'm facing", Thunder Bluff, 2026-11-11): only the `max` nearest places
+-- (12), nothing within CLEAR pixels of the player arrow, smaller dots, and
+-- quest givers left to the world map unless switched on
+-- (/ride minipins <n> | quests on|off).
 
 local _, ns = ...
 local C = ns.Compat
@@ -12,8 +17,9 @@ local M = ns:NewModule("MinimapPins", {
   title = "Minimap pins",
   phase = "P3",
   order = 54,
-  defaults = {},
+  defaults = { max = 12, quests = false },
 })
+M.CLEAR, M.SIZE = 11, 10
 
 -- Set true to log the numbers behind the nearest dot once a second (used to
 -- fix the drifting dots on 2026-11-11; off once verified in game).
@@ -62,7 +68,7 @@ function M:Dot(i)
   local d = self.dots[i]
   if not d then
     d = CreateFrame("Button", nil, Minimap)
-    ns.MapPins.Decorate(d, 14)
+    ns.MapPins.Decorate(d, M.SIZE)
     d:SetFrameLevel((Minimap.GetFrameLevel and Minimap:GetFrameLevel() or 1) + 5)
     d:SetScript("OnEnter", function(self)
       local p = self.pin
@@ -99,10 +105,22 @@ function M:Update()
   if tostring(rotate) == "1" then facing = C.Call("GetPlayerFacing") end
   local n = 0
   local nearest
+  local s = self:Settings()
+  local shown = {}
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
-    do
+    if s.quests or pin.kind ~= "quest_giver" then
       local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
       local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
+      if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
+        shown[#shown + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast }
+      end
+    end
+  end
+  table.sort(shown, function(a, b) return a.dist < b.dist end)
+  for i = 1, math.min(#shown, s.max or 12) do
+    local e = shown[i]
+    local pin, x, y, dist, dSouth, dEast = e.pin, e.x, e.y, e.dist, e.dSouth, e.dEast
+    do
       if x then
         n = n + 1
         local d = self:Dot(n)
@@ -139,3 +157,14 @@ end
 function M:Activity()
   return string.format("%d places on the minimap right now", #(self.used or {}))
 end
+
+ns.AddCommand("minipins", "<number> | quests on|off  how many places the minimap shows", function(arg)
+  local s = M:Settings()
+  local n = tonumber(arg or "")
+  local q = (arg or ""):match("^quests%s+(%a+)$")
+  if n then s.max = math.max(0, math.min(40, math.floor(n)))
+  elseif q == "on" or q == "off" then s.quests = q == "on"
+  else ns.Print("usage: /ride minipins 12 | quests on|off") end
+  ns.Print("minimap shows the %d nearest places%s", s.max, s.quests and ", quest givers included" or ", no quest givers")
+  M:Update()
+end)

@@ -103,6 +103,7 @@ T.describe("place details", function()
     T.eq(first, "Vendor (Bowyer)")
     T.eq(second, "Sells: ammo, food & potions")
     local M = ns.Modules:Get("MinimapPins")
+    game.opts.x = 0.51 -- step away: places right under the arrow are hidden
     M:Update()
     local d = M.used[1]
     d.__scripts.OnEnter(d)
