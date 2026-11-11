@@ -427,6 +427,9 @@ function M.new(opts)
   base.GetInboxItemLink = function(i, a) local id = game.inbox[i].items and game.inbox[i].items[a] return id and ("|Hitem:" .. id .. "::|h[x]|h") end
   base.TakeInboxMoney = function(i) game.money = (game.money or player.money) + game.inbox[i].money game.inbox[i].money = 0 end
   base.TakeInboxItem = function(i, a) game.inbox[i].items[a] = nil end
+  -- quest rewards: game.choices = { itemID, ... }
+  base.GetNumQuestChoices = function() return game.choices and #game.choices or 0 end
+  base.GetQuestItemLink = function(kind, i) local id = game.choices and game.choices[i] return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r") end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
@@ -441,6 +444,10 @@ function M.new(opts)
   base.C_Item = base.C_Item or {}
   -- bags: game.bags[bag][slot] = itemID; game.items[itemID] = { name, reqLevel, spell }
   base.C_Container = {
+    GetContainerItemLink = function(bag, slot)
+      local id = game.bags and game.bags[bag] and game.bags[bag][slot]
+      return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r")
+    end,
     GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
     -- game.counts[bag][slot] overrides the default stack of 5
     UseContainerItem = function(bag, slot)

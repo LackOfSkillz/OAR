@@ -65,6 +65,7 @@ Modules\LootLog.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua
 Modules\GearScore.lua
+Modules\QuestRewards.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

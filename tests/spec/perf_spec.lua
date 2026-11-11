@@ -13,7 +13,7 @@ T.describe("perf", function()
   T.it("reports memory, handlers, timers and saves the result", function()
     local game, ns = session()
     for _ = 1, 5 do game:fire("BAG_UPDATE_DELAYED") end
-    game:advance(1) -- let throttled handlers settle before measuring
+    game:advance(3) -- let throttled handlers settle before measuring
     game:slash("perf")
     local r = ns.db.global.perf
     T.ok(game.memoryUpdated)
