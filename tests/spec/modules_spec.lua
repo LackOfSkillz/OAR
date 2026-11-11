@@ -6,6 +6,7 @@ local function session(opts, define)
   local ns = game:loadAddon()
   if define then define(ns) end
   game:login()
+  ns.Modules:SetEnabled("AutoCheck", false) -- its timers/combat hooks would skew these counts
   return game, ns
 end
 

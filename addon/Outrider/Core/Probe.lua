@@ -93,17 +93,27 @@ function Probe:Run()
     pcall(f.UnregisterEvent, f, event)
   end
 
-  out.units = self:Units()
+  out.addonBuild = ns.build
+  out.units = self:RecordUnits("probe")
   ns.db.global.probe = out
-  -- Unit readability differs in and out of combat, so keep the last few runs.
-  local g = ns.db.global
-  g.probeUnits = type(g.probeUnits) == "table" and g.probeUnits or {}
-  out.units.at = out.at
-  table.insert(g.probeUnits, out.units)
-  while #g.probeUnits > 6 do table.remove(g.probeUnits, 1) end
   ns.Log:Info("probe", "build %s (%s) interface %s: %d APIs present, %d missing",
     tostring(out.build.version), tostring(out.build.build), tostring(out.build.interface), present, missing)
   return out
+end
+
+-- Unit readability differs in and out of combat, so keep the last few samples.
+function Probe:RecordUnits(why)
+  local units = self:Units()
+  units.at = time()
+  units.why = why
+  local g = ns.db.global
+  g.probeUnits = type(g.probeUnits) == "table" and g.probeUnits or {}
+  table.insert(g.probeUnits, units)
+  while #g.probeUnits > 6 do table.remove(g.probeUnits, 1) end
+  local n = 0
+  for k in pairs(units) do if k ~= "inCombat" and k ~= "position" and k ~= "at" and k ~= "why" then n = n + 1 end end
+  ns.Log:Info("probe", "units sample (%s) inCombat=%s units=%d", tostring(why), tostring(units.inCombat), n)
+  return units
 end
 
 -- What can we read about nearby units? Run once near mobs, once in combat.

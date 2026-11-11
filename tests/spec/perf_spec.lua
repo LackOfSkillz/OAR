@@ -5,6 +5,7 @@ local function session(opts)
   local game = mock.new(opts)
   local ns = game:loadAddon()
   game:login()
+  ns.Modules:SetEnabled("AutoCheck", false) -- its timers/combat hooks would skew these counts
   return game, ns
 end
 

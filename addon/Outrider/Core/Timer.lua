@@ -64,7 +64,12 @@ Handle.__index = Handle
 function Handle:Cancel()
   if self.cancelled then return end
   self.cancelled = true
-  if self.job then self.job.cancelled = true end
+  if self.job then
+    self.job.cancelled = true
+    -- Fallback mode: drop it now so the OnUpdate driver stops when idle.
+    for i = #queue, 1, -1 do if queue[i] == self.job then table.remove(queue, i) end end
+    if #queue == 0 and driver then driver:Hide() end
+  end
   if self.native and self.native.Cancel then pcall(self.native.Cancel, self.native) end
   Timer.Untrack(self)
 end
