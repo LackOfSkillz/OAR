@@ -55,6 +55,7 @@ Modules\RareAlerts.lua
 Modules\Sightings.lua
 Modules\RaresTab.lua
 Modules\TameHelper.lua
+Modules\PetStatus.lua
 
 Core\Slash.lua
 Core\Boot.lua

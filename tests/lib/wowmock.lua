@@ -356,6 +356,19 @@ function M.new(opts)
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
+  local function u(unit) return game.units and game.units[unit] end
+  base.UnitHealth = function(unit) return u(unit) and u(unit).hp end
+  base.UnitHealthMax = function(unit) return u(unit) and u(unit).hpMax end
+  base.UnitPower = function(unit) return u(unit) and u(unit).focus end
+  base.UnitPowerMax = function(unit) return u(unit) and u(unit).focusMax end
+  base.GetPetExperience = function() local p = u("pet") if p then return p.xp or 0, p.xpMax or 0 end return 0, 0 end
+  base.HasPetUI = function() return u("pet") ~= nil end
+  base.C_UnitAuras = { GetAuraDataByIndex = function(unit, i)
+    local a = u(unit) and u(unit).auras and u(unit).auras[i]
+    if a then return { name = a.name, spellId = a.spellId } end
+  end }
+  if opts.petHappiness then base.GetPetHappiness = function() return game.petHappiness or opts.petHappiness end end
   -- macros: game.macros = { { name, icon, body, perChar } }, index = position
   game.macros = opts.macros or {}
   base.MAX_CHARACTER_MACROS = 18
