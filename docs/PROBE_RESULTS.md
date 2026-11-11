@@ -33,7 +33,8 @@ Fill this in during P0-08 from `tools/read-logs.ps1 -Section probe`, and keep it
 | UnitPosition order | Walk test 2026-11-11: the FIRST value is north-south (falls walking south), the second east-west (rises walking west). Minimap dots now use map coords x map size, which does not depend on this | 2026-11-11 |
 | Map 2521 size | 5562 x 3708 yards (measured from map corners via C_Map.GetWorldPosFromMapPos) | 2026-11-11 |
 | World axes | `C_Map.GetWorldPosFromMapPos` returns its axes swapped relative to `UnitPosition` (exact match after swapping, 0.0 yards). Waypoints:Calibrate() detects it at login | 2026-11-11 |
-| Pet happiness | No GetPetHappiness and no buffs on the pet (Dog, Cat 12, npcID 165189): Forever probably has no pet happiness. Panel shows none | 2026-11-11 |
+| Pet happiness | No GetPetHappiness and no buffs on the pet (Dog, Cat 12, npcID 165189). BUT the pet window shows loyalty "(Rebellious)" for Mystmane, so loyalty (and likely happiness) exist on Forever behind other APIs; PetStatus now logs C_StableInfo.GetStablePetInfo fields to find them | 2026-11-11 |
+| Mystmane (tamed by Gary) | Bear, level 13, Health 424, Armor 797, Damage 18-24, Attack Power 56, Crit 5.0%, Haste 2.0%, Movement speed 114%, loyalty Rebellious (pet window screenshot) | 2026-11-11 |
 | Minimap view radius | 333.3 yards at Gary's zoom (C_Minimap.GetViewRadius) | 2026-11-11 |
 | Tame Beast | A channel on Forever (bar drains to zero, tame completes at zero; Gary 2026-11-11). `/stopmacro [channeling]` guards the tame macro | 2026-11-11 |
 | Error pipeline | Deliberate error caught once with full stack through Safe/xpcall | 2026-11-11 |

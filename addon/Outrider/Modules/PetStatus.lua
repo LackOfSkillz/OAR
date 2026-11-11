@@ -171,6 +171,30 @@ function M:LogPet(d)
   self:Info("pet %s npcID=%s family=%s level=%s xp=%s/%s focus=%s happinessAPI=%s buffs=[%s]", tostring(d.name),
     tostring(d.npcID), tostring(d.family), tostring(d.level), tostring(d.xp), tostring(d.xpMax), tostring(d.focus),
     tostring(d.happiness), table.concat(self:Auras(), ", "))
+  self:LogStable()
+end
+
+-- Forever shows loyalty ("Rebellious", Gary's Mystmane, 2026-11-11) though
+-- GetPetLoyalty/GetPetHappiness are gone. Log every plain field the modern
+-- stable API returns for the active pets, once per session, to find them.
+function M:LogStable()
+  if self.stableLogged then return end
+  local get = C.Resolve("C_StableInfo.GetStablePetInfo")
+  if type(get) ~= "function" then return end
+  self.stableLogged = true
+  for slot = 1, 5 do
+    local ok, info = pcall(get, slot)
+    if ok and type(info) == "table" then
+      local parts = {}
+      for k, v in pairs(info) do
+        if type(v) ~= "table" and type(v) ~= "function" then
+          parts[#parts + 1] = tostring(k) .. "=" .. tostring(C.Readable(v))
+        end
+      end
+      table.sort(parts)
+      self:Info("stable slot %d: %s", slot, table.concat(parts, " "))
+    end
+  end
 end
 
 function M:Snapshot()
