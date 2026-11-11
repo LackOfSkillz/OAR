@@ -122,7 +122,7 @@ add("reset", "char|all confirm  wipe settings (needs the word confirm)", functio
   ReloadUI()
 end)
 
-add("selftest", "error|combat|button  checks for the test pipeline", function(arg)
+add("selftest", "error|combat|button|toast  checks for the test pipeline", function(arg)
   if arg == "error" then
     ns.Safe("selftest", function() error("Outrider selftest: deliberate error (this is expected)") end)
     ns.Print("deliberate error recorded. Type /reload so Claude can read it.")
@@ -131,8 +131,10 @@ add("selftest", "error|combat|button  checks for the test pipeline", function(ar
     ns.Print(ns.Combat:Pending() > 0 and "queued until combat ends" or "ran immediately (not in combat)")
   elseif arg == "button" then
     ns.SecureButtons:SelfTest()
+  elseif arg == "toast" then
+    ns.Toast:SelfTest()
   else
-    ns.Print("usage: /ride selftest error|combat|button")
+    ns.Print("usage: /ride selftest error|combat|button|toast")
   end
 end)
 

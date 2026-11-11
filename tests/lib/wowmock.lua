@@ -88,7 +88,13 @@ local function newRegion(game, kind, name, parent)
     __scripts = {}, __events = {}, __points = {}, __w = 0, __h = 0, __text = nil,
   }
   local methods = game.methods
-  setmetatable(r, { __index = function(_, k) return methods[k] or noop end })
+  -- Unknown Methods (Capitalized, like the real API) are no-ops; unknown
+  -- lowercase fields are nil, as on a real frame table.
+  setmetatable(r, { __index = function(_, k)
+    local m = methods[k]
+    if m then return m end
+    if type(k) == "string" and k:match("^%u") then return noop end
+  end })
   game.frames[#game.frames + 1] = r
   if name then rawset(game.env, name, r) end
   return r
@@ -124,6 +130,7 @@ local function buildMethods(game)
   m.GetAttribute = function(self, k) local a = rawget(self, "__attrs") return a and a[k] end
   m.RegisterForClicks = function(self, ...) self.__clicks = { ... } end
   m.SetAllPoints = noop
+  m.IsMouseOver = function(self) return rawget(self, "__mouseOver") == true end
   m.SetColorTexture = noop
   m.Click = function(self, button)
     if self.__scripts.OnClick then self.__scripts.OnClick(self, button or "LeftButton", false) end
@@ -203,7 +210,8 @@ function M.new(opts)
     reloads = 0,
     blockedEvents = {},
     blocked = {},
-    macrosRun = {},      -- macrotext of secure buttons Gary "clicked"        -- protected calls an addon made in combat (taint in game)
+    macrosRun = {},
+    sounds = {},      -- macrotext of secure buttons Gary "clicked"        -- protected calls an addon made in combat (taint in game)
     globalsWritten = {},
     loadedAddons = {},
   }, Game)
@@ -289,7 +297,7 @@ function M.new(opts)
   base.BackdropTemplateMixin = {}
   base.GetCursorPosition = function() return 100, 100 end
   base.HideUIPanel = noop
-  base.PlaySound = noop
+  base.PlaySound = function(id, channel) game.sounds[#game.sounds + 1] = id end
   base.RAID_CLASS_COLORS = { HUNTER = { r = 0.67, g = 0.83, b = 0.45 }, PRIEST = { r = 1, g = 1, b = 1 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
   base.Settings = {
     RegisterCanvasLayoutCategory = function(frame, name)
