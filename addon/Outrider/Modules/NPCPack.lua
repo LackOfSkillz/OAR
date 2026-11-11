@@ -20,7 +20,7 @@ ns.NPCPack = M
 M.ADDON = "Outrider_Data_NPC"
 -- one pin per NPC: the most useful role wins
 M.PRIORITY = { "innkeeper", "stable_master", "bank", "auction", "trainer", "guild_master", "tabard",
-  "spirit_healer", "vendor", "repair" }
+  "spirit_healer", "vendor", "repair", "quest_giver" }
 
 function M:OnInitialize()
   self.maps, self.count = {}, 0

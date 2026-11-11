@@ -23,6 +23,7 @@ FLAGS = [
 ]
 # Flight masters come from the client itself (C_TaxiMap), so they are skipped here.
 SPAWNS_BIT = 2 ** (7 - 1)
+QUEST_STARTS_BIT = 2 ** (10 - 1)  # field 10: quests this NPC starts (Gary wants quest givers, 2026-11-11)
 FACTION = {"A": "Alliance", "H": "Horde"}
 
 
@@ -178,6 +179,8 @@ def main():
             continue
         flags = row.get(15) or 0
         kinds = [k for bit, k in FLAGS if flags & bit]
+        if (row.get("p", 0) // QUEST_STARTS_BIT) % 2:
+            kinds.append("quest_giver")
         if not kinds:
             continue
         if not (row.get("p", 0) // SPAWNS_BIT) % 2:

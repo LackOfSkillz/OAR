@@ -27,7 +27,7 @@ local LABELS = {
   rare = "Rare", spirit_healer = "Spirit healer", flight_master = "Flight master", vendor = "Vendor",
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
-  tabard = "Tabard vendor",
+  tabard = "Tabard vendor", quest_giver = "Quest giver",
 }
 M.LABELS = LABELS
 
@@ -40,18 +40,20 @@ local GROUP = {
   trainer = "trainer",
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
-  rare = "rare",
+  rare = "rare", quest_giver = "quest",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
+  quest = { 0.75, 0.45, 1.00 },
 }
-M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares" }
+M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers" }
 local ICON = {
   innkeeper = TRACK .. "Innkeeper", bank = TRACK .. "Banker", auction = TRACK .. "Auctioneer",
   flight_master = TRACK .. "FlightMaster", stable_master = TRACK .. "StableMaster", mailbox = TRACK .. "Mailbox",
   repair = TRACK .. "Repair", spirit_healer = "Interface\\Icons\\Spell_Holy_Resurrection",
   guild_master = "Interface\\Icons\\INV_Misc_Note_02", tabard = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
+  quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
 }
 -- class names that make a trainer a class trainer (else profession)
 local CLASSES = { "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid", "Pet" }
