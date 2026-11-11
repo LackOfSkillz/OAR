@@ -299,9 +299,19 @@ function M.new(opts)
     IsAddOnLoaded = function(addon) return game.loadedAddons[addon] == true end,
     LoadAddOn = function(addon) return game.loadedAddons[addon] == true end,
   }
-  base.C_Timer = {
-    After = function(delay, fn) game.timers[#game.timers + 1] = { at = game.clock + delay, fn = fn } end,
-  }
+  if not opts.noCTimer then
+    base.C_Timer = {
+      After = function(delay, fn) game.timers[#game.timers + 1] = { at = game.clock + delay, fn = fn } end,
+      NewTicker = function(delay, fn, iterations)
+        local h = { cancelled = false }
+        function h:Cancel() self.cancelled = true end
+        function h:IsCancelled() return self.cancelled end
+        game.timers[#game.timers + 1] = { at = game.clock + delay, fn = function() fn(h) end, every = delay,
+          handle = h, left = iterations }
+        return h
+      end,
+    }
+  end
   base.C_Map = {
     GetBestMapForUnit = function() return opts.mapID or 1412 end,
     GetPlayerMapPosition = function()
@@ -363,15 +373,35 @@ function Game:setCombat(on)
   self:fire(on and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
 end
 
+-- Runs due timers in time order (a timer scheduled by a callback runs in the
+-- same advance if it falls inside the window), then one OnUpdate per shown
+-- frame. Use small steps to exercise OnUpdate-driven code.
 function Game:advance(seconds)
-  self.clock = self.clock + seconds
+  local target = self.clock + seconds
   self.now = self.now + math.floor(seconds)
-  local due, keep = {}, {}
-  for _, t in ipairs(self.timers) do
-    if t.at <= self.clock then due[#due + 1] = t else keep[#keep + 1] = t end
+  while true do
+    local best, bi
+    for i, t in ipairs(self.timers) do
+      if t.at <= target and (not best or t.at < best.at) then best, bi = t, i end
+    end
+    if not best then break end
+    table.remove(self.timers, bi)
+    if best.at > self.clock then self.clock = best.at end
+    if not (best.handle and best.handle.cancelled) then
+      best.fn()
+      if best.every and not best.handle.cancelled then
+        if best.left then best.left = best.left - 1 end
+        if not best.left or best.left > 0 then
+          best.at = best.at + best.every
+          self.timers[#self.timers + 1] = best
+        end
+      end
+    end
   end
-  self.timers = keep
-  for _, t in ipairs(due) do t.fn() end
+  self.clock = target
+  for _, f in ipairs(self.frames) do
+    if f.__shown and f.__scripts.OnUpdate then f.__scripts.OnUpdate(f, seconds) end
+  end
 end
 
 function Game:slash(line)

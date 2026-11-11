@@ -17,6 +17,7 @@ Core\Log.lua
 Core\Errors.lua
 Core\Events.lua
 Core\Combat.lua
+Core\Timer.lua
 Core\Serialize.lua
 Core\DB.lua
 Core\Profiles.lua
