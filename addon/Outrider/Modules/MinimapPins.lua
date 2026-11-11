@@ -92,6 +92,7 @@ function M:Update()
   local rotate = C.Call("C_CVar.GetCVar", "rotateMinimap")
   if tostring(rotate) == "1" then facing = C.Call("GetPlayerFacing") end
   local n = 0
+  local nearest
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
     local _, wN, wW = W.WorldPos(mapID, pin.x, pin.y)
     if wN then
@@ -100,6 +101,9 @@ function M:Update()
         n = n + 1
         local d = self:Dot(n)
         d.pin, d.dist = pin, dist
+        if not nearest or dist < nearest.dist then
+          nearest = { name = pin.name, dist = dist, dN = wN - pN, dW = wW - pW, x = x, y = y }
+        end
         d.tex:SetColorTexture(ns.Theme:Color(pin.kind == "rare" and "warn" or "accent"))
         d:ClearAllPoints()
         d:SetPoint("CENTER", Minimap, "CENTER", x, y)
@@ -107,6 +111,18 @@ function M:Update()
         self.used[n] = d
       end
     end
+  end
+  -- Diagnostics for the "dots drift the wrong way" report (2026-11-11):
+  -- once a second, the numbers behind the nearest dot, plus our raw position
+  -- sources, so Claude can see which axis or sign is off.
+  local now = GetTime and GetTime() or 0
+  if nearest and now - (self.lastDiag or 0) >= 1 then
+    self.lastDiag = now
+    local _, mx, my = C.PlayerPosition("player")
+    local uy, ux = C.Call("UnitPosition", "player")
+    self:Info("diag %s dist=%.0f dN=%.0f dW=%.0f dot=%.0f,%.0f map=%.4f,%.4f unitpos=%.1f,%.1f facing=%s rotate=%s radius=%.0f half=%.0f",
+      tostring(nearest.name), nearest.dist, nearest.dN, nearest.dW, nearest.x, nearest.y, mx or -1, my or -1,
+      uy or -1, ux or -1, tostring(facing and string.format("%.2f", facing)), tostring(rotate), radius or -1, half)
   end
   if n ~= self.lastCount then
     self.lastCount = n
