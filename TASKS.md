@@ -146,7 +146,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P8-03 Rare sightings sharing · Both · deps: P8-01, P2-07 · 2026-11-11: Modules/RareShare.lua, /ride share rares guild|party on|off (off by default); receivers record to Sightings (pins), toast watched rares with layer; drops whispers and bad data. Needs a second player
 - [ ] P8-04 Location sharing (opt-in) · Both · deps: P8-01, P3-03
 - [ ] P8-05 Gathering and fishing sharing · Claude · deps: P8-01, P5-13
-- [ ] P8-06 Town errand list · Claude · deps: P5-01, P5-02, P4-06, P2-11
+- [~] P8-06 Town errand list · Claude · deps: P5-01, P5-02, P4-06, P2-11 · 2026-11-11: Modules/Errands.lua + Errands tab + /ride errands: repair, junk, ammo, trainer (even level since last visit), AH shopping list; toast on entering a rest area, row click = waypoint. Reagents and alt mail later
 - [ ] P8-07 Chat triage · Claude · deps: P7-08
 - [ ] P8-08 Forecasts · Claude · deps: P8-03, P5-08
 - [ ] P8-09 Gate G8 · Both · deps: all P8

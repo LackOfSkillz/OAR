@@ -438,6 +438,8 @@ function M.new(opts)
     end,
   }
   base.IsInGuild = function() return opts.inGuild or false end
+  base.IsResting = function() return game.resting or false end
+  base.GetInventoryItemDurability = function(slot) local d = game.durability and game.durability[slot] if d then return d[1], d[2] end end
   base.IsInGroup = function() return opts.inGroup or false end
   base.IsInRaid = function() return opts.inRaid or false end
   base.CanMerchantRepair = function() return game.canRepair or false end

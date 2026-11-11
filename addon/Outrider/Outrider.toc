@@ -69,6 +69,7 @@ Modules\QuestRewards.lua
 Modules\GearSets.lua
 Modules\Comm.lua
 Modules\RareShare.lua
+Modules\Errands.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua
