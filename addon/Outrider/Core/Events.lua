@@ -8,6 +8,10 @@ local _, ns = ...
 local Events = { handlers = {}, unitFrames = {}, stats = {}, slow = {} }
 ns.Events = Events
 
+-- Events addons may not even try to register on Forever: the attempt makes
+-- Blizzard block Outrider ("disable this addon?"). Refused before RegisterEvent.
+Events.FORBIDDEN = { COMBAT_LOG_EVENT_UNFILTERED = true, COMBAT_LOG_EVENT = true }
+
 local frame = CreateFrame("Frame")
 Events.frame = frame
 
@@ -42,6 +46,10 @@ frame:SetScript("OnEvent", function(_, event, ...) dispatch(event, ...) end)
 -- Register fn(event, ...) for event. owner is any table (usually a module).
 function Events:On(event, owner, fn)
   assert(type(event) == "string" and type(fn) == "function", "Events:On(event, owner, fn)")
+  if self.FORBIDDEN[event] then
+    if ns.Log then ns.Log:Warn("events", "refused %s: forbidden for addons on Forever", event) end
+    return nil
+  end
   local list = self.handlers[event]
   if not list then
     list = {}

@@ -63,7 +63,10 @@ local function build(self)
   f.text:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
   f.text:SetPoint("RIGHT", -8, 0)
   f.text:SetJustifyH("LEFT")
-  f:SetScript("OnDragStart", function() Toast:Anchor():StartMoving() end)
+  f:SetScript("OnDragStart", function()
+    if ns.Compat.InCombat() and Toast:HasSecure() then return end
+    Toast:Anchor():StartMoving()
+  end)
   f:SetScript("OnDragStop", function()
     Toast:Anchor():StopMovingOrSizing()
     Toast:SaveAnchor()
@@ -74,7 +77,18 @@ local function build(self)
   return f
 end
 
+-- A frame that a secure button is anchored to becomes protected in combat,
+-- so moving toasts that carry buttons waits until combat ends.
+function Toast:HasSecure()
+  for _, f in ipairs(self.visible) do if f.secure then return true end end
+  return false
+end
+
 function Toast:Layout()
+  if ns.Compat.InCombat() and self:HasSecure() then
+    ns.Combat:Run("toast:layout", function() Toast:Layout() end, "toast:layout")
+    return
+  end
   local a = self:Anchor()
   for i, f in ipairs(self.visible) do
     f:ClearAllPoints()

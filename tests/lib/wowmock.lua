@@ -104,7 +104,10 @@ M.newRegion = newRegion
 local function buildMethods(game)
   local m = {}
   m.RegisterEvent = function(self, event)
-    if game.blockedEvents[event] then error("Frame:RegisterEvent(): " .. event .. " is not allowed", 2) end
+    if game.blockedEvents[event] then
+      game.forbiddenAttempts = (game.forbiddenAttempts or 0) + 1
+      error("Frame:RegisterEvent(): " .. event .. " is not allowed", 2)
+    end
     self.__events[event] = true
   end
   m.UnregisterEvent = function(self, event) self.__events[event] = nil end

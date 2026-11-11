@@ -63,8 +63,10 @@ Probe.EVENTS = {
   "UNIT_PET", "PET_STABLE_SHOW", "TRADE_SKILL_SHOW", "CRAFT_SHOW", "AUCTION_HOUSE_SHOW",
   "MERCHANT_SHOW", "GOSSIP_SHOW", "TRAINER_SHOW", "TAXIMAP_OPENED", "LOOT_OPENED", "QUEST_COMPLETE",
   "BAG_UPDATE_DELAYED", "CHAT_MSG_ADDON", "EDIT_MODE_LAYOUTS_UPDATED", "ADDON_ACTION_BLOCKED",
-  "ADDON_ACTION_FORBIDDEN", "COMBAT_LOG_EVENT_UNFILTERED",
+  "ADDON_ACTION_FORBIDDEN",
 }
+-- Never tested by registering: on Forever even trying makes Blizzard block
+-- Outrider and offer to disable it (seen 2026-11-11). See ns.Events.FORBIDDEN.
 
 function Probe:Run()
   local out = { at = time(), build = {}, apis = {}, events = {}, constants = {}, units = {} }
@@ -85,13 +87,24 @@ function Probe:Run()
   end
   out.summary = { present = present, missing = missing }
 
-  -- Can we register each event? (Some are blocked on Forever, e.g. the combat log.)
-  local f = CreateFrame("Frame")
+  -- Does each event exist? Prefer the client's own check, which registers
+  -- nothing; fall back to a test registration. Forbidden events are skipped.
+  local isValid = C_EventUtils and C_EventUtils.IsEventValid
+  local f
   for _, event in ipairs(self.EVENTS) do
-    local ok, err = pcall(f.RegisterEvent, f, event)
-    out.events[event] = ok and true or tostring(err)
-    pcall(f.UnregisterEvent, f, event)
+    if ns.Events.FORBIDDEN[event] then
+      out.events[event] = "skipped (forbidden)"
+    elseif isValid then
+      local ok, valid = pcall(isValid, event)
+      out.events[event] = ok and (valid and true or "not valid") or "check failed"
+    else
+      f = f or CreateFrame("Frame")
+      local ok, err = pcall(f.RegisterEvent, f, event)
+      out.events[event] = ok and true or tostring(err)
+      pcall(f.UnregisterEvent, f, event)
+    end
   end
+  for event in pairs(ns.Events.FORBIDDEN) do out.events[event] = "skipped (forbidden)" end
 
   out.addonBuild = ns.build
   out.units = self:RecordUnits("probe")
