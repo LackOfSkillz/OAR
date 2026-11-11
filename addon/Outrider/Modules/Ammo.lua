@@ -59,3 +59,8 @@ function M:Alert(n, title, color)
 end
 
 function M:Snapshot() return { ammo = self.last } end
+
+function M:Activity()
+  local n = self:Count()
+  return n and string.format("%d ammo (warns under %d)", n, self:Settings().low) or "no ammo slot reading"
+end

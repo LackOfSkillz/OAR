@@ -77,3 +77,5 @@ ns.AddCommand("tamemacro", "<Beast Name>  write a pull + tame macro for that bea
   local scan = ns.Modules:Get("RareScan")
   if ok and scan then scan:Watch(M.Capitalize(strtrim(arg)), true) end
 end)
+
+function M:Activity() return "/ride tamemacro <Beast> writes a pull + tame macro" end

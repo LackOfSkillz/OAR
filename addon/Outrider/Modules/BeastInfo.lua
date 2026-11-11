@@ -77,3 +77,5 @@ function M:OnTooltip(tip)
   local r, g, b = ns.Theme:Color("accent")
   for _, line in ipairs(self:Lines(unit, shift)) do tip:AddLine(line, r, g, b) end
 end
+
+function M:Activity() return "adds family, level and tameable lines to beast tooltips" end

@@ -27,3 +27,5 @@ end
 function M:Snapshot()
   return { greeted = self:Settings().greeted }
 end
+
+function M:Activity() return "greets each character once" end

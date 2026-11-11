@@ -111,3 +111,10 @@ ns.AddCommand("way", "<x> <y> [title] | clear  waypoint on the current map (map 
   local ok, w = M:Set(mapID, x / 100, y / 100, title ~= "" and title or nil)
   if ok then ns.Print("waypoint %s at %.1f, %.1f (%s)", w.title, x, y, w.backend) else ns.Print(tostring(w)) end
 end)
+
+function M:Activity()
+  local w = self.current
+  if not w then return "no waypoint (" .. self:Backend() .. " ready)" end
+  local d = self:Distance()
+  return string.format("to %s, %s", w.title, d and string.format("%d yards", d) or "distance unknown")
+end

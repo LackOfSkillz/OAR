@@ -99,3 +99,8 @@ end
 function M:Snapshot()
   return { layer = self.current, label = self.Label(self.current), confidence = self.confidence }
 end
+
+function M:Activity()
+  if not self.current then return string.format("learning (%d of %d mobs seen)", #self.window, self.MIN) end
+  return string.format("you are on %s (%.0f%% sure)", self.Label(self.current), self.confidence * 100)
+end

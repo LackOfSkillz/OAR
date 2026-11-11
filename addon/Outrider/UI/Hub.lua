@@ -162,7 +162,11 @@ Hub:AddTab("modules", L.modules, function(p)
       if s then
         row.mod = ns.Modules:Get(s.name)
         row.label:SetText(s.title)
-        row.note:SetText((s.phase and (s.phase .. "  ") or "") .. (s.enabled and "" or tostring(s.reason)))
+        if s.enabled then
+          row.note:SetText(s.activity and (ns.Theme:Hex("good") .. s.activity .. "|r") or "")
+        else
+          row.note:SetText(tostring(s.reason))
+        end
         row:Refresh()
         row:Show()
       else

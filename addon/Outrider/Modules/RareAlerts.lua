@@ -81,3 +81,9 @@ function M:Snapshot()
   local i = self.lastInfo
   return i and { lastAlert = { npcID = i.npcID, name = i.name, t = i.t } } or nil
 end
+
+function M:Activity()
+  local n = 0
+  for _ in pairs(self.lastAlert) do n = n + 1 end
+  return n == 0 and "waiting for a rare (toast + sound when one shows up)" or (n .. " alerts this session, last: " .. tostring(self.lastInfo and self.lastInfo.name))
+end

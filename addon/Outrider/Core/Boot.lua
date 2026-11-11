@@ -41,6 +41,17 @@ function Boot:OnLogin()
   local on = 0
   for _, m in ipairs(ns.Modules.list) do if m.enabled then on = on + 1 end end
   ns.Log:Info("boot", "login complete: %d/%d modules on, %d addons detected", on, #ns.Modules.list, #(ns.Conflicts.found or {}))
+  -- One line per login so Gary can see Outrider is alive (setting: loginLine).
+  if ns.db.global.loginLine ~= false then
+    local scan = ns.Modules:Get("RareScan")
+    local watch = {}
+    if scan and scan.enabled then
+      for k in pairs(scan:Settings().watch) do watch[#watch + 1] = tostring(k) end
+      table.sort(watch)
+    end
+    ns.Print("%d features on%s. /ride shows what each is doing.", on,
+      #watch > 0 and (", watching for " .. table.concat(watch, ", ")) or "")
+  end
 end
 
 function Boot:OnLogout()

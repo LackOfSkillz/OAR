@@ -132,3 +132,9 @@ function M:Describe(npcID, layer, now)
   if w.state == "open" then return string.format("window open now, %d min left (%s)", mins(w.closesIn), w.source) end
   return string.format("window passed, %s %d min ago (%s)", w.last.state, ago, w.source)
 end
+
+function M:Activity()
+  local n, total = 0, 0
+  for _, list in pairs(self.db) do n = n + 1 total = total + #list end
+  return string.format("%d sightings of %d rares saved", total, n)
+end

@@ -154,3 +154,8 @@ function M:Snapshot()
   local d = self:Read()
   return d and { name = d.name, level = d.level, family = d.family, xp = d.xp, xpMax = d.xpMax } or nil
 end
+
+function M:Activity()
+  local d = self:Read()
+  return d and string.format("%s level %s, panel shown", tostring(d.name), tostring(d.level)) or "no pet out"
+end

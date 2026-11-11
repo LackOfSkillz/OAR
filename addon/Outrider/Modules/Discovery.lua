@@ -165,3 +165,10 @@ ns.AddCommand("discovered", "[n]  last n NPCs Outrider recorded (default 10)", f
       tostring(r.mapID), r.x and string.format("%.1f,%.1f", r.x * 100, r.y * 100) or "")
   end
 end)
+
+function M:Activity()
+  local today, start = 0, time() - 86400
+  for _, e in pairs(self.db.npcs) do if (e.firstSeen or 0) >= start then today = today + 1 end end
+  local last = self.db.recent[#self.db.recent]
+  return string.format("%d NPCs known, %d new today%s", self:Count(), today, last and (", last: " .. last.name) or "")
+end

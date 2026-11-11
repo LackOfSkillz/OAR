@@ -133,3 +133,8 @@ function M:CombatChecks(n)
     self:Info("test button macro %s %s", macro, now and "set" or "queued until combat ends")
   end
 end
+
+function M:Activity()
+  local p = ns.db.global.probe
+  return string.format("test data: probe %s, %d fights sampled", p and p.addonBuild == ns.build and "done" or "pending", self.combats or 0)
+end

@@ -54,3 +54,5 @@ ns.AddCommand("coords", "print map id and your coordinates", function()
   ns.Print("%s (map %s): %s", zone, tostring(mapID), M.Format(mapID, x, y))
   ns.Log:Info("coords", "%s map=%s %s", zone, tostring(mapID), M.Format(mapID, x, y))
 end)
+
+function M:Activity() return "under the minimap: " .. M.Format(C.PlayerPosition("player")) end

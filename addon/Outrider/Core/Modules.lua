@@ -146,8 +146,14 @@ function Modules:Status()
   local out = {}
   for _, mod in ipairs(self.list) do
     local want, reason = self:ShouldEnable(mod)
+    -- Optional mod:Activity() -> one short line saying what it is doing now.
+    local activity
+    if mod.enabled and mod.Activity then
+      local ok, line = ns.Safe(mod.name .. ":Activity", mod.Activity, mod)
+      if ok then activity = line end
+    end
     out[#out + 1] = { name = mod.name, title = mod.spec.title or mod.name, enabled = mod.enabled,
-                      want = want, reason = reason, phase = mod.spec.phase }
+                      want = want, reason = reason, phase = mod.spec.phase, activity = activity }
   end
   return out
 end
