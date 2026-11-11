@@ -463,6 +463,11 @@ function M.new(opts)
     end,
   }
   -- gear: game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 5, ... }; items[id].equipLoc / class / subclass
+  base.C_Item.EquipItemByName = function(link, slot)
+    if game.combat then error("EquipItemByName in combat") end
+    game.worn = game.worn or {}
+    game.worn[slot] = tonumber(tostring(link):match("item:(%d+)"))
+  end
   base.C_Item.GetItemStats = function(link)
     local id = tonumber(tostring(link):match("item:(%d+)"))
     return game.itemStats and game.itemStats[id] or {}
