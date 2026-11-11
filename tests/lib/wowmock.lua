@@ -369,7 +369,21 @@ function M.new(opts)
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
   base.CanMerchantRepair = function() return game.canRepair or false end
-  base.Enum = { TooltipDataType = { Unit = 2 } }
+  base.Enum = { TooltipDataType = { Unit = 2 }, SpellBookSpellBank = { Player = 0 } }
+  -- spellbook: game.spells = { { name, id, rank, passive } } in one skill line
+  game.spells = opts.spells or {
+    { name = "Auto Shot", id = 75 }, { name = "Arcane Shot", id = 14282, rank = 3 },
+    { name = "Arcane Shot", id = 14281, rank = 2 }, { name = "Tame Beast", id = 1515 },
+    { name = "Hunter's Mark", id = 1130, rank = 1 }, { name = "Wing Clip", id = 2974, rank = 1 },
+  }
+  base.C_SpellBook = {
+    GetNumSpellBookSkillLines = function() return 1 end,
+    GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = #game.spells } end,
+    GetSpellBookItemInfo = function(i)
+      local s = game.spells[i]
+      if s then return { name = s.name, spellID = s.id, subName = s.rank and ("Rank " .. s.rank) or "", isPassive = s.passive } end
+    end,
+  }
   base.TooltipDataProcessor = { AddTooltipPostCall = function(kind, fn)
     game.tooltipHooks = game.tooltipHooks or {}
     game.tooltipHooks[#game.tooltipHooks + 1] = { kind = kind, fn = fn }

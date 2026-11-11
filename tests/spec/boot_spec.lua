@@ -51,7 +51,7 @@ T.describe("boot", function()
     local samples = {
       help = "", hub = "", version = "", status = "", debug = "on", log = "5", mark = "P0 test",
       errors = "", probe = "", modules = "", module = "Welcome off", export = "", import = "",
-      copy = "Nobody-Forever", chars = "", minimap = "off", snap = "", reset = "", selftest = "combat", perf = "", discovered = "5", watch = "The Rake", unwatch = "The Rake", tamemacro = "Test Beast", way = "50 50 test", coords = "", near = "spirit",
+      copy = "Nobody-Forever", chars = "", minimap = "off", snap = "", reset = "", selftest = "combat", perf = "", discovered = "5", watch = "The Rake", unwatch = "The Rake", tamemacro = "Test Beast", way = "50 50 test", coords = "", near = "spirit", spells = "",
     }
     for _, name in ipairs(ns.Slash.order) do
       T.ok(samples[name] ~= nil, "add a sample for new command /ride " .. name)
