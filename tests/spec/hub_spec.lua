@@ -15,7 +15,7 @@ T.describe("hub", function()
     local f = ns.Hub.frame
     T.ok(f:IsShown())
     T.eq(ns.Hub.current, "overview")
-    T.same(f.tabBar.order, { "overview", "modules", "characters", "tools" })
+    T.same(f.tabBar.order, { "overview", "modules", "characters", "rares", "tools" })
     for _, id in ipairs(f.tabBar.order) do f.tabBar:Select(id) T.eq(ns.Hub.current, id) end
     T.eq(#ns.Errors.list, 0)
     T.contains(ns.Hub.byId.overview.panel.who:GetText(), "Torrant")

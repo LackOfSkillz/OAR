@@ -53,6 +53,7 @@ Modules\Layers.lua
 Modules\RareScan.lua
 Modules\RareAlerts.lua
 Modules\Sightings.lua
+Modules\RaresTab.lua
 Modules\TameHelper.lua
 
 Core\Slash.lua
