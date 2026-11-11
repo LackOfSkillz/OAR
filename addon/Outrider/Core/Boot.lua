@@ -31,6 +31,7 @@ end
 function Boot:OnLogin()
   ns.Errors:HookBugGrabber()
   ns.Conflicts:Detect()
+  if ns.db.char.classAccent then ns.Theme:UseClassAccent() end
   ns.Settings:Init()
   ns.MinimapButton:Init()
   ns.SecureButtons:Init()

@@ -122,7 +122,7 @@ add("reset", "char|all confirm  wipe settings (needs the word confirm)", functio
   ReloadUI()
 end)
 
-add("selftest", "error|combat|button|toast  checks for the test pipeline", function(arg)
+add("selftest", "error|combat|button|toast|widgets  checks for the test pipeline", function(arg)
   if arg == "error" then
     ns.Safe("selftest", function() error("Outrider selftest: deliberate error (this is expected)") end)
     ns.Print("deliberate error recorded. Type /reload so Claude can read it.")
@@ -133,8 +133,10 @@ add("selftest", "error|combat|button|toast  checks for the test pipeline", funct
     ns.SecureButtons:SelfTest()
   elseif arg == "toast" then
     ns.Toast:SelfTest()
+  elseif arg == "widgets" then
+    ns.UI:WidgetTest()
   else
-    ns.Print("usage: /ride selftest error|combat|button|toast")
+    ns.Print("usage: /ride selftest error|combat|button|toast|widgets")
   end
 end)
 

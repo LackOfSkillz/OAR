@@ -28,6 +28,7 @@ Core\Probe.lua
 # UI kit
 UI\Theme.lua
 UI\Widgets.lua
+UI\WidgetsExtra.lua
 UI\SecureButtons.lua
 UI\Toast.lua
 UI\Hub.lua

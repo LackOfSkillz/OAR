@@ -177,7 +177,19 @@ local function buildMethods(game)
     if p then return p[1], p[2], p[3], p[4], p[5] end
   end
   m.GetNumPoints = function(self) return #self.__points end
-  m.SetText = function(self, t) self.__text = t end
+  m.SetText = function(self, t)
+    self.__text = t
+    if self.__kind == "EditBox" and self.__scripts.OnTextChanged then self.__scripts.OnTextChanged(self, false) end
+  end
+  m.SetMinMaxValues = function(self, a, b) self.__min, self.__max = a, b end
+  m.GetMinMaxValues = function(self) return self.__min, self.__max end
+  m.SetValue = function(self, v)
+    if self.__min then v = math.max(self.__min, math.min(self.__max, v)) end
+    local changed = self.__value ~= v
+    self.__value = v
+    if changed and self.__scripts.OnValueChanged then self.__scripts.OnValueChanged(self, v, false) end
+  end
+  m.GetValue = function(self) return self.__value end
   m.GetText = function(self) return self.__text end
   m.SetFormattedText = function(self, fmt, ...) self.__text = string.format(fmt, ...) end
   m.CreateFontString = function(self, name) return newRegion(game, "FontString", name, self) end

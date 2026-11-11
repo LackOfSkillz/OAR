@@ -35,7 +35,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [x] P1-04 Throttle and timer helpers · Claude · deps: none — 2026-11-11: Core/Timer.lua (After, Ticker, Throttle with trailing run, OnUpdate fallback idle when empty); 8 specs
 - [~] P1-05 Secure button pool · Claude · deps: P1-04 — 2026-11-11: UI/SecureButtons.lua (pool of 4 prewarmed, combat-deferred SetMacro/Show/Place/Release), mock flags protected calls in combat; 8 specs. Waiting on Gary: /ride selftest button
 - [~] P1-06 Toasts · Claude · deps: P1-04 — 2026-11-11: UI/Toast.lua (3-stack, drag saves anchor per char, hover holds, sound, pooled secure button parented to UIParent); 7 specs. Waiting on Gary: /ride selftest toast
-- [ ] P1-07 UI kit additions · Claude · deps: P1-06
+- [~] P1-07 UI kit additions · Claude · deps: P1-06 — 2026-11-11: UI/WidgetsExtra.lua (ScrollList virtualized, Tabs, own Dropdown, Slider, throttled SearchBox), class accent setting; 8 specs. Waiting on Gary: /ride selftest widgets screenshot
 - [ ] P1-08 Hub with tabs · Claude · deps: P1-07
 - [ ] P1-09 Minimap button and settings page · Both · deps: P1-08
 - [ ] P1-10 Snapshot stays dormant but works · Both · deps: P0-07
