@@ -46,6 +46,7 @@ Data\Registry.lua
 Data\Macros_Hunter.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
+Modules\MacroEngine.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

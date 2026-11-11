@@ -78,7 +78,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 4: Macro library  ([phases/P4_macros.md](phases/P4_macros.md))
 
-- [ ] P4-01 Macro engine (pure logic) · Claude · deps: none
+- [x] P4-01 Macro engine (pure logic) · Claude · deps: none — 2026-11-11: Modules/MacroEngine.lua: Fill, Validate (255, unknown command, brackets, !Auto Shot/!Aspect, #showtooltip), Explain in plain English; all pack macros validate; explanations for the hunter pack reviewed; 5 specs
 - [ ] P4-02 Spellbook resolver · Claude · deps: P0-08
 - [ ] P4-03 Library window · Claude · deps: P4-01, P4-02, P1-08
 - [ ] P4-04 Installer · Both · deps: P4-03
