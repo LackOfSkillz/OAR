@@ -38,3 +38,23 @@ T.describe("minimap pins", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("minimap pin hover", function()
+  T.it("hovering a dot shows its name, kind and distance; clicking opens its card", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    ns.db.global.pois["npc-1-vendor"] = { id = "npc-1-vendor", kind = "vendor", mapID = 1412, x = 0.50, y = 0.37, name = "Smith", verified = false }
+    local M = ns.Modules:Get("MinimapPins")
+    M:Update()
+    local d = M.used[1]
+    local tip = game.env.GameTooltip
+    d.__scripts.OnEnter(d)
+    T.eq(tip.__lines[1], "Smith")
+    T.eq(tip.__lines[2], "Vendor, 40 yards")
+    d.__scripts.OnClick(d)
+    T.eq(ns.MapPins.card.title:GetText(), "Smith")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

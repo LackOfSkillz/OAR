@@ -30,6 +30,9 @@ Fill this in during P0-08 from `tools/read-logs.ps1 -Section probe`, and keep it
 | First Discovery capture | npcID 256092 Shadowgale Shriekling, map 2521 (0.598, 0.344) | 2026-11-11 |
 | Memory | 577 KB with 5 modules (budget 1.5 MB) | 2026-11-11 |
 | Pet health / focus | `UnitHealth("pet")` and `UnitPower("pet")` came back secret (shown as ? before the fix); `UnitHealthMax("pet")` readable (380), `GetPetExperience` readable (694/2525). Display raw, never compute (C6) | 2026-11-11 |
+| World axes | `C_Map.GetWorldPosFromMapPos` returns its axes swapped relative to `UnitPosition` (exact match after swapping, 0.0 yards). Waypoints:Calibrate() detects it at login | 2026-11-11 |
+| Pet happiness | No GetPetHappiness and no buffs on the pet (Dog, Cat 12, npcID 165189): Forever probably has no pet happiness. Panel shows none | 2026-11-11 |
+| Minimap view radius | 333.3 yards at Gary's zoom (C_Minimap.GetViewRadius) | 2026-11-11 |
 | Tame Beast | A channel on Forever (bar drains to zero, tame completes at zero; Gary 2026-11-11). `/stopmacro [channeling]` guards the tame macro | 2026-11-11 |
 | Error pipeline | Deliberate error caught once with full stack through Safe/xpcall | 2026-11-11 |
 

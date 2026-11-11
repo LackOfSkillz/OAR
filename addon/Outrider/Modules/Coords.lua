@@ -23,7 +23,8 @@ function M:OnEnable()
   if not self.text then
     self.text = Minimap:CreateFontString(nil, "OVERLAY")
     ns.Theme:StyleText(self.text, "small", "text")
-    self.text:SetPoint("TOP", Minimap, "BOTTOM", 0, -4)
+    -- below the zone/clock line other UI puts right under the minimap
+    self.text:SetPoint("TOP", Minimap, "BOTTOM", 0, -22)
   end
   self.text:Show()
   self:On("PLAYER_STARTED_MOVING", function(mod)

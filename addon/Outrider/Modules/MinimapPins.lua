@@ -52,11 +52,27 @@ function M:OnDisable()
   self.used = {}
 end
 
+-- Each dot is a small button: hover shows name, kind and distance; click
+-- opens the same card as the world map pin (Gary asked, 2026-11-11).
 function M:Dot(i)
   local d = self.dots[i]
   if not d then
-    d = Minimap:CreateTexture(nil, "OVERLAY")
-    d:SetSize(6, 6)
+    d = CreateFrame("Button", nil, Minimap)
+    d:SetSize(8, 8)
+    d:SetFrameLevel((Minimap.GetFrameLevel and Minimap:GetFrameLevel() or 1) + 5)
+    d.tex = d:CreateTexture(nil, "OVERLAY")
+    d.tex:SetAllPoints()
+    d:SetScript("OnEnter", function(self)
+      local p = self.pin
+      if not p then return end
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(p.name or "?")
+      GameTooltip:AddLine(string.format("%s, %d yards", ns.MapPins.LABELS[p.kind] or p.kind, math.floor((self.dist or 0) + 0.5)),
+        ns.Theme:Color("muted"))
+      GameTooltip:Show()
+    end)
+    d:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    d:SetScript("OnClick", function(self) if self.pin then ns.MapPins:ShowCard(self.pin) end end)
     self.dots[i] = d
   end
   return d
@@ -79,11 +95,12 @@ function M:Update()
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
     local _, wN, wW = W.WorldPos(mapID, pin.x, pin.y)
     if wN then
-      local x, y = M.Offset(wN - pN, wW - pW, radius, half, facing)
+      local x, y, dist = M.Offset(wN - pN, wW - pW, radius, half, facing)
       if x then
         n = n + 1
         local d = self:Dot(n)
-        d:SetColorTexture(ns.Theme:Color(pin.kind == "rare" and "warn" or "accent"))
+        d.pin, d.dist = pin, dist
+        d.tex:SetColorTexture(ns.Theme:Color(pin.kind == "rare" and "warn" or "accent"))
         d:ClearAllPoints()
         d:SetPoint("CENTER", Minimap, "CENTER", x, y)
         d:Show()
