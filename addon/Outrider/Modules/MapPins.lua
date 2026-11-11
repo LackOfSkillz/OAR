@@ -83,8 +83,8 @@ end
 
 -- Fill a marker: frame has .ring and .icon textures.
 function M.Paint(frame, pin)
-  local c = M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
-  frame.ring:SetColorTexture(c[1], c[2], c[3], 0.55)
+  local c = pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
+  frame.ring:SetColorTexture(c[1], c[2], c[3], pin.questColor and 0.95 or 0.55)
   local ok = frame.icon:SetTexture(M.IconFor(pin))
   if ok == false then
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1) -- missing file: plain round dot
@@ -132,6 +132,24 @@ function M:PinsFor(mapID)
   return out
 end
 
+-- Quest givers: attach the quests on offer for this character and the color
+-- of the best one; false when a known giver has nothing left to offer.
+function M.AddQuests(pin, packEntry)
+  if not packEntry or not packEntry.quests then return true end
+  local list = ns.NPCPack:QuestsFor(packEntry)
+  if #list == 0 then return false end
+  pin.quests, pin.questColor = list, ns.NPCPack.DIFF_COLOR[list[1].diff]
+  return true
+end
+
+-- Tooltip/card lines for a quest giver's quests (at most 5).
+function M.QuestLines(pin)
+  local out = {}
+  for i = 1, math.min(5, #(pin.quests or {})) do out[#out + 1] = ns.NPCPack.QuestLine(pin.quests[i]) end
+  if pin.quests and #pin.quests > 5 then out[#out + 1] = string.format("and %d more", #pin.quests - 5) end
+  return out
+end
+
 function M:BuildPins(mapID)
   local out, hidden = {}, self:Settings().hidden
   local faction = C.Call("UnitFactionGroup", "player")
@@ -139,14 +157,16 @@ function M:BuildPins(mapID)
   for id, p in pairs(ns.db.global.pois or {}) do
     if p.npcID then own[p.npcID] = true end
     if p.mapID == mapID and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
-      out[#out + 1] = { id = id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name or LABELS[p.kind], npcID = p.npcID, poi = p }
+      local pin = { id = id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name or LABELS[p.kind], npcID = p.npcID, poi = p }
+      if M.AddQuests(pin, p.kind == "quest_giver" and ns.NPCPack and p.npcID and ns.NPCPack:Npc(p.npcID)) then out[#out + 1] = pin end
     end
   end
   -- Optional private NPC pack (D10); NPCs Gary visited himself win.
   if ns.NPCPack then
     for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do
       if not own[p.npcID] and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
-        out[#out + 1] = { id = p.id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name, npcID = p.npcID, poi = p }
+        local pin = { id = p.id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name, npcID = p.npcID, poi = p }
+        if M.AddQuests(pin, p.kind == "quest_giver" and p) then out[#out + 1] = pin end
       end
     end
   end
@@ -224,6 +244,7 @@ function M:AcquirePin(canvas)
       local first, second = ns.POI.Describe(self.data.poi or self.data, LABELS[self.data.kind] or self.data.kind)
       GameTooltip:AddLine(first, ns.Theme:Color("muted"))
       if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
+      for _, l in ipairs(M.QuestLines(self.data)) do GameTooltip:AddLine(l) end
       GameTooltip:Show()
     end)
     pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -310,6 +331,7 @@ function M:CardText(data)
     lines[#lines + 1] = string.format("Visited %d time%s, last %s", p.n or 1, (p.n or 1) == 1 and "" or "s",
       p.lastSeen and date("%Y-%m-%d", p.lastSeen) or "?")
     if p.faction then lines[#lines + 1] = p.faction end
+    for _, l in ipairs(M.QuestLines(data)) do lines[#lines + 1] = l end
   end
   return table.concat(lines, "\n")
 end

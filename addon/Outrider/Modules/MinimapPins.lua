@@ -78,6 +78,7 @@ function M:Dot(i)
       local first, second = ns.POI.Describe(p.poi or p, ns.MapPins.LABELS[p.kind] or p.kind)
       GameTooltip:AddLine(string.format("%s, %d yards", first, math.floor((self.dist or 0) + 0.5)), ns.Theme:Color("muted"))
       if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
+      for _, l in ipairs(ns.MapPins.QuestLines(p)) do GameTooltip:AddLine(l) end
       GameTooltip:Show()
     end)
     d:SetScript("OnLeave", function() GameTooltip:Hide() end)

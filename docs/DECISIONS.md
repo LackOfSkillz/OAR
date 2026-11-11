@@ -26,3 +26,5 @@
 | Q3 | License | GPLv3 / MIT / all rights reserved | GPLv3 if we ever study or reuse GPL addon code; MIT if everything is original | Before any public release |
 | Q4 | Visual direction for Phase 7 | Clean dark (default theme) / Classic gold trimmed / Minimal | Claude makes mockups in P7-01 | P7 |
 | Q5 | Guild sharing on by default for guildmates who install it | yes / opt-in | Opt-in per character | P8 |
+
+- 2026-11-11: Questie and QuestieDB were removed from AddOns at Gary's request. The importers read the saved zip in private/questie-source; Outrider runs without Questie (D10 holds).
