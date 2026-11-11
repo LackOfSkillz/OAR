@@ -65,6 +65,7 @@ Modules\Fishing.lua
 Modules\LootLog.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua
+Modules\SkillUp.lua
 Modules\GearScore.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua

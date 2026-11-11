@@ -392,7 +392,7 @@ function M.new(opts)
       local p = game.prof
       return p and { professionName = p.name, skillLevel = p.skill, maxSkillLevel = p.max }
     end,
-    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true } end,
+    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff } end,
     GetRecipeSchematic = function(id)
       local r = game.prof.recipes[id]
       local slots = {}

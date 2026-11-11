@@ -71,7 +71,9 @@ function M:ScanModern()
   for _, id in ipairs(ids) do
     local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)
     if type(info) == "table" and info.learned ~= false then
-      recipes[id] = { name = C.Readable(info.name), learned = info.learned ~= false, reagents = reagentsModern(id) }
+      -- diff: the client's color, 0 orange, 1 yellow, 2 green, 3 grey (relativeDifficulty)
+      recipes[id] = { name = C.Readable(info.name), learned = info.learned ~= false, reagents = reagentsModern(id),
+        diff = C.Readable(info.relativeDifficulty), skillUps = C.Readable(info.numSkillUps) }
     end
   end
   local skill = type(base) == "table" and base.skillLevel or nil

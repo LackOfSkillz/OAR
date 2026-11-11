@@ -122,6 +122,13 @@ ns.Hub:AddTab("crafting", "Crafting", function(p)
       lines[#lines + 1] = "  " .. n .. " x " .. (r and r.name or key)
     end
     self.queue:SetText(table.concat(lines, "\n"))
-    self.shop:SetText("Shopping list:\n" .. M:ShoppingText())
+    local text = "Shopping list:\n" .. M:ShoppingText()
+    if ns.SkillUp and ns.SkillUp.enabled then
+      for prof in pairs(ns.db.char.professions or {}) do
+        local l = ns.SkillUp:Lines(prof)
+        text = text .. "\n\n" .. table.concat(l, "\n", 1, math.min(#l, 4))
+      end
+    end
+    self.shop:SetText(text)
   end
 end, 46)
