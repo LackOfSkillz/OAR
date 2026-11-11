@@ -349,6 +349,8 @@ function M.new(opts)
     GetAddOnMetadata = function(addon, field) if addon == M.ADDON then return meta[field] end end,
     IsAddOnLoaded = function(addon) return game.loadedAddons[addon] == true end,
     LoadAddOn = function(addon) return game.loadedAddons[addon] == true end,
+    UpdateAddOnMemoryUsage = function() game.memoryUpdated = true end,
+    GetAddOnMemoryUsage = function(addon) if addon == M.ADDON then return opts.memoryKB or 420 end return 0 end,
   }
   if not opts.noCTimer then
     base.C_Timer = {

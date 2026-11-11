@@ -64,6 +64,8 @@ add("probe", "record which game APIs exist (then /reload)", function()
   ns.Print("probe done: %d present, %d missing. Type /reload so the results are saved.", p.summary.present, p.summary.missing)
 end)
 
+add("perf", "memory, events, timers and modules (then /reload)", function() ns.Perf:Report() end)
+
 add("modules", "list modules and why each is on or off", function()
   for _, s in ipairs(ns.Modules:Status()) do
     ns.Print("%s %s  %s", s.enabled and "|cff66dd77on |r" or "|cff999999off|r", s.name, s.enabled and "" or tostring(s.reason))

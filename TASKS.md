@@ -39,8 +39,8 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P1-08 Hub with tabs · Claude · deps: P1-07 — 2026-11-11: Overview/Modules/Characters/Tools tabs, Hub:AddTab(id,title,build,order) for modules, last tab per char; 6 specs. Waiting on Gary: screenshot of each tab
 - [ ] P1-09 Minimap button and settings page · Both · deps: P1-08
 - [ ] P1-10 Snapshot stays dormant but works · Both · deps: P0-07
-- [ ] P1-11 Performance check · Claude · deps: P1-08
-- [ ] P1-12 Installed addons check · Claude · deps: P0-02
+- [~] P1-11 Performance check · Claude · deps: P1-08 — 2026-11-11: /ride perf (memory via C_AddOns, event counts, debug-only handler timing with slowest 10, timers, pools, budget flags); 3 specs. Waiting on Gary: /ride perf in a city after 10 min
+- [x] P1-12 Installed addons check · Claude · deps: P0-02 — 2026-11-11: AddOns folder holds only Outrider (no BugGrabber/BugSack yet); no overlaps, KNOWN list unchanged. Recheck folder names when Gary installs addons (Forever Data Protect folder name unverified)
 - [ ] P1-13 Gate G1 run · Both · deps: all P1
 - [ ] **G1** gate: settings survive a full game restart; two characters (hunter + priest or mage) have independent settings and the hub shows only what applies to each; a 30-minute normal play session produces zero Outrider errors and zero taint reports; the name question (Q1) is settled.
 

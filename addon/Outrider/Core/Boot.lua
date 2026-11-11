@@ -18,6 +18,7 @@ function Boot:OnAddonLoaded(_, name)
   if name ~= ADDON then return end
   ns.Events:Off("ADDON_LOADED", Boot)
   ns.session = newSession()
+  ns.bootClock = GetTime and GetTime() or 0
   ns.Log:Attach()
   ns.DB:Init()
   ns.Errors:Attach()
