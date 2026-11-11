@@ -363,6 +363,12 @@ function M.new(opts)
     for i, m in ipairs(game.macros) do if m.name == name then return i end end
     return 0
   end
+  -- like the client: name lookup ignores case
+  base.GetMacroIndexByName = function(name)
+    for i, m in ipairs(game.macros) do if m.name:lower() == tostring(name):lower() then return i end end
+    return 0
+  end
+  base.GetMacroInfo = function(i) local m = game.macros[i] if m then return m.name, m.icon, m.body end end
   base.GetNumMacros = function()
     local acct, char = 0, 0
     for _, m in ipairs(game.macros) do if m.perChar then char = char + 1 else acct = acct + 1 end end

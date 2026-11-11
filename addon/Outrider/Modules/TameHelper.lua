@@ -27,6 +27,11 @@ M.TEMPLATE = table.concat({
   "/castsequence [combat] reset=combat Tame Beast, Wing Clip",
 }, "\n")
 
+-- "mystmane" -> "Mystmane", "ghost howl" -> "Ghost Howl" (names are typed by hand).
+function M.Capitalize(name)
+  return (name:gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end))
+end
+
 function M:Body(beast)
   return (self.TEMPLATE:gsub("{NAME}", beast))
 end
@@ -35,11 +40,16 @@ end
 function M:WriteMacro(beast, macroName)
   if type(beast) ~= "string" or beast == "" then return false, "usage: /ride tamemacro <Beast Name>" end
   if C.InCombat() then return false, "not in combat: macros can only be changed out of combat" end
+  beast = M.Capitalize(beast)
   macroName = (macroName or beast):sub(1, 16)
   local body = self:Body(beast)
   if #body > 255 then return false, "macro would be over 255 characters" end
   local index = C.Call("GetMacroIndexByName", macroName) or 0
   if index > 0 then
+    -- Keep the existing macro's own name and icon; only the text changes.
+    local existing = C.Call("GetMacroInfo", index)
+    -- (a macro named after the beast gets the beast's proper capitals)
+    if existing and existing:lower() ~= beast:lower() then macroName = existing end
     local ok = pcall(EditMacro, index, macroName, nil, body)
     if not ok then return false, "EditMacro failed" end
     self:Info("tame macro updated: %s (index %d, %d chars)", macroName, index, #body)
