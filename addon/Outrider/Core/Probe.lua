@@ -26,6 +26,13 @@ Probe.APIS = {
   { "GetNumStableSlots", "P2" }, { "HasPetUI", "P2" }, { "PlaySound", "P2" }, { "PlaySoundFile", "P2" },
   { "C_Spell.GetSpellInfo", "P2" }, { "GetSpellInfo", "P2" }, { "IsSpellKnown", "P4" }, { "IsPlayerSpell", "P4" },
   { "GetInventoryItemCount", "P2", "ammo count" },
+  -- follow-ups after the 2026-11-11 probe (Classic pet/spell/item globals missing)
+  { "C_StableInfo.GetStablePetInfo", "P2" }, { "C_StableInfo.GetNumActivePets", "P2" },
+  { "C_StableInfo.GetNumStablePets", "P2" }, { "C_PetInfo.GetPetTamersForMap", "P2" },
+  { "GetPetFoodList", "P2" }, { "C_UnitAuras.GetAuraDataByIndex", "P2" }, { "UnitPower", "P2", "pet focus" },
+  { "C_Spell.PickupSpell", "P4" }, { "C_SpellBook.GetNumSpellBookSkillLines", "P4" },
+  { "C_SpellBook.PickupSpellBookItem", "P4" }, { "C_Item.EquipItemByName", "P6" },
+  { "C_EventUtils.IsEventValid", "P0", "event check without registering" },
   -- map and navigation
   { "C_Map.GetBestMapForUnit", "P3" }, { "C_Map.GetPlayerMapPosition", "P3" }, { "C_Map.GetMapInfo", "P3" },
   { "C_Map.SetUserWaypoint", "P3" }, { "C_Map.ClearUserWaypoint", "P3" }, { "C_Map.GetWorldPosFromMapPos", "P3" },

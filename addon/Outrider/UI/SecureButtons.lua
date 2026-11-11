@@ -18,9 +18,12 @@ local function create()
   local b = CreateFrame("Button", "Outrider_SecureButton" .. id, UIParent, "SecureActionButtonTemplate")
   b.outriderID = id
   b:SetSize(64, 24)  -- fixed: resizing is protected in combat too
-  -- Modern clients fire secure clicks on key down when ActionButtonUseKeyDown
-  -- is set and on up otherwise; registering both covers either setting.
-  b:RegisterForClicks("AnyUp", "AnyDown")
+  -- Gary's client has ActionButtonUseKeyDown = 1. Registering AnyUp+AnyDown
+  -- fired OnClick on both press and release (seen 2026-11-11), so register
+  -- only the half that matches the setting, like Blizzard's action bars.
+  local keyDown = ns.Compat.Call("C_CVar.GetCVar", "ActionButtonUseKeyDown")
+  if keyDown == nil then keyDown = ns.Compat.Call("GetCVar", "ActionButtonUseKeyDown") end
+  b:RegisterForClicks(tostring(keyDown) == "1" and "AnyDown" or "AnyUp")
   b:SetFrameStrata("DIALOG")
   -- Look (textures, text) is not protected and may change any time.
   b.bg = b:CreateTexture(nil, "BACKGROUND")

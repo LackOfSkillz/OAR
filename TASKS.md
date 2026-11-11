@@ -21,7 +21,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [x] P0-05 First deploy and login · Both · deps: P0-02, P0-03 — 2026-11-11: build bd98a54 loaded, version line + login complete, greeting shown, 0 errors (first try missed: WoW was started before the deploy)
 - [x] P0-06 Real interface number · Both · deps: P0-05 — 2026-11-11: client reports iface 16001, build 1.60.1.70888; TOC already 16001, no change; C1 confirmed
 - [x] P0-07 SavedVariables round trip (critical) · Both · deps: P0-05 — 2026-11-11: PASS. loads rose over 3 reloads and a full restart (client 10:51:24), sv=yes, debug kept; C4 confirmed fixed
-- [ ] P0-08 API probe · Both · deps: P0-05
+- [~] P0-08 API probe · Both · deps: P0-05 — 2026-11-11: auto probe ran: 78 present, 21 missing, PROBE_RESULTS filled; Classic pet happiness/loyalty/stable APIs missing (P2-09 redesign). Still needed: in-combat + nameplate unit samples (auto on next fight)
 - [~] P0-09 Error pipeline check · Both · deps: P0-05 — 2026-11-11: deliberate error recorded once with stack; combat queue ran out of combat. Still needed: selftest combat IN combat; BugGrabber not installed
 - [x] P0-10 Name and rename · Gary decides, Claude renames · deps: none — 2026-11-11: renamed to Outrider in v0.2.0; GitHub repo rename + remote update left for Claude Code on the PC
 - [ ] P0-11 Screenshot loop · Both · deps: P0-05
@@ -38,8 +38,8 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P1-07 UI kit additions · Claude · deps: P1-06 — 2026-11-11: UI/WidgetsExtra.lua (ScrollList virtualized, Tabs, own Dropdown, Slider, throttled SearchBox), class accent setting; 8 specs. Waiting on Gary: /ride selftest widgets screenshot
 - [~] P1-08 Hub with tabs · Claude · deps: P1-07 — 2026-11-11: Overview/Modules/Characters/Tools tabs, Hub:AddTab(id,title,build,order) for modules, last tab per char; 6 specs. Waiting on Gary: screenshot of each tab
 - [ ] P1-09 Minimap button and settings page · Both · deps: P1-08
-- [ ] P1-10 Snapshot stays dormant but works · Both · deps: P0-07
-- [~] P1-11 Performance check · Claude · deps: P1-08 — 2026-11-11: /ride perf (memory via C_AddOns, event counts, debug-only handler timing with slowest 10, timers, pools, budget flags); 3 specs. Waiting on Gary: /ride perf in a city after 10 min
+- [x] P1-10 Snapshot stays dormant but works · Both · deps: P0-07 — 2026-11-11: snapshot taken automatically at logout, no reload by itself
+- [x] P1-11 Performance check · Claude · deps: P1-08 — 2026-11-11: auto perf at logout: 577 KB, 25 handlers, 0 timers, no idle OnUpdate, slowest handler 1.36 ms (login); within budget
 - [x] P1-12 Installed addons check · Claude · deps: P0-02 — 2026-11-11: AddOns folder holds only Outrider (no BugGrabber/BugSack yet); no overlaps, KNOWN list unchanged. Recheck folder names when Gary installs addons (Forever Data Protect folder name unverified)
 - [ ] P1-13 Gate G1 run · Both · deps: all P1
 - [ ] **G1** gate: settings survive a full game restart; two characters (hunter + priest or mage) have independent settings and the hub shows only what applies to each; a 30-minute normal play session produces zero Outrider errors and zero taint reports; the name question (Q1) is settled.
