@@ -368,6 +368,28 @@ function M.new(opts)
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  -- professions: game.prof = { name, skill, max, recipes = { [id] = { name, reagents = {[itemID]=n} } } }
+  base.GetProfessions = function() if game.prof then return 1 end end
+  base.GetProfessionInfo = function() local p = game.prof if p then return p.name, nil, p.skill, p.max end end
+  base.C_TradeSkillUI = {
+    GetAllRecipeIDs = function()
+      local ids = {}
+      for id in pairs(game.prof and game.prof.recipes or {}) do ids[#ids + 1] = id end
+      table.sort(ids)
+      return ids
+    end,
+    GetBaseProfessionInfo = function()
+      local p = game.prof
+      return p and { professionName = p.name, skillLevel = p.skill, maxSkillLevel = p.max }
+    end,
+    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true } end,
+    GetRecipeSchematic = function(id)
+      local r = game.prof.recipes[id]
+      local slots = {}
+      for item, n in pairs(r.reagents) do slots[#slots + 1] = { reagents = { { itemID = item } }, quantityRequired = n } end
+      return { reagentSlotSchematics = slots }
+    end,
+  }
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]

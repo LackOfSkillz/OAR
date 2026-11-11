@@ -55,6 +55,7 @@ Modules\RankCheck.lua
 Modules\BagFood.lua
 Modules\RareMacros.lua
 Modules\Inventory.lua
+Modules\Professions.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua
