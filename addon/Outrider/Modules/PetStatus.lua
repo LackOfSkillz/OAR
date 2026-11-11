@@ -53,6 +53,8 @@ function M:Read()
     focus = C.Readable(C.Call("UnitPower", "pet")), focusMax = C.Readable(C.Call("UnitPowerMax", "pet")),
     family = C.Readable(C.Call("UnitCreatureFamily", "pet")),
   }
+  -- raw (possibly secret) values, only ever passed to SetText
+  d.rawHp, d.rawFocus = C.Call("UnitHealth", "pet"), C.Call("UnitPower", "pet")
   d.xp, d.xpMax = C.Call("GetPetExperience")
   d.happiness = C.Call("GetPetHappiness")
   d.npcID = C.UnitNpcID("pet")
@@ -73,6 +75,13 @@ function M:Auras()
   return out
 end
 
+-- Put a value on screen whether it is plain or secret.
+function M.ShowRaw(fs, v)
+  if v == nil then fs:SetText("?") return end
+  if not C.IsSecret(v) then fs:SetText(tostring(v)) return end
+  if not pcall(fs.SetText, fs, v) then fs:SetText("?") end
+end
+
 function M:Build()
   if self.frame then return self.frame end
   local s = self:Settings()
@@ -81,7 +90,15 @@ function M:Build()
   local c = f.content
   f.line1 = UI.Text(c, "normal", "text") f.line1:SetPoint("TOPLEFT", 0, 0)
   f.line2 = UI.Text(c, "small", "muted") f.line2:SetPoint("TOPLEFT", 0, -18)
-  f.line3 = UI.Text(c, "small", "muted") f.line3:SetPoint("TOPLEFT", 0, -34)
+  -- Health and focus can be secret values on Forever (seen 2026-11-11: current
+  -- health and focus hidden, max health readable). Secrets may be shown but
+  -- not combined or compared (C6), so each number gets its own text that is
+  -- handed the raw value.
+  f.line3 = UI.Text(c, "small", "muted") f.line3:SetPoint("TOPLEFT", 0, -34) f.line3:SetText("Health")
+  f.hpVal = UI.Text(c, "small", "text") f.hpVal:SetPoint("LEFT", f.line3, "RIGHT", 4, 0)
+  f.hpMax = UI.Text(c, "small", "muted") f.hpMax:SetPoint("LEFT", f.hpVal, "RIGHT", 2, 0)
+  f.focusLabel = UI.Text(c, "small", "muted") f.focusLabel:SetPoint("LEFT", f.hpMax, "RIGHT", 10, 0) f.focusLabel:SetText("Focus")
+  f.focusVal = UI.Text(c, "small", "text") f.focusVal:SetPoint("LEFT", f.focusLabel, "RIGHT", 4, 0)
   f.line4 = UI.Text(c, "small", "text") f.line4:SetPoint("TOPLEFT", 0, -50)
   f:HookScript("OnDragStart", function() if M.feed and not C.InCombat() then ns.SecureButtons:SetShown(M.feed, false) end end)
   f:HookScript("OnDragStop", function() M:PlaceFeed() end)
@@ -122,7 +139,9 @@ function M:Refresh(why)
   else
     f.line2:SetText("XP unknown")
   end
-  f.line3:SetText(string.format("Health %s / %s   Focus %s", tostring(d.hp or "?"), tostring(d.hpMax or "?"), tostring(d.focus or "?")))
+  M.ShowRaw(f.hpVal, d.rawHp)
+  f.hpMax:SetText("/ " .. tostring(d.hpMax or "?"))
+  M.ShowRaw(f.focusVal, d.rawFocus)
   f.line4:SetText(d.happiness and ("Happiness: " .. (HAPPY[d.happiness] or tostring(d.happiness))) or "")
   self:CheckUnhappy(d)
   if not f:IsShown() then f:Show() end

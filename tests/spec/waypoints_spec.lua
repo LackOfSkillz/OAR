@@ -47,12 +47,29 @@ T.describe("waypoints", function()
     T.contains(game:chatText(), "Mulgore (map 1412): 46.00, 37.00")
   end)
 
-  T.it("coords tick only while moving", function()
+  T.it("coords and minimap pins tick only while moving", function()
     local game, ns = session()
     T.eq(ns.Timer.Pending(), 0)
     game:fire("PLAYER_STARTED_MOVING")
-    T.eq(ns.Timer.Pending(), 1)
+    T.ok(ns.Modules:Get("Coords").ticker)
+    T.ok(ns.Modules:Get("MinimapPins").ticker)
     game:fire("PLAYER_STOPPED_MOVING")
     T.eq(ns.Timer.Pending(), 0)
+  end)
+end)
+
+T.describe("world axes calibration", function()
+  T.it("detects whether map->world returns its axes in the other order", function()
+    local game, ns = session()
+    T.eq(ns.Waypoints.swap, false, "mock returns the same order as UnitPosition")
+    -- now make the map API hand back swapped axes
+    local orig = game.env.C_Map.GetWorldPosFromMapPos
+    game.env.C_Map.GetWorldPosFromMapPos = function(m, v) return 1, { GetXY = function() return v.y * 1000, v.x * 1000 end } end
+    ns.Waypoints:Calibrate()
+    T.eq(ns.Waypoints.swap, true)
+    local _, x, y = ns.Waypoints.WorldPos(1412, 0.46, 0.37)
+    T.eq(x, 460)
+    T.eq(y, 370)
+    game.env.C_Map.GetWorldPosFromMapPos = orig
   end)
 end)

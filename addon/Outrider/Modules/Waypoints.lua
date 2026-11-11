@@ -25,21 +25,52 @@ function M:Backend()
   return "none"
 end
 
--- World position in yards for a map point (nil when the client can't say).
-function M.WorldPos(mapID, x, y)
+-- World positions in yards, always as (north, west) = UnitPosition's
+-- (posX, posY). C_Map.GetWorldPosFromMapPos may hand its axes back in the
+-- other order; Calibrate() compares both for the player's own spot and
+-- sets M.swap (checked in game, logged once per session).
+local function rawWorld(mapID, x, y)
   local get, vec = C.Resolve("C_Map.GetWorldPosFromMapPos"), rawget(_G, "CreateVector2D")
   if type(get) ~= "function" or type(vec) ~= "function" then return nil end
   local ok, continent, pos = pcall(get, mapID, vec(x, y))
   if not ok or not pos then return nil end
-  local okXY, wx, wy = pcall(pos.GetXY, pos)
+  local okXY, a, b = pcall(pos.GetXY, pos)
   if not okXY then return nil end
-  return continent, wx, wy
+  return continent, a, b
+end
+
+function M.WorldPos(mapID, x, y)
+  local continent, a, b = rawWorld(mapID, x, y)
+  if not a then return nil end
+  if M.swap then return continent, b, a end
+  return continent, a, b
 end
 
 function M.PlayerWorldPos()
   local y, x, _, instance = C.Call("UnitPosition", "player")
   if not x then return nil end
   return instance, x, y
+end
+
+function M:Calibrate()
+  local mapID, mx, my = C.PlayerPosition("player")
+  local _, px, py = M.PlayerWorldPos()
+  if not (mapID and mx and px) then return nil end
+  local _, a, b = rawWorld(mapID, mx, my)
+  if not a then return nil end
+  local straight = math.abs(a - px) + math.abs(b - py)
+  local swapped = math.abs(a - py) + math.abs(b - px)
+  M.swap = swapped < straight
+  self:Info("world axes: map->world %s (off by %.1f yards; UnitPosition x=%.1f y=%.1f, map gives %.1f, %.1f)",
+    M.swap and "SWAPPED" or "same order", math.min(straight, swapped), px, py, a, b)
+  return M.swap
+end
+
+function M:OnEnable()
+  self:On("PLAYER_ENTERING_WORLD", function(mod)
+    if mod.calibrated then return end
+    if mod:Calibrate() ~= nil then mod.calibrated = true end
+  end)
 end
 
 function M:Distance()

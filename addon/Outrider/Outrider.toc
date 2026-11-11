@@ -62,6 +62,7 @@ Modules\Waypoints.lua
 Modules\POICapture.lua
 Modules\Nearest.lua
 Modules\MapPins.lua
+Modules\MinimapPins.lua
 Modules\Coords.lua
 
 Core\Slash.lua
