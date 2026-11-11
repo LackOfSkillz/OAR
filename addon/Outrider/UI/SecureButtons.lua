@@ -119,7 +119,10 @@ function SB:SelfTest()
     t = self:Acquire("selftest")
     if not t then ns.Print("no secure button available (try out of combat)") return end
     self.test = t
-    t:HookScript("OnClick", function() ns.Log:Info("selftest", "secure button clicked (%s)", tostring(t.macro)) end)
+    t:HookScript("OnClick", function(_, button, down)
+      ns.Log:Info("selftest", "secure button clicked (%s) button=%s down=%s keydownCVar=%s", tostring(t.macro), tostring(button),
+        tostring(down), tostring(C_CVar and C_CVar.GetCVar and C_CVar.GetCVar("ActionButtonUseKeyDown")))
+    end)
     self:Place(t, "CENTER", UIParent, "CENTER", 0, 120)
     self:SetShown(t, true)
   end
