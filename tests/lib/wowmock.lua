@@ -348,6 +348,31 @@ function M.new(opts)
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  -- macros: game.macros = { { name, icon, body, perChar } }, index = position
+  game.macros = opts.macros or {}
+  base.MAX_CHARACTER_MACROS = 18
+  base.GetMacroIndexByName = function(name)
+    for i, m in ipairs(game.macros) do if m.name == name then return i end end
+    return 0
+  end
+  base.GetNumMacros = function()
+    local acct, char = 0, 0
+    for _, m in ipairs(game.macros) do if m.perChar then char = char + 1 else acct = acct + 1 end end
+    return acct, char
+  end
+  base.EditMacro = function(i, name, icon, body)
+    if game.combat then error("EditMacro in combat") end
+    local m = game.macros[i]
+    if name then m.name = name end
+    if icon then m.icon = icon end
+    if body then m.body = body end
+    return i
+  end
+  base.CreateMacro = function(name, icon, body, perChar)
+    if game.combat then error("CreateMacro in combat") end
+    game.macros[#game.macros + 1] = { name = name, icon = icon, body = body, perChar = perChar }
+    return #game.macros
+  end
   base.C_CVar = { GetCVar = function(name) return (opts.cvars or {})[name] end }
 
   -- C_ namespaces

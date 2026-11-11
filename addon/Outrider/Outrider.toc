@@ -50,6 +50,7 @@ Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua
 Modules\RareScan.lua
+Modules\TameHelper.lua
 
 Core\Slash.lua
 Core\Boot.lua

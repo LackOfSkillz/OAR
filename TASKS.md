@@ -53,7 +53,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P2-05 Watchlist and Rares tab · Claude · deps: P2-04, P1-08
 - [ ] P2-06 Layer detection · Both · deps: P2-01
 - [ ] P2-07 Sightings and respawn windows · Claude · deps: P2-03, P2-06
-- [ ] P2-08 TameHelper · Both · deps: P2-04, P1-05
+- [~] P2-08 TameHelper · Both · deps: P2-04, P1-05 — 2026-11-11: /ride tamemacro <Name> writes pull+tame macro (Concussive out of combat; Tame Beast, Wing Clip castsequence in combat) via EditMacro/CreateMacro; 3 specs. Toast Tame button still to do
 - [ ] P2-09 PetStatus · Claude · deps: P1-07
 - [ ] P2-10 BeastInfo tooltips · Claude · deps: P2-02
 - [ ] P2-11 Ammo · Claude · deps: P1-06
