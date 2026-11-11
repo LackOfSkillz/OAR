@@ -88,7 +88,7 @@ end
 
 function M:OnEnable()
   self:On("SPELLS_CHANGED", function(mod) ns.Throttle("spellbook", 0.5, function() mod:Scan() end) end)
-  self:On("LEARNED_SPELL_IN_TAB", function(mod) ns.Throttle("spellbook", 0.5, function() mod:Scan() end) end)
+  -- (LEARNED_SPELL_IN_TAB does not exist on Forever; SPELLS_CHANGED covers learning)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Scan() end)
 end
 

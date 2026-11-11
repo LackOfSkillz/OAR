@@ -22,7 +22,7 @@ T.describe("spellbook", function()
   T.it("learning a spell refreshes it (throttled) and it is saved per character", function()
     local game, ns = session()
     game.spells[#game.spells + 1] = { name = "Multi-Shot", id = 2643, rank = 1 }
-    game:fire("LEARNED_SPELL_IN_TAB")
+    game:fire("SPELLS_CHANGED")
     game:advance(1)
     T.ok(ns.Spellbook:Known("Multi-Shot"))
     T.ok(ns.db.char.spellbook.spells["multi-shot"])

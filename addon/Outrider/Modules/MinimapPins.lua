@@ -109,7 +109,7 @@ function M:Update()
         n = n + 1
         local d = self:Dot(n)
         d.pin, d.dist = pin, dist
-        if not nearest or dist < nearest.dist then
+        if M.DIAG and (not nearest or dist < nearest.dist) then
           nearest = { name = pin.name, dist = dist, dN = -dSouth, dW = -dEast, x = x, y = y }
         end
         d.tex:SetColorTexture(ns.Theme:Color(pin.kind == "rare" and "warn" or "accent"))

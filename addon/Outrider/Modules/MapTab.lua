@@ -22,6 +22,7 @@ function T:ClearAll()
   local D = ns.Modules:Get("Discovery")
   if D and D.db then D.db = g.discovered end
   ns.Log:Info("maptab", "cleared %d places and all recorded NPCs", n)
+  if ns.MapPins then ns.MapPins:Invalidate() end
   if ns.MapPins and ns.MapPins.map and ns.MapPins.map:IsShown() then ns.MapPins:Refresh() end
   return n
 end
@@ -37,6 +38,7 @@ ns.Hub:AddTab("map", "Map", function(p)
       function() return not ns.MapPins:Settings().hidden[kind] end,
       function(on)
         ns.MapPins:Settings().hidden[kind] = (not on) or nil
+        ns.MapPins:Invalidate()
         ns.Modules:Get("MinimapPins"):Update()
       end)
     c:SetPoint("TOPLEFT", col * 260, -24 - row * 22)

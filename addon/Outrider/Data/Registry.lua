@@ -71,6 +71,7 @@ function Data:Register(kind, packName, entries)
     end
   end
   for _, e in ipairs(errors) do if ns.Log then ns.Log:Warn("data", "%s", e) end end
+  if ns.Events and ns.Events.Fire then ns.Events:Fire("OTR_DATA_CHANGED", kind) end
   return accepted, errors
 end
 

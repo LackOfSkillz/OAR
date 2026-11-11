@@ -30,7 +30,28 @@ local LABELS = {
 M.LABELS = LABELS
 
 -- Pins for one map: { id, kind, x, y, name, npcID?, poi?, rare? } (pure).
+-- PinsFor is called 5x a second by the minimap while moving; building new
+-- tables each time made memory read 3 MB (2026-11-11). Results are cached
+-- per map and dropped when a place, sighting, filter or rare pack changes.
+M.cache = {}
+function M:Invalidate() self.cache = {} end
+
+ns.Events:On("OTR_POI_ADDED", M, function() M:Invalidate() end)
+ns.Events:On("OTR_SIGHTING_ADDED", M, function() M:Invalidate() end)
+ns.Events:On("OTR_DATA_CHANGED", M, function() M:Invalidate() end)
+
 function M:PinsFor(mapID)
+  -- also rebuild if places were added or removed without an event
+  local n = 0
+  for _ in pairs(ns.db.global.pois or {}) do n = n + 1 end
+  local cached = self.cache[mapID]
+  if cached and cached.poiCount == n then return cached.pins end
+  local out = self:BuildPins(mapID)
+  self.cache[mapID] = { pins = out, poiCount = n }
+  return out
+end
+
+function M:BuildPins(mapID)
   local out, hidden = {}, self:Settings().hidden
   local faction = C.Call("UnitFactionGroup", "player")
   for id, p in pairs(ns.db.global.pois or {}) do
