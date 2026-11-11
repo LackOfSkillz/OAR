@@ -77,25 +77,39 @@ function M:Catch(items)
     self:Info("caught %s x%d (map %d)", tostring(it.name), it.count, mapID)
   end
   self.sessionValue = (self.sessionValue or 0) + value
+  -- fishing spot: where Gary stands (the water is up to ~20 yards away)
+  local _, x, y = C.PlayerPosition("player")
+  if mapID ~= 0 and x and items[1] then self:AddNode("fish", mapID, x, y, items[1].name) end
 end
 
 function M:Node(kind, items)
   local mapID, x, y = C.PlayerPosition("player")
   if not (mapID and x) then return end
-  local name = items[1].name
+  return self:AddNode(kind, mapID, x, y, items[1] and items[1].name)
+end
+
+-- Adds or merges a node. `by` = guildmate who shared it (nil = Gary).
+-- Fires OTR_NODE_FOUND(node) for a node Gary found himself that is new.
+function M:AddNode(kind, mapID, x, y, name, by)
   for _, n in ipairs(ns.db.global.nodes) do
     if n.mapID == mapID and n.kind == kind and math.abs(n.x - x) < self.MERGE and math.abs(n.y - y) < self.MERGE then
-      n.count, n.lastSeen = (n.count or 1) + 1, time()
-      n.name = name or n.name
+      if not by then
+        n.count, n.lastSeen = (n.count or 1) + 1, time()
+        n.name = name or n.name
+        n.sharedBy = nil
+      end
       ns.Events:Fire("OTR_POI_ADDED", nil)
-      return n
+      return n, false
     end
   end
-  local n = { kind = kind, mapID = mapID, x = x, y = y, name = name, count = 1, firstSeen = time(), lastSeen = time(), verified = false }
+  local n = { kind = kind, mapID = mapID, x = x, y = y, name = name, count = 1, firstSeen = time(), lastSeen = time(),
+    verified = false, sharedBy = by }
   table.insert(ns.db.global.nodes, n)
-  self:Info("new %s node %s at map %d %.1f,%.1f", kind, tostring(name), mapID, x * 100, y * 100)
+  self:Info("new %s node %s at map %d %.1f,%.1f%s", kind, tostring(name), mapID, x * 100, y * 100,
+    by and (" (shared by " .. tostring(by) .. ")") or "")
   ns.Events:Fire("OTR_POI_ADDED", nil)
-  return n
+  if not by then ns.Events:Fire("OTR_NODE_FOUND", n) end
+  return n, true
 end
 
 function M:NodesFor(mapID)

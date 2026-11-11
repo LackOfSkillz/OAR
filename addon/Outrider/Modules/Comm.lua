@@ -20,7 +20,7 @@ ns.Comm = M
 
 M.PREFIX, M.PROTOCOL, M.CHUNK = "Outrider", 1, 240
 local CHANNELS = { GUILD = true, PARTY = true, RAID = true, WHISPER = true }
-M.KNOWN_TYPES = { HELLO = true, RARE = true, LOC = true }
+M.KNOWN_TYPES = { HELLO = true, RARE = true, LOC = true, NODE = true }
 
 function M:OnInitialize()
   self.inbox, self.peers = {}, {}
@@ -124,13 +124,16 @@ function M:Activity()
   return string.format("sharing %s; %d other Outrider users seen", self:Settings().hello and "on (version hello)" or "off", n)
 end
 
-ns.AddCommand("share", "hello on|off | rares guild|party on|off  sharing (all off by default)", function(arg)
+ns.AddCommand("share", "hello on|off | rares guild|party on|off | nodes on|off  sharing (all off by default)", function(arg)
   local what, state = (arg or ""):match("^(%S+)%s+(%S+)$")
   local where, st2 = (arg or ""):match("^rares%s+(%S+)%s+(%S+)$")
   if what == "hello" and (state == "on" or state == "off") then
     M:Settings().hello = state == "on"
     ns.Print("version hello %s", state)
     if state == "on" then M:Hello() end
+  elseif ns.GatherShare and what == "nodes" and (state == "on" or state == "off") then
+    ns.GatherShare:Settings().guild = state == "on"
+    ns.Print("sharing herb, ore and fishing spots with the guild %s", state)
   elseif ns.RareShare and (where == "guild" or where == "party") and (st2 == "on" or st2 == "off") then
     ns.RareShare:Settings()[where] = st2 == "on"
     ns.Print("rare sharing with %s %s", where, st2)

@@ -71,6 +71,7 @@ Modules\GearSets.lua
 Modules\Handoffs.lua
 Modules\Comm.lua
 Modules\RareShare.lua
+Modules\GatherShare.lua
 Modules\Errands.lua
 Modules\Feed.lua
 Modules\Chat.lua
