@@ -86,6 +86,7 @@ Modules\Errands.lua
 Modules\Feed.lua
 Modules\Chat.lua
 Modules\Find.lua
+Modules\RarePlates.lua
 Modules\SpellCheck.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua

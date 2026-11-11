@@ -451,6 +451,13 @@ function M.new(opts)
   game.chatFilters = {}
   base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
   base.SetItemRef = function() end
+  -- nameplates: one fake plate frame per nameplate unit
+  base.C_NamePlate = { GetNamePlateForUnit = function(unit)
+    if type(unit) ~= "string" or not unit:match("^nameplate") then return nil end
+    game.plates = game.plates or {}
+    game.plates[unit] = game.plates[unit] or base.CreateFrame("Frame", nil, base.UIParent)
+    return game.plates[unit]
+  end }
   base.IsResting = function() return game.resting or false end
   base.GetInventoryItemDurability = function(slot) local d = game.durability and game.durability[slot] if d then return d[1], d[2] end end
   base.IsInGroup = function() return opts.inGroup or false end

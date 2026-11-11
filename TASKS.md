@@ -130,7 +130,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P7-04 Skin Blizzard frames · Claude · deps: P7-02, P7-03
 - [ ] P7-05 Tooltips · Claude · deps: P7-04
 - [ ] P7-06 Unit frames and bars, look only · Claude · deps: P7-04
-- [ ] P7-07 Nameplates · Claude · deps: P2-03
+- [~] P7-07 Nameplates · Claude · deps: P2-03 · 2026-11-11: Modules/RarePlates.lua: own star frame anchored above a rare's nameplate (gold = watchlist, silver = other rare), forbidden plates skipped, pooled, yields to Plater/ThreatPlates/Kui; bar/font styling left to the client until the P7 skin decisions. Waiting on: a rare's nameplate screenshot
 - [~] P7-08 Chat · Claude · deps: P1-07 · 2026-11-11: Modules/Chat.lua via Blizzard chat message filters only: keyword highlight (your name, watched rares, shopping list, /ride chat word add), feed entry per keyword per 5 min, repeat spam hidden 60 s (channel/say/yell), URLs clickable to a copy box, /ride copychat, /ride chat time on|off. Short channel names and LFG tab not done (need AddMessage replace / a layout change: ask Gary); chat spell check (Modules/SpellCheck.lua + Outrider_Data_Words, D12); 1 spec
 - [ ] P7-09 Context layouts · Both · deps: P7-06
 - [~] P7-10 Command bar · Claude · deps: P3-07, P6-06 · 2026-11-11: Modules/Find.lua + Bindings.xml (Key Bindings > Outrider > Find anything) + /ride find: rares (card + waypoint), /ride near words, NPC names (waypoint), gear (Gear tab filtered), macros, hub tabs; ten sample queries in find_spec. Crates waits on P5-06
