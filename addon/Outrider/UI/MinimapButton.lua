@@ -19,6 +19,8 @@ local function onTooltip(tt)
   local _, loads = ns.DB:SavedVariablesStatus()
   tt:AddLine(string.format("v%s  build %s  loads %d", ns.version, ns.build, loads), 0.7, 0.7, 0.7)
   if #ns.Errors.list > 0 then tt:AddLine(#ns.Errors.list .. " error(s): /ride errors", 1, 0.4, 0.4) end
+  local unread = ns.Feed and ns.Feed:Unread() or 0
+  if unread > 0 then tt:AddLine(unread .. " new in the Feed tab", 1, 0.78, 0.3) end
   tt:AddLine("Left click: open   Right click: settings   Drag: move", 0.56, 0.82, 1)
 end
 

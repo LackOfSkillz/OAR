@@ -134,7 +134,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P7-08 Chat · Claude · deps: P1-07
 - [ ] P7-09 Context layouts · Both · deps: P7-06
 - [ ] P7-10 Command bar · Claude · deps: P3-07, P6-06
-- [ ] P7-11 Notification center · Claude · deps: P1-06
+- [~] P7-11 Notification center · Claude · deps: P1-06 · 2026-11-11: Modules/Feed.lua: every toast also kept (last 50, account-wide, newest first), Feed hub tab + /ride feed, unread count on the minimap button tooltip; 1 spec. Waiting on Gary: open the Feed tab
 - [ ] P7-12 First-run setup and accessibility · Claude · deps: P7-09
 - [ ] P7-13 Gate G7 · Both · deps: all P7
 - [ ] **G7** gate: Gary signs off on before/after screenshots for the main screens; a one-hour session including combat, a dungeon or group, a city and fishing produces zero taint reports and zero Outrider errors; with ElvUI or EllesmereUI installed, the skin steps aside and only Outrider's own panels remain.

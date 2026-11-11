@@ -136,6 +136,7 @@ end
 
 function Toast:Show(opts)
   opts = opts or {}
+  if ns.Events and not opts.noFeed then ns.Events:Fire("OTR_TOAST", opts) end
   while #self.visible >= self.MAX do self:Dismiss(self.visible[1]) end
   local f = table.remove(self.pool) or build(self)
   f.title:SetText(opts.title or "")
