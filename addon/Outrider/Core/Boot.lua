@@ -46,7 +46,7 @@ function Boot:OnLogin()
     local scan = ns.Modules:Get("RareScan")
     local watch = {}
     if scan and scan.enabled then
-      for k in pairs(scan:Settings().watch) do watch[#watch + 1] = tostring(k) end
+      for k in pairs(scan:Settings().watch) do watch[#watch + 1] = ns.TitleCase(k) end
       table.sort(watch)
     end
     ns.Print("%d features on%s. /ride shows what each is doing.", on,

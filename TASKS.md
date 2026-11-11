@@ -24,7 +24,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [x] P0-08 API probe · Both · deps: P0-05 — 2026-11-11: auto probe 78 present / 21 missing; unit samples out of and in combat (target + nameplate fully readable, no secrets); PROBE_RESULTS and C3/C5/C6 updated. Classic pet APIs missing → P2-09 redesign
 - [x] P0-09 Error pipeline check · Both · deps: P0-05 — 2026-11-11: deliberate error recorded once with stack; combat queue held during a real fight (11:28:51) and ran after it (11:29:03), test button macro deferred; taint from the forbidden-event probe was caught and logged. BugGrabber not installed (optional)
 - [x] P0-10 Name and rename · Gary decides, Claude renames · deps: none — 2026-11-11: renamed to Outrider in v0.2.0; GitHub repo rename + remote update left for Claude Code on the PC
-- [ ] P0-11 Screenshot loop · Both · deps: P0-05
+- [x] P0-11 Screenshot loop · Both · deps: P0-05 — 2026-11-11: Gary pastes screenshots into the chat (in-game Print Screen saved none); Claude read the hub Modules tab correctly (Torrant Mcluvin, 13 modules, ammo 1139)
 - [ ] **G0** gate: a code change goes from Claude's edit to Gary's screen and back into Claude's log reader in under two minutes; SavedVariables round trip is confirmed (or the fallback is chosen); `docs/PROBE_RESULTS.md` is filled in and committed.
 
 ## Phase 1: Foundation  ([phases/P1_foundation.md](phases/P1_foundation.md))
@@ -36,7 +36,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P1-05 Secure button pool · Claude · deps: P1-04 — 2026-11-11: UI/SecureButtons.lua (pool of 4 prewarmed, combat-deferred SetMacro/Show/Place/Release), mock flags protected calls in combat; 8 specs. Waiting on Gary: /ride selftest button
 - [~] P1-06 Toasts · Claude · deps: P1-04 — 2026-11-11: UI/Toast.lua (3-stack, drag saves anchor per char, hover holds, sound, pooled secure button parented to UIParent); 7 specs. Waiting on Gary: /ride selftest toast
 - [~] P1-07 UI kit additions · Claude · deps: P1-06 — 2026-11-11: UI/WidgetsExtra.lua (ScrollList virtualized, Tabs, own Dropdown, Slider, throttled SearchBox), class accent setting; 8 specs. Waiting on Gary: /ride selftest widgets screenshot
-- [~] P1-08 Hub with tabs · Claude · deps: P1-07 — 2026-11-11: Overview/Modules/Characters/Tools tabs, Hub:AddTab(id,title,build,order) for modules, last tab per char; 6 specs. Waiting on Gary: screenshot of each tab
+- [x] P1-08 Hub with tabs · Claude · deps: P1-07 — 2026-11-11: five tabs render in game (Gary screenshot of Modules tab with live status lines); Esc and position as before
 - [ ] P1-09 Minimap button and settings page · Both · deps: P1-08
 - [x] P1-10 Snapshot stays dormant but works · Both · deps: P0-07 — 2026-11-11: snapshot taken automatically at logout, no reload by itself
 - [x] P1-11 Performance check · Claude · deps: P1-08 — 2026-11-11: auto perf at logout: 577 KB, 25 handlers, 0 timers, no idle OnUpdate, slowest handler 1.36 ms (login); within budget
@@ -56,7 +56,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P2-08 TameHelper · Both · deps: P2-04, P1-05 — 2026-11-11: /ride tamemacro writes pull+tame macro (Shift re-pull) and watches the beast; rare toasts show Pull/Tame (same macro) for tameable rares at or below your level, else Target; 7 specs. Waiting on Gary: a real tame via the toast
 - [~] P2-09 PetStatus · Claude · deps: P1-07 — 2026-11-11: Modules/PetStatus.lua on modern API (name/level/XP/health/focus, Feed = /cast Feed Pet secure button against UIParent, happiness only if an API exists, pet buffs logged per login to find Forever happiness); 5 specs. Waiting on Gary: summon pet, screenshot
 - [~] P2-10 BeastInfo tooltips · Claude · deps: P2-02 — 2026-11-11: Modules/BeastInfo.lua via TooltipDataProcessor post-call (family, level vs yours, tameable for hunters, rare sighting line, Shift = pack details marked unverified); 4 specs. Waiting on Gary: screenshot of a beast tooltip
-- [~] P2-11 Ammo · Claude · deps: P1-06 — 2026-11-11: Modules/Ammo.lua (slot 0 count, toast once <200 and once <50, count logged at login); 3 specs. Waiting on Gary: login log confirms the slot reads
+- [x] P2-11 Ammo · Claude · deps: P1-06 — 2026-11-11: ammo slot reads in game (1139, Gary screenshot); warns once <200 and once <50; 3 specs
 - [ ] P2-12 Gate G2 field test · Both · deps: all P2
 - [ ] **G2** gate: in the field, alerts fire for The Rake, Mystmane and Ghost Howl (or whichever of the three Gary can reach, plus two other rares); the target/tame button works with one click; sightings show the right zone, position and layer in the Rares tab; no errors or taint in a 1-hour hunting session.
 

@@ -49,6 +49,11 @@ function ns.AddCommand(name, usage, fn)
 end
 
 -- Tiny helpers shared by all files
+
+-- "mystmane" -> "Mystmane", "ghost howl" -> "Ghost Howl" (display of typed names).
+function ns.TitleCase(s)
+  return (tostring(s):gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end))
+end
 function ns.Print(msg, ...)
   if select("#", ...) > 0 then msg = string.format(msg, ...) end
   local line = "|cff8fd1ffOutrider|r " .. tostring(msg)
