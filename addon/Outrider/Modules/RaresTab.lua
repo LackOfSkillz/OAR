@@ -10,6 +10,7 @@ local UI = ns.UI
 
 local R = { name = "rarestab", scope = "zone" }
 ns.RaresTab = R
+ns.RaresTab = R
 
 local RARE = { rare = true, rareelite = true }
 

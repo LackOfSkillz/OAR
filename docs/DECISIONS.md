@@ -28,3 +28,5 @@
 | Q5 | Guild sharing on by default for guildmates who install it | yes / opt-in | Opt-in per character | P8 |
 
 - 2026-11-11: Questie and QuestieDB were removed from AddOns at Gary's request. The importers read the saved zip in private/questie-source; Outrider runs without Questie (D10 holds).
+
+- 2026-11-11: P6-07 GearQuest bridge skipped: GearQuest Forever is not installed on Gary's PC. If he installs it, check for a public API and add a read-only bridge.

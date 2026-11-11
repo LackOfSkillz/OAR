@@ -107,6 +107,19 @@ function M:Candidates()
   return out
 end
 
+-- Plain slot word for an item ("bow", "cloak", "ring"...), for the command bar.
+local SLOT_WORDS = { INVTYPE_HEAD = "helm head", INVTYPE_NECK = "neck amulet", INVTYPE_SHOULDER = "shoulder",
+  INVTYPE_CHEST = "chest", INVTYPE_ROBE = "chest robe", INVTYPE_WAIST = "belt waist", INVTYPE_LEGS = "legs pants",
+  INVTYPE_FEET = "boots feet", INVTYPE_WRIST = "bracers wrist", INVTYPE_HAND = "gloves hands", INVTYPE_FINGER = "ring",
+  INVTYPE_TRINKET = "trinket", INVTYPE_CLOAK = "cloak back", INVTYPE_WEAPON = "weapon", INVTYPE_2HWEAPON = "weapon two-hand",
+  INVTYPE_WEAPONMAINHAND = "weapon", INVTYPE_WEAPONOFFHAND = "weapon offhand", INVTYPE_SHIELD = "shield offhand",
+  INVTYPE_HOLDABLE = "offhand", INVTYPE_RANGED = "bow ranged", INVTYPE_RANGEDRIGHT = "gun crossbow wand ranged",
+  INVTYPE_THROWN = "thrown ranged" }
+function M.SlotWord(id)
+  local info = C.ItemInfo(id)
+  return info and SLOT_WORDS[info.equipLoc or ""] or ""
+end
+
 function M.Describe(c)
   local w = c.where or {}
   local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or "?"
@@ -162,7 +175,21 @@ ns.Hub:AddTab("gear", "Gear", function(p)
   })
   p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
   p.list:SetWidth(560)
-  function p:Refresh() self.list:SetItems(M:Candidates()) end
+  function p:Refresh()
+    local list, f = M:Candidates(), M.filter
+    if f and f ~= "" then
+      local keep = {}
+      for _, c in ipairs(list) do
+        if tostring(c.name):lower():find(f, 1, true) or M.SlotWord(c.itemID):find(f, 1, true) then keep[#keep + 1] = c end
+      end
+      list = keep
+      self.head:SetText("Upgrades matching '" .. f .. "'. Click one for a waypoint.")
+      M.filter = nil
+    else
+      self.head:SetText("Upgrades near you, best first. Click one for a waypoint. Sources are unverified community data.")
+    end
+    self.list:SetItems(list)
+  end
 end, 44)
 
 ns.AddCommand("nearby", "upgrades you can get in this zone", function()
