@@ -46,6 +46,12 @@ Data\Registry.lua
 Data\Macros_Hunter.lua
 Data\Macros_Priest.lua
 Data\Macros_Mage.lua
+Data\Macros_Warrior.lua
+Data\Macros_Rogue.lua
+Data\Macros_Warlock.lua
+Data\Macros_Druid.lua
+Data\Macros_Shaman.lua
+Data\Macros_Paladin.lua
 Data\StatWeights.lua
 
 # Feature modules (added phase by phase, see TASKS.md)

@@ -36,7 +36,7 @@ T.describe("shipped data packs", function()
   T.it("only uses known slash commands", function()
     local ok = { cast = true, castsequence = true, use = true, target = true, targetexact = true, targetenemy = true,
       cleartarget = true, stopmacro = true, petattack = true, petfollow = true, petpassive = true, startattack = true,
-      stopattack = true, focus = true, clearfocus = true, dismount = true, stopcasting = true, cancelaura = true }
+      stopattack = true, focus = true, clearfocus = true, dismount = true, stopcasting = true, cancelaura = true, cancelform = true }
     for _, m in ipairs(ns.Data:All("macro")) do
       for line in m.body:gmatch("[^\n]+") do
         local cmd = line:match("^/(%a+)")

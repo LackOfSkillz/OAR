@@ -30,3 +30,14 @@ WoW Forever runs Classic-style game data on the modern (Midnight-era) client. So
 - Parse the combat log, even if a build allows it again, until Blizzard says it is intended.
 - Automate fishing, selling, posting or anything else without a key press per action. "Sell junk" is a button Gary clicks; double-click fishing uses an override binding that still needs his click.
 - Scrape websites at runtime. Data packs are built offline and shipped as Lua.
+
+## Class spell changes reported by community guides (unverified, 2026-11-11)
+
+From Rankedboost's WoW Forever class macro pages, gathered for the P4-08 macro packs. Low confidence until seen in game; the packs avoid these spells for now.
+- Warrior: Tactical Mastery is a level 14 trainer passive; Berserker Rage at 30; Thunder Clap 6 s cooldown; Retaliation and Shield Wall 15 min; Victory Rush at 20.
+- Rogue: new Poised passive and Shank strike.
+- Warlock: Curse of Agony renamed Bane of Agony (own slot); Dark Pact and Curse of Shadow removed.
+- Druid: Innervate, Rebirth and Remove Curse usable in Moonkin; Faerie Fire (Feral) talent gone; Nature's Grasp trained at 10; Roots indoors; new Revive at 12.
+- Shaman: Fire Nova Totem removed (Fire Nova spell at 12); Totemic Call and Totemic Recall added; imbues last 60 min.
+- Paladin: Judgement no longer consumes the Seal; Divine Shield shares a cooldown with Divine Protection; Holy Strike at 6.
+- General (Kami-Labs): a spell alone on an action bar does not move to a newly trained rank (RankCheck covers this).
