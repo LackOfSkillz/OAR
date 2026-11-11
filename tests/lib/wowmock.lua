@@ -380,6 +380,19 @@ function M.new(opts)
   base.GetMerchantNumItems = function() return game.merchant and #game.merchant or 0 end
   base.GetMerchantItemID = function(i) return game.merchant and game.merchant[i] end
   base.C_Item = base.C_Item or {}
+  -- bags: game.bags[bag][slot] = itemID; game.items[itemID] = { name, reqLevel, spell }
+  base.C_Container = {
+    GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
+    GetContainerItemInfo = function(bag, slot)
+      local id = game.bags and game.bags[bag] and game.bags[bag][slot]
+      if id then return { itemID = id, stackCount = 5 } end
+    end,
+  }
+  base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
+  base.C_Item.GetItemInfo = function(id)
+    local it = game.items and game.items[id]
+    if it then return it.name, nil, 1, 1, it.reqLevel or 0 end
+  end
   base.C_Item.GetItemInfoInstant = function(id)
     return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
   end

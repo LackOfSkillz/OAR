@@ -39,6 +39,10 @@ function M:Values()
     table.sort(names)
     v.TARGET = names[1]
   end
+  if ns.BagFood then
+    if not ns.BagFood.food and not ns.BagFood.drink then ns.BagFood:Scan() end
+    v.FOOD, v.DRINK = ns.BagFood.food, ns.BagFood.drink
+  end
   return v
 end
 
