@@ -1,0 +1,85 @@
+local T, mock = ...
+
+-- Loads the addon, then registers extra test modules before login.
+local function session(opts, define)
+  local game = mock.new(opts)
+  local ns = game:loadAddon()
+  if define then define(ns) end
+  game:login()
+  return game, ns
+end
+
+T.describe("modules", function()
+  T.it("respects class restrictions", function()
+    local _, ns = session({ class = "PRIEST" }, function(ns)
+      ns:NewModule("PetBar", { classes = { HUNTER = true } })
+    end)
+    T.no(ns.Modules:Get("PetBar").enabled)
+    local ok = ns.Modules:SetEnabled("PetBar", true)
+    T.no(ok, "cannot force a hunter module on a priest")
+  end)
+
+  T.it("steps aside for overlapping addons unless the player chooses", function()
+    local _, ns = session({ addons = { "RareScanner" } }, function(ns)
+      ns:NewModule("RareAlerts", { yieldsTo = { "RareScanner" } })
+    end)
+    local mod = ns.Modules:Get("RareAlerts")
+    T.no(mod.enabled)
+    local _, reason = ns.Modules:ShouldEnable(mod)
+    T.contains(reason, "RareScanner")
+    T.ok(ns.Modules:SetEnabled("RareAlerts", true))
+    T.ok(mod.enabled, "player choice wins")
+  end)
+
+  T.it("needs required addons", function()
+    local _, ns = session({}, function(ns)
+      ns:NewModule("QuestieBridge", { requires = { "Questie" } })
+    end)
+    local mod = ns.Modules:Get("QuestieBridge")
+    T.no(mod.enabled)
+    local _, reason = ns.Modules:ShouldEnable(mod)
+    T.contains(reason, "Questie")
+  end)
+
+  T.it("a module that errors is isolated and switched off", function()
+    local _, ns = session({}, function(ns)
+      local bad = ns:NewModule("Broken", {})
+      function bad:OnEnable() error("boom") end
+      local good = ns:NewModule("Fine", {})
+      function good:OnEnable() self.ran = true end
+    end)
+    T.no(ns.Modules:Get("Broken").enabled)
+    T.ok(ns.Modules:Get("Broken").broken)
+    T.ok(ns.Modules:Get("Fine").ran, "other modules still run")
+    T.eq(#ns.Errors.list, 1)
+  end)
+
+  T.it("toggling off removes its event handlers; choice persists", function()
+    local game, ns = session({}, function(ns)
+      local m = ns:NewModule("Counter", {})
+      function m:OnEnable() self:On("PLAYER_TARGET_CHANGED", function(self) self.count = (self.count or 0) + 1 end) end
+    end)
+    local m = ns.Modules:Get("Counter")
+    game:fire("PLAYER_TARGET_CHANGED")
+    T.eq(m.count, 1)
+    ns.Modules:SetEnabled("Counter", false)
+    game:fire("PLAYER_TARGET_CHANGED")
+    T.eq(m.count, 1, "no events after disable")
+    local saved = game:logout()
+    local _, ns2 = session({ savedVariables = saved }, function(ns2) ns2:NewModule("Counter", {}) end)
+    T.no(ns2.Modules:Get("Counter").enabled, "off after restart")
+  end)
+
+  T.it("toggles requested in combat wait for combat to end", function()
+    local game, ns = session({}, function(ns)
+      local m = ns:NewModule("Secureish", { defaultEnabled = false })
+      function m:OnEnable() self.on = true end
+    end)
+    game:setCombat(true)
+    ns.Modules:SetEnabled("Secureish", true)
+    T.no(ns.Modules:Get("Secureish").on, "not during combat")
+    T.eq(ns.Combat:Pending(), 1)
+    game:setCombat(false)
+    T.ok(ns.Modules:Get("Secureish").on, "after combat")
+  end)
+end)

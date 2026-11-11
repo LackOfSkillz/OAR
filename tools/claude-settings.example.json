@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/deploy.ps1:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/read-logs.ps1:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/screenshot-latest.ps1:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/backup-sv.ps1)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File tools/find-wow.ps1:*)",
+      "Bash(python tools/lua.py:*)",
+      "Bash(python tools/build_tasks.py)",
+      "Bash(lua tests/run_tests.lua:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

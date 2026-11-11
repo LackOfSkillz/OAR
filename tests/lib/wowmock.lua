@@ -1,0 +1,409 @@
+-- tests/lib/wowmock.lua
+-- A small fake of the WoW client, enough to load OAR the way the game does:
+-- files in TOC order, each called with (addonName, ns), inside a sandbox
+-- that has WoW's globals and NOT Lua's io/os (WoW has neither).
+--
+-- Usage:
+--   local mock = require("wowmock")
+--   local game = mock.new({ name = "Torrant", class = "HUNTER" })
+--   game:loadAddon()            -- runs every TOC file
+--   game:login()                -- ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD
+--   local text = game:logout()  -- PLAYER_LOGOUT, returns SavedVariables file text
+--   local game2 = mock.new({ savedVariables = text })   -- "next session"
+
+local M = {}
+
+M.ADDON = "OAR"
+M.ROOT = "addon/OAR/"
+
+local function noop() end
+
+-- ------------------------------------------------------------------ helpers
+local function readFile(path)
+  local f = io.open(path, "rb")
+  if not f then return nil end
+  local s = f:read("*a")
+  f:close()
+  return s
+end
+M.readFile = readFile
+
+function M.tocFiles(tocPath)
+  local text = assert(readFile(tocPath or (M.ROOT .. M.ADDON .. ".toc")), "cannot read TOC")
+  local files, meta = {}, {}
+  for line in text:gmatch("[^\r\n]+") do
+    local k, v = line:match("^##%s*([%w%-_]+)%s*:%s*(.-)%s*$")
+    if k then meta[k] = v
+    elseif not line:match("^%s*#") and line:match("%S") then
+      files[#files + 1] = (line:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\\", "/"))
+    end
+  end
+  return files, meta
+end
+
+-- Lua-source writer in the same spirit as WoW's SavedVariables writer.
+local function serialize(v, indent, seen)
+  indent = indent or ""
+  local t = type(v)
+  if t == "string" then return string.format("%q", v)
+  elseif t == "number" then
+    if v == math.floor(v) then return string.format("%.0f", v) end
+    return string.format("%.17g", v)
+  elseif t == "boolean" or t == "nil" then return tostring(v)
+  elseif t == "table" then
+    seen = seen or {}
+    assert(not seen[v], "cycle in saved variables")
+    seen[v] = true
+    local keys = {}
+    for k in pairs(v) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b)
+      if type(a) == type(b) and (type(a) == "number" or type(a) == "string") then return a < b end
+      return type(a) < type(b)
+    end)
+    local inner = indent .. "\t"
+    local parts = {}
+    for _, k in ipairs(keys) do
+      local kv = v[k]
+      local kt = type(kv)
+      if kt ~= "function" and kt ~= "userdata" and kt ~= "thread" then
+        local key = type(k) == "string" and string.format("[%q]", k) or ("[" .. serialize(k) .. "]")
+        parts[#parts + 1] = inner .. key .. " = " .. serialize(kv, inner, seen) .. ","
+      end
+    end
+    seen[v] = nil
+    if #parts == 0 then return "{}" end
+    return "{\n" .. table.concat(parts, "\n") .. "\n" .. indent .. "}"
+  end
+  return "nil"
+end
+M.serialize = serialize
+
+-- ------------------------------------------------------------------ frames
+local Game = {}
+Game.__index = Game
+
+local function newRegion(game, kind, name, parent)
+  local r = {
+    __kind = kind, __name = name, __parent = parent, __shown = (kind ~= "Frame" and true) or true,
+    __scripts = {}, __events = {}, __points = {}, __w = 0, __h = 0, __text = nil,
+  }
+  local methods = game.methods
+  setmetatable(r, { __index = function(_, k) return methods[k] or noop end })
+  game.frames[#game.frames + 1] = r
+  if name then rawset(game.env, name, r) end
+  return r
+end
+M.newRegion = newRegion
+
+local function buildMethods(game)
+  local m = {}
+  m.RegisterEvent = function(self, event)
+    if game.blockedEvents[event] then error("Frame:RegisterEvent(): " .. event .. " is not allowed", 2) end
+    self.__events[event] = true
+  end
+  m.UnregisterEvent = function(self, event) self.__events[event] = nil end
+  m.UnregisterAllEvents = function(self) self.__events = {} end
+  m.IsEventRegistered = function(self, event) return self.__events[event] == true end
+  m.RegisterUnitEvent = m.RegisterEvent
+  m.SetScript = function(self, what, fn) self.__scripts[what] = fn end
+  m.GetScript = function(self, what) return self.__scripts[what] end
+  m.HookScript = function(self, what, fn)
+    local old = self.__scripts[what]
+    self.__scripts[what] = function(...) if old then old(...) end fn(...) end
+  end
+  m.Show = function(self)
+    local was = self.__shown
+    self.__shown = true
+    if not was and self.__scripts.OnShow then self.__scripts.OnShow(self) end
+  end
+  m.Hide = function(self)
+    local was = self.__shown
+    self.__shown = false
+    if was and self.__scripts.OnHide then self.__scripts.OnHide(self) end
+  end
+  m.SetShown = function(self, on) if on then m.Show(self) else m.Hide(self) end end
+  m.IsShown = function(self) return self.__shown end
+  m.IsVisible = function(self) return self.__shown end
+  m.GetName = function(self) return self.__name end
+  m.GetParent = function(self) return self.__parent end
+  m.SetSize = function(self, w, h) self.__w, self.__h = w, h end
+  m.SetWidth = function(self, w) self.__w = w end
+  m.SetHeight = function(self, h) self.__h = h end
+  m.GetWidth = function(self) return self.__w > 0 and self.__w or 140 end
+  m.GetHeight = function(self) return self.__h > 0 and self.__h or 140 end
+  m.GetCenter = function() return 0, 0 end
+  m.GetEffectiveScale = function() return 1 end
+  m.GetScale = function() return 1 end
+  m.SetPoint = function(self, point, a, b, c, d)
+    local rel, relPoint, x, y = nil, nil, 0, 0
+    if type(a) == "number" then x, y = a, b
+    elseif type(a) == "table" then rel, relPoint, x, y = a, b, c, d end
+    if type(relPoint) == "number" then x, y, relPoint = relPoint, x, nil end
+    self.__points[#self.__points + 1] = { point, rel, relPoint or point, x or 0, y or 0 }
+  end
+  m.ClearAllPoints = function(self) self.__points = {} end
+  m.GetPoint = function(self, i)
+    local p = self.__points[i or 1]
+    if p then return p[1], p[2], p[3], p[4], p[5] end
+  end
+  m.GetNumPoints = function(self) return #self.__points end
+  m.SetText = function(self, t) self.__text = t end
+  m.GetText = function(self) return self.__text end
+  m.SetFormattedText = function(self, fmt, ...) self.__text = string.format(fmt, ...) end
+  m.CreateFontString = function(self, name) return newRegion(game, "FontString", name, self) end
+  m.CreateTexture = function(self, name) return newRegion(game, "Texture", name, self) end
+  m.GetObjectType = function(self) return self.__kind end
+  m.IsForbidden = function() return false end
+  m.GetFrameLevel = function() return 1 end
+  m.GetChildren = function() return end
+  m.EnableMouse = noop
+  -- tooltip-ish
+  m.AddLine = function(self, text) self.__lines = self.__lines or {} table.insert(self.__lines, text) end
+  m.NumLines = function(self) return self.__lines and #self.__lines or 0 end
+  m.SetOwner = function(self) self.__lines = {} end
+  -- chat frame
+  m.AddMessage = function(_, text) game.chat[#game.chat + 1] = text end
+  return m
+end
+
+-- ------------------------------------------------------------------ game
+function M.new(opts)
+  opts = opts or {}
+  local game = setmetatable({
+    opts = opts,
+    frames = {},
+    chat = {},
+    timers = {},
+    now = opts.now or 1731300000,
+    clock = 1000,
+    combat = false,
+    reloads = 0,
+    blockedEvents = {},
+    globalsWritten = {},
+    loadedAddons = {},
+  }, Game)
+  for _, e in ipairs(opts.blockedEvents or {}) do game.blockedEvents[e] = true end
+  for _, a in ipairs(opts.addons or {}) do game.loadedAddons[a] = true end
+  game.loadedAddons[M.ADDON] = true
+  game.methods = buildMethods(game)
+
+  local player = {
+    name = opts.name or "Torrant", realm = opts.realm or "Forever", class = opts.class or "HUNTER",
+    race = opts.race or "Tauren", level = opts.level or 24, faction = opts.faction or "Horde",
+    money = opts.money or 123456,
+  }
+  game.player = player
+
+  local env = {}
+  game.env = env
+  local base = {}
+
+  -- Lua builtins WoW exposes (no io, os, require, loadfile, dofile)
+  for _, k in ipairs({ "assert", "error", "ipairs", "next", "pairs", "pcall", "print", "rawequal", "rawget",
+    "rawset", "select", "setmetatable", "getmetatable", "tonumber", "tostring", "type", "unpack", "xpcall",
+    "loadstring", "setfenv", "getfenv", "collectgarbage" }) do base[k] = _G[k] end
+  base.string, base.table, base.math, base.coroutine = string, table, math, coroutine
+  base.bit = { band = function() return 0 end }
+  -- WoW aliases
+  base.format, base.strlen, base.strsub, base.strlower, base.strupper = string.format, string.len, string.sub, string.lower, string.upper
+  base.strfind, base.strmatch, base.gsub, base.strrep, base.strbyte, base.strchar = string.find, string.match, string.gsub, string.rep, string.byte, string.char
+  base.gmatch = string.gmatch
+  base.tinsert, base.tremove, base.sort = table.insert, table.remove, table.sort
+  base.floor, base.ceil, base.abs, base.min, base.max = math.floor, math.ceil, math.abs, math.min, math.max
+  base.print = function(...)
+    local parts = {}
+    for i = 1, select("#", ...) do parts[i] = tostring((select(i, ...))) end
+    game.chat[#game.chat + 1] = table.concat(parts, " ")
+  end
+  base.strsplit = function(sep, s, limit)
+    local out, start = {}, 1
+    while true do
+      if limit and #out == limit - 1 then out[#out + 1] = s:sub(start) break end
+      local i, j = s:find(sep, start, true)
+      if not i then out[#out + 1] = s:sub(start) break end
+      out[#out + 1] = s:sub(start, i - 1)
+      start = j + 1
+    end
+    return unpack(out)
+  end
+  base.strtrim = function(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
+  base.strjoin = function(sep, ...) return table.concat({ ... }, sep) end
+  base.wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
+  base.date = function(fmt, t) return os.date(fmt, t or game.now) end
+  base.time = function() return game.now end
+  base.GetTime = function() return game.clock end
+  base.GetServerTime = function() return game.now end
+  base.debugstack = function() return "[mock stack]" end
+  base.debugprofilestop = function() return game.clock * 1000 end
+  base.geterrorhandler = function() return function(e) error(e) end end
+  base.hooksecurefunc = function(a, b, c)
+    if type(a) == "table" then
+      local old = a[b]
+      a[b] = function(...) local r = { old(...) } c(...) return unpack(r) end
+    else
+      local old = env[a]
+      env[a] = function(...) local r = { old(...) } b(...) return unpack(r) end
+    end
+  end
+  base.issecurevariable = function() return true end
+
+  -- frames and UI globals
+  base.CreateFrame = function(kind, name, parent) return newRegion(game, kind or "Frame", name, parent) end
+  base.UIParent = newRegion(game, "Frame", nil, nil)
+  base.Minimap = newRegion(game, "Frame", nil, nil)
+  base.GameTooltip = newRegion(game, "GameTooltip", nil, nil)
+  base.DEFAULT_CHAT_FRAME = newRegion(game, "ScrollingMessageFrame", nil, nil)
+  base.UISpecialFrames = {}
+  base.SlashCmdList = {}
+  base.BackdropTemplateMixin = {}
+  base.GetCursorPosition = function() return 100, 100 end
+  base.HideUIPanel = noop
+  base.PlaySound = noop
+  base.RAID_CLASS_COLORS = { HUNTER = { r = 0.67, g = 0.83, b = 0.45 }, PRIEST = { r = 1, g = 1, b = 1 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
+  base.Settings = {
+    RegisterCanvasLayoutCategory = function(frame, name)
+      game.settingsCategory = { name = name, frame = frame, ID = 42, GetID = function() return 42 end }
+      return game.settingsCategory
+    end,
+    RegisterAddOnCategory = function(cat) game.settingsRegistered = cat end,
+    OpenToCategory = function(id) game.settingsOpened = id end,
+  }
+  base.ReloadUI = function() game.reloads = game.reloads + 1 end
+
+  -- player and units
+  base.UnitName = function(unit) if unit == "player" then return player.name end return game.units and game.units[unit] and game.units[unit].name end
+  base.UnitFullName = function(unit) if unit == "player" then return player.name, player.realm end end
+  base.GetRealmName = function() return player.realm end
+  base.UnitClass = function(unit) if unit == "player" then return player.class:sub(1, 1) .. player.class:sub(2):lower(), player.class end end
+  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race end end
+  base.UnitLevel = function(unit) if unit == "player" then return player.level end end
+  base.UnitFactionGroup = function(unit) if unit == "player" then return player.faction end end
+  base.UnitExists = function(unit) return unit == "player" or (game.units and game.units[unit] ~= nil) end
+  base.UnitGUID = function(unit)
+    if unit == "player" then return "Player-1-00000001" end
+    return game.units and game.units[unit] and game.units[unit].guid
+  end
+  base.UnitClassification = function(unit) return game.units and game.units[unit] and game.units[unit].classification or "normal" end
+  base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
+  base.GetMoney = function() return player.money end
+  base.GetInventoryItemLink = function(_, slot) if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end end
+  base.InCombatLockdown = function() return game.combat end
+  base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
+  base.WOW_PROJECT_ID = 99
+
+  -- C_ namespaces
+  local files, meta = M.tocFiles()
+  game.tocFiles, game.tocMeta = files, meta
+  base.C_AddOns = {
+    GetAddOnMetadata = function(addon, field) if addon == M.ADDON then return meta[field] end end,
+    IsAddOnLoaded = function(addon) return game.loadedAddons[addon] == true end,
+    LoadAddOn = function(addon) return game.loadedAddons[addon] == true end,
+  }
+  base.C_Timer = {
+    After = function(delay, fn) game.timers[#game.timers + 1] = { at = game.clock + delay, fn = fn } end,
+  }
+  base.C_Map = {
+    GetBestMapForUnit = function() return opts.mapID or 1412 end,
+    GetPlayerMapPosition = function()
+      local x, y = opts.x or 0.46, opts.y or 0.37
+      return { GetXY = function() return x, y end }
+    end,
+    GetMapInfo = function(id) return { mapID = id, name = "Mulgore" } end,
+  }
+  base.issecretvalue = function(v) return type(v) == "table" and v.__secret == true end
+
+  base._G = env
+  -- Real WoW globals live directly in _G (so rawget(_G, "Settings") works).
+  -- New globals are caught by __newindex; overwritten Blizzard globals are
+  -- caught by Game:overwrittenGlobals() comparing against this copy.
+  for k, v in pairs(base) do rawset(env, k, v) end
+  setmetatable(env, {
+    __newindex = function(t, k, v) game.globalsWritten[k] = true rawset(t, k, v) end,
+  })
+  game.base = base
+
+  -- previous session's SavedVariables, exactly as the client would read them
+  if opts.savedVariables then
+    local chunk = assert(loadstring(opts.savedVariables, "=SavedVariables"))
+    setfenv(chunk, env)
+    chunk()
+    game.globalsWritten = {}
+  end
+  return game
+end
+
+-- ------------------------------------------------------------------ actions
+function Game:loadAddon()
+  self.ns = {}
+  for _, rel in ipairs(self.tocFiles) do
+    local path = M.ROOT .. rel
+    local chunk, err = loadfile(path)
+    if not chunk then error("syntax error: " .. tostring(err), 0) end
+    setfenv(chunk, self.env)
+    chunk(M.ADDON, self.ns)
+  end
+  return self.ns
+end
+
+function Game:fire(event, ...)
+  for _, f in ipairs(self.frames) do
+    if f.__events[event] and f.__scripts.OnEvent then f.__scripts.OnEvent(f, event, ...) end
+  end
+end
+
+function Game:login()
+  self:fire("ADDON_LOADED", M.ADDON)
+  self:fire("PLAYER_LOGIN")
+  self:fire("PLAYER_ENTERING_WORLD", true, false)
+  return self.ns
+end
+
+function Game:setCombat(on)
+  self.combat = on
+  self:fire(on and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
+end
+
+function Game:advance(seconds)
+  self.clock = self.clock + seconds
+  self.now = self.now + math.floor(seconds)
+  local due, keep = {}, {}
+  for _, t in ipairs(self.timers) do
+    if t.at <= self.clock then due[#due + 1] = t else keep[#keep + 1] = t end
+  end
+  self.timers = keep
+  for _, t in ipairs(due) do t.fn() end
+end
+
+function Game:slash(line)
+  return self.env.SlashCmdList.OAR(line)
+end
+
+-- Fires PLAYER_LOGOUT and returns the SavedVariables file text.
+function Game:logout()
+  self:fire("PLAYER_LOGOUT")
+  local names = {}
+  for name in (self.tocMeta.SavedVariables or ""):gmatch("[%w_]+") do names[#names + 1] = name end
+  local out = {}
+  for _, name in ipairs(names) do
+    local v = rawget(self.env, name)
+    if v ~= nil then out[#out + 1] = name .. " = " .. serialize(v) end
+  end
+  return table.concat(out, "\n") .. "\n"
+end
+
+-- Blizzard globals the addon replaced (assigning to one taints it in game).
+function Game:overwrittenGlobals()
+  local out = {}
+  for k, v in pairs(self.base) do
+    if rawget(self.env, k) ~= v then out[#out + 1] = k end
+  end
+  table.sort(out)
+  return out
+end
+
+function Game:chatText()
+  return table.concat(self.chat, "\n")
+end
+
+M.Game = Game
+return M

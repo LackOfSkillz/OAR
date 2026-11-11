@@ -1,0 +1,12 @@
+# machine-specific
+tools/local.json
+tools/.last-deploy.json
+tools/setup-log.txt
+backups/
+dist/
+tests/.tmp*
+# editors
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store

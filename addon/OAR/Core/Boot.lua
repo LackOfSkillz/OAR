@@ -1,0 +1,53 @@
+-- Core/Boot.lua
+-- Last file in the TOC. Wires the lifecycle:
+--   ADDON_LOADED (ours) -> SavedVariables exist: DB, log, errors, module init
+--   PLAYER_LOGIN        -> UI, minimap, modules enabled for this character
+--   PLAYER_LOGOUT       -> stamp lastSave (fires on /reload too)
+
+local ADDON, ns = ...
+local Boot = { name = "boot" }
+ns.Boot = Boot
+
+local function newSession()
+  local t = time and time() or 0
+  local r = math.random and math.random(0, 4095) or 0
+  return string.format("%05x%03x", t % 1048576, r)
+end
+
+function Boot:OnAddonLoaded(_, name)
+  if name ~= ADDON then return end
+  ns.Events:Off("ADDON_LOADED", Boot)
+  ns.session = newSession()
+  ns.Log:Attach()
+  ns.DB:Init()
+  ns.Errors:Attach()
+  ns.DB:StartSession(ns.session)
+  local sv, loads = ns.DB:SavedVariablesStatus()
+  ns.Log:Info("boot", "session %s start: v%s build %s char %s loads %d sv=%s",
+    ns.session, ns.version, ns.build, ns.db.key, loads, sv)
+  ns.Modules:InitializeAll()
+end
+
+function Boot:OnLogin()
+  ns.Errors:HookBugGrabber()
+  ns.Conflicts:Detect()
+  ns.Settings:Init()
+  ns.MinimapButton:Init()
+  ns.Modules:EnableAll()
+  if ns.db.char.hub.shown then ns.Hub:Toggle() end
+  local on = 0
+  for _, m in ipairs(ns.Modules.list) do if m.enabled then on = on + 1 end end
+  ns.Log:Info("boot", "login complete: %d/%d modules on, %d addons detected", on, #ns.Modules.list, #(ns.Conflicts.found or {}))
+end
+
+function Boot:OnLogout()
+  ns.DB:OnLogout()
+  ns.Errors:Save()
+  ns.Log:Info("boot", "session %s saved", tostring(ns.session))
+end
+
+ns.Events:On("ADDON_LOADED", Boot, function(...) Boot:OnAddonLoaded(...) end)
+ns.Events:On("PLAYER_LOGIN", Boot, function() Boot:OnLogin() end)
+ns.Events:On("PLAYER_LOGOUT", Boot, function() Boot:OnLogout() end)
+ns.Events:On("ADDON_ACTION_BLOCKED", ns.Errors, function(...) ns.Errors:OnBlocked(...) end)
+ns.Events:On("ADDON_ACTION_FORBIDDEN", ns.Errors, function(...) ns.Errors:OnBlocked(...) end)

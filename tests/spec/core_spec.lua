@@ -1,0 +1,133 @@
+-- Events, combat queue, log, errors, compat, probe.
+local T, mock = ...
+
+local function session(opts)
+  local game = mock.new(opts)
+  local ns = game:loadAddon()
+  game:login()
+  return game, ns
+end
+
+T.describe("events", function()
+  T.it("a failing handler is recorded and does not stop the others", function()
+    local game, ns = session()
+    local owner1, owner2 = { name = "a" }, { name = "b" }
+    local hit = false
+    ns.Events:On("BAG_UPDATE_DELAYED", owner1, function() error("bad handler") end)
+    ns.Events:On("BAG_UPDATE_DELAYED", owner2, function() hit = true end)
+    game:fire("BAG_UPDATE_DELAYED")
+    T.ok(hit)
+    T.eq(#ns.Errors.list, 1)
+    T.contains(ns.Errors.list[1].where, "a:BAG_UPDATE_DELAYED")
+  end)
+
+  T.it("internal messages must use the OAR_ prefix", function()
+    local _, ns = session()
+    T.raises(function() ns.Events:Fire("SOMETHING") end, "OAR_")
+    local got
+    ns.Events:On("OAR_TEST", { name = "t" }, function(_, v) got = v end)
+    ns.Events:Fire("OAR_TEST", 5)
+    T.eq(got, 5)
+  end)
+
+  T.it("an event the client refuses is logged, not fatal", function()
+    local _, ns = session({ blockedEvents = { "COMBAT_LOG_EVENT_UNFILTERED" } })
+    ns.Events:On("COMBAT_LOG_EVENT_UNFILTERED", { name = "x" }, function() end)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
+T.describe("errors", function()
+  T.it("deduplicates and counts repeats; warns in chat once", function()
+    local game, ns = session()
+    for _ = 1, 5 do ns.Safe("loop", function() error("same") end) end
+    T.eq(#ns.Errors.list, 1)
+    T.eq(ns.Errors.list[1].count, 5)
+    local _, n = game:chatText():gsub("error|r in", "")
+    T.eq(n, 1, "one chat warning per session")
+  end)
+
+  T.it("records taint reports that name OAR only", function()
+    local game, ns = session()
+    game:fire("ADDON_ACTION_BLOCKED", "SomeoneElse", "CastSpellByName()")
+    T.eq(#ns.Errors.list, 0)
+    game:fire("ADDON_ACTION_BLOCKED", "OAR", "CastSpellByName()")
+    T.eq(#ns.Errors.list, 1)
+  end)
+end)
+
+T.describe("log", function()
+  T.it("keeps a bounded ring buffer", function()
+    local _, ns = session()
+    for i = 1, ns.Log.MAX + 50 do ns.Log:Info("t", "line %d", i) end
+    T.eq(#ns.Log:Tail(100000), ns.Log.MAX)
+  end)
+
+  T.it("drops debug lines unless debug mode is on", function()
+    local _, ns = session()
+    local before = #ns.Log:Tail(1000)
+    ns.Log:Debug("t", "hidden")
+    T.eq(#ns.Log:Tail(1000), before)
+    ns.db.global.debug = true
+    ns.Log:Debug("t", "shown")
+    T.eq(#ns.Log:Tail(1000), before + 1)
+  end)
+
+  T.it("never crashes on odd arguments and hides secret values", function()
+    local _, ns = session()
+    local secret = { __secret = true }
+    local line = ns.Log:Info("t", "%s and %s and %d", nil, secret, 3)
+    T.contains(line.x, "nil and <secret> and 3")
+    local bad = ns.Log:Info("t", "%d", "not a number")
+    T.contains(bad.x, "format error")
+  end)
+
+  T.it("markers are saved for the read-logs tool", function()
+    local game, ns = session()
+    game:slash("mark P0-07 start")
+    local text = game:logout()
+    T.contains(text, "P0-07 start")
+    T.ok(ns)
+  end)
+end)
+
+T.describe("compat", function()
+  T.it("parses creature GUIDs into npc id and zone uid", function()
+    local _, ns = session()
+    local g = ns.Compat.ParseGUID("Creature-0-4372-1-123-5807-0000ABCDEF")
+    T.eq(g.id, 5807)
+    T.eq(g.zoneUID, 123)
+    T.eq(ns.Compat.ParseGUID("Player-1-00000001").id, nil)
+    T.eq(ns.Compat.ParseGUID(nil), nil)
+  end)
+
+  T.it("returns nil for missing APIs instead of erroring", function()
+    local _, ns = session()
+    T.eq(ns.Compat.Call("C_Nope.Nothing", 1), nil)
+    T.no(ns.Compat.Has("C_Nope.Nothing"))
+    T.ok(ns.Compat.Has("C_Map.GetBestMapForUnit"))
+    local mapID, x, y = ns.Compat.PlayerPosition()
+    T.eq(mapID, 1412)
+    T.ok(x > 0 and y > 0)
+  end)
+end)
+
+T.describe("probe", function()
+  T.it("records APIs, blocked events and build info", function()
+    local game, ns = session({ blockedEvents = { "COMBAT_LOG_EVENT_UNFILTERED" } })
+    game:slash("probe")
+    local p = ns.db.global.probe
+    T.eq(p.build.interface, 16001)
+    T.eq(p.apis["C_Map.GetBestMapForUnit"], true)
+    T.eq(p.apis["C_VignetteInfo.GetVignettes"], false)
+    T.contains(tostring(p.events.COMBAT_LOG_EVENT_UNFILTERED), "not allowed")
+    T.eq(p.events.PLAYER_TARGET_CHANGED, true)
+    T.eq(#ns.Errors.list, 0)
+    game:setCombat(true)
+    game:slash("probe")
+    game:setCombat(false)
+    T.eq(#ns.db.global.probeUnits, 2, "unit runs kept")
+    T.eq(ns.db.global.probeUnits[2].inCombat, true)
+    T.contains(game:logout(), "probe")
+  end)
+end)

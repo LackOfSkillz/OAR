@@ -1,0 +1,47 @@
+## Interface: 16001
+## Title: OAR |cff8fd1ff(One Addon)|r
+## Notes: One addon for WoW Forever: rares, hunter pets, maps, macros, crafting, auctions, fishing, gear and a cleaner UI. Working name.
+## Author: Gary & Claude
+## Version: 0.1.1
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+## SavedVariables: OAR_DB, OAR_Log, OAR_Snapshots
+## OptionalDeps: !BugGrabber, BugSack, LibStub, LibDataBroker-1.1, LibDBIcon-1.0, Questie, TomTom, Auctionator
+## X-License: TBD (see docs/DECISIONS.md)
+## X-Category: Interface Enhancements
+
+# Core (order matters: Init first, Boot last)
+Core\Init.lua
+Core\Build.lua
+Core\Compat.lua
+Core\Log.lua
+Core\Errors.lua
+Core\Events.lua
+Core\Combat.lua
+Core\Serialize.lua
+Core\DB.lua
+Core\Profiles.lua
+Core\Modules.lua
+Core\Conflicts.lua
+Core\Probe.lua
+
+# UI kit
+UI\Theme.lua
+UI\Widgets.lua
+UI\Hub.lua
+UI\MinimapButton.lua
+UI\Settings.lua
+
+# Advisor groundwork (dormant until Phase 9)
+Advisor\Snapshot.lua
+Advisor\Advice.lua
+Advisor\AdviceLoader.lua
+
+# Data packs
+Data\Registry.lua
+Data\Macros_Hunter.lua
+
+# Feature modules (added phase by phase, see TASKS.md)
+Modules\Welcome.lua
+
+Core\Slash.lua
+Core\Boot.lua
