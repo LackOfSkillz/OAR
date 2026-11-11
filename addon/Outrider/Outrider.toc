@@ -57,6 +57,7 @@ Modules\RaresTab.lua
 Modules\TameHelper.lua
 Modules\PetStatus.lua
 Modules\Ammo.lua
+Modules\BeastInfo.lua
 
 Core\Slash.lua
 Core\Boot.lua

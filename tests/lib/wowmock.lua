@@ -360,6 +360,12 @@ function M.new(opts)
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  base.Enum = { TooltipDataType = { Unit = 2 } }
+  base.TooltipDataProcessor = { AddTooltipPostCall = function(kind, fn)
+    game.tooltipHooks = game.tooltipHooks or {}
+    game.tooltipHooks[#game.tooltipHooks + 1] = { kind = kind, fn = fn }
+  end }
+  base.IsShiftKeyDown = function() return game.shift or false end
   -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
   local function u(unit) return game.units and game.units[unit] end
   base.UnitHealth = function(unit) return u(unit) and u(unit).hp end
