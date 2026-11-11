@@ -98,7 +98,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P5-04 Skill-up planner · Claude · deps: P5-02, P5-06
 - [~] P5-05 Prices · Claude · deps: P0-08 — 2026-11-11: Modules/Prices.lua (Auctionator/TSM if present, else own lowest-per-day AH history from browse/commodity results for 14 days, vendor price; tooltip AH + vendor + below-vendor warning); 2 specs. Waiting on: an AH visit
 - [ ] P5-06 Merchant's Favor planner · Both · deps: P5-01, P5-05
-- [ ] P5-07 Auction helper · Claude · deps: P5-05
+- [~] P5-07 Auction helper · Claude · deps: P5-05 · 2026-11-11: Modules/AuctionHelper.lua: own panel beside the AH (never touches Blizzard/Auctionator/TSM frames): suggested price = market minus /ride undercut rule, floor = max(vendor, craft cost) + 5% cut + deposit, warnings (under vendor, deposit > profit); undercut list from owned auctions vs lowest seen today. No price pre-fill, no repost button (Gary uses Blizzard's); crate stacks wait on P5-06. 3 specs
 - [~] P5-08 Ledger · Claude · deps: P5-05 — 2026-11-11: Modules/Ledger.lua (money changes booked to vendor/AH/mail/training/flights/bank/loot, session net + gold per hour logged at logout, last 30 sessions per char); 1 spec. Loot value and AH mail detail still to do
 - [~] P5-09 Merchant helper · Claude · deps: P5-05 — 2026-11-11: Modules/Merchant.lua (panel beside the vendor: Sell junk greys only, 12 per click for buyback; Repair with cost, guild repair if allowed; never on open); vendor goods recorded by POICapture; 2 specs. Waiting on: Gary sells junk and repairs
 - [~] P5-10 Mailbox collect · Claude · deps: P5-08 — 2026-11-11: Collect button beside the mailbox, one thing per click, COD skipped, ledger books it as mail; 1 spec. Waiting on: Gary collects mail

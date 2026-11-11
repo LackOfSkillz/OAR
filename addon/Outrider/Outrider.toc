@@ -58,6 +58,7 @@ Modules\RareMacros.lua
 Modules\Inventory.lua
 Modules\Professions.lua
 Modules\Prices.lua
+Modules\AuctionHelper.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua

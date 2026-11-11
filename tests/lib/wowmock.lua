@@ -363,6 +363,8 @@ function M.new(opts)
   base.C_AuctionHouse = {
     GetBrowseResults = function() return game.browse or {} end,
     GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
+    GetOwnedAuctions = function() return game.owned or {} end,
+    CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
   }
   base.GetInventoryItemLink = function(_, slot)
     if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
