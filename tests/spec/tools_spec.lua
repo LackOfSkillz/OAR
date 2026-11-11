@@ -54,10 +54,10 @@ T.describe("sv_dump tool", function()
     T.contains(chars, "Torrant-Forever")
   end)
 
-  T.it("reads BugGrabber files and keeps only OAR errors", function()
-    writeTmp('BugGrabberDB = { session = 3, errors = { { message = "Interface/AddOns/OAR/Core/X.lua:1: boom", time = "now", counter = 2 }, { message = "Other addon error" } } }\n')
+  T.it("reads BugGrabber files and keeps only Outrider errors", function()
+    writeTmp('BugGrabberDB = { session = 3, errors = { { message = "Interface/AddOns/Outrider/Core/X.lua:1: boom", time = "now", counter = 2 }, { message = "Other addon error" } } }\n')
     local text = runDump({ [1] = TMP, [2] = "bugs" })
-    T.contains(text, "OAR/Core/X.lua")
+    T.contains(text, "Outrider/Core/X.lua")
     T.no(text:find("Other addon", 1, true))
   end)
 

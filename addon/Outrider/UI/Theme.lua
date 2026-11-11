@@ -1,5 +1,5 @@
 -- UI/Theme.lua
--- Design tokens for every OAR window: flat dark panels, 1px borders, one
+-- Design tokens for every Outrider window: flat dark panels, 1px borders, one
 -- accent color. Change the look here, never per window. Phase 7 extends this
 -- into skins for Blizzard frames.
 

@@ -1,5 +1,5 @@
 # tools/backup-sv.ps1
-# Copies OAR's SavedVariables (and BugGrabber's) to backups\<timestamp>\ in the
+# Copies Outrider's SavedVariables (and BugGrabber's) to backups\<timestamp>\ in the
 # repo. Run before risky tests and before any schema migration. Keeps the
 # newest 30 backups. Never writes into the WoW folder.
 #   powershell -ExecutionPolicy Bypass -File tools/backup-sv.ps1
@@ -24,7 +24,7 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $dest = Join-Path $backupRoot $stamp
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 $copied = 0
-foreach ($pattern in @('OAR*.lua', '!BugGrabber.lua', 'BugSack.lua')) {
+foreach ($pattern in @('Outrider*.lua', '!BugGrabber.lua', 'BugSack.lua')) {
   Get-ChildItem $svDir -Filter $pattern -File -ErrorAction SilentlyContinue | ForEach-Object {
     Copy-Item $_.FullName (Join-Path $dest $_.Name)
     $copied++

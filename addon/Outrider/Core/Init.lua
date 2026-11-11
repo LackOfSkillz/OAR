@@ -6,14 +6,14 @@
 local ADDON, ns = ...
 
 ns.ADDON = ADDON
-ns.PREFIX = "OAR"            -- addon message prefix and global prefix (working name)
-ns.SCHEMA = 1                -- OAR_DB schema version, bump with a migration in DB.lua
+ns.PREFIX = "Outrider"       -- addon message prefix
+ns.SCHEMA = 1                -- Outrider_DB schema version, bump with a migration in DB.lua
 ns.build = "dev"             -- overwritten by Core/Build.lua (stamped by tools/deploy.ps1)
 ns.session = nil             -- set in Boot.lua, a short id that ties log lines to one load
 
--- One global handle so Gary/Claude can /dump OAR.version etc. in game.
+-- One global handle so Gary/Claude can /dump Outrider.version etc. in game.
 -- Other addons must not depend on it until we publish a real API.
-_G.OAR = ns
+_G.Outrider = ns
 
 local function meta(field)
   local get = (C_AddOns and C_AddOns.GetAddOnMetadata) or _G.GetAddOnMetadata
@@ -45,7 +45,7 @@ end
 -- Tiny helpers shared by all files
 function ns.Print(msg, ...)
   if select("#", ...) > 0 then msg = string.format(msg, ...) end
-  local line = "|cff8fd1ffOAR|r " .. tostring(msg)
+  local line = "|cff8fd1ffOutrider|r " .. tostring(msg)
   if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(line) else print(line) end
 end
 

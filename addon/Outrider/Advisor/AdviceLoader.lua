@@ -1,5 +1,5 @@
 -- Advisor/AdviceLoader.lua
--- Phase 9 groundwork. Reads OAR_Advice (written by the companion app into
+-- Phase 9 groundwork. Reads Outrider_Advice (written by the companion app into
 -- Advisor/Advice.lua) and keeps only well-formed items whose action is on the
 -- whitelist. Advice never acts by itself: each item becomes a row the player
 -- may click, and clicks only do the whitelisted, non-protected things below.
@@ -7,10 +7,10 @@
 -- Every item carries a confidence ("verified" in game, "community" reported,
 -- "inferred", or "unknown"); the panel shows it next to the advice.
 -- Expected shape:
--- OAR_Advice = {
+-- Outrider_Advice = {
 --   schema = 1,
 --   forCharacter = "Torrant-Realm",
---   answersSnapshot = 1731300000,      -- must equal OAR_Snapshots[char].takenAt
+--   answersSnapshot = 1731300000,      -- must equal Outrider_Snapshots[char].takenAt
 --   items = {
 --     { title = "Tame The Rake", why = "...", action = "waypoint", confidence = "verified",
 --       args = { mapID = 1412, x = 0.46, y = 0.37 } },
@@ -73,11 +73,11 @@ end
 
 -- Returns list of clean items (possibly empty) and a reason string.
 function Advice:Load()
-  local a = rawget(_G, "OAR_Advice")
+  local a = rawget(_G, "Outrider_Advice")
   if type(a) ~= "table" then return {}, "no advice file" end
   if a.schema ~= self.SCHEMA then return {}, "wrong schema" end
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
-  local snaps = rawget(_G, "OAR_Snapshots")
+  local snaps = rawget(_G, "Outrider_Snapshots")
   local snap = type(snaps) == "table" and snaps[ns.db.key]
   if not snap or a.answersSnapshot ~= snap.takenAt then return {}, "advice is stale" end
   local out = {}

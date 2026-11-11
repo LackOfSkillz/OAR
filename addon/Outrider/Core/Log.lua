@@ -1,16 +1,16 @@
 -- Core/Log.lua
--- Ring-buffer debug log saved to OAR_Log (SavedVariables). This is how Claude
+-- Ring-buffer debug log saved to Outrider_Log (SavedVariables). This is how Claude
 -- Code "sees" what happened in game: Gary types /reload, WoW writes
--- WTF\Account\<ACCOUNT>\SavedVariables\OAR.lua, tools/read-logs.ps1 prints it.
+-- WTF\Account\<ACCOUNT>\SavedVariables\Outrider.lua, tools/read-logs.ps1 prints it.
 --
 -- Levels: 1 error, 2 warn, 3 info, 4 debug. Debug lines are kept only while
--- debug mode is on (/oar debug on), so normal play stays light.
+-- debug mode is on (/ride debug on), so normal play stays light.
 
 local _, ns = ...
 local Log = { name = "log", MAX = 600, LEVELS = { "ERROR", "WARN", "INFO", "DEBUG" } }
 ns.Log = Log
 
-local buffer      -- points at OAR_Log.lines once Boot has run
+local buffer      -- points at Outrider_Log.lines once Boot has run
 local pending = {} -- lines logged before SavedVariables are available
 
 local function str(v)
@@ -32,9 +32,9 @@ local function format(msg, ...)
 end
 
 function Log:Attach()
-  OAR_Log = type(OAR_Log) == "table" and OAR_Log or {}
-  OAR_Log.lines = type(OAR_Log.lines) == "table" and OAR_Log.lines or {}
-  buffer = OAR_Log.lines
+  Outrider_Log = type(Outrider_Log) == "table" and Outrider_Log or {}
+  Outrider_Log.lines = type(Outrider_Log.lines) == "table" and Outrider_Log.lines or {}
+  buffer = Outrider_Log.lines
   for _, line in ipairs(pending) do self:_push(line) end
   pending = {}
 end
@@ -74,7 +74,7 @@ function Log:Info(module, msg, ...)  return self:Write(3, module, msg, ...) end
 function Log:Debug(module, msg, ...) return self:Write(4, module, msg, ...) end
 
 -- Markers let tools/read-logs.ps1 show only what happened after a test step:
--- /oar mark P2-04 start
+-- /ride mark P2-04 start
 function Log:Mark(text)
   return self:Write(3, "MARK", "%s", text or "")
 end

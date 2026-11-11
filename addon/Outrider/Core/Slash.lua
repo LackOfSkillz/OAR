@@ -1,6 +1,6 @@
 -- Core/Slash.lua
--- /oar commands. Keep every command short and quiet; most Claude Code test
--- steps are "type /oar <something>, then /reload".
+-- /ride commands. Keep every command short and quiet; most Claude Code test
+-- steps are "type /ride <something>, then /reload".
 
 local _, ns = ...
 local Slash = { name = "slash", commands = {}, order = {} }
@@ -14,11 +14,11 @@ end
 add("help", "list commands", function()
   ns.Print("commands:")
   for _, name in ipairs(Slash.order) do
-    ns.Print("  /oar %s %s", name, Slash.commands[name].usage)
+    ns.Print("  /ride %s %s", name, Slash.commands[name].usage)
   end
 end)
 
-add("hub", "open or close the hub (same as /oar)", function() ns.Hub:Toggle() end)
+add("hub", "open or close the hub (same as /ride)", function() ns.Hub:Toggle() end)
 
 add("version", "addon version, build stamp and client build", function()
   local v, b, _, iface = "", "", nil, ""
@@ -52,7 +52,7 @@ add("mark", "<text>  write a marker line so Claude can find this point in the lo
   ns.Print("marked: %s", arg or "")
 end)
 
-add("errors", "[clear]  show recent OAR errors", function(arg)
+add("errors", "[clear]  show recent Outrider errors", function(arg)
   if arg == "clear" then ns.Errors:Clear() ns.Print("errors cleared") return end
   local list = ns.Errors:Recent(10)
   if #list == 0 then ns.Print("no errors") return end
@@ -72,7 +72,7 @@ end)
 
 add("module", "<name> on|off  switch a module for this character", function(arg)
   local name, state = (arg or ""):match("^(%S+)%s+(%S+)$")
-  if not name or (state ~= "on" and state ~= "off") then ns.Print("usage: /oar module <name> on|off") return end
+  if not name or (state ~= "on" and state ~= "off") then ns.Print("usage: /ride module <name> on|off") return end
   local ok, err = ns.Modules:SetEnabled(name, state == "on")
   if not ok then ns.Print("%s", err) return end
   local queued = ns.Combat:Pending() > 0
@@ -97,7 +97,7 @@ add("copy", "<Name-Realm>  copy settings from another of your characters", funct
   ns.Print(ok and "copied. Type /reload to apply everything." or tostring(err))
 end)
 
-add("chars", "list characters OAR knows on this account", function()
+add("chars", "list characters Outrider knows on this account", function()
   for _, c in ipairs(ns.DB:Characters()) do
     ns.Print("%s%s %s %s", c.current and "* " or "  ", c.key, tostring(c.class), tostring(c.level or ""))
   end
@@ -115,7 +115,7 @@ end)
 add("reset", "char|all confirm  wipe settings (needs the word confirm)", function(arg)
   local scope, confirm = (arg or ""):match("^(%S+)%s*(%S*)$")
   if confirm ~= "confirm" or (scope ~= "char" and scope ~= "all") then
-    ns.Print("type /oar reset char confirm  or  /oar reset all confirm") return
+    ns.Print("type /ride reset char confirm  or  /ride reset all confirm") return
   end
   if scope == "char" then ns.DB:ResetChar() else ns.DB:ResetAll() end
   ns.Print("reset %s. Reloading.", scope)
@@ -124,13 +124,13 @@ end)
 
 add("selftest", "error|combat  checks for the test pipeline", function(arg)
   if arg == "error" then
-    ns.Safe("selftest", function() error("OAR selftest: deliberate error (this is expected)") end)
+    ns.Safe("selftest", function() error("Outrider selftest: deliberate error (this is expected)") end)
     ns.Print("deliberate error recorded. Type /reload so Claude can read it.")
   elseif arg == "combat" then
     ns.Combat:Run("selftest", function() ns.Log:Info("selftest", "combat queue ran") ns.Print("combat queue ran") end, "selftest")
     ns.Print(ns.Combat:Pending() > 0 and "queued until combat ends" or "ran immediately (not in combat)")
   else
-    ns.Print("usage: /oar selftest error|combat")
+    ns.Print("usage: /ride selftest error|combat")
   end
 end)
 
@@ -141,11 +141,12 @@ function Slash:Run(line)
   if rest == "" then rest = nil end
   if cmd == "" then return ns.Hub:Toggle() end
   local c = self.commands[cmd]
-  if not c then ns.Print("unknown command '%s'. /oar help", cmd) return end
-  ns.Log:Debug("slash", "/oar %s %s", cmd, rest or "")
+  if not c then ns.Print("unknown command '%s'. /ride help", cmd) return end
+  ns.Log:Debug("slash", "/ride %s %s", cmd, rest or "")
   ns.Safe("slash:" .. cmd, c.fn, rest)
 end
 
-SLASH_OAR1 = "/oar"
+SLASH_OUTRIDER1 = "/outrider"
+SLASH_OUTRIDER2 = "/ride"
 -- Never reassign SlashCmdList itself (that taints a Blizzard global); only add our key.
-SlashCmdList.OAR = function(msg) Slash:Run(msg) end
+SlashCmdList.OUTRIDER = function(msg) Slash:Run(msg) end

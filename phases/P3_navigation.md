@@ -2,7 +2,7 @@
 
 **Goal:** points of interest appear on the world map and minimap automatically as Gary approaches (like quest markers), clicking a pin shows a card about its subject with a "Waypoint" button, and Gary can ask for the nearest spirit healer, flight master, trainer or vendor and get a waypoint.
 
-**Gate G3:** for five known NPCs, pins land where the game shows them (screenshot check: within a small distance on the map); `/oar near spirit` sets a waypoint to the nearest known spirit healer; pin cards open and show correct info; minimap pins appear and disappear with distance; no errors.
+**Gate G3:** for five known NPCs, pins land where the game shows them (screenshot check: within a small distance on the map); `/ride near spirit` sets a waypoint to the nearest known spirit healer; pin cards open and show correct info; minimap pins appear and disappear with distance; no errors.
 
 Modules: `Waypoints`, `MapPins`, `MinimapPins`, `PinCards`, `Nearest`, `POICapture`, `QuestieBridge` (requires Questie), `Coords`.
 
@@ -10,10 +10,10 @@ Modules: `Waypoints`, `MapPins`, `MinimapPins`, `PinCards`, `Nearest`, `POICaptu
 
 ### P3-01 · Waypoint service · Claude · deps: P0-08
 1. `ns.Waypoints:Set(mapID, x, y, title, opts)` / `:Clear()`. Backends in order: Blizzard user waypoint (`C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(...))` + `C_SuperTrack.SetSuperTrackedUserWaypoint(true)`) if the probe found them; TomTom if loaded (`TomTom:AddWaypoint`); our own arrow (P3-02) otherwise.
-2. Fire `OAR_WAYPOINT_SET` / `OAR_WAYPOINT_CLEARED`. Auto-clear on arrival (within 10 yards, setting).
-3. `/oar way <x> <y> [title]` for the current map.
+2. Fire `OTR_WAYPOINT_SET` / `OTR_WAYPOINT_CLEARED`. Auto-clear on arrival (within 10 yards, setting).
+3. `/ride way <x> <y> [title]` for the current map.
 
-**Done when:** `/oar way 50 50 test` shows a waypoint with whichever backend exists; log names the backend.
+**Done when:** `/ride way 50 50 test` shows a waypoint with whichever backend exists; log names the backend.
 
 ### P3-02 · Fallback arrow · Claude · deps: P3-01
 Only if no Blizzard waypoint and no TomTom.
@@ -53,7 +53,7 @@ Only if no Blizzard waypoint and no TomTom.
 **Done when:** after a city visit the Nearest command finds the vendors and trainers Gary talked to.
 
 ### P3-07 · Nearest · Claude · deps: P3-01, P3-06
-1. `/oar near <kind>` (spirit, flight, inn, repair, ammo, food, trainer, mailbox, bank, ah, stable): nearest known POI of that kind on the current continent (distance in world yards), faction-filtered, sets a waypoint and prints name and distance.
+1. `/ride near <kind>` (spirit, flight, inn, repair, ammo, food, trainer, mailbox, bank, ah, stable): nearest known POI of that kind on the current continent (distance in world yards), faction-filtered, sets a waypoint and prints name and distance.
 2. Hub Overview gets quick buttons for the common ones.
 3. When Gary dies (`PLAYER_DEAD`), optionally show "Nearest spirit healer" with a waypoint button (setting).
 
@@ -74,7 +74,7 @@ Only if no Blizzard waypoint and no TomTom.
 
 ### P3-10 · Coordinates · Claude · deps: P3-01
 1. Player coordinates under the minimap (setting) and cursor coordinates on the world map.
-2. `/oar coords` prints current mapID and x, y with two decimals (for Gary to report locations to Claude).
+2. `/ride coords` prints current mapID and x, y with two decimals (for Gary to report locations to Claude).
 
 **Done when:** coords show and match `/dump C_Map.GetPlayerMapPosition(...)`.
 

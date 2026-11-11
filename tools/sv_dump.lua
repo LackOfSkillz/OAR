@@ -1,8 +1,8 @@
 -- tools/sv_dump.lua
--- Prints what OAR saved, so Claude Code can read in-game results.
---   lua tools/sv_dump.lua <path to SavedVariables\OAR.lua> [section] [options]
+-- Prints what Outrider saved, so Claude Code can read in-game results.
+--   lua tools/sv_dump.lua <path to SavedVariables\Outrider.lua> [section] [options]
 -- sections: summary (default) | log | errors | probe | chars | snapshots | all
---           bugs  (pass the !BugGrabber.lua file instead; prints errors mentioning OAR)
+--           bugs  (pass the !BugGrabber.lua file instead; prints errors mentioning Outrider)
 -- options:  --mark TEXT   only log lines after the last marker containing TEXT
 --           --session ID  only that session (default for log: latest session)
 --           --all-sessions
@@ -11,7 +11,7 @@
 
 local path, section = arg[1], arg[2] or "summary"
 if not path then
-  io.write("usage: lua tools/sv_dump.lua <OAR.lua> [summary|log|errors|probe|chars|snapshots|all|bugs] [--mark TEXT] [--last N]\n")
+  io.write("usage: lua tools/sv_dump.lua <Outrider.lua> [summary|log|errors|probe|chars|snapshots|all|bugs] [--mark TEXT] [--last N]\n")
   os.exit(2)
 end
 if section:sub(1, 2) == "--" then section = "summary" end
@@ -59,19 +59,19 @@ if section == "bugs" then
   for i = #db.errors, 1, -1 do
     local e = db.errors[i]
     local text = tostring(e.message or "") .. "\n" .. tostring(e.stack or "")
-    if text:find("OAR", 1, true) then
+    if text:find("Outrider", 1, true) then
       n = n + 1
       out(string.format("[%s] x%s session %s\n%s\n%s\n\n", tostring(e.time), tostring(e.counter or 1),
         tostring(e.session), tostring(e.message), tostring(e.stack or "")))
       if n >= 15 then break end
     end
   end
-  if n == 0 then out("no BugGrabber errors mention OAR\n") end
+  if n == 0 then out("no BugGrabber errors mention Outrider\n") end
   os.exit(0)
 end
 
-local DB, LOG = env.OAR_DB, env.OAR_Log
-if type(DB) ~= "table" then out("OAR_DB not found in this file (has the addon run and has Gary typed /reload?)\n") end
+local DB, LOG = env.Outrider_DB, env.Outrider_Log
+if type(DB) ~= "table" then out("Outrider_DB not found in this file (has the addon run and has Gary typed /reload?)\n") end
 local global = type(DB) == "table" and DB.global or {}
 local lines = type(LOG) == "table" and LOG.lines or {}
 
@@ -138,7 +138,7 @@ end
 
 local function printProbe()
   local p = global.probe
-  if not p then out("== probe\nnone yet: Gary types /oar probe then /reload\n") return end
+  if not p then out("== probe\nnone yet: Gary types /ride probe then /reload\n") return end
   out(string.format("== probe %s\n", stamp(p.at)))
   for _, k in ipairs(sortedKeys(p.build)) do out(string.format("build.%s = %s\n", k, tostring(p.build[k]))) end
   for _, k in ipairs(sortedKeys(p.constants)) do out(string.format("const %s = %s\n", k, tostring(p.constants[k]))) end
@@ -186,7 +186,7 @@ local function printChars()
 end
 
 local function printSnapshots()
-  local snaps = env.OAR_Snapshots
+  local snaps = env.Outrider_Snapshots
   out("== snapshots\n")
   if type(snaps) ~= "table" then out("none\n") return end
   for _, key in ipairs(sortedKeys(snaps)) do

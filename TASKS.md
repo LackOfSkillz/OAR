@@ -14,16 +14,16 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 0: Setup and ground truth  ([phases/P0_setup.md](phases/P0_setup.md))
 
-- [ ] P0-01 Prepare the PC · Gary · deps: none
-- [ ] P0-02 Find WoW · Claude · deps: P0-01
-- [ ] P0-03 Tests green on Gary's PC · Claude · deps: P0-01
-- [ ] P0-04 Git repository · Claude · deps: P0-03
+- [x] P0-01 Prepare the PC · Gary · deps: none — 2026-11-11: Setup.cmd ran on Gary PC (it-lt-01): Git 2.56, gh 2.103, Python 3.12.10 + lupa, Claude Code 2.1.322
+- [x] P0-02 Find WoW · Claude · deps: P0-01 — 2026-11-11: WoW at C:\Program Files (x86)\World of Warcraft, client folder _forever_, account folder found; tools/local.json written
+- [x] P0-03 Tests green on Gary's PC · Claude · deps: P0-01 — 2026-11-11: 71/71 green on Gary PC
+- [x] P0-04 Git repository · Claude · deps: P0-03 — 2026-11-11: private repo LackOfSkillz/OAR (rename to Outrider pending, see HANDOFF.md), noreply commit identity
 - [ ] P0-05 First deploy and login · Both · deps: P0-02, P0-03
 - [ ] P0-06 Real interface number · Both · deps: P0-05
 - [ ] P0-07 SavedVariables round trip (critical) · Both · deps: P0-05
 - [ ] P0-08 API probe · Both · deps: P0-05
 - [ ] P0-09 Error pipeline check · Both · deps: P0-05
-- [ ] P0-10 Name and rename · Gary decides, Claude renames · deps: none (do before the P1 gate)
+- [x] P0-10 Name and rename · Gary decides, Claude renames · deps: none — 2026-11-11: renamed to Outrider in v0.2.0; GitHub repo rename + remote update left for Claude Code on the PC
 - [ ] P0-11 Screenshot loop · Both · deps: P0-05
 - [ ] **G0** gate: a code change goes from Claude's edit to Gary's screen and back into Claude's log reader in under two minutes; SavedVariables round trip is confirmed (or the fallback is chosen); `docs/PROBE_RESULTS.md` is filled in and committed.
 
@@ -42,7 +42,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P1-11 Performance check · Claude · deps: P1-08
 - [ ] P1-12 Installed addons check · Claude · deps: P0-02
 - [ ] P1-13 Gate G1 run · Both · deps: all P1
-- [ ] **G1** gate: settings survive a full game restart; two characters (hunter + priest or mage) have independent settings and the hub shows only what applies to each; a 30-minute normal play session produces zero OAR errors and zero taint reports; the name question (Q1) is settled.
+- [ ] **G1** gate: settings survive a full game restart; two characters (hunter + priest or mage) have independent settings and the hub shows only what applies to each; a 30-minute normal play session produces zero Outrider errors and zero taint reports; the name question (Q1) is settled.
 
 ## Phase 2: Hunter tools and rares  ([phases/P2_hunter_rares.md](phases/P2_hunter_rares.md))
 
@@ -74,7 +74,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P3-10 Coordinates · Claude · deps: P3-01
 - [ ] P3-11 Redrawn zone check · Both · deps: P3-06
 - [ ] P3-12 Gate G3 · Both · deps: all P3
-- [ ] **G3** gate: for five known NPCs, pins land where the game shows them (screenshot check: within a small distance on the map); `/oar near spirit` sets a waypoint to the nearest known spirit healer; pin cards open and show correct info; minimap pins appear and disappear with distance; no errors.
+- [ ] **G3** gate: for five known NPCs, pins land where the game shows them (screenshot check: within a small distance on the map); `/ride near spirit` sets a waypoint to the nearest known spirit healer; pin cards open and show correct info; minimap pins appear and disappear with distance; no errors.
 
 ## Phase 4: Macro library  ([phases/P4_macros.md](phases/P4_macros.md))
 
@@ -137,7 +137,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P7-11 Notification center · Claude · deps: P1-06
 - [ ] P7-12 First-run setup and accessibility · Claude · deps: P7-09
 - [ ] P7-13 Gate G7 · Both · deps: all P7
-- [ ] **G7** gate: Gary signs off on before/after screenshots for the main screens; a one-hour session including combat, a dungeon or group, a city and fishing produces zero taint reports and zero OAR errors; with ElvUI or EllesmereUI installed, the skin steps aside and only OAR's own panels remain.
+- [ ] **G7** gate: Gary signs off on before/after screenshots for the main screens; a one-hour session including combat, a dungeon or group, a city and fishing produces zero taint reports and zero Outrider errors; with ElvUI or EllesmereUI installed, the skin steps aside and only Outrider's own panels remain.
 
 ## Phase 8: Sharing and social  ([phases/P8_sharing.md](phases/P8_sharing.md))
 
@@ -155,12 +155,12 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 ## Phase 9: AI advisor (parked; start only when Gary says so)  ([phases/P9_ai_advisor.md](phases/P9_ai_advisor.md))
 
 - [ ] P9-01 Richer snapshots · Claude · deps: P2–P6 modules
-- [ ] P9-02 `/oar ask` · Claude · deps: P9-01
+- [ ] P9-02 `/ride ask` · Claude · deps: P9-01
 - [ ] P9-03 Companion app · Claude · deps: P9-02
 - [ ] P9-04 Model wiring · Both · deps: P9-03
 - [ ] P9-05 Safety tests · Claude · deps: P9-04
 - [ ] P9-06 Gate G9 · Both · deps: all P9
-- [ ] **G9** gate: Gary types `/oar ask`, reloads, and within a minute sees 3 to 8 relevant options for Torrant; malformed or stale advice files are ignored safely; nothing leaves the PC unless Gary configured a cloud model; no option can cast, target, buy or move anything.
+- [ ] **G9** gate: Gary types `/ride ask`, reloads, and within a minute sees 3 to 8 relevant options for Torrant; malformed or stale advice files are ignored safely; nothing leaves the PC unless Gary configured a cloud model; no option can cast, target, buy or move anything.
 
 ### Release (any time after G3, Gary's call)
 

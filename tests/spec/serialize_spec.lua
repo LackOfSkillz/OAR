@@ -49,7 +49,7 @@ T.describe("serialize", function()
   T.it("export strings round-trip and detect tampering", function()
     local v = { kind = "x", list = { 1, 2, 3 } }
     local s = S.Export(v)
-    T.eq(s:sub(1, 5), "OAR1:")
+    T.eq(s:sub(1, 5), "OTR1:")
     T.same(S.Import(s), v)
     T.same(S.Import("  " .. s .. "\n"), v, "whitespace tolerated")
     local tampered = s:sub(1, -3) .. (s:sub(-2, -2) == "A" and "B" or "A") .. s:sub(-1)

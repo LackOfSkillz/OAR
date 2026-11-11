@@ -3,7 +3,7 @@
 -- Packs register here; the registry validates required fields so a typo in a
 -- pack is caught by the unit tests, not in game. Full field reference:
 -- docs/DATA_SCHEMAS.md. Big packs can later move into load-on-demand addons
--- (OAR_Data_Gear etc.) that call OAR.Data:Register(...) the same way.
+-- (Outrider_Data_Gear etc.) that call Outrider.Data:Register(...) the same way.
 --
 -- Rule: never invent IDs or coordinates. Fill them from in-game capture
 -- (discovery mode) or a cited source, and set verified = true only after

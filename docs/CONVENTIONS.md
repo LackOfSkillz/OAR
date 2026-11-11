@@ -15,11 +15,11 @@
 |---|---|---|
 | Module | PascalCase identifier | `RareAlerts`, `PetStatus` |
 | Module file | `Modules/<Name>.lua`, or `Modules/<Name>/` for multi-file | `Modules/Hunter/PetStatus.lua` |
-| Named frame | `OAR_<Module><Thing>` | `OAR_RareAlertsToast` |
-| Internal message | `OAR_<NOUN>_<VERB>` | `OAR_RARE_SEEN`, `OAR_WAYPOINT_SET`, `OAR_PROFILE_CHANGED` |
+| Named frame | `Outrider_<Module><Thing>` | `Outrider_RareAlertsToast` |
+| Internal message | `OTR_<NOUN>_<VERB>` | `OTR_RARE_SEEN`, `OTR_WAYPOINT_SET`, `OTR_PROFILE_CHANGED` |
 | Settings keys | lowerCamel | `soundOn`, `alertCooldown` |
 | Data pack file | `Data/<Kind>_<Region>.lua` | `Data/Rares_Kalimdor.lua` |
-| Slash subcommand | lower, one word | `/oar rares`, `/oar near spirit` |
+| Slash subcommand | lower, one word | `/ride rares`, `/ride near spirit` |
 | Task IDs in commits | `Px-nn: summary` | `P2-04: rare detector reads nameplates` |
 
 ## Module template
@@ -27,7 +27,7 @@
 ```lua
 -- Modules/RareAlerts.lua
 -- Toast + sound when a known rare or any rare-classified mob is seen.
--- Listens to OAR_RARE_SEEN from RareScan. Secure "Target" button is pooled.
+-- Listens to OTR_RARE_SEEN from RareScan. Secure "Target" button is pooled.
 
 local ADDON, ns = ...
 local M = ns:NewModule("RareAlerts", {
@@ -43,7 +43,7 @@ function M:OnInitialize()
 end
 
 function M:OnEnable()
-  self:On("OAR_RARE_SEEN", self.OnRareSeen)
+  self:On("OTR_RARE_SEEN", self.OnRareSeen)
   self:Secure("build toast", function() self:BuildToast() end)
 end
 
@@ -83,7 +83,7 @@ Rules:
 ## Logging
 
 - `self:Info` for things Claude needs to verify a task (one line per meaningful action, not per frame).
-- `self:Debug` for detail; only stored with `/oar debug on`.
+- `self:Debug` for detail; only stored with `/ride debug on`.
 - `self:Warn` for degraded features ("Questie API changed, bridge off").
 - Errors come from `ns.Safe` automatically; don't log the same error twice.
 - Include IDs in log lines (`npcID`, `mapID`, `itemID`) so logs can be checked against data.

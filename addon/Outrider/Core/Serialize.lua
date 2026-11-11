@@ -3,7 +3,7 @@
 -- The parser never calls loadstring, so an import string cannot run code.
 --
 -- Wire format:  Z nil | T true | F false | N<number>; | S<len>:<bytes> | { k v k v ... }
--- Export form:  OAR1:<8 hex adler32>:<base64 payload>
+-- Export form:  OTR1:<8 hex adler32>:<base64 payload>
 
 local _, ns = ...
 local S = { MAX_DEPTH = 32, MAX_LEN = 400000 }
@@ -159,7 +159,7 @@ function S.Adler32(s)
 end
 
 -- ---------------------------------------------------------------- export
-S.EXPORT_TAG = "OAR1"
+S.EXPORT_TAG = "OTR1"
 
 function S.Export(value)
   local payload = S.Encode(value)
@@ -171,7 +171,7 @@ function S.Import(text)
   if type(text) ~= "string" then return nil, "nothing to import" end
   text = text:gsub("^%s+", ""):gsub("%s+$", "")
   local tag, sum, body = text:match("^(%w+):(%x+):(.+)$")
-  if tag ~= S.EXPORT_TAG then return nil, "not an OAR export string" end
+  if tag ~= S.EXPORT_TAG then return nil, "not an Outrider export string" end
   local payload, err = S.Base64Decode(body)
   if not payload then return nil, err end
   if S.Adler32(payload) ~= sum:lower() then return nil, "checksum mismatch (string was cut off or edited)" end

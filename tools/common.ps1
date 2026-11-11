@@ -5,7 +5,7 @@
 $ErrorActionPreference = 'Stop'
 $script:RepoRoot = Split-Path -Parent $PSScriptRoot
 $script:ConfigPath = Join-Path $PSScriptRoot 'local.json'
-$script:AddonName = 'OAR'
+$script:AddonName = 'Outrider'
 
 function Get-RepoRoot { return $script:RepoRoot }
 

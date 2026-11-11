@@ -15,7 +15,7 @@ Modules: `GearScore`, `GearTooltip`, `QuestRewards`, `UpgradeFinder`, `AltHandof
 2. Spec detection from talent points (Classic talent API per probe); Gary can override and edit weights in the hub.
 3. Specs: weights load for every class; detection picks the tree with most points.
 
-**Done when:** `/oar weights` prints Torrant's detected spec and weights.
+**Done when:** `/ride weights` prints Torrant's detected spec and weights.
 
 ### P6-02 · Item scoring · Claude · deps: P6-01
 1. `Score(itemLink, char)`: stats from `C_Item.GetItemStats`/`GetItemStats`, plus tooltip parsing (via `C_TooltipInfo` if present) for stats the API misses ("Equip: Increases attack power by 24").
@@ -23,7 +23,7 @@ Modules: `GearScore`, `GearTooltip`, `QuestRewards`, `UpgradeFinder`, `AltHandof
 3. Usable checks: armor type and weapon skills the class can use, required level ("usable in 2 levels" tag), class restrictions, faction.
 4. Specs with fixture items covering each slot rule.
 
-**Done when:** specs pass; `/oar score` on a linked item prints the verdict and the stat diff.
+**Done when:** specs pass; `/ride score` on a linked item prints the verdict and the stat diff.
 
 ### P6-03 · Tooltip verdict · Claude · deps: P6-02
 1. One line on item tooltips: "+12% upgrade for Torrant (Marksmanship, solo)" in green, "downgrade" in muted, "usable at 26" in amber. Shift shows the stat diff.
@@ -38,7 +38,7 @@ Modules: `GearScore`, `GearTooltip`, `QuestRewards`, `UpgradeFinder`, `AltHandof
 **Done when:** Gary turns in a quest with choices and the highlight matches his choice.
 
 ### P6-05 · Upgrade sources pack · Claude · deps: P3-06
-1. Separate load-on-demand addon `addon/OAR_Data_Gear/` (TOC with `## LoadOnDemand: 1`, `## Dependencies: OAR`) with `gear` entries: quest rewards, vendor items, rare drops, dungeon drops for levels 1 to 60, from cited sources, faction-tagged, `verified = false`.
+1. Separate load-on-demand addon `addon/Outrider_Data_Gear/` (TOC with `## LoadOnDemand: 1`, `## Dependencies: Outrider`) with `gear` entries: quest rewards, vendor items, rare drops, dungeon drops for levels 1 to 60, from cited sources, faction-tagged, `verified = false`.
 2. Fill vendor entries from merchant lists Gary actually opened (P5-09 records them).
 3. Tests: the data addon validates; deploy.ps1 and package.ps1 handle a second addon folder (extend them).
 

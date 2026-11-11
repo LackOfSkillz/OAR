@@ -1,6 +1,6 @@
 # tools/deploy.ps1
-# Runs the tests, then mirrors addon/OAR into <WoW>\_forever_\Interface\AddOns\OAR
-# and stamps Core\Build.lua in the deployed copy so "/oar version" proves
+# Runs the tests, then mirrors addon/Outrider into <WoW>\_forever_\Interface\AddOns\Outrider
+# and stamps Core\Build.lua in the deployed copy so "/ride version" proves
 # which build is running. Tells you whether Gary needs /reload or a restart.
 #   powershell -ExecutionPolicy Bypass -File tools/deploy.ps1
 #   ... -SkipTests     (only when a test failure is understood and unrelated)
@@ -17,7 +17,7 @@ $target = Join-Path $cfg.addonsDir $script:AddonName
 
 # Safety: only ever replace our own folder inside an AddOns directory.
 $normalized = $target.Replace('/', '\').TrimEnd('\')
-if ($normalized -notmatch '\\Interface\\AddOns\\OAR$') { throw "Refusing to deploy to unexpected path: $target" }
+if ($normalized -notmatch '\\Interface\\AddOns\\Outrider$') { throw "Refusing to deploy to unexpected path: $target" }
 
 if (-not $SkipTests) {
   Write-Host "Running tests..."
@@ -29,7 +29,7 @@ if (-not $SkipTests) {
 $stateFile = Join-Path $PSScriptRoot '.last-deploy.json'
 $files = Get-ChildItem -Path $source -Recurse -File | ForEach-Object { $_.FullName.Substring($source.Length + 1).Replace('\', '/') } | Sort-Object
 $fileList = ($files -join "`n")
-$tocHash = (Get-FileHash -Algorithm SHA256 -Path (Join-Path $source 'OAR.toc')).Hash
+$tocHash = (Get-FileHash -Algorithm SHA256 -Path (Join-Path $source 'Outrider.toc')).Hash
 $needsRestart = $true
 if (Test-Path $stateFile) {
   $deployState = Get-Content -Raw $stateFile | ConvertFrom-Json
@@ -58,9 +58,9 @@ if ($needsRestart) {
   if ($running) {
     Write-Host "TOC or file list changed: Gary must EXIT the game fully and start it again (a /reload will not pick up new files)." -ForegroundColor Yellow
   } else {
-    Write-Host "Game is not running. Gary starts it, enables OAR on the character screen (tick 'Load out of date AddOns' if shown), and logs in."
+    Write-Host "Game is not running. Gary starts it, enables Outrider on the character screen (tick 'Load out of date AddOns' if shown), and logs in."
   }
 } else {
-  if ($running) { Write-Host "Gary types /reload in game, then /oar version should show build $stamp." }
-  else { Write-Host "Game is not running. Gary starts it and logs in; /oar version should show build $stamp." }
+  if ($running) { Write-Host "Gary types /reload in game, then /ride version should show build $stamp." }
+  else { Write-Host "Game is not running. Gary starts it and logs in; /ride version should show build $stamp." }
 }

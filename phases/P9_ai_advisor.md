@@ -2,7 +2,7 @@
 
 **Goal:** a model on Gary's PC (local, or a frontier model he configures) reads a snapshot of the character and offers a short list of options in game; choosing one only does harmless, non-protected things (waypoint, track quest, open a panel, show an item). Design: `docs/AI_ADVISOR_LATER.md`.
 
-**Gate G9:** Gary types `/oar ask`, reloads, and within a minute sees 3 to 8 relevant options for Torrant; malformed or stale advice files are ignored safely; nothing leaves the PC unless Gary configured a cloud model; no option can cast, target, buy or move anything.
+**Gate G9:** Gary types `/ride ask`, reloads, and within a minute sees 3 to 8 relevant options for Torrant; malformed or stale advice files are ignored safely; nothing leaves the PC unless Gary configured a cloud model; no option can cast, target, buy or move anything.
 
 Already in the code: `Advisor/Snapshot.lua`, `Advisor/AdviceLoader.lua` (whitelist and validation, tested), empty `Advisor/Advice.lua`, `tools/deploy.ps1 -KeepAdvice`.
 
@@ -12,16 +12,16 @@ Already in the code: `Advisor/Snapshot.lua`, `Advisor/AdviceLoader.lua` (whiteli
 1. Each module adds `Snapshot()` with plain data the advisor would need: Rares (watchlist, last sightings), PetStatus (pet family, level, happiness), Professions (skills, queue), Gear (top candidates), Inventory (money, notable items), quests (log titles and IDs).
 2. Keep the snapshot under ~50 KB; spec checks size and that it is plain data (no functions, no frames).
 
-**Done when:** `/oar snap` + `/reload` gives a complete snapshot; `tools/read-logs.ps1 -Section snapshots` shows it.
+**Done when:** `/ride snap` + `/reload` gives a complete snapshot; `tools/read-logs.ps1 -Section snapshots` shows it.
 
-### P9-02 · `/oar ask` · Claude · deps: P9-01
-1. Bind `Snapshot:AskAdvisor()` to `/oar ask` (out of combat; collects and reloads; typing the command is Gary's key press).
+### P9-02 · `/ride ask` · Claude · deps: P9-01
+1. Bind `Snapshot:AskAdvisor()` to `/ride ask` (out of combat; collects and reloads; typing the command is Gary's key press).
 2. Advice panel (hub tab **Advisor**): list of `ns.Advice:Load()` items with title, why, and a button that performs the whitelisted action. Shows "no advice yet" / "advice is stale" reasons from the loader.
 
 **Done when:** with a hand-written test Advice.lua, the panel shows the items and each button does its harmless action.
 
 ### P9-03 · Companion app · Claude · deps: P9-02
-1. `companion/` (Python or Node, Gary's choice): watches `WTF\...\SavedVariables\OAR.lua`, parses it safely (a Lua table parser, never executing it), exposes an MCP server with read-only tools: `list_characters`, `get_snapshot(char)`, `get_rare_log(char)`, `get_gear(char)`, `get_professions(char)`, plus one write tool `write_advice(char, items)` that validates against the same whitelist and writes `Interface\AddOns\OAR\Advisor\Advice.lua` as plain data.
+1. `companion/` (Python or Node, Gary's choice): watches `WTF\...\SavedVariables\Outrider.lua`, parses it safely (a Lua table parser, never executing it), exposes an MCP server with read-only tools: `list_characters`, `get_snapshot(char)`, `get_rare_log(char)`, `get_gear(char)`, `get_professions(char)`, plus one write tool `write_advice(char, items)` that validates against the same whitelist and writes `Interface\AddOns\Outrider\Advisor\Advice.lua` as plain data.
 2. Never writes anything else; never runs while unconfigured.
 
 **Done when:** an MCP client (Claude Desktop or Claude Code) can call the tools and get Torrant's snapshot.
@@ -45,10 +45,10 @@ Run the gate checks; tick G9.
 # Release (any time after G3, Gary's call)
 
 ### R-01 · Packaging · Claude
-`tools/package.ps1` builds `dist\OAR-<version>.zip`. Use PowerShell 7 for release zips (Windows PowerShell 5.1's Compress-Archive writes backslash paths some sites reject) or 7-Zip. Include the data addons.
+`tools/package.ps1` builds `dist\Outrider-<version>.zip`. Use PowerShell 7 for release zips (Windows PowerShell 5.1's Compress-Archive writes backslash paths some sites reject) or 7-Zip. Include the data addons.
 
 ### R-02 · Changelog and version · Claude
-`CHANGELOG.md` per release; semantic version in the TOC; `/oar version` shows it.
+`CHANGELOG.md` per release; semantic version in the TOC; `/ride version` shows it.
 
 ### R-03 · Public release decision · Gary
 Q2 and Q3 in DECISIONS (public or not, license). If public: CurseForge and Wago project pages, screenshots, a short description that only claims what has been verified on Forever.

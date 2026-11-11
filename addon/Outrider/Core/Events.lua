@@ -2,7 +2,7 @@
 -- One hidden frame dispatches every game event to registered handlers.
 -- Handlers are grouped by owner (a module table) so a module can be switched
 -- off with a single OffAll(owner). Every handler runs inside ns.Safe.
--- Internal messages (ns:Fire) use the same table with names starting "OAR_".
+-- Internal messages (ns:Fire) use the same table with names starting "OTR_".
 
 local _, ns = ...
 local Events = { handlers = {}, unitFrames = {} }
@@ -11,7 +11,7 @@ ns.Events = Events
 local frame = CreateFrame("Frame")
 Events.frame = frame
 
-local function isInternal(event) return event:sub(1, 4) == "OAR_" end
+local function isInternal(event) return event:sub(1, 4) == "OTR_" end
 
 local function dispatch(event, ...)
   local list = Events.handlers[event]
@@ -64,9 +64,9 @@ function Events:OffAll(owner)
   for _, event in ipairs(events) do self:Off(event, owner) end
 end
 
--- Internal message bus: ns.Events:Fire("OAR_PROFILE_CHANGED", key)
+-- Internal message bus: ns.Events:Fire("OTR_PROFILE_CHANGED", key)
 function Events:Fire(message, ...)
-  assert(isInternal(message), "internal messages must start with OAR_")
+  assert(isInternal(message), "internal messages must start with OTR_")
   dispatch(message, ...)
 end
 

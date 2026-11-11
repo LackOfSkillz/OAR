@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (renamed to Outrider, 2026-11-11)
+
+- The addon is now **Outrider** (was the working name OAR): folder `addon/Outrider`, `Outrider.toc`, SavedVariables `Outrider_DB`, `Outrider_Log`, `Outrider_Snapshots`, advice global `Outrider_Advice`, global handle `Outrider`, frames `Outrider_*`, internal messages `OTR_*`, export strings `OTR1:`, slash commands `/outrider` and `/ride`.
+- Done before the first deploy, so no saved settings needed migrating.
+- Tools follow the new name (deploy target `AddOns\Outrider`, SavedVariables file `Outrider.lua`, release zip `Outrider-<version>.zip`).
+- HANDOFF.md added for the switch from the chat to Claude Code on Gary's PC.
+- Entries below this one use the old name.
+
 ## 0.1.1 (review fixes, 2026-11-11)
 
 - DB: migrations run on a copy; a missing step, a failing step, or a file from a newer OAR now puts the session in safe mode (saved file left untouched, temporary settings in memory) instead of silently continuing.

@@ -2,20 +2,20 @@
 
 **Goal:** the core every module stands on is proven in the real client: modules switch per character, settings survive restarts, export/import works, errors are caught and readable, the hub and minimap button work, and the shared services Phase 2 needs (secure button pool, toasts, throttling) exist.
 
-Most of the core is already written (see `addon/OAR/Core`, `UI`). Phase 1 tasks verify it in game and add the missing shared services.
+Most of the core is already written (see `addon/Outrider/Core`, `UI`). Phase 1 tasks verify it in game and add the missing shared services.
 
-**Gate G1:** settings survive a full game restart; two characters (hunter + priest or mage) have independent settings and the hub shows only what applies to each; a 30-minute normal play session produces zero OAR errors and zero taint reports; the name question (Q1) is settled.
+**Gate G1:** settings survive a full game restart; two characters (hunter + priest or mage) have independent settings and the hub shows only what applies to each; a 30-minute normal play session produces zero Outrider errors and zero taint reports; the name question (Q1) is settled.
 
 ---
 
 ### P1-01 · Module loader in game · Both · deps: P0-07
-1. Gary: `/oar modules`, `/oar module Welcome off`, `/reload`, `/oar modules`, `/oar module Welcome on`, `/reload`.
+1. Gary: `/ride modules`, `/ride module Welcome off`, `/reload`, `/ride modules`, `/ride module Welcome on`, `/reload`.
 2. Claude: `tools/read-logs.ps1 -Section chars`.
 
 **Done when:** Welcome shows `switched off` for Torrant after the first reload and nothing after the second; no errors.
 
 ### P1-02 · Character awareness · Both · deps: P1-01
-1. Gary logs in on his priest (or mage), `/oar status`, opens the hub (`/oar`), Print Screen, `/reload`.
+1. Gary logs in on his priest (or mage), `/ride status`, opens the hub (`/ride`), Print Screen, `/reload`.
 2. Claude: `tools/read-logs.ps1 -Section chars` and the screenshot.
 
 **Done when:** two character sections with correct class/race/level; the priest got the greeting once; hub shows the priest's name and class.
@@ -45,12 +45,12 @@ Rare alerts (P2), tame helper (P2), macro buttons (P4) all need clickable secure
 4. Specs: acquiring in combat returns a pre-created button; SetMacro in combat is queued and applied after combat; release resets attributes.
 
 **Files:** `UI/SecureButtons.lua`, mock `SetAttribute/GetAttribute`, `tests/spec/secure_spec.lua`.
-**Done when:** specs pass; in game, Gary can click a test button (add `/oar selftest button`: a small secure button whose macro is `/wave`) and it works out of combat, and after combat if the macro was changed during combat.
+**Done when:** specs pass; in game, Gary can click a test button (add `/ride selftest button`: a small secure button whose macro is `/wave`) and it works out of combat, and after combat if the macro was changed during combat.
 
 ### P1-06 · Toasts · Claude · deps: P1-04
 1. `UI/Toast.lua`: `ns.Toast:Show({ title, text, icon, color, sound, duration, button = { label, macro } })`. Stack up to 3, top-center by default, movable anchor saved per character, fade out. Sound via `PlaySound(soundKitID)` guarded; sound choice per module setting.
 2. Optional secure button on the toast via the pool (P1-05).
-3. `/oar selftest toast` shows a sample.
+3. `/ride selftest toast` shows a sample.
 
 **Done when:** Gary sees the sample toast with sound, can drag its anchor, and the position survives /reload; screenshot reviewed.
 
@@ -69,21 +69,21 @@ Rare alerts (P2), tame helper (P2), macro buttons (P4) all need clickable secure
 **Done when:** screenshot of each tab; no errors; Esc closes; position saved.
 
 ### P1-09 · Minimap button and settings page · Both · deps: P1-08
-1. Gary: drag the minimap button around, `/reload` (position kept). Right click (settings page opens at OAR). Left click (hub). `/oar minimap off`, `/reload`, `/oar minimap on`.
-2. If Gary uses a minimap button collector, check OAR's button is collected (LibDBIcon path).
+1. Gary: drag the minimap button around, `/reload` (position kept). Right click (settings page opens at Outrider). Left click (hub). `/ride minimap off`, `/reload`, `/ride minimap on`.
+2. If Gary uses a minimap button collector, check Outrider's button is collected (LibDBIcon path).
 
-**Done when:** all of the above work; Esc > Options > AddOns shows OAR with the "Open OAR hub" button.
+**Done when:** all of the above work; Esc > Options > AddOns shows Outrider with the "Open Outrider hub" button.
 
 ### P1-10 · Snapshot stays dormant but works · Both · deps: P0-07
-1. Gary: `/oar snap`, `/reload`.
+1. Gary: `/ride snap`, `/reload`.
 2. Claude: `tools/read-logs.ps1 -Section snapshots`.
 
 **Done when:** a snapshot for Torrant with level, class, mapID and gear IDs is in the file; no reload happened by itself.
 
 ### P1-11 · Performance check · Claude · deps: P1-08
-1. Add `/oar perf`: `UpdateAddOnMemoryUsage()` then `GetAddOnMemoryUsage("OAR")` (or `C_AddOns` variant per probe), event handler counts per event, pending timers, modules on.
+1. Add `/ride perf`: `UpdateAddOnMemoryUsage()` then `GetAddOnMemoryUsage("Outrider")` (or `C_AddOns` variant per probe), event handler counts per event, pending timers, modules on.
 2. Optional: wrap the dispatcher with `debugprofilestop()` timing when debug is on, keep the slowest 10 handlers.
-3. Gary runs `/oar perf` in a city after 10 minutes of play, `/reload`.
+3. Gary runs `/ride perf` in a city after 10 minutes of play, `/reload`.
 
 **Done when:** numbers logged and within the budget in ARCHITECTURE.md; anything over budget gets a task.
 
@@ -98,4 +98,4 @@ Rare alerts (P2), tame helper (P2), macro buttons (P4) all need clickable secure
 1. Gary: play normally for 30 minutes on Torrant (quests, a city visit, combat), then switch to the priest for 5 minutes, then exit the game fully, start again, log in on Torrant.
 2. Claude: `tools/read-logs.ps1 -Section all -Bugs`.
 
-**Done when:** zero OAR errors and taint entries; settings intact after restart; tick G1 in TASKS.md.
+**Done when:** zero Outrider errors and taint entries; settings intact after restart; tick G1 in TASKS.md.

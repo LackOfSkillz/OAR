@@ -1,18 +1,18 @@
 # tools/setup-dev.ps1
-# One-time setup of this PC for OAR development. Run it with Setup.cmd (double-click)
+# One-time setup of this PC for Outrider development. Run it with Setup.cmd (double-click)
 # or:  powershell -NoProfile -ExecutionPolicy Bypass -File tools\setup-dev.ps1
 #
 # What it does (each step is skipped if already done, so it is safe to run again):
 #   1. Installs Git, GitHub CLI and Python 3.12 with winget (Windows asks you to approve installers)
 #   2. Installs lupa for Python (a real Lua 5.1 for the test suite)
 #   3. Installs Claude Code (official installer) unless -SkipClaudeCode
-#   4. Runs the OAR tests and looks for your WoW folder
+#   4. Runs the Outrider tests and looks for your WoW folder
 #   5. Signs you in to GitHub (in your browser), creates a PRIVATE repo and pushes the project
 # Everything it does is written to tools\setup-log.txt (git-ignored).
 #
-# Options: -RepoName OAR   -SkipClaudeCode   -SkipGitHub   -DryRun (print the plan, change nothing)
+# Options: -RepoName Outrider   -SkipClaudeCode   -SkipGitHub   -DryRun (print the plan, change nothing)
 param(
-  [string]$RepoName = 'OAR',
+  [string]$RepoName = 'Outrider',
   [switch]$SkipClaudeCode,
   [switch]$SkipGitHub,
   [switch]$DryRun
@@ -21,7 +21,7 @@ param(
 
 $root = Get-RepoRoot
 $logPath = Join-Path $PSScriptRoot 'setup-log.txt'
-Write-Utf8NoBom $logPath ("OAR setup " + (Get-Date -Format 's') + $(if ($DryRun) { ' (dry run)' } else { '' }) + "`r`n")
+Write-Utf8NoBom $logPath ("Outrider setup " + (Get-Date -Format 's') + $(if ($DryRun) { ' (dry run)' } else { '' }) + "`r`n")
 $problems = New-Object System.Collections.Generic.List[string]
 
 function Log([string]$Text, [string]$Color = 'Gray') {
@@ -173,7 +173,7 @@ try {
           Invoke-NativeQuiet { & git remote add origin "https://github.com/$login/$RepoName.git" }
           Log "repo $login/$RepoName already exists on GitHub; connected it as origin"
         } else {
-          Invoke-NativeQuiet { & gh repo create $RepoName --private --source . --remote origin --description "OAR: one addon for WoW Forever (working name)" | Out-Host }
+          Invoke-NativeQuiet { & gh repo create $RepoName --private --source . --remote origin --description "Outrider: one addon for WoW Forever" | Out-Host }
           Log "created private repo $login/$RepoName" 'Green'
         }
       }

@@ -78,7 +78,7 @@ ns.Data:Register("macro", "hunter", {
     explain = "First press scatters and recalls the pet, second press drops the trap. Step back so the target walks in.",
     source = "Endgame Tools" },
 
-  { id = "hunter-tame-rare", name = "OAR Tame", class = "HUNTER", verified = true, tags = { "pet", "rare" },
+  { id = "hunter-tame-rare", name = "Outrider Tame", class = "HUNTER", verified = true, tags = { "pet", "rare" },
     body = "#showtooltip Tame Beast\n/stopmacro [channeling]\n/cleartarget\n/targetexact {TARGET}\n/stopmacro [noexists][noharm][dead]\n/cast Tame Beast",
     needsSpells = { "Tame Beast" }, template = { TARGET = "rare beast name" },
     explain = "Safe to mash: presses during the channel do nothing, and [noharm] skips other hunters' pets with the same name.",
@@ -104,7 +104,7 @@ ns.Data:Register("macro", "hunter", {
     needsSpells = { "Tranquilizing Shot" },
     explain = "Removes an enrage from your focus without switching targets.", source = "Wowcalc" },
 
-  { id = "hunter-rare-scan", name = "OAR Scan", class = "HUNTER", verified = false, tags = { "rare" },
+  { id = "hunter-rare-scan", name = "Outrider Scan", class = "HUNTER", verified = false, tags = { "rare" },
     body = "/cleartarget\n{RARE_LINES}",
     template = { RARE_LINES = "one /targetexact line per rare in the current zone (about ten fit)" },
     explain = "Press while riding through a zone; a listed rare in range becomes your target. Rebuilt per zone.",

@@ -1,5 +1,5 @@
 -- UI/Settings.lua
--- Registers an "OAR" page under Esc > Options > AddOns. The page is a short
+-- Registers an "Outrider" page under Esc > Options > AddOns. The page is a short
 -- description plus a button that opens the hub, where the real settings live.
 -- Supports the modern Settings API and the old InterfaceOptions API.
 
@@ -12,16 +12,16 @@ function Settings_:Init()
   if self.ready then return end
   self.ready = true
   local panel = CreateFrame("Frame")
-  panel.name = "OAR"
+  panel.name = "Outrider"
   local title = UI.Text(panel, "title", "text")
   title:SetPoint("TOPLEFT", 16, -16)
-  title:SetText("OAR")
+  title:SetText("Outrider")
   local body = UI.Text(panel, "normal", "muted")
   body:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
   body:SetWidth(560)
   body:SetJustifyH("LEFT")
   body:SetText("Settings are per character. Open the hub to switch modules on or off, export or import a setup, or copy settings from another character.")
-  local open = UI:Button(panel, "Open OAR hub", 140, function()
+  local open = UI:Button(panel, "Open Outrider hub", 140, function()
     if HideUIPanel and SettingsPanel then HideUIPanel(SettingsPanel) end
     ns.Hub:Toggle()
   end)
@@ -34,7 +34,7 @@ function Settings_:Init()
 
   local S = rawget(_G, "Settings")
   if S and S.RegisterCanvasLayoutCategory and S.RegisterAddOnCategory then
-    local ok, category = pcall(S.RegisterCanvasLayoutCategory, panel, "OAR")
+    local ok, category = pcall(S.RegisterCanvasLayoutCategory, panel, "Outrider")
     if ok and category then
       pcall(S.RegisterAddOnCategory, category)
       self.category = category

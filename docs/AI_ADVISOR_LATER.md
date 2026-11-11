@@ -12,7 +12,7 @@ WoW addons can't open sockets or files. The only bridge is SavedVariables:
 
 ```
  in game                              on Gary's PC
- /oar snap  -> OAR_Snapshots   ---->  WTF\...\SavedVariables\OAR.lua   (written on /reload)
+ /ride snap  -> Outrider_Snapshots   ---->  WTF\...\SavedVariables\Outrider.lua   (written on /reload)
                                          |
                                          v
                                 companion app (MCP server)
@@ -21,16 +21,16 @@ WoW addons can't open sockets or files. The only bridge is SavedVariables:
                                    model (local or cloud)
                                          |
                                          v
- AdviceLoader <- OAR_Advice   <----  Interface\AddOns\OAR\Advisor\Advice.lua  (data only)
+ AdviceLoader <- Outrider_Advice   <----  Interface\AddOns\Outrider\Advisor\Advice.lua  (data only)
  (after /reload)
 ```
 
-Round trip: Gary types `/oar ask` (bound later to `Snapshot:AskAdvisor`, which collects and reloads), the companion notices the file change, asks the model, writes Advice.lua, Gary types `/reload` once more (or the companion waits for the next natural reload), and the advice panel shows the options.
+Round trip: Gary types `/ride ask` (bound later to `Snapshot:AskAdvisor`, which collects and reloads), the companion notices the file change, asks the model, writes Advice.lua, Gary types `/reload` once more (or the companion waits for the next natural reload), and the advice panel shows the options.
 
 ## What already exists
 
-- `Advisor/Snapshot.lua`: `/oar snap` collects level, class, race, faction, money, position, equipped item IDs, and anything modules return from `Module:Snapshot()`. Schema 1.
-- `Advisor/AdviceLoader.lua`: validates `OAR_Advice` (schema, character, snapshot match) and keeps only whitelisted actions (`waypoint`, `track_quest`, `open_panel`, `show_item`) with typed args. Tested in `tests/spec/advisor_spec.lua`.
+- `Advisor/Snapshot.lua`: `/ride snap` collects level, class, race, faction, money, position, equipped item IDs, and anything modules return from `Module:Snapshot()`. Schema 1.
+- `Advisor/AdviceLoader.lua`: validates `Outrider_Advice` (schema, character, snapshot match) and keeps only whitelisted actions (`waypoint`, `track_quest`, `open_panel`, `show_item`) with typed args. Tested in `tests/spec/advisor_spec.lua`.
 - `Advisor/Advice.lua`: ships empty. `tools/deploy.ps1 -KeepAdvice` preserves the companion's file.
 
 ## Phase 9 tasks

@@ -1,7 +1,7 @@
 -- Core/Probe.lua
--- "/oar probe" records which APIs actually exist on this client build, so
+-- "/ride probe" records which APIs actually exist on this client build, so
 -- every later phase is built on facts, not on what retail or Classic Era do.
--- Results go to OAR_DB.global.probe; tools/read-logs.ps1 -Probe prints them
+-- Results go to Outrider_DB.global.probe; tools/read-logs.ps1 -Probe prints them
 -- and Claude writes docs/PROBE_RESULTS.md from them (task P0-08).
 -- Read-only: nothing here changes game state.
 
@@ -131,7 +131,7 @@ end
 
 function Probe:Summary()
   local p = ns.db.global.probe
-  if not p then return "no probe yet: type /oar probe" end
+  if not p then return "no probe yet: type /ride probe" end
   return string.format("probe %s: build %s, %d present, %d missing", date("%Y-%m-%d %H:%M", p.at),
     tostring(p.build.build), p.summary.present, p.summary.missing)
 end

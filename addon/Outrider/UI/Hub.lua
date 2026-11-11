@@ -1,7 +1,7 @@
 -- UI/Hub.lua
--- The one OAR window: who you are, which modules are on for THIS character
+-- The one Outrider window: who you are, which modules are on for THIS character
 -- and why, detected addons, export/import/copy, errors. Opened by the
--- minimap button or /oar. Feature modules add their own tabs in later phases
+-- minimap button or /ride. Feature modules add their own tabs in later phases
 -- via ns.Hub:AddSection(title, builder).
 
 local _, ns = ...
@@ -17,7 +17,7 @@ end
 
 function Hub:Build()
   if self.frame then return self.frame end
-  local f = UI:Window("OAR_Hub", "OAR", 560, 470, ns.db.char.hub)
+  local f = UI:Window("Outrider_Hub", "Outrider", 560, 470, ns.db.char.hub)
   self.frame = f
   local c = f.content
 

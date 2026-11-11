@@ -1,5 +1,5 @@
 -- UI/Widgets.lua
--- Small widget kit so every OAR window looks and behaves the same.
+-- Small widget kit so every Outrider window looks and behaves the same.
 -- Non-secure only: secure action buttons (cast/target/use) live with the
 -- module that needs them and are created out of combat via Module:Secure.
 
@@ -117,7 +117,7 @@ end
 function UI:TextDialog(title, body, mode, onAccept)
   local d = self.dialog
   if not d then
-    d = self:Window("OAR_TextDialog", title, 520, 300)
+    d = self:Window("Outrider_TextDialog", title, 520, 300)
     local scroll = CreateFrame("ScrollFrame", nil, d.content, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 0, 0)
     scroll:SetPoint("BOTTOMRIGHT", -24, 34)

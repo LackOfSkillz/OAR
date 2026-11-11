@@ -7,8 +7,8 @@ Claude Code cannot see the game. It sees three things: the files it deploys, the
 1. Claude: `tools/test.ps1` green, then `tools/deploy.ps1`. Note the build stamp it prints.
 2. Claude to Gary, as a numbered list, e.g.:
    1. `/reload` (or "exit the game fully and start it again" if deploy said so)
-   2. `/oar version`: should say build `20261111-1530-abc123`
-   3. `/oar mark P2-04 start`
+   2. `/ride version`: should say build `20261111-1530-abc123`
+   3. `/ride mark P2-04 start`
    4. do the thing (target The Rake, open a trainer, fish for 2 minutes...)
    5. `/reload`
    6. say "done" (and anything you noticed)
@@ -28,12 +28,12 @@ Each task's "Done when" names the log lines to look for. Add `self:Info(...)` li
 | Command | Use |
 |---|---|
 | `/reload` | write results to disk, reload code |
-| `/oar version` | prove which build is running |
-| `/oar status` | character, saved-settings check, module count, errors |
-| `/oar mark <text>` | marker so read-logs shows only what follows |
-| `/oar debug on` | store debug lines (turn off after the test) |
-| `/oar errors` | errors in chat |
-| `/oar probe` | API facts (then /reload) |
+| `/ride version` | prove which build is running |
+| `/ride status` | character, saved-settings check, module count, errors |
+| `/ride mark <text>` | marker so read-logs shows only what follows |
+| `/ride debug on` | store debug lines (turn off after the test) |
+| `/ride errors` | errors in chat |
+| `/ride probe` | API facts (then /reload) |
 | `/dump <expression>` | Blizzard's own inspector, e.g. `/dump C_Map.GetBestMapForUnit("player")` |
 | `/framestack` | name of the frame under the mouse (UI work) |
 | `/console scriptErrors 1` | show Lua errors on screen (if BugSack is not installed) |

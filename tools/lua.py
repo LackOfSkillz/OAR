@@ -38,7 +38,7 @@ def main() -> int:
                     found.append(os.path.join(root, name).replace(os.sep, "/"))
         return lua.table_from(sorted(found))
 
-    g.OAR_HOST_LIST_LUA = list_lua
+    g.OTR_HOST_LIST_LUA = list_lua
     try:
         g.dofile(script)
     except Exception as exc:  # LuaError and friends

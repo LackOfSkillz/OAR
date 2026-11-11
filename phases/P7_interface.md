@@ -2,7 +2,7 @@
 
 **Goal:** the screen looks current and behaves around what Gary is doing: flat dark panels with the class color as accent, readable fonts, clean tooltips, and context layouts (questing, combat, dungeon, fishing, crafting, auction) built on Edit Mode and Blizzard's own frames. Skin, don't replace.
 
-**Gate G7:** Gary signs off on before/after screenshots for the main screens; a one-hour session including combat, a dungeon or group, a city and fishing produces zero taint reports and zero OAR errors; with ElvUI or EllesmereUI installed, the skin steps aside and only OAR's own panels remain.
+**Gate G7:** Gary signs off on before/after screenshots for the main screens; a one-hour session including combat, a dungeon or group, a city and fishing produces zero taint reports and zero Outrider errors; with ElvUI or EllesmereUI installed, the skin steps aside and only Outrider's own panels remain.
 
 What Forever gives us (from the blueprint research): Edit Mode, a Cooldown Manager, a built-in damage meter, a swing timer and a one-bag view ship with the client; players pick a Classic or Enhanced preset at first login. Protected frames can't be moved or rebuilt in combat. Values can be shown in combat but not computed. Fonts we ship need a redistributable license (SIL Open Font License).
 
@@ -11,13 +11,13 @@ Modules: `Skin` (yieldsTo ElvUI, EllesmereUI), `TooltipPlus`, `Bars` (look only)
 ---
 
 ### P7-01 · Visual direction · Both · deps: P1-07
-1. Claude makes a mockup (an image or an HTML page) of three directions: Clean dark (current theme tokens), Classic+ (gold trim and parchment, sharper), Minimal. Show the same screen: unit frames, bars, tooltip, OAR hub, a toast.
+1. Claude makes a mockup (an image or an HTML page) of three directions: Clean dark (current theme tokens), Classic+ (gold trim and parchment, sharper), Minimal. Show the same screen: unit frames, bars, tooltip, Outrider hub, a toast.
 2. Gary picks one (Q4 in DECISIONS). Theme tokens updated to match.
 
 **Done when:** decision recorded; Theme.lua updated.
 
 ### P7-02 · Fonts and textures · Claude · deps: P7-01
-1. Pick an open-license font family (check the license file allows redistribution; include it in `addon/OAR/Media/Fonts/` with its license). Register sizes in Theme.
+1. Pick an open-license font family (check the license file allows redistribution; include it in `addon/Outrider/Media/Fonts/` with its license). Register sizes in Theme.
 2. Status bar and border textures (our own, simple). LibSharedMedia registration if LSM is present.
 
 **Done when:** fonts render in the hub and toasts; license files included; DECISIONS notes the fonts and licenses.
@@ -33,10 +33,10 @@ Modules: `Skin` (yieldsTo ElvUI, EllesmereUI), `TooltipPlus`, `Bars` (look only)
 2. Never reparent, move or resize protected frames; never call `SetPoint` on secure frames in combat.
 3. Step aside when ElvUI or EllesmereUI is loaded (`yieldsTo`). One owner per frame.
 
-**Done when:** before/after screenshots for each frame; `/oar errors` empty after opening each frame in and out of combat.
+**Done when:** before/after screenshots for each frame; `/ride errors` empty after opening each frame in and out of combat.
 
 ### P7-05 · Tooltips · Claude · deps: P7-04
-1. Flat tooltip style, class-colored border for players, a thin health bar, target-of-target line, and a single ordered block for OAR lines (upgrade verdict, AH value, beast info, "needed by quest/recipe"). Each module adds lines through one `ns.TooltipLines:Add(kind, provider)` so they appear in a fixed order and never duplicate.
+1. Flat tooltip style, class-colored border for players, a thin health bar, target-of-target line, and a single ordered block for Outrider lines (upgrade verdict, AH value, beast info, "needed by quest/recipe"). Each module adds lines through one `ns.TooltipLines:Add(kind, provider)` so they appear in a fixed order and never duplicate.
 2. Optional ID display (npcID, itemID, spellID) for Claude-Gary debugging, off by default.
 
 **Done when:** screenshots of player, NPC, beast and item tooltips.
@@ -61,7 +61,7 @@ Modules: `Skin` (yieldsTo ElvUI, EllesmereUI), `TooltipPlus`, `Bars` (look only)
 
 ### P7-09 · Context layouts · Both · deps: P7-06
 1. Contexts: questing, combat, dungeon/raid, battleground, fishing, crafting, auction, city. Detection from events (`PLAYER_REGEN_DISABLED`, instance type, fishing mode, profession or AH frame open).
-2. Each context selects an Edit Mode layout (if `C_EditMode` allows switching layouts by API, out of combat) and which OAR panels show. Combat context uses only secure visibility drivers.
+2. Each context selects an Edit Mode layout (if `C_EditMode` allows switching layouts by API, out of combat) and which Outrider panels show. Combat context uses only secure visibility drivers.
 3. Per-character presets; export/import with profiles.
 
 **Done when:** Gary walks from questing into a city into the AH and the layout follows; no taint.

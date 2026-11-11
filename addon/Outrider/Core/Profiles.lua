@@ -6,7 +6,7 @@
 -- Character metadata (class, level, logins) is never copied.
 
 local _, ns = ...
-local Profiles = { name = "profiles", KIND = "oar-profile", VERSION = 1 }
+local Profiles = { name = "profiles", KIND = "outrider-profile", VERSION = 1 }
 ns.Profiles = Profiles
 
 local COPYABLE = { "modules", "hub" }
@@ -38,8 +38,8 @@ end
 
 function Profiles:Validate(p)
   if type(p) ~= "table" then return false, "not a profile" end
-  if p.kind ~= self.KIND then return false, "this string is not an OAR profile" end
-  if type(p.v) ~= "number" or p.v > self.VERSION then return false, "profile is from a newer OAR version" end
+  if p.kind ~= self.KIND then return false, "this string is not an Outrider profile" end
+  if type(p.v) ~= "number" or p.v > self.VERSION then return false, "profile is from a newer Outrider version" end
   if type(p.data) ~= "table" then return false, "profile has no data" end
   for field, value in pairs(p.data) do
     local allowed = false
@@ -61,7 +61,7 @@ function Profiles:Apply(p)
   ns.ApplyDefaults(ns.db.char, ns.DB.charDefaults)
   for name in pairs(ns.DB.moduleDefaults) do ns.DB:ModuleSettings(name) end
   if ns.Log then ns.Log:Info("profiles", "applied profile from %s", tostring(p.from)) end
-  ns.Events:Fire("OAR_PROFILE_CHANGED", p.from)
+  ns.Events:Fire("OTR_PROFILE_CHANGED", p.from)
   return true
 end
 

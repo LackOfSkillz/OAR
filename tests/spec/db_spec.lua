@@ -45,7 +45,7 @@ T.describe("db", function()
   end)
 
   T.it("survives a damaged SavedVariables file", function()
-    local _, ns = session({ savedVariables = 'OAR_DB = { global = "oops", chars = 5 }\nOAR_Log = 7\n' })
+    local _, ns = session({ savedVariables = 'Outrider_DB = { global = "oops", chars = 5 }\nOutrider_Log = 7\n' })
     T.eq(type(ns.db.global), "table")
     T.eq(type(ns.db.char), "table")
     T.eq(#ns.Errors.list, 0)

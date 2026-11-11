@@ -2,7 +2,8 @@
 local T, mock = ...
 
 local ALLOWED_GLOBALS = {
-  OAR = true, OAR_DB = true, OAR_Log = true, OAR_Snapshots = true, OAR_Advice = true, SLASH_OAR1 = true,
+  Outrider = true, Outrider_DB = true, Outrider_Log = true, Outrider_Snapshots = true, Outrider_Advice = true,
+  SLASH_OUTRIDER1 = true, SLASH_OUTRIDER2 = true,
 }
 
 T.describe("boot", function()
@@ -37,12 +38,13 @@ T.describe("boot", function()
     local game = mock.new()
     game:loadAddon()
     game:login()
-    T.ok(game.env.SlashCmdList.OAR, "SlashCmdList.OAR")
-    T.eq(game.env.SLASH_OAR1, "/oar")
+    T.ok(game.env.SlashCmdList.OUTRIDER, "SlashCmdList.OUTRIDER")
+    T.eq(game.env.SLASH_OUTRIDER1, "/outrider")
+    T.eq(game.env.SLASH_OUTRIDER2, "/ride")
     T.ok(game.settingsRegistered, "Settings category registered")
   end)
 
-  T.it("runs every /oar command without recording an error", function()
+  T.it("runs every /ride command without recording an error", function()
     local game = mock.new()
     local ns = game:loadAddon()
     game:login()
@@ -52,7 +54,7 @@ T.describe("boot", function()
       copy = "Nobody-Forever", chars = "", minimap = "off", snap = "", reset = "", selftest = "combat",
     }
     for _, name in ipairs(ns.Slash.order) do
-      T.ok(samples[name] ~= nil, "add a sample for new command /oar " .. name)
+      T.ok(samples[name] ~= nil, "add a sample for new command /ride " .. name)
       game:slash(name .. " " .. samples[name])
     end
     T.eq(#ns.Errors.list, 0, "errors after running every command")

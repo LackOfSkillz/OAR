@@ -36,22 +36,22 @@ function Errors:Record(where, err, trace)
   -- Quiet by default: one chat line per session, more only in debug mode.
   if not self.warnedThisSession or (ns.Log and ns.Log:IsDebug()) then
     self.warnedThisSession = true
-    ns.Print("|cffff6060error|r in %s (details: /oar errors)", where or "?")
+    ns.Print("|cffff6060error|r in %s (details: /ride errors)", where or "?")
   end
   self:Save()
   return entry
 end
 
 function Errors:Save()
-  if type(OAR_Log) ~= "table" then return end
-  OAR_Log.errors = self.list
+  if type(Outrider_Log) ~= "table" then return end
+  Outrider_Log.errors = self.list
 end
 
 function Errors:Attach()
   -- Carry errors from the previous session so Claude can read them after a
   -- crash-free reload; they are tagged by session id.
-  if type(OAR_Log) == "table" and type(OAR_Log.errors) == "table" then
-    for _, e in ipairs(OAR_Log.errors) do
+  if type(Outrider_Log) == "table" and type(Outrider_Log.errors) == "table" then
+    for _, e in ipairs(Outrider_Log.errors) do
       if type(e) == "table" and e.msg then
         local key = (e.where or "?") .. "|" .. e.msg
         if not self.byKey[key] then

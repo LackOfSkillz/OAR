@@ -20,7 +20,7 @@
           WoW Forever client API (guarded by Compat; facts in PROBE_RESULTS.md)
 ```
 
-A module may use Core and shared services. Modules never call each other's internals directly; they talk through internal messages (`ns.Events:Fire("OAR_RARE_SEEN", info)`) or a small public table the providing module documents in its header (e.g. `ns.Waypoints:Set(mapID, x, y, title)`). That keeps any module removable.
+A module may use Core and shared services. Modules never call each other's internals directly; they talk through internal messages (`ns.Events:Fire("OTR_RARE_SEEN", info)`) or a small public table the providing module documents in its header (e.g. `ns.Waypoints:Set(mapID, x, y, title)`). That keeps any module removable.
 
 ## Lifecycle
 
@@ -29,14 +29,14 @@ A module may use Core and shared services. Modules never call each other's inter
 | File load (TOC order) | Each file adds itself to `ns`. Modules call `ns:NewModule`, which registers settings defaults. No game state yet. |
 | `ADDON_LOADED` (ours) | SavedVariables are available: `Log:Attach`, `DB:Init` (migrations, defaults, character section), `Errors:Attach`, session start, `OnInitialize` for every module. |
 | `PLAYER_LOGIN` | BugGrabber hook, conflict detection, settings page, minimap button, then `OnEnable` for each module that should run for this character (class, required addons, yields, player choice). |
-| `PLAYER_LOGOUT` (also on /reload) | `lastSave` stamp, errors saved. WoW writes `OAR.lua`. |
+| `PLAYER_LOGOUT` (also on /reload) | `lastSave` stamp, errors saved. WoW writes `Outrider.lua`. |
 
 ## Saved data
 
-One account-wide file: `WTF\Account\<ACCOUNT>\SavedVariables\OAR.lua`.
+One account-wide file: `WTF\Account\<ACCOUNT>\SavedVariables\Outrider.lua`.
 
 ```lua
-OAR_DB = {
+Outrider_DB = {
   schema = 1,
   global = {                 -- account-wide
     debug, minimap = { hide, angle }, loads, sessions = { ... }, lastSave = { ... },
@@ -54,8 +54,8 @@ OAR_DB = {
     },
   },
 }
-OAR_Log = { lines = { {t, s, l, m, x}, ... up to 600 }, errors = { ... up to 50 } }
-OAR_Snapshots = { ["Torrant-Realm"] = { ... } }   -- P9 groundwork, written only by /oar snap
+Outrider_Log = { lines = { {t, s, l, m, x}, ... up to 600 }, errors = { ... up to 50 } }
+Outrider_Snapshots = { ["Torrant-Realm"] = { ... } }   -- P9 groundwork, written only by /ride snap
 ```
 
 "Character aware" means: `ns.db.char` is always the logged-in character's section; module defaults can depend on class (`spec.classes`); the hub shows only what applies; export/import/copy move a setup between characters.
@@ -70,7 +70,7 @@ Decision order for whether a module runs: class allowed → required addons load
 
 ## Events
 
-One hidden frame in `Core/Events.lua`. Handlers are keyed by owner so `OffAll(module)` removes everything. Each handler runs in `ns.Safe`. Internal messages share the dispatcher and must start with `OAR_`. Conventions for message names are in CONVENTIONS.md.
+One hidden frame in `Core/Events.lua`. Handlers are keyed by owner so `OffAll(module)` removes everything. Each handler runs in `ns.Safe`. Internal messages share the dispatcher and must start with `OTR_`. Conventions for message names are in CONVENTIONS.md.
 
 ## Combat safety
 
@@ -78,7 +78,7 @@ One hidden frame in `Core/Events.lua`. Handlers are keyed by owner so `OffAll(mo
 
 ## Data packs
 
-Plain tables registered with `ns.Data:Register(kind, packName, entries)`, validated against `Data.SCHEMAS`. Small packs live in `addon/OAR/Data/`. Big ones (gear sources, recipes) become separate load-on-demand addons in `addon/OAR_Data_<Name>/` with `## LoadOnDemand: 1` and `## Dependencies: OAR`, loaded with `ns.Compat.LoadAddOn` when a module first needs them. Formats: DATA_SCHEMAS.md.
+Plain tables registered with `ns.Data:Register(kind, packName, entries)`, validated against `Data.SCHEMAS`. Small packs live in `addon/Outrider/Data/`. Big ones (gear sources, recipes) become separate load-on-demand addons in `addon/Outrider_Data_<Name>/` with `## LoadOnDemand: 1` and `## Dependencies: Outrider`, loaded with `ns.Compat.LoadAddOn` when a module first needs them. Formats: DATA_SCHEMAS.md.
 
 Self-building data: Discovery (P2-02) records NPCs, vendors, trainers, flight masters and gathering nodes Gary actually meets, with Forever-native coordinates. Shipped packs start small and verified; discovery fills the rest.
 
@@ -92,4 +92,4 @@ A bridge is a module with `requires = { "OtherAddon" }` that reads the other add
 
 ## Performance budget
 
-Measured with `/oar perf` (P1-12): core idle under 1.5 MB memory, under 0.1 ms per frame average; no `OnUpdate` scripts running when nothing is visible; nameplate scans throttled to 4 per second; data packs loaded on demand.
+Measured with `/ride perf` (P1-12): core idle under 1.5 MB memory, under 0.1 ms per frame average; no `OnUpdate` scripts running when nothing is visible; nameplate scans throttled to 4 per second; data packs loaded on demand.

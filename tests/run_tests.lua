@@ -17,7 +17,7 @@ local filter = arg and arg[1]
 
 local function listLua(dir)
   -- tools/lua.py provides this because its embedded Lua has no io.popen
-  local host = rawget(_G, "OAR_HOST_LIST_LUA")
+  local host = rawget(_G, "OTR_HOST_LIST_LUA")
   if host then
     local out = {}
     for _, f in ipairs(host(dir)) do out[#out + 1] = f end

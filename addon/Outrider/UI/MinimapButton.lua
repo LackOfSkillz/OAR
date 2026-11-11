@@ -14,11 +14,11 @@ local function onClick(_, button)
 end
 
 local function onTooltip(tt)
-  tt:AddLine("OAR")
+  tt:AddLine("Outrider")
   tt:AddLine(ns.db.key, 0.7, 0.7, 0.7)
   local _, loads = ns.DB:SavedVariablesStatus()
   tt:AddLine(string.format("v%s  build %s  loads %d", ns.version, ns.build, loads), 0.7, 0.7, 0.7)
-  if #ns.Errors.list > 0 then tt:AddLine(#ns.Errors.list .. " error(s): /oar errors", 1, 0.4, 0.4) end
+  if #ns.Errors.list > 0 then tt:AddLine(#ns.Errors.list .. " error(s): /ride errors", 1, 0.4, 0.4) end
   tt:AddLine("Left click: open   Right click: settings   Drag: move", 0.56, 0.82, 1)
 end
 
@@ -28,12 +28,12 @@ function MB:TryLibDBIcon()
   local LDB = LibStub("LibDataBroker-1.1", true)
   local Icon = LibStub("LibDBIcon-1.0", true)
   if not (LDB and Icon) then return false end
-  local obj = LDB:NewDataObject("OAR", {
-    type = "launcher", icon = ICON, label = "OAR",
+  local obj = LDB:NewDataObject("Outrider", {
+    type = "launcher", icon = ICON, label = "Outrider",
     OnClick = onClick,
     OnTooltipShow = onTooltip,
   })
-  Icon:Register("OAR", obj, ns.db.global.minimap)
+  Icon:Register("Outrider", obj, ns.db.global.minimap)
   self.lib = Icon
   return true
 end
@@ -46,7 +46,7 @@ function MB:Position(b)
 end
 
 function MB:BuildOwn()
-  local b = CreateFrame("Button", "OAR_MinimapButton", Minimap)
+  local b = CreateFrame("Button", "Outrider_MinimapButton", Minimap)
   b:SetSize(31, 31)
   b:SetFrameStrata("MEDIUM")
   b:SetFrameLevel(8)
@@ -94,7 +94,7 @@ end
 function MB:SetHidden(hide)
   ns.db.global.minimap.hide = hide and true or false
   if self.lib then
-    if hide then self.lib:Hide("OAR") else self.lib:Show("OAR") end
+    if hide then self.lib:Hide("Outrider") else self.lib:Show("Outrider") end
   elseif self.button then
     self.button:SetShown(not hide)
   end

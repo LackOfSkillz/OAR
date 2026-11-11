@@ -1,5 +1,5 @@
 -- tests/lib/wowmock.lua
--- A small fake of the WoW client, enough to load OAR the way the game does:
+-- A small fake of the WoW client, enough to load Outrider the way the game does:
 -- files in TOC order, each called with (addonName, ns), inside a sandbox
 -- that has WoW's globals and NOT Lua's io/os (WoW has neither).
 --
@@ -13,8 +13,8 @@
 
 local M = {}
 
-M.ADDON = "OAR"
-M.ROOT = "addon/OAR/"
+M.ADDON = "Outrider"
+M.ROOT = "addon/Outrider/"
 
 local function noop() end
 
@@ -375,7 +375,7 @@ function Game:advance(seconds)
 end
 
 function Game:slash(line)
-  return self.env.SlashCmdList.OAR(line)
+  return self.env.SlashCmdList.OUTRIDER(line)
 end
 
 -- Fires PLAYER_LOGOUT and returns the SavedVariables file text.

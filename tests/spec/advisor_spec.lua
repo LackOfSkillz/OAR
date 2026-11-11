@@ -12,14 +12,14 @@ T.describe("snapshot", function()
   T.it("collects plain data for the current character", function()
     local game, ns = session()
     game:slash("snap")
-    local s = game.env.OAR_Snapshots["Torrant-Forever"]
+    local s = game.env.Outrider_Snapshots["Torrant-Forever"]
     T.eq(s.schema, 1)
     T.eq(s.class, "HUNTER")
     T.eq(s.where.mapID, 1412)
     T.eq(s.gear[18], 2504)
     T.ok(s.modules.Welcome, "modules contribute")
     T.eq(game.reloads, 0, "snap never reloads by itself")
-    T.contains(game:logout(), "OAR_Snapshots")
+    T.contains(game:logout(), "Outrider_Snapshots")
   end)
 end)
 
@@ -27,8 +27,8 @@ T.describe("advice loader", function()
   local function withAdvice(advice)
     local game, ns = session()
     ns.Snapshot:Collect()
-    local taken = game.env.OAR_Snapshots["Torrant-Forever"].takenAt
-    game.env.OAR_Advice = advice(taken)
+    local taken = game.env.Outrider_Snapshots["Torrant-Forever"].takenAt
+    game.env.Outrider_Advice = advice(taken)
     return ns.Advice:Load()
   end
 

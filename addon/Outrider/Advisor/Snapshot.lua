@@ -1,6 +1,6 @@
 -- Advisor/Snapshot.lua
--- Phase 9 groundwork, safe to ship now: "/oar snap" writes a plain-data
--- picture of the current character into OAR_Snapshots, which WoW saves to
+-- Phase 9 groundwork, safe to ship now: "/ride snap" writes a plain-data
+-- picture of the current character into Outrider_Snapshots, which WoW saves to
 -- disk on the next /reload or logout. The future companion app (an MCP
 -- server on Gary's PC) reads that file and nothing else. No network, no
 -- input, no automation. Modules contribute by defining :Snapshot().
@@ -39,7 +39,7 @@ local function fromModules()
 end
 
 function Snap:Collect()
-  OAR_Snapshots = type(OAR_Snapshots) == "table" and OAR_Snapshots or {}
+  Outrider_Snapshots = type(Outrider_Snapshots) == "table" and Outrider_Snapshots or {}
   local meta = ns.db.char.meta
   local s = {
     schema = self.SCHEMA,
@@ -52,7 +52,7 @@ function Snap:Collect()
     gear = gear(),
     modules = fromModules(),
   }
-  OAR_Snapshots[ns.db.key] = s
+  Outrider_Snapshots[ns.db.key] = s
   ns.Log:Info("snapshot", "snapshot taken for %s", ns.db.key)
   return s
 end

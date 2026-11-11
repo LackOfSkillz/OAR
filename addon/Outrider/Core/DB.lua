@@ -1,7 +1,7 @@
 -- Core/DB.lua
 -- SavedVariables layout (account-wide file, one section per character):
 --
--- OAR_DB = {
+-- Outrider_DB = {
 --   schema = 1,
 --   global = { debug, minimap, loads, sessions, lastSave, probe, discovered ... },
 --   chars  = { ["Torrant-Realm"] = { meta, modules = { [name] = { enabled, settings } }, hub ... } },
@@ -45,7 +45,7 @@ end
 function DB:Migrate(original)
   local from = type(original.schema) == "number" and original.schema or ns.SCHEMA
   if from > ns.SCHEMA then
-    return nil, string.format("saved by a newer OAR (schema %d, this version understands %d)", from, ns.SCHEMA)
+    return nil, string.format("saved by a newer Outrider (schema %d, this version understands %d)", from, ns.SCHEMA)
   end
   if from == ns.SCHEMA then original.schema = from return original end
   local db = ns.CopyTable(original)
@@ -71,11 +71,11 @@ function DB:EnterSafeMode(reason)
 end
 
 function DB:Init()
-  self.freshFile = type(OAR_DB) ~= "table"
-  if self.freshFile then OAR_DB = {} end
+  self.freshFile = type(Outrider_DB) ~= "table"
+  if self.freshFile then Outrider_DB = {} end
   self.safeMode = nil
-  local db, why = self:Migrate(OAR_DB)
-  if db then OAR_DB = db else db = self:EnterSafeMode(why) end
+  local db, why = self:Migrate(Outrider_DB)
+  if db then Outrider_DB = db else db = self:EnterSafeMode(why) end
   db.global = type(db.global) == "table" and db.global or {}
   db.chars = type(db.chars) == "table" and db.chars or {}
   ns.ApplyDefaults(db.global, self.globalDefaults)
@@ -105,7 +105,7 @@ function DB:Init()
   return ns.db
 end
 
--- Status for "/oar status" and the P0-07 round-trip check.
+-- Status for "/ride status" and the P0-07 round-trip check.
 function DB:SavedVariablesStatus()
   if self.safeMode then return "SAFE MODE (" .. self.safeMode .. ")", 0 end
   local loads = ns.db and ns.db.global.loads or 0
@@ -163,6 +163,6 @@ function DB:ResetChar()
 end
 
 function DB:ResetAll()
-  OAR_DB = nil
+  Outrider_DB = nil
   self.reset = true
 end

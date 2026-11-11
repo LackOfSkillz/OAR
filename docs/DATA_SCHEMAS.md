@@ -112,4 +112,4 @@ Packs register with `ns.Data:Register(kind, packName, entries)`. Every kind also
 
 ## Addon messages (Phase 8)
 
-Prefix `OAR`. Body = `v<protocol>|<type>|<payload>` where payload is `ns.Serialize.Base64Encode(ns.Serialize.Encode(table))` (base64 so no byte can break the channel), chunked when over 250 bytes (`#1/3` suffix). Types: `RARE` (npcID, mapID, x, y, layer, t, state), `HELLO` (version, build), `LOC` (opt-in position: mapID, x, y, zone). Receivers ignore unknown types and newer protocol versions they can't read.
+Prefix `Outrider`. Body = `v<protocol>|<type>|<payload>` where payload is `ns.Serialize.Base64Encode(ns.Serialize.Encode(table))` (base64 so no byte can break the channel), chunked when over 250 bytes (`#1/3` suffix). Types: `RARE` (npcID, mapID, x, y, layer, t, state), `HELLO` (version, build), `LOC` (opt-in position: mapID, x, y, zone). Receivers ignore unknown types and newer protocol versions they can't read.

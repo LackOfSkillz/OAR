@@ -10,9 +10,9 @@ local function session(opts, define)
 end
 
 T.describe("schema safety", function()
-  local saved = 'OAR_DB = { schema = 99, global = { loads = 7, keep = "me" }, chars = {} }\n'
+  local saved = 'Outrider_DB = { schema = 99, global = { loads = 7, keep = "me" }, chars = {} }\n'
 
-  T.it("a file from a newer OAR is left untouched (safe mode)", function()
+  T.it("a file from a newer Outrider is left untouched (safe mode)", function()
     local game, ns = session({ savedVariables = saved })
     T.ok(ns.DB.safeMode, "safe mode on")
     T.contains(ns.DB:SavedVariablesStatus(), "SAFE MODE")
@@ -26,7 +26,7 @@ T.describe("schema safety", function()
   end)
 
   T.it("a failing migration step does not damage the original", function()
-    local old = 'OAR_DB = { schema = 0, global = { loads = 3, keep = "me" }, chars = {} }\n'
+    local old = 'Outrider_DB = { schema = 0, global = { loads = 3, keep = "me" }, chars = {} }\n'
     local game = mock.new({ savedVariables = old })
     local ns = game:loadAddon()
     ns.DB.migrations[0] = function(db) db.global.keep = "half-done" error("boom") end
@@ -38,13 +38,13 @@ T.describe("schema safety", function()
   end)
 
   T.it("a missing migration step is refused, not skipped", function()
-    local old = 'OAR_DB = { schema = 0, global = {}, chars = {} }\n'
+    local old = 'Outrider_DB = { schema = 0, global = {}, chars = {} }\n'
     local _, ns = session({ savedVariables = old })
     T.contains(ns.DB.safeMode or "", "no migration from schema 0")
   end)
 
   T.it("a working migration upgrades and saves", function()
-    local old = 'OAR_DB = { schema = 0, global = { oldName = 5 }, chars = {} }\n'
+    local old = 'Outrider_DB = { schema = 0, global = { oldName = 5 }, chars = {} }\n'
     local game = mock.new({ savedVariables = old })
     local ns = game:loadAddon()
     ns.DB.migrations[0] = function(db) db.global.newName = db.global.oldName db.global.oldName = nil end
@@ -72,7 +72,7 @@ T.describe("resets", function()
     game:loadAddon()
     game:login()
     game:slash("reset all confirm")
-    T.no(game:logout():find("OAR_DB", 1, true))
+    T.no(game:logout():find("Outrider_DB", 1, true))
   end)
 end)
 
@@ -107,8 +107,8 @@ T.describe("advice validation", function()
   local function load(items)
     local game, ns = session()
     ns.Snapshot:Collect()
-    local taken = game.env.OAR_Snapshots["Torrant-Forever"].takenAt
-    game.env.OAR_Advice = { schema = 1, forCharacter = "Torrant-Forever", answersSnapshot = taken, items = items }
+    local taken = game.env.Outrider_Snapshots["Torrant-Forever"].takenAt
+    game.env.Outrider_Advice = { schema = 1, forCharacter = "Torrant-Forever", answersSnapshot = taken, items = items }
     return (ns.Advice:Load())
   end
 

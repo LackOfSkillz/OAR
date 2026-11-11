@@ -1,6 +1,6 @@
 # Phase 8: Sharing and social
 
-**Goal:** guildmates and party members running OAR share rare sightings (and, opt-in, their locations and gathering nodes), chat gets sorted so the important lines stand out, and a town errand list tells each character what to do while in a city.
+**Goal:** guildmates and party members running Outrider share rare sightings (and, opt-in, their locations and gathering nodes), chat gets sorted so the important lines stand out, and a town errand list tells each character what to do while in a city.
 
 **Gate G8:** with a second player (a friend or a second account) in the same guild, each sees the other's rare sightings within five seconds and as a pin; location sharing is off until switched on, and when on shows the other player on the world map; trial accounts don't break anything; chat triage and the errand list work for Torrant.
 
@@ -11,7 +11,7 @@ Modules/services: `ns.Comm` (core service), `RareShare`, `LocationShare`, `Gathe
 ---
 
 ### P8-01 · Comm layer · Claude · deps: P1-04
-1. `Core/Comm.lua`: `C_ChatInfo.RegisterAddonMessagePrefix("OAR")`; `ns.Comm:Send(type, payload, channel, target)`, `ns.Comm:On(type, fn)`. Message format in DATA_SCHEMAS.md (versioned, base64 payload, chunked past 250 bytes, reassembled with a timeout).
+1. `Core/Comm.lua`: `C_ChatInfo.RegisterAddonMessagePrefix("Outrider")`; `ns.Comm:Send(type, payload, channel, target)`, `ns.Comm:On(type, fn)`. Message format in DATA_SCHEMAS.md (versioned, base64 payload, chunked past 250 bytes, reassembled with a timeout).
 2. Throttle: token bucket per channel (ChatThrottleLib if present, otherwise our own: about 800 bytes/s burst, lower sustained), priority for small messages.
 3. Guard: `IsTrialAccount()` / `IsVeteranTrialAccount()` → receive only; log once.
 4. Ignore messages from ourselves, unknown types, newer protocol versions, and senders not in our guild/party/raid for that channel.
@@ -21,7 +21,7 @@ Modules/services: `ns.Comm` (core service), `RareShare`, `LocationShare`, `Gathe
 
 ### P8-02 · Version check · Claude · deps: P8-01
 1. On login and on joining a group, send `HELLO` (version, build) at most once per 10 minutes per channel. If a peer has a newer version, tell Gary once.
-2. Hub Overview lists guildmates and party members with OAR and their versions.
+2. Hub Overview lists guildmates and party members with Outrider and their versions.
 
 **Done when:** two clients see each other in the list.
 
