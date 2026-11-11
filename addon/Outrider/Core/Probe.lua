@@ -115,9 +115,63 @@ function Probe:Run()
 
   out.addonBuild = ns.build
   out.units = self:RecordUnits("probe")
+  out.editMode = self:EditMode()
   ns.db.global.probe = out
   ns.Log:Info("probe", "build %s (%s) interface %s: %d APIs present, %d missing",
     tostring(out.build.version), tostring(out.build.build), tostring(out.build.interface), present, missing)
+  return out
+end
+
+-- P7-03 Edit Mode survey (read only): which layouts exist and which frames
+-- Edit Mode already moves (so Outrider must never move them, only restyle),
+-- and which common frames it does not cover.
+Probe.EDIT_MODE_FRAMES = {
+  "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "PartyFrame", "CompactRaidFrameContainer",
+  "BossTargetFrameContainer", "ArenaEnemyFramesContainer", "MainMenuBar", "MainActionBar", "MultiBarBottomLeft",
+  "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft", "StanceBar", "PetActionBar", "PossessActionBar",
+  "MinimapCluster", "ObjectiveTrackerFrame", "QuestWatchFrame", "BuffFrame", "DebuffFrame", "PlayerCastingBarFrame",
+  "CastingBarFrame", "ChatFrame1", "BagsBar", "MicroMenuContainer", "MicroMenu", "StatusTrackingBarManager",
+  "MainStatusTrackingBarContainer", "LootFrame", "TalkingHeadFrame", "ExtraAbilityContainer", "GameTooltipDefaultContainer",
+  "EncounterBar", "DurabilityFrame", "VehicleSeatIndicator", "ArchaeologyDigsiteProgressBar", "TimerTracker",
+}
+
+function Probe:EditMode()
+  local out = { api = {}, layouts = {}, systems = {}, frames = {} }
+  local em = rawget(_G, "C_EditMode")
+  for _, fn in ipairs({ "GetLayouts", "SetActiveLayout", "SaveLayouts", "GetAccountSettings", "ConvertLayoutInfoToString" }) do
+    out.api[fn] = type(em) == "table" and type(em[fn]) == "function" or false
+  end
+  if out.api.GetLayouts then
+    local ok, info = pcall(em.GetLayouts)
+    if ok and type(info) == "table" then
+      out.activeLayout = info.activeLayout
+      for i, l in ipairs(info.layouts or {}) do
+        out.layouts[i] = { name = tostring(l.layoutName), type = l.layoutType }
+      end
+    end
+  end
+  local mgr = rawget(_G, "EditModeManagerFrame")
+  out.manager = mgr ~= nil
+  local isSystem = {}
+  if mgr and type(mgr.registeredSystemFrames) == "table" then
+    for _, f in ipairs(mgr.registeredSystemFrames) do
+      local ok, name = pcall(f.GetName, f)
+      name = ok and name or "?"
+      isSystem[name] = true
+      out.systems[#out.systems + 1] = name
+    end
+  end
+  for _, name in ipairs(self.EDIT_MODE_FRAMES) do
+    local f = rawget(_G, name)
+    if f then
+      local protected = f.IsProtected and select(1, pcall(f.IsProtected, f)) and f:IsProtected() or false
+      out.frames[name] = (isSystem[name] and "edit mode" or "not in edit mode") .. (protected and ", protected" or "")
+    end
+  end
+  local layoutNames = {}
+  for _, l in ipairs(out.layouts) do layoutNames[#layoutNames + 1] = l.name end
+  ns.Log:Info("probe", "edit mode: manager %s, %d layouts (%s), active %s, %d system frames",
+    tostring(out.manager), #out.layouts, table.concat(layoutNames, ", "), tostring(out.activeLayout), #out.systems)
   return out
 end
 

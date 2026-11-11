@@ -126,7 +126,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 - [x] P7-01 Visual direction · Both · deps: P1-07 · 2026-11-11: three-way mockup (Clean dark / Classic+ / Minimal) shown in chat; Gary picked Clean dark (D14); Theme.lua tokens already match
 - [x] P7-02 Fonts and textures · Claude · deps: P7-01 · 2026-11-11: Gary kept the game font (D15, no bundled font or licence); flat WHITE8x8 bar and 1px border registered with LibSharedMedia when loaded (Theme:RegisterMedia, 1 spec)
-- [ ] P7-03 Edit Mode survey · Both · deps: P0-08
+- [~] P7-03 Edit Mode survey · Both · deps: P0-08 · 2026-11-11: Probe:EditMode() runs with the automatic login probe: C_EditMode API presence, layouts (names, types, active), EditModeManagerFrame system frames, and 39 common frames marked "edit mode" or not (+ protected); read-logs -Section probe prints it. Waiting on: one login, then findings go into PROBE_RESULTS.md
 - [ ] P7-04 Skin Blizzard frames · Claude · deps: P7-02, P7-03
 - [ ] P7-05 Tooltips · Claude · deps: P7-04
 - [ ] P7-06 Unit frames and bars, look only · Claude · deps: P7-04
