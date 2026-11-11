@@ -346,7 +346,11 @@ function M.new(opts)
   base.UnitFullName = function(unit) if unit == "player" then return player.name, player.realm end end
   base.GetRealmName = function() return player.realm end
   local CLASS_ID = { WARRIOR = 1, PALADIN = 2, HUNTER = 3, ROGUE = 4, PRIEST = 5, SHAMAN = 7, MAGE = 8, WARLOCK = 9, DRUID = 11 }
-  base.UnitClass = function(unit) if unit == "player" then return player.class:sub(1, 1) .. player.class:sub(2):lower(), player.class, CLASS_ID[player.class] end end
+  base.UnitClass = function(unit)
+    if unit == "player" then return player.class:sub(1, 1) .. player.class:sub(2):lower(), player.class, CLASS_ID[player.class] end
+    local u = game.units and game.units[unit]
+    if u and u.class then return u.class:sub(1, 1) .. u.class:sub(2):lower(), u.class, CLASS_ID[u.class] end
+  end
   -- quests: game.questsDone[id] = true, game.questsActive[id] = true
   base.C_QuestLog = {
     IsQuestFlaggedCompleted = function(id) return game.questsDone and game.questsDone[id] or false end,

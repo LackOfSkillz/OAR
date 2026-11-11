@@ -92,6 +92,7 @@ Modules\RarePlates.lua
 Modules\Advisor.lua
 Modules\Skin.lua
 Modules\Tooltips.lua
+Modules\UnitLook.lua
 Modules\SpellCheck.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
