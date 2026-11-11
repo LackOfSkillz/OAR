@@ -46,6 +46,7 @@ Data\Registry.lua
 Data\Macros_Hunter.lua
 Data\Macros_Priest.lua
 Data\Macros_Mage.lua
+Data\StatWeights.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\MacroEngine.lua
@@ -63,6 +64,7 @@ Modules\Fishing.lua
 Modules\LootLog.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua
+Modules\GearScore.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

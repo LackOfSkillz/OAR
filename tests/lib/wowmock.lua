@@ -366,6 +366,7 @@ function M.new(opts)
   }
   base.GetInventoryItemLink = function(_, slot)
     if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
+    if game.worn and game.worn[slot] then return "|cffffffff|Hitem:" .. game.worn[slot] .. "::::::::24:::::|h[w]|h|r" end
     if slot == 16 and game.pole then return "|cffffffff|Hitem:6256::::::::24:::::|h[Fishing Pole]|h|r" end
     if slot == 0 and (game.ammo or opts.ammo) then return "|cffffffff|Hitem:2512::::::::24:::::|h[Rough Arrow]|h|r" end
   end
@@ -454,13 +455,23 @@ function M.new(opts)
       if id then return { itemID = id, stackCount = (game.counts and game.counts[bag] and game.counts[bag][slot]) or 5 } end
     end,
   }
+  -- gear: game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 5, ... }; items[id].equipLoc / class / subclass
+  base.C_Item.GetItemStats = function(link)
+    local id = tonumber(tostring(link):match("item:(%d+)"))
+    return game.itemStats and game.itemStats[id] or {}
+  end
   base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
+  local function idOf(v) return tonumber(tostring(v):match("item:(%d+)")) or v end
   base.C_Item.GetItemInfo = function(id)
+    id = idOf(id)
     local it = game.items and game.items[id]
-    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, nil, nil, it.sell or 0 end
+    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, it.equipLoc, nil, it.sell or 0 end
   end
   base.C_Item.GetItemInfoInstant = function(id)
+    id = idOf(id)
     if id == 6256 then return id, nil, nil, nil, nil, 2, 20 end
+    local it = game.items and game.items[id]
+    if it and it.class then return id, nil, nil, it.equipLoc, nil, it.class, it.subclass end
     return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
   end
   base.Enum = { TooltipDataType = { Unit = 2, Item = 0 }, SpellBookSpellBank = { Player = 0 } }

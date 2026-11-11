@@ -110,9 +110,9 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 6: Gear advisor  ([phases/P6_gear.md](phases/P6_gear.md))
 
-- [ ] P6-01 Stat weights · Claude · deps: none
-- [ ] P6-02 Item scoring · Claude · deps: P6-01
-- [ ] P6-03 Tooltip verdict · Claude · deps: P6-02
+- [~] P6-01 Stat weights · Claude · deps: none — 2026-11-11: Data/StatWeights.lua starting points for all 9 classes (labelled as such), per-char overrides, /ride weights. Spec detection from talents still to do
+- [~] P6-02 Item scoring · Claude · deps: P6-01 — 2026-11-11: GearScore (C_Item.GetItemStats x weights, ranged DPS for hunters, weaker ring/trinket, 2H vs MH+OH, required level, armor type by class and level 40), /ride score; 5 specs
+- [~] P6-03 Tooltip verdict · Claude · deps: P6-02 — 2026-11-11: one line on item tooltips (upgrade green, downgrade muted, usable at N amber, cannot wear). Waiting on: Gary checks 10 items; other-character verdicts still to do
 - [ ] P6-04 Bags and quest rewards · Claude · deps: P6-02
 - [ ] P6-05 Upgrade sources pack · Claude · deps: P3-06
 - [ ] P6-06 Nearby upgrades · Claude · deps: P6-02, P6-05, P2-07, P3-01
