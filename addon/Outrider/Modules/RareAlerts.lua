@@ -59,13 +59,19 @@ function M:OnRareSeen(_, info)
   local button = { label = "Target", macro = "/targetexact " .. info.name }
   local tame = ns.Modules:Get("TameHelper")
   local myLevel = ns.Compat.Call("UnitLevel", "player") or 0
+  local note
   if tame and tame.enabled and info.tameable and (not info.level or info.level <= myLevel) then
     button = { label = "Pull/Tame", macro = tame:Body(info.name) }
+    -- Classic rule (Gary, 2026-11-11): you can't tame while you have a pet,
+    -- even a dismissed one; it has to be in a stable slot.
+    local petName = ns.Compat.Readable(ns.Compat.Call("UnitName", "pet"))
+    if petName then note = "Stable " .. petName .. " first: /ride near stable" end
   end
   if s.toast and info.name then
     ns.Toast:Show({
       title = "Rare: " .. info.name,
-      text = self:Text(info),
+      text = note and (self:Text(info) .. "
+" .. note) or self:Text(info),
       color = "warn",
       sound = s.sound and ns.Toast:SoundID(s.soundName) or nil,
       duration = 20,

@@ -108,3 +108,13 @@ T.describe("rare alerts for hunters", function()
     T.ok(ns.Modules:Get("RareScan"):IsWatched(nil, "Ghost Howl"))
   end)
 end)
+
+T.describe("rare alerts stable hint", function()
+  T.it("a tameable rare while a pet is out says to stable it first", function()
+    local game, ns = session()
+    game.units.pet = { guid = "Pet-0-5250-0-777-2971-0100000001", name = "Rake" }
+    game.units.target = rare(80020, "Tame Me Too", { level = 20 })
+    game:fire("PLAYER_TARGET_CHANGED")
+    T.contains(ns.Toast.visible[1].text:GetText(), "Stable Rake first")
+  end)
+end)
