@@ -46,7 +46,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 2: Hunter tools and rares  ([phases/P2_hunter_rares.md](phases/P2_hunter_rares.md))
 
-- [~] P2-01 Discovery: record what Gary meets · Claude · deps: P1-04 — 2026-11-11: Modules/Discovery.lua (target/mouseover/throttled nameplates/NPC windows, quality ranks, interact averaging, roles, layer outside instances, /ride discovered), ns.AddCommand for module commands; 7 specs. Waiting on Gary: target 5 NPCs + talk to a vendor
+- [x] P2-01 Discovery: record what Gary meets · Claude · deps: P1-04 — 2026-11-11: in game 17+ NPCs captured on map 2521 by mouseover/nameplate/interact; vendor (Railee Thriceforged), banker, stable master tagged with quality interact; 7 specs
 - [ ] P2-02 Rare data pack seed · Both · deps: P2-01
 - [~] P2-03 RareScan · Claude · deps: P2-01 — 2026-11-11: Modules/RareScan.lua (classification/pack/watchlist, OTR_RARE_SEEN, 60 s dedupe with dead/layer re-fire, batched nameplates, secret-safe, nameplate CVar hint, /ride watch|unwatch per char); 8 specs. Waiting on Gary: mouse over a rare
 - [~] P2-04 RareAlerts · Claude · deps: P2-03, P1-05, P1-06 — 2026-11-11: Modules/RareAlerts.lua (toast + sound + Target secure button /targetexact, 5 min per-NPC cooldown, modes all/pack/watch, yields to RareScanner); 6 specs. Waiting on Gary: a real rare

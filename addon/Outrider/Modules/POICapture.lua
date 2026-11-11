@@ -31,7 +31,35 @@ function M:OnInitialize()
   self.db = g.pois
 end
 
+-- Discovery tagged NPC windows before places existed (and still does);
+-- turn those roles into places so earlier visits show on the map too.
+local ROLE_KIND = { vendor = "vendor", banker = "bank", stablemaster = "stable_master", trainer = "trainer",
+  flightmaster = "flight_master" }
+
+function M:Backfill()
+  local npcs = ns.db.global.discovered and ns.db.global.discovered.npcs or {}
+  local faction = C.Call("UnitFactionGroup", "player")
+  local added = 0
+  for npcID, e in pairs(npcs) do
+    if e.quality == "interact" and e.mapID and e.x then
+      for _, role in ipairs(e.roles or {}) do
+        local kind = ROLE_KIND[role]
+        local id = kind and ("npc-" .. npcID .. "-" .. kind)
+        if id and not self.db[id] then
+          self.db[id] = { id = id, kind = kind, mapID = e.mapID, x = e.x, y = e.y, n = e.posN or 1, npcID = npcID,
+            name = e.name, verified = false, source = "discovery", faction = faction, firstSeen = e.firstSeen,
+            lastSeen = e.lastSeen }
+          added = added + 1
+        end
+      end
+    end
+  end
+  if added > 0 then self:Info("backfilled %d places from earlier NPC visits", added) end
+  return added
+end
+
 function M:OnEnable()
+  self:Backfill()
   for event, kind in pairs(EVENTS) do
     self:On(event, function(mod) mod:CaptureWindow(kind) end)
   end

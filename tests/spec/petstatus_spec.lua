@@ -92,3 +92,16 @@ T.describe("pet status secret values", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("pet log under event storms", function()
+  T.it("the pet line is logged even when health/focus updates flood in", function()
+    local game, ns, M = session()
+    game.units.pet = pet()
+    game:fire("UNIT_PET", "player")
+    for _ = 1, 20 do game:fire("UNIT_POWER_UPDATE", "pet") game:fire("UNIT_HEALTH", "pet") end
+    game:advance(0.5)
+    local found = false
+    for _, l in ipairs(ns.Log:Tail(15)) do if ns.Log:FormatLine(l):find("pet Rake npcID", 1, true) then found = true end end
+    T.ok(found)
+  end)
+end)

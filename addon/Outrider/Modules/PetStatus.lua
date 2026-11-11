@@ -39,7 +39,11 @@ function M:OnDisable()
   if self.feed then ns.SecureButtons:Release(self.feed) self.feed = nil end
 end
 
+-- The throttle keeps only the latest call's arguments, and health/focus
+-- updates arrive many times a second, so a "pet changed" reason would be
+-- lost. Remember it in a flag instead (bug seen in game 2026-11-11).
 function M:Update(why)
+  if why then self.logPending = true end
   ns.Throttle("petstatus", 0.2, function() M:Refresh(why) end)
 end
 
@@ -125,7 +129,7 @@ end
 
 function M:Refresh(why)
   local d = self:Read()
-  if why == "login" or why == "pet changed" then self:LogPet(d) end
+  if self.logPending then self.logPending = false self:LogPet(d) end
   if not d then
     if self.frame then self.frame:Hide() end
     if self.feed then ns.SecureButtons:SetShown(self.feed, false) end
