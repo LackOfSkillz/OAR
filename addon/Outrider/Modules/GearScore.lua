@@ -32,6 +32,8 @@ local RANGED = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THRO
 -- armor subclass: 1 cloth, 2 leather, 3 mail, 4 plate; best each class wears (by level)
 local ARMOR = { PRIEST = 1, MAGE = 1, WARLOCK = 1, ROGUE = 2, DRUID = 2 }
 local ARMOR40 = { HUNTER = { 2, 3 }, SHAMAN = { 2, 3 }, WARRIOR = { 3, 4 }, PALADIN = { 3, 4 } }
+local SHIELD_CLASSES = { WARRIOR = true, PALADIN = true, SHAMAN = true }
+local OFFHAND = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true, INVTYPE_HOLDABLE = true }
 
 function M:Weights()
   local base = ns.StatWeights[ns.PlayerClass()] or ns.StatWeights.WARRIOR
@@ -77,7 +79,14 @@ end
 function M:Usable(link, info)
   local level = C.Call("UnitLevel", "player") or 1
   if info and info.reqLevel and info.reqLevel > level then return "level " .. info.reqLevel, info.reqLevel end
-  local _, class, subclass = itemClass(link)
+  local equipLoc, class, subclass = itemClass(link)
+  if class == 4 and subclass == 6 and not SHIELD_CLASSES[ns.PlayerClass()] then return "can't wear" end
+  -- off-hand items do nothing while a two-hander is in the main hand
+  -- (Gary's hunter was told an orb was a +100% upgrade, 2026-11-11)
+  if OFFHAND[equipLoc or (info and info.equipLoc) or ""] then
+    local mh = C.Call("GetInventoryItemLink", "player", 16)
+    if mh and select(1, itemClass(mh)) == "INVTYPE_2HWEAPON" then return "two-hander" end
+  end
   if class == 4 and subclass and subclass >= 1 and subclass <= 4 then
     local cls = ns.PlayerClass()
     local max = ARMOR[cls]
@@ -97,14 +106,16 @@ function M:Compare(link)
   local slots = equipLoc and SLOTS[equipLoc]
   if not slots then return nil end
   local new = self:Score(link, equipLoc)
-  local old
+  local old, empty = nil, true
   if equipLoc == "INVTYPE_2HWEAPON" then
     local mh, oh = C.Call("GetInventoryItemLink", "player", 16), C.Call("GetInventoryItemLink", "player", 17)
     old = (mh and self:Score(mh, "INVTYPE_WEAPON") or 0) + (oh and self:Score(oh, "INVTYPE_WEAPONOFFHAND") or 0)
+    empty = not mh and not oh
   else
     for _, slot in ipairs(slots) do
       local worn = C.Call("GetInventoryItemLink", "player", slot)
       local s = worn and self:Score(worn, equipLoc) or 0
+      if worn then empty = false end
       if worn and linkID(worn) == linkID(link) then s = new end
       if not old or s < old then old = s end -- compare with the weaker ring/trinket
     end
@@ -113,7 +124,7 @@ function M:Compare(link)
   local pct
   if old > 0 then pct = (new - old) / old * 100 elseif new > 0 then pct = 100 else pct = 0 end
   local why, futureLevel = self:Usable(link, info)
-  return { pct = pct, new = new, old = old, slot = slots[1], why = why, future = futureLevel }
+  return { pct = pct, new = new, old = old, slot = slots[1], why = why, future = futureLevel, empty = empty }
 end
 
 function M:Verdict(link)
@@ -121,7 +132,9 @@ function M:Verdict(link)
   if not r then return nil end
   local role = (ns.StatWeights[ns.PlayerClass()] or {}).role or ""
   if r.why == "can't wear" then return "can't wear this armor type", "muted" end
+  if r.why == "two-hander" then return "not with your two-hander", "muted" end
   local pct = math.floor(r.pct + 0.5)
+  if not r.why and r.empty and r.new > 0 then return "fills an empty slot (" .. role .. ")", "good" end
   if r.why then
     if pct > 0 then return string.format("usable at %d (+%d%%)", r.future or 0, pct), "warn" end
     return nil

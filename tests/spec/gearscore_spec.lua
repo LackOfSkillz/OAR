@@ -62,3 +62,26 @@ T.describe("gear advisor", function()
     end
   end)
 end)
+
+T.describe("gear advisor off-hand", function()
+  T.it("an orb is not an upgrade while a two-hander is worn; shields only for shield classes; empty slot wording", function()
+    local game = mock.new()
+    game.items = {
+      [701] = { name = "Big Staff", equipLoc = "INVTYPE_2HWEAPON", class = 2, subclass = 10 },
+      [702] = { name = "Beaded Orb", equipLoc = "INVTYPE_HOLDABLE", class = 4, subclass = 0 },
+      [703] = { name = "Buckler", equipLoc = "INVTYPE_SHIELD", class = 4, subclass = 6 },
+      [704] = { name = "Gloves", equipLoc = "INVTYPE_HAND", class = 4, subclass = 2 },
+    }
+    game.itemStats = { [701] = { ITEM_MOD_AGILITY_SHORT = 5 }, [702] = { ITEM_MOD_AGILITY_SHORT = 1 },
+      [703] = { ITEM_MOD_STAMINA_SHORT = 3 }, [704] = { ITEM_MOD_AGILITY_SHORT = 2 } }
+    game.worn = { [16] = 701 }
+    local ns = game:loadAddon()
+    game:login()
+    local G = ns.GearScore
+    local link = function(id) return "|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r" end
+    T.eq((G:Verdict(link(702))), "not with your two-hander")
+    T.eq((G:Verdict(link(703))), "can't wear this armor type", "hunters can't use shields")
+    T.contains((G:Verdict(link(704))), "fills an empty slot")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
