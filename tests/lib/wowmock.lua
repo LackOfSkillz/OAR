@@ -366,6 +366,7 @@ function M.new(opts)
   }
   base.GetInventoryItemLink = function(_, slot)
     if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
+    if slot == 16 and game.pole then return "|cffffffff|Hitem:6256::::::::24:::::|h[Fishing Pole]|h|r" end
     if slot == 0 and (game.ammo or opts.ammo) then return "|cffffffff|Hitem:2512::::::::24:::::|h[Rough Arrow]|h|r" end
   end
   base.GetInventoryItemCount = function(_, slot) if slot == 0 then return game.ammo or opts.ammo or 0 end return 1 end
@@ -397,6 +398,19 @@ function M.new(opts)
   base.GetRepairAllCost = function() return game.repairCost or 0, (game.repairCost or 0) > 0 end
   base.RepairAllItems = function(guild) game.repaired = { guild = guild } game.repairCost = 0 end
   base.CanGuildBankRepair = function() return false end
+  -- override bindings: game.overrides[key] = action or "CLICK name"
+  base.SetOverrideBinding = function(owner, prio, key, action)
+    if game.combat then game.blocked[#game.blocked + 1] = "SetOverrideBinding" end
+    game.overrides = game.overrides or {}
+    game.overrides[key] = action
+  end
+  base.SetOverrideBindingClick = function(owner, prio, key, name)
+    if game.combat then game.blocked[#game.blocked + 1] = "SetOverrideBindingClick" end
+    game.overrides = game.overrides or {}
+    game.overrides[key] = "CLICK " .. name
+  end
+  base.ClearOverrideBindings = function() game.overrides = {} end
+  base.SetCVar = function(k, v) opts.cvars = opts.cvars or {} opts.cvars[k] = v end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
@@ -431,6 +445,7 @@ function M.new(opts)
     if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, nil, nil, it.sell or 0 end
   end
   base.C_Item.GetItemInfoInstant = function(id)
+    if id == 6256 then return id, nil, nil, nil, nil, 2, 20 end
     return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
   end
   base.Enum = { TooltipDataType = { Unit = 2, Item = 0 }, SpellBookSpellBank = { Player = 0 } }
@@ -499,7 +514,8 @@ function M.new(opts)
     game.macros[#game.macros + 1] = { name = name, icon = icon, body = body, perChar = perChar }
     return #game.macros
   end
-  base.C_CVar = { GetCVar = function(name) return (opts.cvars or {})[name] end }
+  base.C_CVar = { GetCVar = function(name) return (opts.cvars or {})[name] end,
+    SetCVar = function(k, v) opts.cvars = opts.cvars or {} opts.cvars[k] = v end }
 
   -- C_ namespaces
   local files, meta = M.tocFiles()
