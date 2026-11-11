@@ -73,6 +73,7 @@ Modules\Comm.lua
 Modules\RareShare.lua
 Modules\Errands.lua
 Modules\Feed.lua
+Modules\Chat.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

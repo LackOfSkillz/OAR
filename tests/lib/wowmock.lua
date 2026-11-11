@@ -296,6 +296,8 @@ function M.new(opts)
     else
       local old = env[a]
       env[a] = function(...) local r = { old(...) } b(...) return unpack(r) end
+      game.secureHooked = game.secureHooked or {}
+      game.secureHooked[a] = env[a] -- hooksecurefunc is the sanctioned way; not an overwrite
     end
   end
   base.issecurevariable = function() return true end
@@ -440,6 +442,9 @@ function M.new(opts)
     end,
   }
   base.IsInGuild = function() return opts.inGuild or false end
+  game.chatFilters = {}
+  base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
+  base.SetItemRef = function() end
   base.IsResting = function() return game.resting or false end
   base.GetInventoryItemDurability = function(slot) local d = game.durability and game.durability[slot] if d then return d[1], d[2] end end
   base.IsInGroup = function() return opts.inGroup or false end
@@ -742,7 +747,8 @@ end
 function Game:overwrittenGlobals()
   local out = {}
   for k, v in pairs(self.base) do
-    if rawget(self.env, k) ~= v then out[#out + 1] = k end
+    local now = rawget(self.env, k)
+    if now ~= v and not (self.secureHooked and self.secureHooked[k] == now) then out[#out + 1] = k end
   end
   table.sort(out)
   return out
@@ -753,4 +759,17 @@ function Game:chatText()
 end
 
 M.Game = Game
+
+-- Run a chat line through the registered message filters, like ChatFrame does.
+-- Returns hidden, text.
+function Game:chatLine(event, msg, author)
+  local text = msg
+  for _, fn in ipairs(self.chatFilters[event] or {}) do
+    local r = { fn(nil, event, text, author) }
+    if r[1] then return true end
+    if r[2] then text = r[2] end
+  end
+  return false, text
+end
+
 return M
