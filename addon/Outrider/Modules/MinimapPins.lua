@@ -15,6 +15,10 @@ local M = ns:NewModule("MinimapPins", {
   defaults = {},
 })
 
+-- Set true to log the numbers behind the nearest dot once a second (used to
+-- fix the drifting dots on 2026-11-11; off once verified in game).
+M.DIAG = false
+
 -- dNorth/dWest in yards from the player; returns x, y pixels from the
 -- minimap centre (x right, y up), or nil when outside the radius.
 function M.Offset(dNorth, dWest, radius, halfSize, facing)
@@ -119,7 +123,7 @@ function M:Update()
   -- once a second, the numbers behind the nearest dot, plus our raw position
   -- sources, so Claude can see which axis or sign is off.
   local now = GetTime and GetTime() or 0
-  if nearest and now - (self.lastDiag or 0) >= 1 then
+  if M.DIAG and nearest and now - (self.lastDiag or 0) >= 1 then
     self.lastDiag = now
     local _, mx, my = C.PlayerPosition("player")
     local uy, ux = C.Call("UnitPosition", "player")
