@@ -394,6 +394,9 @@ function M.new(opts)
       return { reagentSlotSchematics = slots }
     end,
   }
+  base.GetRepairAllCost = function() return game.repairCost or 0, (game.repairCost or 0) > 0 end
+  base.RepairAllItems = function(guild) game.repaired = { guild = guild } game.repairCost = 0 end
+  base.CanGuildBankRepair = function() return false end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
@@ -410,6 +413,13 @@ function M.new(opts)
   base.C_Container = {
     GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
     -- game.counts[bag][slot] overrides the default stack of 5
+    UseContainerItem = function(bag, slot)
+      if game.combat then error("UseContainerItem in combat") end
+      local id = game.bags[bag][slot]
+      game.sold = game.sold or {}
+      game.sold[#game.sold + 1] = id
+      game.bags[bag][slot] = nil
+    end,
     GetContainerItemInfo = function(bag, slot)
       local id = game.bags and game.bags[bag] and game.bags[bag][slot]
       if id then return { itemID = id, stackCount = (game.counts and game.counts[bag] and game.counts[bag][slot]) or 5 } end

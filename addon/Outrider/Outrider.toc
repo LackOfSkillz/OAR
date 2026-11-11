@@ -58,6 +58,7 @@ Modules\Inventory.lua
 Modules\Professions.lua
 Modules\Prices.lua
 Modules\Ledger.lua
+Modules\Merchant.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

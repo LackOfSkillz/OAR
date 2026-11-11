@@ -100,7 +100,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P5-06 Merchant's Favor planner · Both · deps: P5-01, P5-05
 - [ ] P5-07 Auction helper · Claude · deps: P5-05
 - [~] P5-08 Ledger · Claude · deps: P5-05 — 2026-11-11: Modules/Ledger.lua (money changes booked to vendor/AH/mail/training/flights/bank/loot, session net + gold per hour logged at logout, last 30 sessions per char); 1 spec. Loot value and AH mail detail still to do
-- [ ] P5-09 Merchant helper · Claude · deps: P5-05
+- [~] P5-09 Merchant helper · Claude · deps: P5-05 — 2026-11-11: Modules/Merchant.lua (panel beside the vendor: Sell junk greys only, 12 per click for buyback; Repair with cost, guild repair if allowed; never on open); vendor goods recorded by POICapture; 2 specs. Waiting on: Gary sells junk and repairs
 - [ ] P5-10 Mailbox collect · Claude · deps: P5-08
 - [ ] P5-11 Fishing: one key · Both · deps: P1-05
 - [ ] P5-12 Fishing: gear, log, cooking · Claude · deps: P5-11, P5-01
