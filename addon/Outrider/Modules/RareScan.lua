@@ -137,6 +137,14 @@ ns.AddCommand("unwatch", "<name or npcID>  stop watching", function(arg)
   if ok then ns.Print("stopped watching %s", tostring(k)) end
 end)
 
+-- P9-01: what the advisor needs (plain data)
+function M:Snapshot()
+  local watch = {}
+  for k in pairs(self:Settings().watch) do watch[#watch + 1] = k end
+  table.sort(watch, function(a, b) return tostring(a) < tostring(b) end)
+  return { watch = watch }
+end
+
 function M:Activity()
   local n, watch = 0, {}
   for _ in pairs(self.last) do n = n + 1 end

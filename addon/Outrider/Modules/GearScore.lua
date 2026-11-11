@@ -159,6 +159,13 @@ function M:OnEnable()
   end)
 end
 
+-- P9-01: the weights the verdicts use
+function M:Snapshot()
+  local w, out = self:Weights(), {}
+  for k, v in pairs(w) do if type(v) == "number" then out[k] = v end end
+  return { role = w.role, weights = out }
+end
+
 function M:Activity()
   local w = ns.StatWeights[ns.PlayerClass()] or {}
   return "item tooltips compare with your gear (" .. tostring(w.role or "?") .. " weights)"

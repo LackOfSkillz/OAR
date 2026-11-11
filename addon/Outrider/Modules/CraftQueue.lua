@@ -92,6 +92,20 @@ function M:ShoppingText()
   return #lines > 0 and table.concat(lines, "\n") or "Queue is empty. Click a recipe on the left to add it."
 end
 
+-- P9-01: queued crafts and what is still missing for them
+function M:Snapshot()
+  local queue = {}
+  for key, n in pairs(self:Settings().queue) do
+    local r = self:Find(key)
+    queue[#queue + 1] = { key = key, name = r and r.name, count = n }
+  end
+  local missing = {}
+  for _, row in ipairs(self:Shopping()) do
+    if row.missing > 0 then missing[#missing + 1] = { itemID = row.itemID, missing = row.missing, alts = row.alts } end
+  end
+  return { queue = queue, missing = missing }
+end
+
 function M:Activity()
   local n = 0
   for _, c in pairs(self:Settings().queue) do n = n + c end

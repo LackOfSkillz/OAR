@@ -1,4 +1,4 @@
-# Phase 9: AI advisor (parked; start only when Gary says so)
+# Phase 9: AI advisor (started 2026-11-11 at Gary's go-ahead)
 
 **Goal:** a model on Gary's PC (local, or a frontier model he configures) reads a snapshot of the character and offers a short list of options in game; choosing one only does harmless, non-protected things (waypoint, track quest, open a panel, show an item). Design: `docs/AI_ADVISOR_LATER.md`.
 

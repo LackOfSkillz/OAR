@@ -154,7 +154,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 9: AI advisor (parked; start only when Gary says so)  ([phases/P9_ai_advisor.md](phases/P9_ai_advisor.md))
 
-- [ ] P9-01 Richer snapshots · Claude · deps: P2–P6 modules
+- [~] P9-01 Richer snapshots · Claude · deps: P2–P6 modules · 2026-11-11: Gary said proceed with P9. Snapshot adds quest log (id, title, level, complete) and module parts: RareScan watchlist, Sightings last 25 with window state, Professions skills, CraftQueue queue + missing, Nearby top 8, GearScore role + weights, Ledger gold per hour, Errands; plain-data filter, 50 KB cap (drops the biggest part). RareAlerts no longer errors on a nameless sighting. 2 specs
 - [ ] P9-02 `/ride ask` · Claude · deps: P9-01
 - [ ] P9-03 Companion app · Claude · deps: P9-02
 - [ ] P9-04 Model wiring · Both · deps: P9-03

@@ -349,6 +349,13 @@ function M.new(opts)
   base.C_QuestLog = {
     IsQuestFlaggedCompleted = function(id) return game.questsDone and game.questsDone[id] or false end,
     IsOnQuest = function(id) return game.questsActive and game.questsActive[id] or false end,
+    -- quest log: game.questLog = { {title, questID, level, isHeader, complete} }
+    GetNumQuestLogEntries = function() return #(game.questLog or {}) end,
+    GetInfo = function(i) return game.questLog and game.questLog[i] end,
+    IsComplete = function(id)
+      for _, q in ipairs(game.questLog or {}) do if q.questID == id then return q.complete or false end end
+      return false
+    end,
   }
   base.UnitRace = function(unit) if unit == "player" then return player.race, player.race end end
   base.UnitLevel = function(unit)

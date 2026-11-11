@@ -85,6 +85,13 @@ function M:Go(e)
   return ok
 end
 
+-- P9-01: today's town list
+function M:Snapshot()
+  local out = {}
+  for i, e in ipairs(self:List()) do out[i] = { kind = e.kind, text = e.text } end
+  return { errands = out }
+end
+
 function M:Activity()
   local n = #self:List()
   return n == 0 and "nothing to do in town" or (n .. " errands for the next town")

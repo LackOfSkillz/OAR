@@ -65,6 +65,14 @@ function M:OnLogout()
     ns.Prices.Money(math.floor(math.abs(perHour))), #parts > 0 and table.concat(parts, "; ") or "no change")
 end
 
+-- P9-01: this session and the saved sessions' gold per hour
+function M:Snapshot()
+  local net, perHour = self:Summary()
+  local g = ns.Forecasts and ns.Forecasts.Gold(ns.db.char.ledger)
+  return { sessionNet = net, sessionPerHour = math.floor(perHour), avgPerHour = g and math.floor(g.perHour),
+    sessions = g and g.sessions }
+end
+
 function M:Activity()
   local net, perHour = self:Summary()
   return string.format("this session %s%s, %s per hour", net < 0 and "-" or "+", ns.Prices.Money(math.abs(net)),

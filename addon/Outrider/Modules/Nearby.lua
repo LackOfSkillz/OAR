@@ -179,6 +179,18 @@ end
 
 function M:OnDisable() ns.ThrottleCancel("nearby:scan") end
 
+-- P9-01: the best upgrade candidates right now (top 8)
+function M:Snapshot()
+  local out = {}
+  for i, c in ipairs(self:Candidates()) do
+    if i > 8 then break end
+    local w = c.where or {}
+    out[i] = { itemID = c.itemID, name = c.name, pct = math.floor(c.pct + 0.5), source = c.kind,
+      who = w.who, mapID = w.mapID, x = w.x, y = w.y }
+  end
+  return { candidates = out }
+end
+
 function M:Activity()
   if self.pack == false then return "no gear pack installed; alts' items only" end
   return "upgrades from quests, vendors and drops in this zone (Gear tab)"

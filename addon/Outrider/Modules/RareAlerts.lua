@@ -53,6 +53,11 @@ function M:OnRareSeen(_, info)
   local now = GetTime and GetTime() or time()
   local ok, why = self:ShouldAlert(info, now)
   if not ok then self:Debug("no alert npcID=%d: %s", info.npcID, why) return end
+  -- a sighting without a readable name (secret in combat, or shared) still alerts
+  if type(info.name) ~= "string" or info.name == "" then
+    local pack = ns.Data:Get("rare", info.npcID)
+    info.name = pack and pack.name or ("NPC " .. tostring(info.npcID))
+  end
   self.lastAlert[info.npcID] = now
   self.lastInfo = info
   local s = self:Settings()

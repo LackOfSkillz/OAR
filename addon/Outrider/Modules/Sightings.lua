@@ -153,6 +153,22 @@ function M:Describe(npcID, layer, now)
   return string.format("window passed, %s %d min ago (%s)", w.last.state, ago, w.source)
 end
 
+-- P9-01: last sighting per rare (newest 25) with its respawn window state
+function M:Snapshot()
+  local rows = {}
+  for npcID, list in pairs(self.db) do
+    local last = list[#list]
+    if last then
+      local w = self:Window(npcID, last.layer)
+      rows[#rows + 1] = { npcID = npcID, t = last.t, state = last.state, mapID = last.mapID, x = last.x, y = last.y,
+        layer = last.layer, how = last.how, window = w.state, observations = #(self.obs[npcID] or {}) }
+    end
+  end
+  table.sort(rows, function(a, b) return (a.t or 0) > (b.t or 0) end)
+  while #rows > 25 do table.remove(rows) end
+  return { recent = rows }
+end
+
 function M:Activity()
   local n, total = 0, 0
   for _, list in pairs(self.db) do n = n + 1 total = total + #list end

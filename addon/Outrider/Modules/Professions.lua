@@ -127,6 +127,17 @@ function M:Scan(why)
   end
 end
 
+-- P9-01: skill per profession (recipes stay out: too big for the advisor)
+function M:Snapshot()
+  local out = {}
+  for name, p in pairs(ns.db.char.professions or {}) do
+    local n = 0
+    for _ in pairs(p.recipes or {}) do n = n + 1 end
+    out[name] = { skill = p.skill, max = p.max, recipes = n }
+  end
+  return out
+end
+
 function M:Activity()
   local parts = {}
   for name, p in pairs(self:Store()) do
