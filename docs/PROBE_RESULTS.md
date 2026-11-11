@@ -72,6 +72,8 @@ Probe 2026-11-11 11:09 (build 70888): 78 present, 21 missing. The client is a mo
 | Unit | GUID readable | Name readable | Classification | Note |
 |---|---|---|---|---|
 | player (out of combat) | yes | yes | normal | 2026-11-11, map 2521 |
-| target (out of combat) | | | | |
-| target (in combat) | | | | |
-| nameplate1 | | | | |
+| target (out of combat) | yes | yes | normal, family Bear | 2026-11-11, npcID 250927 Shadowgale Ursera |
+| target (in combat) | yes | yes | normal, family Bear | 2026-11-11 11:14:33: no secret values on GUID/name/classification/family |
+| nameplate1 (out of and in combat) | yes | yes | normal, family Bear | 2026-11-11: nameplate reads work in combat too |
+
+Combat timing: `PLAYER_REGEN_DISABLED` fires while `InCombatLockdown()` is still false (2026-11-11). Protected changes made inside that handler still go through; checks that need lockdown wait a moment.

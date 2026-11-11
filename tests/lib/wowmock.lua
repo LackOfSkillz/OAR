@@ -462,9 +462,16 @@ function Game:login()
   return self.ns
 end
 
+-- Like the real client: PLAYER_REGEN_DISABLED fires while InCombatLockdown()
+-- is still false; lockdown starts right after the handlers run.
 function Game:setCombat(on)
-  self.combat = on
-  self:fire(on and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
+  if on then
+    self:fire("PLAYER_REGEN_DISABLED")
+    self.combat = true
+  else
+    self.combat = false
+    self:fire("PLAYER_REGEN_ENABLED")
+  end
 end
 
 -- Runs due timers in time order (a timer scheduled by a callback runs in the

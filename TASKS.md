@@ -21,7 +21,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [x] P0-05 First deploy and login · Both · deps: P0-02, P0-03 — 2026-11-11: build bd98a54 loaded, version line + login complete, greeting shown, 0 errors (first try missed: WoW was started before the deploy)
 - [x] P0-06 Real interface number · Both · deps: P0-05 — 2026-11-11: client reports iface 16001, build 1.60.1.70888; TOC already 16001, no change; C1 confirmed
 - [x] P0-07 SavedVariables round trip (critical) · Both · deps: P0-05 — 2026-11-11: PASS. loads rose over 3 reloads and a full restart (client 10:51:24), sv=yes, debug kept; C4 confirmed fixed
-- [~] P0-08 API probe · Both · deps: P0-05 — 2026-11-11: auto probe ran: 78 present, 21 missing, PROBE_RESULTS filled; Classic pet happiness/loyalty/stable APIs missing (P2-09 redesign). Still needed: in-combat + nameplate unit samples (auto on next fight)
+- [x] P0-08 API probe · Both · deps: P0-05 — 2026-11-11: auto probe 78 present / 21 missing; unit samples out of and in combat (target + nameplate fully readable, no secrets); PROBE_RESULTS and C3/C5/C6 updated. Classic pet APIs missing → P2-09 redesign
 - [~] P0-09 Error pipeline check · Both · deps: P0-05 — 2026-11-11: deliberate error recorded once with stack; combat queue ran out of combat. Still needed: selftest combat IN combat; BugGrabber not installed
 - [x] P0-10 Name and rename · Gary decides, Claude renames · deps: none — 2026-11-11: renamed to Outrider in v0.2.0; GitHub repo rename + remote update left for Claude Code on the PC
 - [ ] P0-11 Screenshot loop · Both · deps: P0-05

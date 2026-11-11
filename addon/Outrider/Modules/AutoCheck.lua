@@ -106,13 +106,24 @@ function M:OnCombatStart()
   self.inFight, self.combatTargetSampled = true, false
   local n = self.combats
   self:Info("combat %d started: sampling", n)
+  -- PLAYER_REGEN_DISABLED fires just BEFORE lockdown starts (seen in game
+  -- 2026-11-11: InCombatLockdown() was still false), so the queue checks
+  -- wait half a second, when lockdown is really on.
+  ns.Timer.After(0.5, function()
+    if not ns.Compat.InCombat() then M:Info("combat %d: lockdown not on 0.5 s in, skipped", n) return end
+    M:CombatChecks(n)
+  end, "autocheck:lockdown")
   ns.Timer.After(1, function()
     if ns.Compat.InCombat() then ns.Probe:RecordUnits("combat") end
   end, "autocheck:combat")
-  ns.Combat:Run("autocheck", function()
+end
+
+function M:CombatChecks(n)
+  local queued = ns.Combat:Run("autocheck", function()
     M.inFight = false
     M:Info("combat queue ran after combat %d", n)
   end, "autocheck:combat" .. n)
+  self:Info("combat %d: queue job %s", n, queued == false and "queued until combat ends" or "ran at once (not locked)")
   local sb = ns.SecureButtons
   if sb and sb.test then
     local macro = (sb.test.wantMacro == "/wave") and "/cheer" or "/wave"
