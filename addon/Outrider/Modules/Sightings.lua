@@ -30,6 +30,7 @@ end
 function M:OnEnable()
   self:On("OTR_RARE_SEEN", self.OnRareSeen)
   self:On("UNIT_PET", self.OnPet)
+  self:On("UNIT_SPELLCAST_CHANNEL_START", self.OnChannel)
 end
 
 function M:Record(npcID, s)
@@ -72,9 +73,28 @@ function M:OnRareSeen(_, info)
 end
 
 -- A freshly tamed pet keeps the beast's npcID in its GUID.
+-- On Forever every hunter pet has the same generic npcID (165189, seen when
+-- Gary tamed Mystmane, 2026-11-11), so the beast is remembered when the Tame
+-- Beast channel starts, and the new pet within 30 s is that beast.
+function M:OnChannel(_, unit, _, spellID)
+  if unit ~= "player" then return end
+  local info = C.Call("C_Spell.GetSpellInfo", spellID)
+  local name = type(info) == "table" and C.Readable(info.name) or C.Readable((C.Call("GetSpellInfo", spellID)))
+  if name ~= "Tame Beast" then return end
+  local npcID = C.UnitNpcID("target")
+  if npcID then self.taming = { npcID = npcID, t = GetTime and GetTime() or 0 } end
+end
+
 function M:OnPet(_, unit)
   if unit ~= "player" then return end
-  local id = C.UnitNpcID("pet")
+  local id
+  local now = GetTime and GetTime() or 0
+  if self.taming and now - self.taming.t <= 30 and C.Call("UnitExists", "pet") then
+    id = self.taming.npcID
+    self.taming = nil
+  else
+    id = C.UnitNpcID("pet")
+  end
   if not id or id == self.lastPetID then return end
   self.lastPetID = id
   if not ns.Data:Get("rare", id) and not self.db[id] then return end

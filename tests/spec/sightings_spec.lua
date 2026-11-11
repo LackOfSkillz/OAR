@@ -71,3 +71,16 @@ T.describe("sightings", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("tame detection on Forever", function()
+  T.it("the rare being channeled with Tame Beast is recorded as tamed, even with a generic pet id", function()
+    local game, ns, S = session()
+    seen(ns, 259388, "alive", 1, 1000)
+    game.spells[#game.spells + 1] = { name = "Tame Beast", id = 1515 }
+    game.units = { target = { guid = "Creature-0-5250-0-777-259388-00000001", name = "Mystmane" } }
+    game:fire("UNIT_SPELLCAST_CHANNEL_START", "player", "cast-guid", 1515)
+    game.units.pet = { guid = "Pet-0-5250-0-777-165189-0100000001", name = "Bear" }
+    game:fire("UNIT_PET", "player")
+    T.eq(S:Last(259388).state, "tamed")
+  end)
+end)
