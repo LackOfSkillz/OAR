@@ -352,7 +352,11 @@ function M.new(opts)
   base.UnitClassification = function(unit) return game.units and game.units[unit] and game.units[unit].classification or "normal" end
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
   base.GetMoney = function() return player.money end
-  base.GetInventoryItemLink = function(_, slot) if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end end
+  base.GetInventoryItemLink = function(_, slot)
+    if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
+    if slot == 0 and (game.ammo or opts.ammo) then return "|cffffffff|Hitem:2512::::::::24:::::|h[Rough Arrow]|h|r" end
+  end
+  base.GetInventoryItemCount = function(_, slot) if slot == 0 then return game.ammo or opts.ammo or 0 end return 1 end
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99

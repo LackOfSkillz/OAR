@@ -56,7 +56,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P2-08 TameHelper · Both · deps: P2-04, P1-05 — 2026-11-11: /ride tamemacro <Name> writes pull+tame macro (Concussive out of combat; Tame Beast, Wing Clip castsequence in combat) via EditMacro/CreateMacro; 3 specs. Toast Tame button still to do
 - [~] P2-09 PetStatus · Claude · deps: P1-07 — 2026-11-11: Modules/PetStatus.lua on modern API (name/level/XP/health/focus, Feed = /cast Feed Pet secure button against UIParent, happiness only if an API exists, pet buffs logged per login to find Forever happiness); 5 specs. Waiting on Gary: summon pet, screenshot
 - [ ] P2-10 BeastInfo tooltips · Claude · deps: P2-02
-- [ ] P2-11 Ammo · Claude · deps: P1-06
+- [~] P2-11 Ammo · Claude · deps: P1-06 — 2026-11-11: Modules/Ammo.lua (slot 0 count, toast once <200 and once <50, count logged at login); 3 specs. Waiting on Gary: login log confirms the slot reads
 - [ ] P2-12 Gate G2 field test · Both · deps: all P2
 - [ ] **G2** gate: in the field, alerts fire for The Rake, Mystmane and Ghost Howl (or whichever of the three Gary can reach, plus two other rares); the target/tame button works with one click; sightings show the right zone, position and layer in the Rares tab; no errors or taint in a 1-hour hunting session.
 
