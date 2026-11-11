@@ -49,6 +49,7 @@ Data\Macros_Hunter.lua
 Modules\MacroEngine.lua
 Modules\Spellbook.lua
 Modules\MacroLibrary.lua
+Modules\RankCheck.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

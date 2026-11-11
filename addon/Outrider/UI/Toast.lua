@@ -158,6 +158,23 @@ function Toast:Show(opts)
       if ns.Compat.InCombat() then body = body .. " " .. L.combatNote end
     end
   end
+  -- A plain (insecure) button that runs Lua on Gary's click, e.g. "Fix".
+  -- It is a child of the toast; only secure buttons must stay detached.
+  if not f.action then
+    f.action = ns.UI:Button(f, "", 70)
+    f.action:SetHeight(20)
+    f.action:SetPoint("BOTTOMRIGHT", -8, 6)
+  end
+  if opts.action and opts.action.fn then
+    f.action.label:SetText(opts.action.label or "OK")
+    f.action:SetScript("OnClick", function()
+      ns.Safe("toast:action", opts.action.fn)
+      Toast:Dismiss(f)
+    end)
+    f.action:Show()
+  else
+    f.action:Hide()
+  end
   f.text:SetText(body)
   self.visible[#self.visible + 1] = f
   self:Layout()

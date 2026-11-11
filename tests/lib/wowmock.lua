@@ -489,6 +489,18 @@ function M.new(opts)
     return 1, { GetXY = function() return v.x * 1000, v.y * 1000 end }
   end
   base.CreateVector2D = function(x, y) return { x = x, y = y } end
+  -- action bars: game.actions[slot] = spellID; spell info from game.spells
+  local function spellByID(id) for _, s in ipairs(game.spells) do if s.id == id then return s end end end
+  base.GetActionInfo = function(slot) local id = game.actions and game.actions[slot] if id then return "spell", id end end
+  base.C_Spell = { GetSpellInfo = function(id) local s = spellByID(id) return s and { name = s.name } end,
+    GetSpellSubtext = function(id) local s = spellByID(id) return s and s.rank and ("Rank " .. s.rank) or "" end,
+    PickupSpell = function(id) game.cursorSpell = id end }
+  base.PlaceAction = function(slot)
+    if game.combat then error("PlaceAction in combat") end
+    game.actions = game.actions or {}
+    game.actions[slot] = game.cursorSpell
+  end
+  base.ClearCursor = function() game.cursorSpell = nil end
   base.C_TaxiMap = { GetTaxiNodesForMap = function(mapID)
     return game.taxi and game.taxi[mapID] or {}
   end }

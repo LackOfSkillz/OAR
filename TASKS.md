@@ -83,7 +83,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P4-03 Library window · Claude · deps: P4-01, P4-02, P1-08 — 2026-11-11: hub Macros tab: class + general macros, state from spellbook/level/placeholders, filled body, plain-English explanation, notes; 1 spec. Waiting on Gary: screenshot
 - [~] P4-04 Installer · Both · deps: P4-03 — 2026-11-11: Install/Update/Remove/Pick up out of combat, per-char tracking, never touches macros Gary made, slot checks, TARGET from watchlist; 5 specs. Waiting on Gary: install Pull, AutoShot, PetCare and press them
 - [ ] P4-05 Live placeholders · Claude · deps: P4-04
-- [ ] P4-06 Rank-check · Both · deps: P4-02
+- [~] P4-06 Rank-check · Both · deps: P4-02 — 2026-11-11: Modules/RankCheck.lua (action slots vs highest known rank, toast with Fix button out of combat, logs findings at every login); toast gains plain action buttons; 3 specs. Waiting on: login log (does Forever auto-upgrade?) and a trainer visit
 - [ ] P4-07 Rare-aware macros · Claude · deps: P4-04, P2-05
 - [ ] P4-08 Class packs · Claude · deps: P4-01
 - [ ] P4-09 Export, import and context sets · Claude · deps: P4-04
