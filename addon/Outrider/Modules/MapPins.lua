@@ -101,7 +101,9 @@ function M:AcquirePin(canvas)
     pin:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
       GameTooltip:AddLine(self.data.name or "?")
-      GameTooltip:AddLine(LABELS[self.data.kind] or self.data.kind, ns.Theme:Color("muted"))
+      local first, second = ns.POI.Describe(self.data.poi or self.data, LABELS[self.data.kind] or self.data.kind)
+      GameTooltip:AddLine(first, ns.Theme:Color("muted"))
+      if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
       GameTooltip:Show()
     end)
     pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -182,6 +184,9 @@ function M:CardText(data)
     end
   elseif data.poi then
     local p = data.poi
+    local first, second = ns.POI.Describe(p, LABELS[p.kind] or p.kind)
+    lines[#lines + 1] = first
+    if second then lines[#lines + 1] = second end
     lines[#lines + 1] = string.format("Visited %d time%s, last %s", p.n or 1, (p.n or 1) == 1 and "" or "s",
       p.lastSeen and date("%Y-%m-%d", p.lastSeen) or "?")
     if p.faction then lines[#lines + 1] = p.faction end

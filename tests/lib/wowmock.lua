@@ -369,6 +369,20 @@ function M.new(opts)
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
   base.CanMerchantRepair = function() return game.canRepair or false end
+  base.C_TooltipInfo = { GetUnit = function(unit)
+    local d = game.units and game.units[unit]
+    if not d then return nil end
+    local lines = { { leftText = d.name } }
+    if d.title then lines[2] = { leftText = d.title } else lines[2] = { leftText = "Level 20" } end
+    return { lines = lines }
+  end }
+  -- merchant: game.merchant = { itemID, ... }; game.itemClass[itemID] = classID
+  base.GetMerchantNumItems = function() return game.merchant and #game.merchant or 0 end
+  base.GetMerchantItemID = function(i) return game.merchant and game.merchant[i] end
+  base.C_Item = base.C_Item or {}
+  base.C_Item.GetItemInfoInstant = function(id)
+    return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
+  end
   base.Enum = { TooltipDataType = { Unit = 2 }, SpellBookSpellBank = { Player = 0 } }
   -- spellbook: game.spells = { { name, id, rank, passive } } in one skill line
   game.spells = opts.spells or {

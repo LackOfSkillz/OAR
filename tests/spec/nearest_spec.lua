@@ -86,3 +86,41 @@ T.describe("poi backfill", function()
     T.eq(ns2.db.global.pois["npc-6102-vendor"], nil, "a mouseover position is not good enough for a place")
   end)
 end)
+
+T.describe("place details", function()
+  T.it("vendors record their title and what they sell; tooltips show both", function()
+    local game, ns = session()
+    game.merchant = { 9001, 9002, 9003 }
+    game.itemClass = { [9001] = 6, [9002] = 6, [9003] = 0 }
+    game.opts.x, game.opts.y = 0.47, 0.37
+    game.units.npc = { guid = "Creature-0-5250-0-777-6201-00000001", name = "Bow Seller", title = "Bowyer" }
+    game:fire("MERCHANT_SHOW")
+    game:advance(1)
+    local p = ns.db.global.pois["npc-6201-vendor"]
+    T.eq(p.title, "Bowyer")
+    T.same(p.goods, { "ammo", "food & potions" })
+    local first, second = ns.POI.Describe(p, "Vendor")
+    T.eq(first, "Vendor (Bowyer)")
+    T.eq(second, "Sells: ammo, food & potions")
+    local M = ns.Modules:Get("MinimapPins")
+    M:Update()
+    local d = M.used[1]
+    d.__scripts.OnEnter(d)
+    T.contains(game.env.GameTooltip.__lines[2], "Vendor (Bowyer)")
+    T.eq(game.env.GameTooltip.__lines[3], "Sells: ammo, food & potions")
+  end)
+
+  T.it("trainers keep what they train", function()
+    local game, ns = session()
+    game.units.npc = { guid = "Creature-0-5250-0-777-6202-00000001", name = "Teacher", title = "Hunter Trainer" }
+    game:fire("TRAINER_SHOW")
+    T.eq(ns.POI.Describe(ns.db.global.pois["npc-6202-trainer"], "Trainer"), "Trainer (Hunter Trainer)")
+  end)
+
+  T.it("NPCs without a title just show the kind", function()
+    local game, ns = session()
+    game.units.npc = { guid = "Creature-0-5250-0-777-6203-00000001", name = "Plain" }
+    game:fire("BANKFRAME_OPENED")
+    T.eq(ns.db.global.pois["npc-6203-bank"].title, nil)
+  end)
+end)

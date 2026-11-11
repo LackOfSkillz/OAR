@@ -71,8 +71,9 @@ function M:Dot(i)
       if not p then return end
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
       GameTooltip:AddLine(p.name or "?")
-      GameTooltip:AddLine(string.format("%s, %d yards", ns.MapPins.LABELS[p.kind] or p.kind, math.floor((self.dist or 0) + 0.5)),
-        ns.Theme:Color("muted"))
+      local first, second = ns.POI.Describe(p.poi or p, ns.MapPins.LABELS[p.kind] or p.kind)
+      GameTooltip:AddLine(string.format("%s, %d yards", first, math.floor((self.dist or 0) + 0.5)), ns.Theme:Color("muted"))
+      if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
       GameTooltip:Show()
     end)
     d:SetScript("OnLeave", function() GameTooltip:Hide() end)

@@ -96,6 +96,7 @@ function M:Capture(unit, how, role)
   e.classification = C.Readable(C.Call("UnitClassification", unit)) or e.classification
   e.family = C.Readable(C.Call("UnitCreatureFamily", unit)) or e.family
   e.creatureType = ctype or e.creatureType
+  e.title = C.UnitTitle(unit) or e.title
   if g.zoneUID and not inInstance() then e.layer = g.zoneUID end
 
   local upgraded = self:UpdatePosition(e, how)

@@ -131,6 +131,18 @@ function C.UnitNpcID(unit)
   return g and g.id, g
 end
 
+-- An NPC's title ("Bowyer", "Hunter Trainer") is the tooltip line under its
+-- name. Read through C_TooltipInfo (no tooltip shown); nil when there is none.
+function C.UnitTitle(unit)
+  local data = C.Call("C_TooltipInfo.GetUnit", unit)
+  if type(data) ~= "table" or type(data.lines) ~= "table" then return nil end
+  local line = data.lines[2]
+  local text = line and C.Readable(line.leftText)
+  if type(text) ~= "string" or text == "" then return nil end
+  if text:find("^Level ") or text:find("^%?%?") then return nil end
+  return text
+end
+
 function C.ServerTime()
   return C.Call("GetServerTime") or time()
 end

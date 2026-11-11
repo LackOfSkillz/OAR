@@ -45,9 +45,10 @@ function M:Backfill()
       for _, role in ipairs(e.roles or {}) do
         local kind = ROLE_KIND[role]
         local id = kind and ("npc-" .. npcID .. "-" .. kind)
+        if id and self.db[id] and e.title and not self.db[id].title then self.db[id].title = e.title end
         if id and not self.db[id] then
           self.db[id] = { id = id, kind = kind, mapID = e.mapID, x = e.x, y = e.y, n = e.posN or 1, npcID = npcID,
-            name = e.name, verified = false, source = "discovery", faction = faction, firstSeen = e.firstSeen,
+            name = e.name, title = e.title, verified = false, source = "discovery", faction = faction, firstSeen = e.firstSeen,
             lastSeen = e.lastSeen }
           added = added + 1
         end
@@ -70,11 +71,53 @@ function M:CaptureWindow(kind)
   local npcID, g = C.UnitNpcID("npc")
   if not npcID or not g or g.kind ~= "Creature" then return nil end
   local name = C.Readable(C.Call("UnitName", "npc"))
-  local poi = self:Add("npc-" .. npcID .. "-" .. kind, kind, { npcID = npcID, name = name })
+  local poi = self:Add("npc-" .. npcID .. "-" .. kind, kind, { npcID = npcID, name = name, title = C.UnitTitle("npc") })
+  if kind == "vendor" and poi then
+    -- merchant items arrive a moment after the window opens
+    ns.Timer.After(0.5, function() M:ScanGoods(poi) end, "poi:goods")
+  end
   if kind == "vendor" and C.Call("CanMerchantRepair") then
     self:Add("npc-" .. npcID .. "-repair", "repair", { npcID = npcID, name = name })
   end
   return poi
+end
+
+-- What a vendor sells, by item class: { "ammo", "food & drink", ... }.
+local CLASS = { [0] = "food & potions", [1] = "bags", [2] = "weapons", [4] = "armor", [5] = "reagents",
+  [6] = "ammo", [7] = "trade goods", [9] = "recipes", [11] = "quivers", [15] = "misc" }
+M.CLASS = CLASS
+
+function M:ScanGoods(p)
+  local n = C.Call("GetMerchantNumItems") or 0
+  if n == 0 then return end
+  local seen, kinds = {}, {}
+  for i = 1, n do
+    local id = C.Call("GetMerchantItemID", i)
+    if id then
+      -- classID is the 6th return; C.Call only passes 5 back, so call directly
+      local get = C.Resolve("C_Item.GetItemInfoInstant") or rawget(_G, "GetItemInfoInstant")
+      local classID
+      if type(get) == "function" then
+        local ok, _, _, _, _, _, cls = pcall(get, id)
+        if ok then classID = cls end
+      end
+      local k = CLASS[classID or -1]
+      if k and not seen[k] then seen[k] = true kinds[#kinds + 1] = k end
+    end
+  end
+  table.sort(kinds)
+  if #kinds > 0 then
+    p.goods = kinds
+    self:Info("vendor %s sells: %s", tostring(p.name), table.concat(kinds, ", "))
+  end
+end
+
+-- One line for tooltips and cards: "Vendor (Bowyer)" + "Sells: ammo, weapons".
+function M.Describe(p, label)
+  local first = label or p.kind
+  if p.title and p.title ~= p.name then first = first .. " (" .. p.title .. ")" end
+  local second = p.goods and #p.goods > 0 and ("Sells: " .. table.concat(p.goods, ", ")) or nil
+  return first, second
 end
 
 function M:CaptureObject(kind)
