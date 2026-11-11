@@ -63,14 +63,14 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 ## Phase 3: Navigation and map  ([phases/P3_navigation.md](phases/P3_navigation.md))
 
 - [~] P3-01 Waypoint service · Claude · deps: P0-08 — 2026-11-11: Modules/Waypoints.lua (Blizzard user waypoint + supertrack, TomTom fallback, arrival clear checked 1/s only while active, /ride way); 3 specs. In-game check comes with pin cards/Nearest (no typing)
-- [ ] P3-02 Fallback arrow · Claude · deps: P3-01
+- [x] P3-02 Fallback arrow · Claude · deps: P3-01 — 2026-11-11: not needed: Blizzard user waypoints + supertrack exist on Forever (probe), so the arrow backend is never used; revisit only if that changes
 - [~] P3-03 World map pins · Claude · deps: P0-08 — 2026-11-11: Modules/MapPins.lua (own frames on WorldMapFrame canvas, redrawn on show/map change, places + rares, faction filter, per-char hidden kinds); 3 specs. Waiting on Gary: open the map after a town visit
 - [~] P3-04 Minimap pins · Claude · deps: P3-03 — 2026-11-11: Modules/MinimapPins.lua (pure Offset math with rotation, C_Minimap.GetViewRadius, 5/s only while moving); world-axis calibration logged at login; 3 specs. Waiting on Gary: walk up to a recorded vendor
 - [~] P3-05 Pin cards · Claude · deps: P3-03 — 2026-11-11: click a pin: card with kind, coords, visits or rare window, Waypoint + Watch buttons (no secure actions); 1 spec
 - [~] P3-06 POI capture · Claude · deps: P2-01 — 2026-11-11: Modules/POICapture.lua (vendor+repair, trainer, flight, bank, AH, stable, spirit healer, mailbox; averaged position; faction of capturer); 2 specs. Waiting on Gary: a town visit
 - [~] P3-07 Nearest · Claude · deps: P3-01, P3-06 — 2026-11-11: /ride near <kind>, nearest on continent by world yards, faction filter, auto spirit-healer waypoint on death; 3 specs. Hub quick buttons still to do
-- [ ] P3-08 Questie bridge · Claude · deps: P3-03
-- [ ] P3-09 Discovery privacy and controls · Claude · deps: P3-06
+- [!] P3-08 Questie bridge · Claude · deps: P3-03 — 2026-11-11: blocked: Questie is not installed on Gary's PC, and its API must be read from its own source. Resumes if Gary installs Questie
+- [x] P3-09 Discovery privacy and controls · Claude · deps: P3-06 — 2026-11-11: hub Map tab: per-char pin kind filters, Discovery and place recording toggles, counts, two-click clear; data stays local; 3 specs
 - [~] P3-10 Coordinates · Claude · deps: P3-01 — 2026-11-11: Modules/Coords.lua (coords under minimap, ticking only while moving; /ride coords prints + logs); 2 specs. Cursor coords on world map still to do
 - [ ] P3-11 Redrawn zone check · Both · deps: P3-06
 - [ ] P3-12 Gate G3 · Both · deps: all P3
