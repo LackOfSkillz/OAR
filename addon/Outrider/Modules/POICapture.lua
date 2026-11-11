@@ -23,7 +23,40 @@ local EVENTS = {
   MERCHANT_SHOW = "vendor", TRAINER_SHOW = "trainer", TAXIMAP_OPENED = "flight_master",
   BANKFRAME_OPENED = "bank", AUCTION_HOUSE_SHOW = "auction", PET_STABLE_SHOW = "stable_master",
   CONFIRM_XP_LOSS = "spirit_healer", MAIL_SHOW = "mailbox",
+  GUILD_REGISTRAR_SHOW = "guild_master", PETITION_VENDOR_SHOW = "guild_master",
+  TABARD_FRAME_OPENED = "tabard", CONFIRM_BINDER = "innkeeper",
 }
+
+-- Innkeepers, guild masters and others mostly open a plain chat (gossip)
+-- window, so on GOSSIP_SHOW the NPC's title decides (Gary, 2026-11-11).
+-- English titles; anything not matched is left to Discovery.
+local TITLE_KINDS = {
+  { "innkeeper", "innkeeper" }, { "guild master", "guild_master" }, { "guild registrar", "guild_master" },
+  { "tabard", "tabard" }, { "stable master", "stable_master" }, { "flight master", "flight_master" },
+  { "wind rider master", "flight_master" }, { "gryphon master", "flight_master" }, { "hippogryph master", "flight_master" },
+  { "bat handler", "flight_master" }, { "banker", "bank" }, { "auctioneer", "auction" }, { "trainer", "trainer" },
+  { "spirit healer", "spirit_healer" },
+}
+M.TITLE_KINDS = TITLE_KINDS
+
+function M.KindFromTitle(title)
+  if type(title) ~= "string" then return nil end
+  local t = title:lower()
+  for _, pair in ipairs(TITLE_KINDS) do
+    if t:find(pair[1], 1, true) then return pair[2] end
+  end
+end
+
+function M:OnGossip()
+  local title = C.UnitTitle("npc")
+  local kind = M.KindFromTitle(title)
+  -- spirit healers often have no title but are named so
+  if not kind then
+    local name = C.Readable(C.Call("UnitName", "npc"))
+    if name == "Spirit Healer" then kind = "spirit_healer" end
+  end
+  if kind then return self:CaptureWindow(kind) end
+end
 
 function M:OnInitialize()
   local g = ns.db.global
@@ -34,7 +67,9 @@ end
 -- Discovery tagged NPC windows before places existed (and still does);
 -- turn those roles into places so earlier visits show on the map too.
 local ROLE_KIND = { vendor = "vendor", banker = "bank", stablemaster = "stable_master", trainer = "trainer",
-  flightmaster = "flight_master" }
+  flightmaster = "flight_master", innkeeper = "innkeeper", guild_master = "guild_master", tabard = "tabard",
+  bank = "bank", auction = "auction", stable_master = "stable_master", flight_master = "flight_master",
+  spirit_healer = "spirit_healer" }
 
 function M:Backfill()
   local npcs = ns.db.global.discovered and ns.db.global.discovered.npcs or {}
@@ -42,7 +77,11 @@ function M:Backfill()
   local added = 0
   for npcID, e in pairs(npcs) do
     if e.quality == "interact" and e.mapID and e.x then
-      for _, role in ipairs(e.roles or {}) do
+      local roles = {}
+      for _, r in ipairs(e.roles or {}) do roles[#roles + 1] = r end
+      local byTitle = M.KindFromTitle(e.title)
+      if byTitle then roles[#roles + 1] = byTitle end
+      for _, role in ipairs(roles) do
         local kind = ROLE_KIND[role]
         local id = kind and ("npc-" .. npcID .. "-" .. kind)
         if id and self.db[id] and e.title and not self.db[id].title then self.db[id].title = e.title end
@@ -64,6 +103,7 @@ function M:OnEnable()
   for event, kind in pairs(EVENTS) do
     self:On(event, function(mod) mod:CaptureWindow(kind) end)
   end
+  self:On("GOSSIP_SHOW", self.OnGossip)
 end
 
 function M:CaptureWindow(kind)

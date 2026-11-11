@@ -124,3 +124,40 @@ T.describe("place details", function()
     T.eq(ns.db.global.pois["npc-6203-bank"].title, nil)
   end)
 end)
+
+T.describe("gossip NPCs", function()
+  T.it("innkeepers and guild masters are recorded from their title when you talk to them", function()
+    local game, ns = session()
+    game.units.npc = { guid = "Creature-0-5250-0-777-6301-00000001", name = "Inn Lady", title = "Innkeeper" }
+    game:fire("GOSSIP_SHOW")
+    game.units.npc = { guid = "Creature-0-5250-0-777-6302-00000001", name = "Guild Guy", title = "Guild Master" }
+    game:fire("GOSSIP_SHOW")
+    game.units.npc = { guid = "Creature-0-5250-0-777-6303-00000001", name = "Random", title = "Fisherman" }
+    game:fire("GOSSIP_SHOW")
+    T.eq(ns.POI:Count("innkeeper"), 1)
+    T.eq(ns.POI:Count("guild_master"), 1)
+    T.eq(ns.POI:Count(), 2, "untitled-role NPCs are not places")
+    game:slash("near inn")
+    T.eq(ns.Waypoints.current.title, "Inn Lady")
+  end)
+
+  T.it("setting your hearthstone also records the innkeeper", function()
+    local game, ns = session()
+    game.units.npc = { guid = "Creature-0-5250-0-777-6304-00000001", name = "Inn Lady 2" }
+    game:fire("CONFIRM_BINDER")
+    T.eq(ns.POI:Count("innkeeper"), 1)
+  end)
+end)
+
+T.describe("title backfill", function()
+  T.it("an innkeeper talked to earlier becomes a place at login", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.global.discovered.npcs[6401] = { name = "Old Inn", title = "Innkeeper", quality = "interact", mapID = 1412, x = 0.5, y = 0.5, roles = { "gossip" } }
+    local g2 = mock.new({ savedVariables = game:logout() })
+    local ns2 = g2:loadAddon()
+    g2:login()
+    T.ok(ns2.db.global.pois["npc-6401-innkeeper"])
+  end)
+end)

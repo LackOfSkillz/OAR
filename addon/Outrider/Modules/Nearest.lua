@@ -18,6 +18,7 @@ M.ALIASES = {
   spirit = "spirit_healer", healer = "spirit_healer", flight = "flight_master", fly = "flight_master",
   vendor = "vendor", repair = "repair", trainer = "trainer", mail = "mailbox", mailbox = "mailbox",
   bank = "bank", ah = "auction", auction = "auction", stable = "stable_master",
+  inn = "innkeeper", innkeeper = "innkeeper", guild = "guild_master", tabard = "tabard",
 }
 
 function M:OnEnable()
@@ -61,12 +62,12 @@ function M:OnDead()
 end
 
 function M:Activity()
-  return "/ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable"
+  return "/ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild"
 end
 
-ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable>  waypoint to the nearest one", function(arg)
+ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild>  waypoint to the nearest one", function(arg)
   local kind = M.ALIASES[(arg or ""):lower()]
-  if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable") return end
+  if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild") return end
   local _, msg = M:Go(kind)
   ns.Print(msg)
 end)

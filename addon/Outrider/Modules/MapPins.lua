@@ -21,11 +21,13 @@ ns.MapPins = M
 local COLORS = {
   rare = "warn", spirit_healer = "accent", flight_master = "good", vendor = "text", repair = "text",
   trainer = "accent", bank = "good", auction = "good", stable_master = "good", mailbox = "muted",
+  innkeeper = "good", guild_master = "muted", tabard = "muted",
 }
 local LABELS = {
   rare = "Rare", spirit_healer = "Spirit healer", flight_master = "Flight master", vendor = "Vendor",
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
-  stable_master = "Stable master", mailbox = "Mailbox",
+  stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
+  tabard = "Tabard vendor",
 }
 M.LABELS = LABELS
 

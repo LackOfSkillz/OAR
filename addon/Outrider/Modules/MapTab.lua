@@ -7,7 +7,7 @@ local _, ns = ...
 local UI = ns.UI
 
 local KINDS = { "rare", "vendor", "repair", "trainer", "flight_master", "spirit_healer", "bank", "auction",
-  "stable_master", "mailbox" }
+  "stable_master", "mailbox", "innkeeper", "guild_master", "tabard" }
 
 local T = { name = "maptab" }
 ns.MapTab = T
