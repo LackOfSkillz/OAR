@@ -68,3 +68,18 @@ function Theme:StyleText(fs, size, colorName)
   fs:SetFont(self.font.path, self.font[size or "normal"] or self.font.normal, "")
   fs:SetTextColor(self:Color(colorName or "text"))
 end
+
+-- LibSharedMedia (D15): when another addon has loaded it, offer Outrider's
+-- flat bar and 1px border so other addons can pick the same look. Nothing
+-- happens without it. Called from Boot.
+function Theme:RegisterMedia()
+  if self.mediaRegistered then return true end
+  local LibStub = rawget(_G, "LibStub")
+  if type(LibStub) ~= "table" and type(LibStub) ~= "function" then return false end
+  local ok, LSM = pcall(LibStub, "LibSharedMedia-3.0", true)
+  if not ok or type(LSM) ~= "table" or type(LSM.Register) ~= "function" then return false end
+  pcall(LSM.Register, LSM, "statusbar", "Outrider Flat", "Interface\Buttons\WHITE8x8")
+  pcall(LSM.Register, LSM, "border", "Outrider 1px", "Interface\Buttons\WHITE8x8")
+  self.mediaRegistered = true
+  return true
+end

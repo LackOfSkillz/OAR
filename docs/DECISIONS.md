@@ -17,6 +17,8 @@
 | D11 | Our own data addons `InterfaceAddOnsOutrider_Data_*` may be written by their generator tools (e.g. `py tools/import_questie.py --deploy`), in addition to `Outrider` via deploy.ps1. Installing anyone else's addon still needs Gary's OK each time | The private NPC pack (D10) is a separate load-on-demand addon so Outrider never depends on it | 2026-11-11 |
 | D12 | Chat spell check uses the SCOWL / English Speller Database size-60 list, US + GB spellings, downloaded once from app.aspell.net with Gary's OK and built by `tools/build_words.py` into the load-on-demand addon `Outrider_Data_Words` (kept in the repo with its LICENSE.txt; deploy.ps1 copies `addon/Outrider_Data_*`) | Gary chose "Full list" and "Both" spellings; the licence allows redistribution with the copyright notice | 2026-11-11 |
 | D13 | Gear sources (P6-05) come from the same private QuestieDB copy (D10) through `tools/import_gear.py`, into the load-on-demand addon `Outrider_Data_Gear` (git-ignored, deployed with `--deploy`, never released). Only sources are copied (quest, vendor, named drop with positions); stats are read in game. Dungeon drops are missing until Questie dungeon areas map to client maps | Spec asked for a gear pack from cited sources; Questie is the cited source Gary already approved | 2026-11-11 |
+| D14 | Visual direction: **Clean dark** (flat dark panels, 1px borders, blue accent; the existing Theme.lua tokens) | Gary picked it from the three-way mockup (Clean dark / Classic+ / Minimal), 2026-11-11 | 2026-11-11 |
+| D15 | Fonts: keep the game font (Fonts\FRIZQT__.TTF); no bundled font, so no font licence to carry. Textures stay WHITE8x8 (own flat bars and 1px borders), registered with LibSharedMedia when it is loaded | Gary chose "Keep the game font" over Inter / Roboto Condensed, 2026-11-11 | 2026-11-11 |
 
 ## Open questions for Gary
 
@@ -24,7 +26,6 @@
 |---|---|---|---|---|
 | Q2 | Personal use or public release | personal / friends via zip / public on CurseForge and Wago | Personal first, decide at the end of P3 | P3 gate |
 | Q3 | License | GPLv3 / MIT / all rights reserved | GPLv3 if we ever study or reuse GPL addon code; MIT if everything is original | Before any public release |
-| Q4 | Visual direction for Phase 7 | Clean dark (default theme) / Classic gold trimmed / Minimal | Claude makes mockups in P7-01 | P7 |
 | Q5 | Guild sharing on by default for guildmates who install it | yes / opt-in | Opt-in per character | P8 |
 
 - 2026-11-11: Questie and QuestieDB were removed from AddOns at Gary's request. The importers read the saved zip in private/questie-source; Outrider runs without Questie (D10 holds).
