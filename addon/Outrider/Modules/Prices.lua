@@ -111,22 +111,16 @@ function M:OnEnable()
   self:On("AUCTION_HOUSE_CLOSED", function(mod)
     if (mod.seen or 0) > 0 then mod:Info("auction house: recorded %d prices this visit", mod.seen) mod.seen = 0 end
   end)
-  if not self.hooked then
-    self.hooked = true
-    local add, enum = C.Resolve("TooltipDataProcessor.AddTooltipPostCall"), C.Resolve("Enum.TooltipDataType.Item")
-    if type(add) == "function" and enum then
-      add(enum, function(tip, data)
-        if not M.enabled or tip ~= GameTooltip then return end
-        local id = data and C.Readable(data.id)
-        if type(id) ~= "number" then return end
-        ns.Safe("Prices:tooltip", function()
-          local r, g, b = ns.Theme:Color("muted")
-          for _, l in ipairs(M:TooltipLines(id)) do tip:AddLine(l, r, g, b) end
-        end)
-      end)
-    end
-  end
 end
+
+-- AH and vendor value through the shared ordered block (P7-05)
+ns.TooltipLines:Add("item", "value", M, function(_, data)
+  local id = data and C.Readable(data.id)
+  if type(id) ~= "number" then return nil end
+  local out = {}
+  for _, l in ipairs(M:TooltipLines(id)) do out[#out + 1] = { l, "muted" } end
+  return out
+end)
 
 function M:Activity()
   local n = 0

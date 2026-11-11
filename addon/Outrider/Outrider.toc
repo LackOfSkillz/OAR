@@ -32,6 +32,7 @@ UI\Widgets.lua
 UI\WidgetsExtra.lua
 UI\SecureButtons.lua
 UI\Toast.lua
+UI\TooltipLines.lua
 UI\Hub.lua
 UI\MinimapButton.lua
 UI\Settings.lua
@@ -90,6 +91,7 @@ Modules\Find.lua
 Modules\RarePlates.lua
 Modules\Advisor.lua
 Modules\Skin.lua
+Modules\Tooltips.lua
 Modules\SpellCheck.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua

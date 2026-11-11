@@ -137,18 +137,10 @@ function M:OnEnable()
   self:On("BANKFRAME_CLOSED", function(mod) mod.bankOpen = false end)
   self:On("PLAYERBANKSLOTS_CHANGED", function(mod) if mod.bankOpen then mod:ScanBank() end end)
   self:On("MAIL_INBOX_UPDATE", function(mod) ns.Throttle("inventory:mail", 1, function() mod:ScanMail() end) end)
-  if not self.hooked then
-    self.hooked = true
-    local add = C.Resolve("TooltipDataProcessor.AddTooltipPostCall")
-    local enum = C.Resolve("Enum.TooltipDataType.Item")
-    if type(add) == "function" and enum then
-      add(enum, function(tip, data)
-        if not M.enabled or tip ~= GameTooltip then return end
-        ns.Safe("Inventory:tooltip", M.OnTooltip, M, tip, data)
-      end)
-    end
-  end
 end
+
+-- Counts across characters through the shared ordered block (P7-05)
+ns.TooltipLines:Add("item", "owned", M, function(tip, data) return M:OnTooltip(tip, data) end)
 
 function M:OnDisable() ns.ThrottleCancel("inventory:bags") ns.ThrottleCancel("inventory:mail") end
 
@@ -156,8 +148,7 @@ function M:OnTooltip(tip, data)
   local id = data and C.Readable(data.id)
   if type(id) ~= "number" then return end
   local shift = C.Call("IsShiftKeyDown") and true or false
-  local r, g, b = ns.Theme:Color("accent")
-  for _, line in ipairs(self:TooltipLines(id, shift)) do tip:AddLine(line, r, g, b) end
+  return self:TooltipLines(id, shift)
 end
 
 function M:Activity()

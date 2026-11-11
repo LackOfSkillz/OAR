@@ -144,20 +144,13 @@ function M:Verdict(link)
   return "about the same as yours", "muted"
 end
 
-function M:OnEnable()
-  if self.hooked then return end
-  self.hooked = true
-  local add, enum = C.Resolve("TooltipDataProcessor.AddTooltipPostCall"), C.Resolve("Enum.TooltipDataType.Item")
-  if type(add) ~= "function" or not enum then return end
-  add(enum, function(tip)
-    if not M.enabled or tip ~= GameTooltip or not tip.GetItem then return end
-    ns.Safe("GearScore:tooltip", function()
-      local _, link = tip:GetItem()
-      local text, color = M:Verdict(link)
-      if text then tip:AddLine(text, ns.Theme:Color(color)) end
-    end)
-  end)
-end
+-- Tooltip verdict through the shared ordered block (P7-05)
+ns.TooltipLines:Add("item", "verdict", M, function(tip)
+  if not tip.GetItem then return nil end
+  local _, link = tip:GetItem()
+  local text, color = M:Verdict(link)
+  return text and { { text, color } } or nil
+end)
 
 -- P9-01: the weights the verdicts use
 function M:Snapshot()

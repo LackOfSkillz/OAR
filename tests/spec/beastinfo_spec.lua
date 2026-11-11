@@ -47,18 +47,17 @@ T.describe("beast info", function()
     T.eq(lines[4], "Abilities: Claw (unverified)")
   end)
 
-  T.it("registers one unit tooltip post-hook, and the hook adds lines to GameTooltip", function()
+  T.it("unit tooltip hooks add the beast line exactly once (shared ordered block, P7-05)", function()
     local game, ns = session()
     local unitHooks = {}
     for _, h in ipairs(game.tooltipHooks) do if h.kind == 2 then unitHooks[#unitHooks + 1] = h end end
-    T.eq(#unitHooks, 1)
-    game.tooltipHooks = unitHooks
+    T.ok(#unitHooks <= 2, "lines hook + style hook at most")
     game.units.mouseover = beast(7201, 12)
     local tip = game.env.GameTooltip
     tip.GetUnit = function() return "Beast", "mouseover" end
     tip.__lines = {}
-    game.tooltipHooks[1].fn(tip)
+    for _, h in ipairs(unitHooks) do h.fn(tip) end
     T.eq(tip:NumLines(), 1)
-    T.eq(#ns.Errors.list, 0)
+    T.eq(#ns.Errors.list, 0, ns.Errors.list[1] and tostring(ns.Errors.list[1].msg or ns.Errors.list[1].message) or "")
   end)
 end)

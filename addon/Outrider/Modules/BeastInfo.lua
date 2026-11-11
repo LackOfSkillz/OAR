@@ -15,21 +15,8 @@ local M = ns:NewModule("BeastInfo", {
   defaults = {},
 })
 
-local hooked = false
-
-function M:OnEnable()
-  if hooked then return end
-  hooked = true
-  local add = C.Resolve("TooltipDataProcessor.AddTooltipPostCall")
-  local enum = C.Resolve("Enum.TooltipDataType.Unit")
-  if type(add) == "function" and enum then
-    add(enum, function(tip) if M.enabled then ns.Safe("BeastInfo:tooltip", M.OnTooltip, M, tip) end end)
-  elseif GameTooltip and GameTooltip.HookScript then
-    GameTooltip:HookScript("OnTooltipSetUnit", function(tip) if M.enabled then ns.Safe("BeastInfo:tooltip", M.OnTooltip, M, tip) end end)
-  else
-    self:Warn("no tooltip hook available")
-  end
-end
+-- Beast lines through the shared ordered block (P7-05)
+ns.TooltipLines:Add("unit", "beast", M, function(tip) return M:OnTooltip(tip) end)
 
 -- Lines to add for a unit (pure, testable). Returns a list of strings.
 function M:Lines(unit, shift)
@@ -74,8 +61,7 @@ function M:OnTooltip(tip)
   local _, unit = tip:GetUnit()
   if not unit then return end
   local shift = C.Call("IsShiftKeyDown") and true or false
-  local r, g, b = ns.Theme:Color("accent")
-  for _, line in ipairs(self:Lines(unit, shift)) do tip:AddLine(line, r, g, b) end
+  return self:Lines(unit, shift)
 end
 
 function M:Activity() return "adds family, level and tameable lines to beast tooltips" end
