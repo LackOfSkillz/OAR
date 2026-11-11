@@ -63,6 +63,7 @@ Modules\TameHelper.lua
 Modules\PetStatus.lua
 Modules\Ammo.lua
 Modules\BeastInfo.lua
+Modules\NPCPack.lua
 Modules\Waypoints.lua
 Modules\POICapture.lua
 Modules\Nearest.lua

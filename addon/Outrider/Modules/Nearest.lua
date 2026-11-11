@@ -34,7 +34,13 @@ function M:Find(kind)
   local here = W.WorldPos(mapID, 0.5, 0.5)
   local faction = C.Call("UnitFactionGroup", "player")
   local best, bestD
-  for _, p in pairs(ns.db.global.pois or {}) do
+  local candidates = {}
+  for _, p in pairs(ns.db.global.pois or {}) do candidates[#candidates + 1] = p end
+  if ns.NPCPack then
+    for _, p in ipairs(ns.NPCPack:OfKind(kind)) do candidates[#candidates + 1] = { kind = kind, mapID = p.mapID,
+      x = p.x, y = p.y, name = p.name, faction = p.faction } end
+  end
+  for _, p in ipairs(candidates) do
     if p.kind == kind and (p.faction == nil or p.faction == faction) then
       local cont, wx, wy = W.WorldPos(p.mapID, p.x, p.y)
       if wx and cont == here then

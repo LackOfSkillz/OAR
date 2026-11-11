@@ -10,3 +10,7 @@ tests/.tmp*
 *.swp
 Thumbs.db
 .DS_Store
+
+# private data copies (D10): never commit or release
+private/
+tools/__pycache__/

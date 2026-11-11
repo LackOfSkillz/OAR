@@ -56,9 +56,19 @@ end
 function M:BuildPins(mapID)
   local out, hidden = {}, self:Settings().hidden
   local faction = C.Call("UnitFactionGroup", "player")
+  local own = {}
   for id, p in pairs(ns.db.global.pois or {}) do
+    if p.npcID then own[p.npcID] = true end
     if p.mapID == mapID and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
       out[#out + 1] = { id = id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name or LABELS[p.kind], npcID = p.npcID, poi = p }
+    end
+  end
+  -- Optional private NPC pack (D10); NPCs Gary visited himself win.
+  if ns.NPCPack then
+    for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do
+      if not own[p.npcID] and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
+        out[#out + 1] = { id = p.id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name, npcID = p.npcID, poi = p }
+      end
     end
   end
   if not hidden.rare then
