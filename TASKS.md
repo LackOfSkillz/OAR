@@ -164,8 +164,8 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ### Release (any time after G3, Gary's call)
 
-- [ ] R-01 Packaging · Claude · deps: none
-- [ ] R-02 Changelog and version · Claude · deps: none
+- [x] R-01 Packaging · Claude · deps: none · 2026-11-11: package.ps1 zips Outrider + repo data addons (Outrider_Data_Words with LICENSE) with forward-slash entries via .NET ZipFile, semantic version check, private Questie packs never included (checked: dist/Outrider-0.3.0.zip)
+- [x] R-02 Changelog and version · Claude · deps: none · 2026-11-11: v0.3.0 in the TOC, CHANGELOG entry, /ride version reads the TOC version
 - [ ] R-03 Public release decision · Gary · deps: none
 
 ## Totals
