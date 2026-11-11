@@ -348,6 +348,7 @@ function M.new(opts)
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  base.C_CVar = { GetCVar = function(name) return (opts.cvars or {})[name] end }
 
   -- C_ namespaces
   local files, meta = M.tocFiles()
