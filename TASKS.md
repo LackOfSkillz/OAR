@@ -52,7 +52,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P2-04 RareAlerts · Claude · deps: P2-03, P1-05, P1-06 — 2026-11-11: Modules/RareAlerts.lua (toast + sound + Target secure button /targetexact, 5 min per-NPC cooldown, modes all/pack/watch, yields to RareScanner); 6 specs. Waiting on Gary: a real rare
 - [ ] P2-05 Watchlist and Rares tab · Claude · deps: P2-04, P1-08
 - [~] P2-06 Layer detection · Both · deps: P2-01 — 2026-11-11: Modules/Layers.lua (zone UID majority over last 20 distinct creatures, min 3, 60% share, OTR_LAYER_CHANGED, L### label in hub Overview); 5 specs. Waiting on Gary: play in one zone, then a layer change
-- [ ] P2-07 Sightings and respawn windows · Claude · deps: P2-03, P2-06
+- [~] P2-07 Sightings and respawn windows · Claude · deps: P2-03, P2-06 — 2026-11-11: Modules/Sightings.lua (50 per NPC, pack or learned windows per layer, 3+ observations before showing a learned range, tamed via UNIT_PET npcID); 5 specs. Rares tab display comes with P2-05
 - [~] P2-08 TameHelper · Both · deps: P2-04, P1-05 — 2026-11-11: /ride tamemacro <Name> writes pull+tame macro (Concussive out of combat; Tame Beast, Wing Clip castsequence in combat) via EditMacro/CreateMacro; 3 specs. Toast Tame button still to do
 - [ ] P2-09 PetStatus · Claude · deps: P1-07
 - [ ] P2-10 BeastInfo tooltips · Claude · deps: P2-02
