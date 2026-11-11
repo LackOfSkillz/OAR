@@ -72,6 +72,7 @@ Modules\Handoffs.lua
 Modules\Comm.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua
+Modules\Forecasts.lua
 Modules\Errands.lua
 Modules\Feed.lua
 Modules\Chat.lua

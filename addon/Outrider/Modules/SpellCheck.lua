@@ -125,6 +125,7 @@ end
 function M:Replace(edit, miss, with)
   local text = edit:GetText()
   if type(text) ~= "string" or text:sub(miss.s, miss.e) ~= miss.word then return false end
+  self:Info("spell check: '%s' -> '%s'", miss.word, with)
   local new = text:sub(1, miss.s - 1) .. with .. text:sub(miss.e + 1)
   edit:SetText(new)
   if edit.SetCursorPosition then edit:SetCursorPosition(miss.s - 1 + #with) end
@@ -156,6 +157,10 @@ function M:Update(edit, includeLast)
   local f = self:Strip()
   local miss = misses[1]
   if not miss then f:Hide() return misses end
+  if not self.loggedFlag then
+    self.loggedFlag = true
+    self:Info("spell check flagged '%s' (first this session)", miss.word)
+  end
   f:ClearAllPoints()
   f:SetPoint("BOTTOMLEFT", edit, "TOPLEFT", 0, 2)
   f.label:SetText(miss.word .. (#misses > 1 and string.format(" (+%d)", #misses - 1) or "") .. "?")

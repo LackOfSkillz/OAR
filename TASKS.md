@@ -148,7 +148,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P8-05 Gathering and fishing sharing · Claude · deps: P8-01, P5-13 · 2026-11-11: Modules/GatherShare.lua: /ride share nodes on (off by default) sends each new herb/ore/fishing spot to the guild (6/min max); receivers merge them into LootLog nodes marked sharedBy, pins say "from <name>"; GUILD only, bad data dropped. LootLog now records fishing spots (where Gary stands) as kind fish. Needs a second player
 - [~] P8-06 Town errand list · Claude · deps: P5-01, P5-02, P4-06, P2-11 · 2026-11-11: Modules/Errands.lua + Errands tab + /ride errands: repair, junk, ammo, trainer (even level since last visit), AH shopping list; toast on entering a rest area, row click = waypoint. Reagents and alt mail later
 - [ ] P8-07 Chat triage · Claude · deps: P7-08
-- [ ] P8-08 Forecasts · Claude · deps: P8-03, P5-08
+- [~] P8-08 Forecasts · Claude · deps: P8-03, P5-08 · 2026-11-11: Modules/Forecasts.lua + Forecasts tab + /ride forecast: respawn range (middle 80% once 5+ gaps, min-max at 3-4, "N of 3 needed" below), median and observation count, from own + shared sightings; gold per hour over 10+ min ledger sessions with trend after 8 sessions, labelled estimate; 2 specs
 - [ ] P8-09 Gate G8 · Both · deps: all P8
 - [ ] **G8** gate: with a second player (a friend or a second account) in the same guild, each sees the other's rare sightings within five seconds and as a pin; location sharing is off until switched on, and when on shows the other player on the world map; trial accounts don't break anything; chat triage and the errand list work for Torrant.
 

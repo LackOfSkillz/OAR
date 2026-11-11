@@ -15,7 +15,7 @@ T.describe("hub", function()
     local f = ns.Hub.frame
     T.ok(f:IsShown())
     T.eq(ns.Hub.current, "overview")
-    T.same(f.tabBar.order, { "overview", "modules", "characters", "rares", "macros", "map", "crafting", "errands", "feed", "tools" })
+    T.same(f.tabBar.order, { "overview", "modules", "characters", "rares", "macros", "map", "crafting", "errands", "feed", "forecasts", "tools" })
     for _, id in ipairs(f.tabBar.order) do f.tabBar:Select(id) T.eq(ns.Hub.current, id) end
     T.eq(#ns.Errors.list, 0)
     T.contains(ns.Hub.byId.overview.panel.who:GetText(), "Torrant")
@@ -35,7 +35,7 @@ T.describe("hub", function()
     game:slash("")
     ns.Hub:AddTab("pet", "Pet", function(p) p.built = true end, 50)
     local order = ns.Hub.frame.tabBar.order
-    T.same(order, { "overview", "modules", "characters", "rares", "macros", "map", "crafting", "errands", "feed", "pet", "tools" })
+    T.same(order, { "overview", "modules", "characters", "rares", "macros", "map", "crafting", "errands", "feed", "forecasts", "pet", "tools" })
     ns.Hub.frame.tabBar:Select("pet")
     T.ok(ns.Hub.byId.pet.panel.built)
   end)
