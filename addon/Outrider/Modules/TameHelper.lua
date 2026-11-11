@@ -73,4 +73,7 @@ ns.AddCommand("tamemacro", "<Beast Name>  write a pull + tame macro for that bea
   if ns.PlayerClass() ~= "HUNTER" then ns.Print("tame macros are for hunters") return end
   local ok, msg = M:WriteMacro(arg and strtrim(arg))
   ns.Print(msg)
+  -- A beast worth a tame macro is worth an alert: watch it on this character.
+  local scan = ns.Modules:Get("RareScan")
+  if ok and scan then scan:Watch(M.Capitalize(strtrim(arg)), true) end
 end)

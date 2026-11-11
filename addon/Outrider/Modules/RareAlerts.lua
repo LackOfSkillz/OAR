@@ -56,6 +56,12 @@ function M:OnRareSeen(_, info)
   self.lastAlert[info.npcID] = now
   self.lastInfo = info
   local s = self:Settings()
+  local button = { label = "Target", macro = "/targetexact " .. info.name }
+  local tame = ns.Modules:Get("TameHelper")
+  local myLevel = ns.Compat.Call("UnitLevel", "player") or 0
+  if tame and tame.enabled and info.tameable and (not info.level or info.level <= myLevel) then
+    button = { label = "Pull/Tame", macro = tame:Body(info.name) }
+  end
   if s.toast and info.name then
     ns.Toast:Show({
       title = "Rare: " .. info.name,
@@ -63,7 +69,7 @@ function M:OnRareSeen(_, info)
       color = "warn",
       sound = s.sound and ns.Toast:SoundID(s.soundName) or nil,
       duration = 20,
-      button = { label = "Target", macro = "/targetexact " .. info.name },
+      button = button,
     })
   elseif s.sound then
     ns.Compat.Call("PlaySound", ns.Toast:SoundID(s.soundName), "Master")
