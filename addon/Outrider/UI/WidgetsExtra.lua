@@ -89,6 +89,21 @@ function UI:Tabs(parent, tabs, onSelect)
     self.order[#self.order + 1] = id
     return b
   end
+  -- Re-anchor buttons in the given id order (tabs added later by modules).
+  function bar:SetOrder(ids)
+    local seen, order = {}, {}
+    for _, id in ipairs(ids) do if self.buttons[id] and not seen[id] then order[#order + 1] = id seen[id] = true end end
+    for _, id in ipairs(self.order) do if not seen[id] then order[#order + 1] = id end end
+    self.order = order
+    local last
+    for _, id in ipairs(order) do
+      local b = self.buttons[id]
+      b:ClearAllPoints()
+      if last then b:SetPoint("LEFT", last, "RIGHT", 4, 0) else b:SetPoint("LEFT", 0, 0) end
+      last = b
+    end
+    prev = last
+  end
   function bar:Select(id)
     if not self.buttons[id] then id = self.order[1] end
     if not id then return end

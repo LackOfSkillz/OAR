@@ -22,6 +22,7 @@ WoW Forever runs Classic-style game data on the modern (Midnight-era) client. So
 | C16 | Macros: 255 characters per macro; account and per-character slot limits | Standard WoW rule | P0-08 records `MAX_ACCOUNT_MACROS`, `MAX_CHARACTER_MACROS` | Validator rejects long macros; installer checks free slots |
 | C17 | New files or TOC changes are read only at client start; `/reload` re-reads existing files | Standard WoW behavior | Built-in | deploy.ps1 tells Gary when a full restart is needed |
 | C18 | SavedVariables are written to disk only on /reload, logout or exit | Standard WoW behavior | Built-in | Every test step ends with /reload before Claude reads logs |
+| C19 | Per-addon object caps: Frame 10000, Texture 40000, FontString 5000, Font 300, Animation 5000, AnimGroup 2000, Timer 500 | Seen in client General.log 2026-11-11 ("LimitedLuaResources: Addon capacity ...") | Re-read General.log after a session with Outrider loaded | Pools for frames and rows (ScrollList virtualized, toast and button pools); never create a timer per item. Watch the Timer cap in /ride perf (P1-11) |
 
 ## Things we deliberately do not do
 

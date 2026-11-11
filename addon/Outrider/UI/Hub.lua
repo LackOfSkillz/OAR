@@ -1,158 +1,258 @@
 -- UI/Hub.lua
--- The one Outrider window: who you are, which modules are on for THIS character
--- and why, detected addons, export/import/copy, errors. Opened by the
--- minimap button or /ride. Feature modules add their own tabs in later phases
--- via ns.Hub:AddSection(title, builder).
+-- The one Outrider window, in tabs:
+--   Overview    who you are, saved-settings check, errors, probe, detected addons
+--   Modules     which modules are on for THIS character and why
+--   Characters  every character Outrider knows, copy settings from one
+--   Tools       export, import, errors, probe, debug, reload
+-- Feature modules add tabs with ns.Hub:AddTab(id, title, build, order); build
+-- receives the tab's panel once, and panel.Refresh (if set) runs each time
+-- the tab is shown. The last tab is remembered per character.
 
 local _, ns = ...
-local Hub = { name = "hub", sections = {} }
+local Hub = { name = "hub", tabs = {}, byId = {} }
 ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 14
+local W, H = 600, 480
 
-function Hub:AddSection(title, build)
-  self.sections[#self.sections + 1] = { title = title, build = build }
+local L = {
+  overview = "Overview", modules = "Modules", characters = "Characters", tools = "Tools",
+  modulesHeading = "Modules for this character",
+  charsHint = "Click Copy to take that character's settings (then /reload).",
+  noOthers = "no other characters saved yet: log in on another character once.",
+}
+
+function Hub:AddTab(id, title, build, order)
+  if self.byId[id] then return self.byId[id] end
+  local t = { id = id, title = title, build = build, order = order or (100 + #self.tabs) }
+  self.tabs[#self.tabs + 1] = t
+  self.byId[id] = t
+  table.sort(self.tabs, function(a, b) return a.order < b.order end)
+  if self.frame then self:AddTabButton(t) end
+  return t
+end
+
+-- Old name kept for anything written against the pre-tab hub.
+function Hub:AddSection(title, build) return self:AddTab(title:lower(), title, build) end
+
+function Hub:AddTabButton(t)
+  local bar = self.frame.tabBar
+  bar:Add(t.id, t.title)
+  local ids = {}
+  for i, o in ipairs(self.tabs) do ids[i] = o.id end
+  bar:SetOrder(ids)
 end
 
 function Hub:Build()
   if self.frame then return self.frame end
-  local f = UI:Window("Outrider_Hub", "Outrider", 560, 470, ns.db.char.hub)
+  local f = UI:Window("Outrider_Hub", "Outrider", W, H, ns.db.char.hub)
   self.frame = f
   local c = f.content
+  f.tabBar = UI:Tabs(c, {}, function(id) Hub:ShowTab(id) end)
+  f.tabBar:SetPoint("TOPLEFT", 0, 0)
+  f.tabBar:SetPoint("RIGHT", 0, 0)
+  for _, t in ipairs(self.tabs) do self:AddTabButton(t) end
 
-  f.who = UI.Text(c, "normal", "muted")
-  f.who:SetPoint("TOPLEFT", 0, 0)
-
-  local heading = UI.Text(c, "large", "accent")
-  heading:SetPoint("TOPLEFT", 0, -24)
-  heading:SetText("Modules for this character")
-
-  f.rows = {}
-  for i = 1, MAX_ROWS do
-    local row = UI:Check(c, "", function() local r = f.rows[i] return r and r.mod and r.mod.enabled end,
-      function(on)
-        local mod = f.rows[i] and f.rows[i].mod
-        if not mod then return end
-        local ok, err = ns.Modules:SetEnabled(mod.name, on)
-        if not ok then ns.Print("%s: %s", mod.name, err) end
-        Hub:Refresh()
-      end)
-    row:SetPoint("TOPLEFT", 0, -46 - (i - 1) * 22)
-    row:SetWidth(520)
-    f.rows[i] = row
-  end
-
-  f.addons = UI.Text(c, "small", "muted")
-  f.addons:SetPoint("BOTTOMLEFT", 0, 70)
-  f.addons:SetWidth(520)
-  f.addons:SetJustifyH("LEFT")
-
-  f.status = UI.Text(c, "small", "muted")
-  f.status:SetPoint("BOTTOMLEFT", 0, 34)
-  f.status:SetWidth(520)
-  f.status:SetJustifyH("LEFT")
-
-  local export = UI:Button(c, "Export", 96, function()
-    local s, err = ns.Profiles:Export()
-    if s then UI:TextDialog("Export settings (" .. ns.db.key .. ")", s, "copy")
-    else ns.Print("export failed: %s", tostring(err)) end
+  f:SetScript("OnShow", function()
+    ns.db.char.hub.shown = true
+    f.tabBar:Select(ns.db.char.hub.tab or "overview")
   end)
-  export:SetPoint("BOTTOMLEFT", 0, 0)
-
-  local import = UI:Button(c, "Import", 96, function()
-    UI:TextDialog("Import settings into " .. ns.db.key, "", "paste", function(text)
-      local ok, err = ns.Profiles:Import(text)
-      if ok then ns.Print("settings imported. Type /reload to apply everything.") end
-      return ok, err
-    end)
-  end)
-  import:SetPoint("LEFT", export, "RIGHT", 6, 0)
-
-  local copy = UI:Button(c, "Copy from...", 110, function() Hub:ShowCopyMenu() end)
-  copy:SetPoint("LEFT", import, "RIGHT", 6, 0)
-
-  f.errorsBtn = UI:Button(c, "Errors", 96, function() ns.Slash:Run("errors") end)
-  f.errorsBtn:SetPoint("LEFT", copy, "RIGHT", 6, 0)
-
-  local reload = UI:Button(c, "Reload UI", 96, function() ReloadUI() end)
-  reload:SetPoint("BOTTOMRIGHT", 0, 0)
-
-  f:SetScript("OnShow", function() Hub:Refresh() ns.db.char.hub.shown = true end)
   f:SetScript("OnHide", function() ns.db.char.hub.shown = false end)
   return f
 end
 
-function Hub:Refresh()
-  local f = self.frame
-  if not f then return end
-  local meta = ns.db.char.meta
-  f.who:SetText(string.format("%s  |  %s %s  |  v%s  build %s", ns.db.key, tostring(meta.class),
-    tostring(meta.level or "?"), ns.version, ns.build))
-
-  local status = ns.Modules:Status()
-  for i, row in ipairs(f.rows) do
-    local s = status[i]
-    if s then
-      row.mod = ns.Modules:Get(s.name)
-      row.label:SetText(s.title)
-      row.note:SetText((s.phase and (s.phase .. "  ") or "") .. (s.enabled and "" or tostring(s.reason)))
-      row:Refresh()
-      row:Show()
-    else
-      row.mod = nil
-      row:Hide()
-    end
-  end
-
-  local found = ns.Conflicts:Detect()
-  local names = {}
-  for _, k in ipairs(found) do names[#names + 1] = k.addon .. " (" .. k.relation .. ")" end
-  f.addons:SetText("Detected addons: " .. (#names > 0 and table.concat(names, ", ") or "none"))
-
-  local sv, loads = ns.DB:SavedVariablesStatus()
-  f.status:SetText(string.format("Saved settings read back: %s  |  loads %d  |  errors %d  |  %s",
-    sv, loads, #ns.Errors.list, ns.Probe:Summary()))
-  f.errorsBtn.label:SetText("Errors (" .. #ns.Errors.list .. ")")
+function Hub:Panel(t)
+  if t.panel then return t.panel end
+  local p = CreateFrame("Frame", nil, self.frame.content)
+  p:SetPoint("TOPLEFT", 0, -32)
+  p:SetPoint("BOTTOMRIGHT", 0, 0)
+  p:Hide()
+  t.panel = p
+  if t.build then ns.Safe("hub:build:" .. t.id, t.build, p) end
+  return p
 end
 
-function Hub:ShowCopyMenu()
-  local f = self.frame
-  if not f.copyMenu then
-    local m = CreateFrame("Frame", nil, f, Theme:BackdropTemplate())
-    m:SetSize(240, 10)
-    m:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 220, 44)
-    m:SetFrameStrata("FULLSCREEN_DIALOG")
-    Theme:ApplyPanel(m, "raised")
-    m.buttons = {}
-    f.copyMenu = m
+function Hub:ShowTab(id)
+  local t = self.byId[id] or self.tabs[1]
+  if not t then return end
+  for _, o in ipairs(self.tabs) do if o.panel and o ~= t then o.panel:Hide() end end
+  local p = self:Panel(t)
+  p:Show()
+  if p.Refresh then ns.Safe("hub:refresh:" .. t.id, p.Refresh, p) end
+  self.current = t.id
+  ns.db.char.hub.tab = t.id
+end
+
+-- Refresh whatever tab is on screen (modules call this after changes).
+function Hub:Refresh()
+  local t = self.current and self.byId[self.current]
+  if self.frame and self.frame:IsShown() and t and t.panel and t.panel.Refresh then
+    ns.Safe("hub:refresh:" .. t.id, t.panel.Refresh, t.panel)
   end
-  local m = f.copyMenu
-  for _, b in ipairs(m.buttons) do b:Hide() end
-  local n = 0
-  for _, ch in ipairs(ns.DB:Characters()) do
-    if not ch.current and n < 10 then
-      n = n + 1
-      local b = m.buttons[n] or UI:Button(m, "", 228)
-      m.buttons[n] = b
-      b:ClearAllPoints()
-      b:SetPoint("TOPLEFT", 6, -6 - (n - 1) * 26)
-      b.label:SetText(ch.key .. "  " .. tostring(ch.class or ""))
-      b:SetScript("OnClick", function()
-        local ok, err = ns.Profiles:CopyFrom(ch.key)
-        ns.Print(ok and ("copied settings from " .. ch.key .. ". Type /reload to apply everything.") or tostring(err))
-        m:Hide()
-        Hub:Refresh()
-      end)
-      b:Show()
-    end
-  end
-  if n == 0 then ns.Print("no other characters saved yet: log in on another character once.") return end
-  m:SetHeight(12 + n * 26)
-  m:SetShown(not m:IsShown())
 end
 
 function Hub:Toggle()
   local f = self:Build()
   f:SetShown(not f:IsShown())
 end
+
+-- ------------------------------------------------------------- Overview
+local function textLine(p, size, color, y)
+  local fs = UI.Text(p, size, color)
+  fs:SetPoint("TOPLEFT", 0, y)
+  fs:SetWidth(W - 20)
+  fs:SetJustifyH("LEFT")
+  return fs
+end
+
+Hub:AddTab("overview", L.overview, function(p)
+  p.who = textLine(p, "large", "text", 0)
+  p.build = textLine(p, "small", "muted", -22)
+  p.sv = textLine(p, "normal", "text", -50)
+  p.errors = textLine(p, "normal", "text", -72)
+  p.probe = textLine(p, "normal", "text", -94)
+  p.mods = textLine(p, "normal", "text", -116)
+  p.addons = textLine(p, "small", "muted", -148)
+  function p:Refresh()
+    local meta = ns.db.char.meta
+    self.who:SetText(string.format("%s  |  %s %s %s", ns.db.key, tostring(meta.race or ""), tostring(meta.class),
+      tostring(meta.level or "?")))
+    self.build:SetText(string.format("v%s  build %s", ns.version, ns.build))
+    local sv, loads = ns.DB:SavedVariablesStatus()
+    self.sv:SetText(string.format("Saved settings read back: %s  (loads %d)", sv, loads))
+    local nerr = #ns.Errors.list
+    self.errors:SetText(nerr == 0 and "Errors: none" or (Theme:Hex("bad") .. "Errors: " .. nerr .. "|r  (Tools tab)"))
+    self.probe:SetText(ns.Probe:Summary())
+    local on, total = 0, 0
+    for _, s in ipairs(ns.Modules:Status()) do total = total + 1 if s.enabled then on = on + 1 end end
+    self.mods:SetText(string.format("Modules on for this character: %d of %d", on, total))
+    local names = {}
+    for _, k in ipairs(ns.Conflicts:Detect()) do names[#names + 1] = k.addon .. " (" .. k.relation .. ")" end
+    self.addons:SetText("Detected addons: " .. (#names > 0 and table.concat(names, ", ") or "none"))
+  end
+end, 10)
+
+-- ------------------------------------------------------------- Modules
+Hub:AddTab("modules", L.modules, function(p)
+  local heading = UI.Text(p, "large", "accent")
+  heading:SetPoint("TOPLEFT", 0, 0)
+  heading:SetText(L.modulesHeading)
+  p.rows = {}
+  for i = 1, MAX_ROWS do
+    local row = UI:Check(p, "", function() local r = p.rows[i] return r and r.mod and r.mod.enabled end,
+      function(on)
+        local mod = p.rows[i] and p.rows[i].mod
+        if not mod then return end
+        local ok, err = ns.Modules:SetEnabled(mod.name, on)
+        if not ok then ns.Print("%s: %s", mod.name, err) end
+        p:Refresh()
+      end)
+    row:SetPoint("TOPLEFT", 0, -24 - (i - 1) * 22)
+    row:SetWidth(W - 40)
+    p.rows[i] = row
+  end
+  function p:Refresh()
+    local status = ns.Modules:Status()
+    for i, row in ipairs(self.rows) do
+      local s = status[i]
+      if s then
+        row.mod = ns.Modules:Get(s.name)
+        row.label:SetText(s.title)
+        row.note:SetText((s.phase and (s.phase .. "  ") or "") .. (s.enabled and "" or tostring(s.reason)))
+        row:Refresh()
+        row:Show()
+      else
+        row.mod = nil
+        row:Hide()
+      end
+    end
+  end
+end, 20)
+
+-- ------------------------------------------------------------- Characters
+Hub:AddTab("characters", L.characters, function(p)
+  local hint = UI.Text(p, "small", "muted")
+  hint:SetPoint("TOPLEFT", 0, 0)
+  hint:SetText(L.charsHint)
+  p.list = UI:ScrollList(p, {
+    rows = 12, rowHeight = 26,
+    build = function(row)
+      row.copy = UI:Button(row, "Copy", 70)
+      row.copy:SetHeight(20)
+      row.copy:SetPoint("RIGHT", -4, 0)
+    end,
+    render = function(row, ch)
+      local when = ch.lastLogin and ch.lastLogin > 0 and date("%Y-%m-%d", ch.lastLogin) or "?"
+      row.text:SetText(string.format("%s%s  %s %s  |  last login %s", ch.key, ch.current and "  (you)" or "",
+        tostring(ch.class or "?"), tostring(ch.level or "?"), when))
+      row.copy:SetShown(not ch.current)
+      row.copy:SetScript("OnClick", function()
+        local ok, err = ns.Profiles:CopyFrom(ch.key)
+        ns.Print(ok and ("copied settings from " .. ch.key .. ". Type /reload to apply everything.") or tostring(err))
+      end)
+    end,
+  })
+  p.list:SetPoint("TOPLEFT", 0, -20)
+  p.list:SetPoint("RIGHT", 0, 0)
+  function p:Refresh() self.list:SetItems(ns.DB:Characters()) end
+end, 30)
+
+-- Kept for /ride copy-style flows and older callers: copies from the first
+-- other character only when exactly one exists, otherwise opens the tab.
+function Hub:ShowCopyMenu()
+  local others = {}
+  for _, ch in ipairs(ns.DB:Characters()) do if not ch.current then others[#others + 1] = ch end end
+  if #others == 0 then ns.Print(L.noOthers) return end
+  local f = self:Build()
+  f:Show()
+  f.tabBar:Select("characters")
+end
+
+-- ------------------------------------------------------------- Tools
+Hub:AddTab("tools", L.tools, function(p)
+  local function btn(label, x, y, fn)
+    local b = UI:Button(p, label, 130, fn)
+    b:SetPoint("TOPLEFT", x, y)
+    return b
+  end
+  btn("Export", 0, 0, function()
+    local s, err = ns.Profiles:Export()
+    if s then UI:TextDialog("Export settings (" .. ns.db.key .. ")", s, "copy")
+    else ns.Print("export failed: %s", tostring(err)) end
+  end)
+  btn("Import", 140, 0, function()
+    UI:TextDialog("Import settings into " .. ns.db.key, "", "paste", function(text)
+      local ok, err = ns.Profiles:Import(text)
+      if ok then ns.Print("settings imported. Type /reload to apply everything.") end
+      return ok, err
+    end)
+  end)
+  p.errorsBtn = btn("Errors", 280, 0, function() ns.Slash:Run("errors") end)
+  btn("Clear errors", 420, 0, function() ns.Slash:Run("errors clear") p:Refresh() end)
+  btn("Run probe", 0, -30, function() ns.Slash:Run("probe") p:Refresh() end)
+  btn("Reload UI", 140, -30, function() ReloadUI() end)
+  p.debug = UI:Check(p, "Debug logging", function() return ns.db.global.debug end,
+    function(on) ns.db.global.debug = on and true or false end)
+  p.debug:SetPoint("TOPLEFT", 0, -66)
+  p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent end,
+    function(on) ns.db.char.classAccent = on and true or false end)
+  p.accent:SetPoint("TOPLEFT", 0, -90)
+  p.probe = UI.Text(p, "small", "muted")
+  p.probe:SetPoint("TOPLEFT", 0, -122)
+  p.probe:SetWidth(W - 20)
+  p.probe:SetJustifyH("LEFT")
+  p.recent = UI.Text(p, "small", "muted")
+  p.recent:SetPoint("TOPLEFT", 0, -144)
+  p.recent:SetWidth(W - 20)
+  p.recent:SetJustifyH("LEFT")
+  function p:Refresh()
+    self.errorsBtn.label:SetText("Errors (" .. #ns.Errors.list .. ")")
+    self.debug:Refresh()
+    self.accent:Refresh()
+    self.probe:SetText(ns.Probe:Summary())
+    local lines = {}
+    for _, e in ipairs(ns.Errors:Recent(5)) do lines[#lines + 1] = string.format("x%d %s: %s", e.count, e.where, e.msg) end
+    self.recent:SetText(#lines > 0 and table.concat(lines, "\n") or "No recent errors.")
+  end
+end, 90)
