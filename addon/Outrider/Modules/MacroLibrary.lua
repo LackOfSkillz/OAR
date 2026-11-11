@@ -43,6 +43,7 @@ function M:Values()
     if not ns.BagFood.food and not ns.BagFood.drink then ns.BagFood:Scan() end
     v.FOOD, v.DRINK = ns.BagFood.food, ns.BagFood.drink
   end
+  if ns.RareMacros and ns.RareMacros.enabled then ns.RareMacros:Values(v) end
   return v
 end
 

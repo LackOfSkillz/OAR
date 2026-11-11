@@ -51,6 +51,7 @@ Modules\Spellbook.lua
 Modules\MacroLibrary.lua
 Modules\RankCheck.lua
 Modules\BagFood.lua
+Modules\RareMacros.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua
