@@ -5,7 +5,12 @@
 -- them at logout and keeps a server copy of macros.
 -- Macro flow (one press = one action, like any normal macro):
 --   out of combat  Concussive Shot pulls and slows
---   in combat      Tame Beast, and if it breaks: Wing Clip, then Tame Beast again
+--   in combat      Tame Beast, and if it breaks (stun): Wing Clip, then Tame Beast again
+--   Shift-click    Concussive Shot (she wandered off) and the sequence resets,
+--                  so the next click is Tame Beast
+-- A macro can't test "is she targeting me" while casting at her, so the
+-- re-pull is Gary's Shift; and Wing Clip + Tame share the global cooldown,
+-- so they are always two clicks.
 
 local _, ns = ...
 local C = ns.Compat
@@ -23,8 +28,8 @@ M.TEMPLATE = table.concat({
   "/cleartarget",
   "/targetexact {NAME}",
   "/stopmacro [noexists][noharm][dead]",
-  "/cast [nocombat] Concussive Shot",
-  "/castsequence [combat] reset=combat Tame Beast, Wing Clip",
+  "/cast [nocombat][mod:shift] Concussive Shot",
+  "/castsequence [combat] reset=combat/shift Tame Beast, Wing Clip",
 }, "\n")
 
 -- "mystmane" -> "Mystmane", "ghost howl" -> "Ghost Howl" (names are typed by hand).
