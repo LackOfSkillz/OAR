@@ -124,13 +124,18 @@ function M:Activity()
   return string.format("sharing %s; %d other Outrider users seen", self:Settings().hello and "on (version hello)" or "off", n)
 end
 
-ns.AddCommand("share", "hello on|off  tell guildmates which Outrider version you run (off by default)", function(arg)
+ns.AddCommand("share", "hello on|off | rares guild|party on|off  sharing (all off by default)", function(arg)
   local what, state = (arg or ""):match("^(%S+)%s+(%S+)$")
+  local where, st2 = (arg or ""):match("^rares%s+(%S+)%s+(%S+)$")
   if what == "hello" and (state == "on" or state == "off") then
     M:Settings().hello = state == "on"
     ns.Print("version hello %s", state)
     if state == "on" then M:Hello() end
+  elseif ns.RareShare and (where == "guild" or where == "party") and (st2 == "on" or st2 == "off") then
+    ns.RareShare:Settings()[where] = st2 == "on"
+    ns.Print("rare sharing with %s %s", where, st2)
   else
-    ns.Print("usage: /ride share hello on|off  (%s)", M:Activity())
+    ns.Print("usage: /ride share hello on|off | rares guild|party on|off  (%s; %s)", M:Activity(),
+      ns.RareShare and ns.RareShare:Activity() or "")
   end
 end)

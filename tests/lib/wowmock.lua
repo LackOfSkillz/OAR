@@ -438,6 +438,8 @@ function M.new(opts)
     end,
   }
   base.IsInGuild = function() return opts.inGuild or false end
+  base.IsInGroup = function() return opts.inGroup or false end
+  base.IsInRaid = function() return opts.inRaid or false end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
