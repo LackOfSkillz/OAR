@@ -173,6 +173,11 @@ local function buildMethods(game)
     elseif type(a) == "table" then rel, relPoint, x, y = a, b, c, d end
     if type(relPoint) == "number" then x, y, relPoint = relPoint, x, nil end
     self.__points[#self.__points + 1] = { point, rel, relPoint or point, x or 0, y or 0 }
+    -- A secure frame anchored to one of our insecure frames makes that frame
+    -- protected in game (moving it gets the addon blocked). Record it.
+    if self.__protected and type(rel) == "table" and not rel.__protected and rel ~= game.env.UIParent then
+      game.secureAnchoredToInsecure = (game.secureAnchoredToInsecure or 0) + 1
+    end
   end
   m.ClearAllPoints = function(self) guard(self, "ClearAllPoints") self.__points = {} end
   m.GetPoint = function(self, i)

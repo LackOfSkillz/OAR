@@ -65,11 +65,13 @@ local function build(self)
   f.text:SetJustifyH("LEFT")
   f:SetScript("OnDragStart", function()
     if ns.Compat.InCombat() and Toast:HasSecure() then return end
+    Toast:HideButtons()
     Toast:Anchor():StartMoving()
   end)
   f:SetScript("OnDragStop", function()
     Toast:Anchor():StopMovingOrSizing()
     Toast:SaveAnchor()
+    Toast:Layout()
   end)
   f:SetScript("OnClick", function(_, button) if button == "RightButton" then Toast:Dismiss(f) end end)
   f:RegisterForClicks("AnyUp")
@@ -77,8 +79,30 @@ local function build(self)
   return f
 end
 
--- A frame that a secure button is anchored to becomes protected in combat,
--- so moving toasts that carry buttons waits until combat ends.
+-- Secure buttons are NEVER anchored to a toast. A frame that a secure frame
+-- is anchored to counts as protected, and moving it (dragging the toasts)
+-- made Blizzard block Outrider on 2026-11-11. Buttons are placed against
+-- UIParent at the toast's screen position, out of combat, after each layout.
+function Toast:HideButtons()
+  for _, f in ipairs(self.visible) do
+    if f.secure then ns.SecureButtons:SetShown(f.secure, false) end
+  end
+end
+
+function Toast:PlaceButton(f)
+  local cx, cy = f:GetCenter()
+  if not cx then
+    -- not drawn yet: try again next frame
+    ns.Timer.After(0, function() if f.secure then Toast:PlaceButton(f) end end, "toast:place")
+    return
+  end
+  local right = cx + (f:GetWidth() or self.W) / 2 - 8
+  ns.SecureButtons:Place(f.secure, "RIGHT", UIParent, "BOTTOMLEFT", right, cy)
+  ns.SecureButtons:SetShown(f.secure, true)
+end
+
+-- Moving toasts that carry buttons waits until combat ends (their buttons
+-- can't follow during combat).
 function Toast:HasSecure()
   for _, f in ipairs(self.visible) do if f.secure then return true end end
   return false
@@ -93,9 +117,7 @@ function Toast:Layout()
   for i, f in ipairs(self.visible) do
     f:ClearAllPoints()
     f:SetPoint("TOP", a, "TOP", 0, -(i - 1) * (self.H + self.GAP))
-    if f.secure then
-      ns.SecureButtons:Place(f.secure, "RIGHT", f, "RIGHT", -8, 0)
-    end
+    if f.secure then self:PlaceButton(f) end
   end
 end
 
