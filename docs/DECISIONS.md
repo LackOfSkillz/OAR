@@ -30,3 +30,4 @@
 - 2026-11-11: Questie and QuestieDB were removed from AddOns at Gary's request. The importers read the saved zip in private/questie-source; Outrider runs without Questie (D10 holds).
 
 - 2026-11-11: P6-07 GearQuest bridge skipped: GearQuest Forever is not installed on Gary's PC. If he installs it, check for a public API and add a read-only bridge.
+- 2026-11-11: GearQuest Forever v1.1.3 installed at Gary's request (zip kept in private/gearquest-source). Its licence is All Rights Reserved, so Outrider only reads its global table in game (GearQuestBridge) and never copies its data. Outrider's nearby-upgrade toast yields to GearQuest's own toasts.

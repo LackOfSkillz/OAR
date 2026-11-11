@@ -77,6 +77,7 @@ Modules\QuestRewards.lua
 Modules\GearSets.lua
 Modules\Handoffs.lua
 Modules\Nearby.lua
+Modules\GearQuestBridge.lua
 Modules\Comm.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua

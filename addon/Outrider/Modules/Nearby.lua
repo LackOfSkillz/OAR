@@ -23,7 +23,7 @@ local M = ns:NewModule("Nearby", {
 ns.Nearby = M
 
 M.ADDON = "Outrider_Data_Gear"
-M.EFFORT = { vendor = 1, alt = 2, quest = 3, drop = 4 }
+M.EFFORT = { vendor = 1, alt = 2, gearquest = 3, quest = 3, drop = 4 }
 M.KIND_LABEL = { vendor = "sold by", quest = "quest", drop = "dropped by", alt = "on" }
 
 function M:Load()
@@ -93,6 +93,24 @@ function M:Candidates()
       end
     end
   end
+  -- GearQuest's own best pick per slot (P6-07), scored with Outrider weights
+  if ns.GearQuestBridge and ns.GearQuestBridge.enabled then
+    for _, g in ipairs(ns.GearQuestBridge:Picks()) do
+      if not seen[g.itemID] then
+        if not stats(g.itemID) then
+          missing = missing + 1
+          C.Call("C_Item.RequestLoadItemDataByID", g.itemID)
+        else
+          local r = ns.GearScore:Compare("item:" .. g.itemID)
+          if r and not r.why and r.pct >= 1 then
+            seen[g.itemID] = true
+            out[#out + 1] = { itemID = g.itemID, name = g.name, pct = r.pct, kind = "gearquest", via = g.label,
+              zone = g.zone, where = g.where }
+          end
+        end
+      end
+    end
+  end
   if ns.Handoffs then
     for _, h in ipairs(ns.Handoffs:Find()) do
       out[#out + 1] = { itemID = h.itemID, name = h.name, pct = h.pct, kind = "alt", where = { who = h.holder } }
@@ -124,6 +142,9 @@ function M.Describe(c)
   local w = c.where or {}
   local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or "?"
   local src = (M.KIND_LABEL[c.kind] or c.kind) .. " " .. who
+  if c.kind == "gearquest" then
+    src = "GearQuest: " .. tostring(c.via or "") .. " " .. who .. (c.zone and (", " .. c.zone) or "")
+  end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end
   return string.format("+%d%%  %s  |cffbbbbbb%s|r", math.floor(c.pct + 0.5), tostring(c.name), src)
 end
@@ -132,7 +153,9 @@ function M:Scan(why)
   if C.InCombat() or C.Call("IsInInstance") then return end
   local list = self:Candidates()
   local s = self:Settings()
-  for _, c in ipairs(list) do
+  -- GearQuest shows its own upgrade toasts: step aside (one owner, hard rule 8)
+  local quiet = ns.GearQuestBridge and ns.GearQuestBridge:GQ() ~= nil
+  for _, c in ipairs(quiet and {} or list) do
     if c.pct >= s.threshold and not s.told[c.itemID] and c.kind ~= "alt" then
       s.told[c.itemID] = time()
       ns.Toast:Show({ title = "Upgrade nearby: " .. tostring(c.name), text = M.Describe(c):gsub("|c%x+", ""):gsub("|r", ""),
