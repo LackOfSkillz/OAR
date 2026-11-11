@@ -42,6 +42,12 @@ function ns.Safe(where, fn, ...)
   return unpack(results, 1, table.maxn(results))
 end
 
+-- Modules load before Core/Slash.lua, so they queue their /ride commands here.
+ns.moduleCommands = {}
+function ns.AddCommand(name, usage, fn)
+  ns.moduleCommands[#ns.moduleCommands + 1] = { name = name, usage = usage, fn = fn }
+end
+
 -- Tiny helpers shared by all files
 function ns.Print(msg, ...)
   if select("#", ...) > 0 then msg = string.format(msg, ...) end

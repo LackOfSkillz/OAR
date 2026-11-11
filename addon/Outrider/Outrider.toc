@@ -47,6 +47,7 @@ Data\Macros_Hunter.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\Welcome.lua
+Modules\Discovery.lua
 
 Core\Slash.lua
 Core\Boot.lua

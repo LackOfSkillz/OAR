@@ -327,7 +327,14 @@ function M.new(opts)
   base.GetRealmName = function() return player.realm end
   base.UnitClass = function(unit) if unit == "player" then return player.class:sub(1, 1) .. player.class:sub(2):lower(), player.class end end
   base.UnitRace = function(unit) if unit == "player" then return player.race, player.race end end
-  base.UnitLevel = function(unit) if unit == "player" then return player.level end end
+  base.UnitLevel = function(unit)
+    if unit == "player" then return player.level end
+    return game.units and game.units[unit] and game.units[unit].level
+  end
+  base.UnitIsPlayer = function(unit) return unit == "player" or (game.units and game.units[unit] and game.units[unit].player) or false end
+  base.UnitCreatureType = function(unit) return game.units and game.units[unit] and game.units[unit].creatureType end
+  base.UnitIsDead = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
+  base.IsInInstance = function() return opts.inInstance and true or false, opts.inInstance and "party" or "none" end
   base.UnitFactionGroup = function(unit) if unit == "player" then return player.faction end end
   base.UnitExists = function(unit) return unit == "player" or (game.units and game.units[unit] ~= nil) end
   base.UnitGUID = function(unit)

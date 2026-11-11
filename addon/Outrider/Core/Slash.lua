@@ -142,6 +142,11 @@ add("selftest", "error|combat|button|toast|widgets  checks for the test pipeline
   end
 end)
 
+-- Commands queued by modules (ns.AddCommand), after the built-ins.
+for _, c in ipairs(ns.moduleCommands) do
+  if not Slash.commands[c.name] then add(c.name, c.usage, c.fn) end
+end
+
 function Slash:Run(line)
   line = (line or ""):gsub("^%s+", ""):gsub("%s+$", "")
   local cmd, rest = line:match("^(%S*)%s*(.-)$")
