@@ -58,6 +58,8 @@ Modules\TameHelper.lua
 Modules\PetStatus.lua
 Modules\Ammo.lua
 Modules\BeastInfo.lua
+Modules\Waypoints.lua
+Modules\Coords.lua
 
 Core\Slash.lua
 Core\Boot.lua

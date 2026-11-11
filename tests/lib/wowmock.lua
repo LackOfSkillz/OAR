@@ -443,6 +443,19 @@ function M.new(opts)
     end,
     GetMapInfo = function(id) return { mapID = id, name = "Mulgore" } end,
   }
+  base.C_Map.SetUserWaypoint = function(p) game.userWaypoint = p end
+  base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end
+  -- world yards: 1 map unit = 1000 yards on every test map
+  base.C_Map.GetWorldPosFromMapPos = function(mapID, v)
+    return 1, { GetXY = function() return v.x * 1000, v.y * 1000 end }
+  end
+  base.CreateVector2D = function(x, y) return { x = x, y = y } end
+  base.UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, x = x, y = y } end }
+  base.C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) game.superTracked = on end }
+  base.UnitPosition = function(unit)
+    if unit ~= "player" then return nil end
+    return (opts.y or 0.37) * 1000, (opts.x or 0.46) * 1000, 0, 1
+  end
   base.issecretvalue = function(v) return type(v) == "table" and v.__secret == true end
 
   base._G = env

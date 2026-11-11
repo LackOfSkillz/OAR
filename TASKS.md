@@ -62,7 +62,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 3: Navigation and map  ([phases/P3_navigation.md](phases/P3_navigation.md))
 
-- [ ] P3-01 Waypoint service · Claude · deps: P0-08
+- [~] P3-01 Waypoint service · Claude · deps: P0-08 — 2026-11-11: Modules/Waypoints.lua (Blizzard user waypoint + supertrack, TomTom fallback, arrival clear checked 1/s only while active, /ride way); 3 specs. In-game check comes with pin cards/Nearest (no typing)
 - [ ] P3-02 Fallback arrow · Claude · deps: P3-01
 - [ ] P3-03 World map pins · Claude · deps: P0-08
 - [ ] P3-04 Minimap pins · Claude · deps: P3-03
@@ -71,7 +71,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P3-07 Nearest · Claude · deps: P3-01, P3-06
 - [ ] P3-08 Questie bridge · Claude · deps: P3-03
 - [ ] P3-09 Discovery privacy and controls · Claude · deps: P3-06
-- [ ] P3-10 Coordinates · Claude · deps: P3-01
+- [~] P3-10 Coordinates · Claude · deps: P3-01 — 2026-11-11: Modules/Coords.lua (coords under minimap, ticking only while moving; /ride coords prints + logs); 2 specs. Cursor coords on world map still to do
 - [ ] P3-11 Redrawn zone check · Both · deps: P3-06
 - [ ] P3-12 Gate G3 · Both · deps: all P3
 - [ ] **G3** gate: for five known NPCs, pins land where the game shows them (screenshot check: within a small distance on the map); `/ride near spirit` sets a waypoint to the nearest known spirit healer; pin cards open and show correct info; minimap pins appear and disappear with distance; no errors.
