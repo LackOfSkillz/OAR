@@ -112,6 +112,44 @@ function M:Remove(entry)
   return true
 end
 
+-- --------------------------------------------------------------- P4-09
+-- Export the library macros this character installed as an OTR1: string.
+-- Only library ids travel; the importing character fills the text itself
+-- (its own food, watchlist, spell names), so no foreign macro text is ever
+-- installed.
+M.KIND, M.VERSION = "macros", 1
+
+function M:Export()
+  local ids = {}
+  for name, rec in pairs(self:Settings().installed) do if rec.id then ids[#ids + 1] = rec.id end end
+  table.sort(ids)
+  if #ids == 0 then return nil, "no library macros installed on this character" end
+  return ns.Serialize.Export({ kind = self.KIND, v = self.VERSION, from = ns.db.key, ids = ids })
+end
+
+-- Returns installed, skipped (list of "name: reason")
+function M:Import(text)
+  local p, err = ns.Serialize.Import(text)
+  if not p then return nil, err end
+  if type(p) ~= "table" or p.kind ~= self.KIND then return nil, "this string is not an Outrider macro export" end
+  if type(p.v) ~= "number" or p.v > self.VERSION then return nil, "made by a newer Outrider" end
+  if type(p.ids) ~= "table" then return nil, "no macros in this string" end
+  local byId = {}
+  for _, e in ipairs(self:Entries()) do byId[e.id] = e end
+  local installed, skipped = 0, {}
+  for _, id in ipairs(p.ids) do
+    local e = type(id) == "string" and byId[id]
+    if not e then
+      skipped[#skipped + 1] = tostring(id) .. ": not for this class"
+    else
+      local ok, why = self:Install(e)
+      if ok then installed = installed + 1 else skipped[#skipped + 1] = e.name .. ": " .. tostring(why) end
+    end
+  end
+  self:Info("imported %d macros from %s, skipped %d", installed, tostring(p.from), #skipped)
+  return installed, skipped
+end
+
 function M:Activity()
   local n = 0
   for _ in pairs(self:Settings().installed) do n = n + 1 end
@@ -158,6 +196,21 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     p:Refresh()
   end)
   d.remove:SetPoint("LEFT", d.pickup, "RIGHT", 6, 0)
+  p.export = UI:Button(p, "Export", 110, function()
+    local s, err = M:Export()
+    if s then UI:TextDialog("Outrider macros (" .. ns.db.key .. ")", s, "copy") else d.msg:SetText(err) end
+  end)
+  p.export:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -6)
+  p.import = UI:Button(p, "Import", 110, function()
+    UI:TextDialog("Import macros into " .. ns.db.key, "", "paste", function(text)
+      local n, skipped = M:Import(text)
+      if not n then return false, skipped end
+      d.msg:SetText(string.format("Installed %d.%s", n, #skipped > 0 and (" Skipped: " .. table.concat(skipped, "; ")) or ""))
+      p:Refresh()
+      return true
+    end)
+  end)
+  p.import:SetPoint("LEFT", p.export, "RIGHT", 6, 0)
 
   function p:ShowEntry(e)
     self.current = e

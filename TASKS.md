@@ -86,7 +86,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [~] P4-06 Rank-check · Both · deps: P4-02 — 2026-11-11: Modules/RankCheck.lua (action slots vs highest known rank, toast with Fix button out of combat, logs findings at every login); toast gains plain action buttons; 3 specs. Waiting on: login log (does Forever auto-upgrade?) and a trainer visit
 - [~] P4-07 Rare-aware macros · Claude · deps: P4-04, P2-05 — 2026-11-11: Modules/RareMacros.lua (tame target follows newest watched tameable rare; scan macro = watched + map rares as /targetexact lines within 255; rebuilt on zone change, never in combat); 2 specs. Waiting on Gary: install Outrider Scan, change zone
 - [ ] P4-08 Class packs · Claude · deps: P4-01
-- [ ] P4-09 Export, import and context sets · Claude · deps: P4-04
+- [~] P4-09 Export, import and context sets · Claude · deps: P4-04 — 2026-11-11: Export/Import buttons in the Macros tab (OTR1 string of library ids; importer fills text locally, skips other-class macros, refuses broken strings); 2 specs. Context sets wait for P7-09 layouts
 - [ ] P4-10 Gate G4 · Both · deps: all P4
 - [ ] **G4** gate: on Torrant, five library macros installed and each works when Gary presses it; on the priest, five priest macros; the rank-check finds an outdated button after a trainer visit and fixes it with one click out of combat; no macro over 255 characters; macro slot counts correct.
 
