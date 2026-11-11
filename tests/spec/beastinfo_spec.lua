@@ -47,9 +47,12 @@ T.describe("beast info", function()
     T.eq(lines[4], "Abilities: Claw (unverified)")
   end)
 
-  T.it("registers one tooltip post-hook, and the hook adds lines to GameTooltip", function()
+  T.it("registers one unit tooltip post-hook, and the hook adds lines to GameTooltip", function()
     local game, ns = session()
-    T.eq(#game.tooltipHooks, 1)
+    local unitHooks = {}
+    for _, h in ipairs(game.tooltipHooks) do if h.kind == 2 then unitHooks[#unitHooks + 1] = h end end
+    T.eq(#unitHooks, 1)
+    game.tooltipHooks = unitHooks
     game.units.mouseover = beast(7201, 12)
     local tip = game.env.GameTooltip
     tip.GetUnit = function() return "Beast", "mouseover" end

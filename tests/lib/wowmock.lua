@@ -383,9 +383,10 @@ function M.new(opts)
   -- bags: game.bags[bag][slot] = itemID; game.items[itemID] = { name, reqLevel, spell }
   base.C_Container = {
     GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
+    -- game.counts[bag][slot] overrides the default stack of 5
     GetContainerItemInfo = function(bag, slot)
       local id = game.bags and game.bags[bag] and game.bags[bag][slot]
-      if id then return { itemID = id, stackCount = 5 } end
+      if id then return { itemID = id, stackCount = (game.counts and game.counts[bag] and game.counts[bag][slot]) or 5 } end
     end,
   }
   base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
@@ -396,7 +397,7 @@ function M.new(opts)
   base.C_Item.GetItemInfoInstant = function(id)
     return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
   end
-  base.Enum = { TooltipDataType = { Unit = 2 }, SpellBookSpellBank = { Player = 0 } }
+  base.Enum = { TooltipDataType = { Unit = 2, Item = 0 }, SpellBookSpellBank = { Player = 0 } }
   -- spellbook: game.spells = { { name, id, rank, passive } } in one skill line
   game.spells = opts.spells or {
     { name = "Auto Shot", id = 75 }, { name = "Arcane Shot", id = 14282, rank = 3 },

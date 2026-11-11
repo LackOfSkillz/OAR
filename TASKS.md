@@ -92,7 +92,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 5: Professions, auctions and fishing  ([phases/P5_professions.md](phases/P5_professions.md))
 
-- [ ] P5-01 Inventory across characters · Claude · deps: P1-04
+- [~] P5-01 Inventory across characters · Claude · deps: P1-04 — 2026-11-11: Modules/Inventory.lua (bags throttled, bank while open, mail, worn, money; item tooltip "You have N (Char n, ...)", Shift for bags/bank/mail); 2 specs. Waiting on: opening the bank on two characters
 - [ ] P5-02 Profession scanner · Claude · deps: P0-08
 - [ ] P5-03 Craft queue and shopping list · Claude · deps: P5-01, P5-02
 - [ ] P5-04 Skill-up planner · Claude · deps: P5-02, P5-06
