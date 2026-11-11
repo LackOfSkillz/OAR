@@ -1,0 +1,52 @@
+-- Advisor tab and /ride ask (P9-02). Advice is a hand-written test file.
+local T, mock = ...
+
+local function session(withAdvice)
+  local game = mock.new()
+  local ns = game:loadAddon()
+  game:login()
+  local snap = ns.Snapshot:Collect()
+  if withAdvice then
+    game.env.Outrider_Advice = { schema = 1, forCharacter = ns.db.key, answersSnapshot = snap.takenAt, items = {
+      { title = "Hunt Mystmane", why = "Its window is open", action = "waypoint", confidence = "verified",
+        args = { mapID = 1412, x = 0.6, y = 0.34 } },
+      { title = "Track The Hunt Begins", why = "Close to done", action = "track_quest", confidence = "inferred", args = { questID = 747 } },
+      { title = "Look at gear", why = "Two upgrades nearby", action = "open_panel", confidence = "inferred", args = { panel = "gear" } },
+      { title = "See the bow", why = "Best ranged pick", action = "show_item", confidence = "community", args = { itemID = 2504 } },
+      { title = "Cast something", why = "never allowed", action = "cast", args = { spell = "Fireball" } },
+    } }
+  end
+  return game, ns
+end
+
+T.describe("advisor tab", function()
+  T.it("lists only whitelisted advice and each button does its harmless action", function()
+    local game, ns = session(true)
+    game.env.C_QuestLog.AddQuestWatch = function(id) game.watched = id end
+    game.env.ItemRefTooltip = game.env.CreateFrame("GameTooltip", "ItemRefTooltip", game.env.UIParent)
+    local items = ns.Advisor:Items()
+    T.eq(#items, 4, "the cast item is dropped")
+    T.ok(ns.Advisor:Perform(items[1]))
+    T.eq(ns.Waypoints.current.title, "Hunt Mystmane")
+    ns.Advisor:Perform(items[2])
+    T.eq(game.watched, 747)
+    ns.Advisor:Perform(items[3])
+    T.eq(ns.Hub.current, "gear")
+    T.ok((ns.Advisor:Perform(items[4])))
+    T.no((ns.Advisor:Perform({ action = "cast", args = {} })))
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("explains why there is no advice; /ride ask snapshots and reloads, never in combat", function()
+    local game, ns = session(false)
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("advisor")
+    T.contains(ns.Hub.byId.advisor.panel.head:GetText(), "No advice yet")
+    game.combat = true
+    game:slash("ask")
+    T.eq(game.reloads, 0)
+    game.combat = false
+    game:slash("ask")
+    T.eq(game.reloads, 1)
+  end)
+end)
