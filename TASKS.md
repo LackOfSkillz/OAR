@@ -80,8 +80,8 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 - [x] P4-01 Macro engine (pure logic) · Claude · deps: none — 2026-11-11: Modules/MacroEngine.lua: Fill, Validate (255, unknown command, brackets, !Auto Shot/!Aspect, #showtooltip), Explain in plain English; all pack macros validate; explanations for the hunter pack reviewed; 5 specs
 - [~] P4-02 Spellbook resolver · Claude · deps: P0-08 — 2026-11-11: Modules/Spellbook.lua (C_SpellBook with classic fallback, highest rank per name, saved per char, /ride spells); 3 specs. Waiting on: the saved list from Gary's next login
-- [ ] P4-03 Library window · Claude · deps: P4-01, P4-02, P1-08
-- [ ] P4-04 Installer · Both · deps: P4-03
+- [~] P4-03 Library window · Claude · deps: P4-01, P4-02, P1-08 — 2026-11-11: hub Macros tab: class + general macros, state from spellbook/level/placeholders, filled body, plain-English explanation, notes; 1 spec. Waiting on Gary: screenshot
+- [~] P4-04 Installer · Both · deps: P4-03 — 2026-11-11: Install/Update/Remove/Pick up out of combat, per-char tracking, never touches macros Gary made, slot checks, TARGET from watchlist; 5 specs. Waiting on Gary: install Pull, AutoShot, PetCare and press them
 - [ ] P4-05 Live placeholders · Claude · deps: P4-04
 - [ ] P4-06 Rank-check · Both · deps: P4-02
 - [ ] P4-07 Rare-aware macros · Claude · deps: P4-04, P2-05

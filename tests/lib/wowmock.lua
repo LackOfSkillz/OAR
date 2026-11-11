@@ -442,6 +442,8 @@ function M.new(opts)
     if body then m.body = body end
     return i
   end
+  base.DeleteMacro = function(i) if game.combat then error("DeleteMacro in combat") end table.remove(game.macros, i) end
+  base.PickupMacro = function(i) game.cursorMacro = i end
   base.CreateMacro = function(name, icon, body, perChar)
     if game.combat then error("CreateMacro in combat") end
     game.macros[#game.macros + 1] = { name = name, icon = icon, body = body, perChar = perChar }
