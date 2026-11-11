@@ -204,6 +204,8 @@ local function buildMethods(game)
   m.CreateTexture = function(self, name) return newRegion(game, "Texture", name, self) end
   m.GetObjectType = function(self) return self.__kind end
   m.IsForbidden = function() return false end
+  m.SetAlpha = function(self, a) self.__alpha = a end
+  m.GetAlpha = function(self) return self.__alpha or 1 end
   m.GetFrameLevel = function() return 1 end
   m.GetChildren = function() return end
   m.EnableMouse = noop
