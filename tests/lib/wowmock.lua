@@ -310,6 +310,14 @@ function M.new(opts)
   end
   base.UIParent = newRegion(game, "Frame", nil, nil)
   base.Minimap = newRegion(game, "Frame", nil, nil)
+  -- world map: a frame with a canvas; game.mapShownID is the map on screen
+  base.WorldMapFrame = newRegion(game, "Frame", "WorldMapFrame", nil)
+  base.WorldMapFrame.__shown = false
+  local canvas = newRegion(game, "Frame", nil, nil)
+  canvas.__w, canvas.__h = 1000, 700
+  base.WorldMapFrame.GetCanvas = function() return canvas end
+  base.WorldMapFrame.GetMapID = function() return game.mapShownID end
+  base.WorldMapFrame.OnMapChanged = function() end
   base.GameTooltip = newRegion(game, "GameTooltip", nil, nil)
   base.DEFAULT_CHAT_FRAME = newRegion(game, "ScrollingMessageFrame", nil, nil)
   base.UISpecialFrames = {}

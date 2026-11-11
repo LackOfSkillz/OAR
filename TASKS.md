@@ -64,9 +64,9 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 - [~] P3-01 Waypoint service · Claude · deps: P0-08 — 2026-11-11: Modules/Waypoints.lua (Blizzard user waypoint + supertrack, TomTom fallback, arrival clear checked 1/s only while active, /ride way); 3 specs. In-game check comes with pin cards/Nearest (no typing)
 - [ ] P3-02 Fallback arrow · Claude · deps: P3-01
-- [ ] P3-03 World map pins · Claude · deps: P0-08
+- [~] P3-03 World map pins · Claude · deps: P0-08 — 2026-11-11: Modules/MapPins.lua (own frames on WorldMapFrame canvas, redrawn on show/map change, places + rares, faction filter, per-char hidden kinds); 3 specs. Waiting on Gary: open the map after a town visit
 - [ ] P3-04 Minimap pins · Claude · deps: P3-03
-- [ ] P3-05 Pin cards · Claude · deps: P3-03
+- [~] P3-05 Pin cards · Claude · deps: P3-03 — 2026-11-11: click a pin: card with kind, coords, visits or rare window, Waypoint + Watch buttons (no secure actions); 1 spec
 - [~] P3-06 POI capture · Claude · deps: P2-01 — 2026-11-11: Modules/POICapture.lua (vendor+repair, trainer, flight, bank, AH, stable, spirit healer, mailbox; averaged position; faction of capturer); 2 specs. Waiting on Gary: a town visit
 - [~] P3-07 Nearest · Claude · deps: P3-01, P3-06 — 2026-11-11: /ride near <kind>, nearest on continent by world yards, faction filter, auto spirit-healer waypoint on death; 3 specs. Hub quick buttons still to do
 - [ ] P3-08 Questie bridge · Claude · deps: P3-03
