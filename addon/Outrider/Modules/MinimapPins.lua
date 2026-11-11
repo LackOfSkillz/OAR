@@ -62,10 +62,8 @@ function M:Dot(i)
   local d = self.dots[i]
   if not d then
     d = CreateFrame("Button", nil, Minimap)
-    d:SetSize(8, 8)
+    ns.MapPins.Decorate(d, 14)
     d:SetFrameLevel((Minimap.GetFrameLevel and Minimap:GetFrameLevel() or 1) + 5)
-    d.tex = d:CreateTexture(nil, "OVERLAY")
-    d.tex:SetAllPoints()
     d:SetScript("OnEnter", function(self)
       local p = self.pin
       if not p then return end
@@ -112,7 +110,7 @@ function M:Update()
         if M.DIAG and (not nearest or dist < nearest.dist) then
           nearest = { name = pin.name, dist = dist, dN = -dSouth, dW = -dEast, x = x, y = y }
         end
-        d.tex:SetColorTexture(ns.Theme:Color(pin.kind == "rare" and "warn" or "accent"))
+        ns.MapPins.Paint(d, pin)
         d:ClearAllPoints()
         d:SetPoint("CENTER", Minimap, "CENTER", x, y)
         d:Show()

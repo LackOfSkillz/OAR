@@ -31,6 +31,82 @@ local LABELS = {
 }
 M.LABELS = LABELS
 
+-- Markers (Gary, 2026-11-11: "less 8 bit", colour by group, different
+-- symbols): the client's own minimap tracking icons as the symbol, a soft
+-- ring in the group colour behind it. Groups: merchant, trainer, service, rare.
+local TRACK = "Interface\\Minimap\\Tracking\\"
+local GROUP = {
+  vendor = "merchant", repair = "merchant",
+  trainer = "trainer",
+  innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
+  mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
+  rare = "rare",
+}
+M.GROUP_COLOR = {
+  merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
+}
+M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares" }
+local ICON = {
+  innkeeper = TRACK .. "Innkeeper", bank = TRACK .. "Banker", auction = TRACK .. "Auctioneer",
+  flight_master = TRACK .. "FlightMaster", stable_master = TRACK .. "StableMaster", mailbox = TRACK .. "Mailbox",
+  repair = TRACK .. "Repair", spirit_healer = "Interface\\Icons\\Spell_Holy_Resurrection",
+  guild_master = "Interface\\Icons\\INV_Misc_Note_02", tabard = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
+  rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
+}
+-- class names that make a trainer a class trainer (else profession)
+local CLASSES = { "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid", "Pet" }
+
+function M.Group(kind) return GROUP[kind] or "service" end
+
+-- Texture path for a pin (pure: by kind, then title / goods for vendors and trainers).
+function M.IconFor(pin)
+  local kind, p = pin.kind, pin.poi or pin
+  if kind == "trainer" then
+    local title = p and p.title or ""
+    for _, c in ipairs(CLASSES) do if title:find(c, 1, true) then return TRACK .. "Class" end end
+    return TRACK .. "Profession"
+  end
+  if kind == "vendor" then
+    local goods = p and p.goods and table.concat(p.goods, ",") or ""
+    local title = (p and p.title or ""):lower()
+    if goods:find("ammo") or title:find("bowyer") or title:find("gunsmith") or title:find("ammo") then return TRACK .. "Ammunition" end
+    if goods:find("food") or title:find("food") or title:find("cook") or title:find("innkeeper") then return TRACK .. "Food" end
+    if goods:find("reagent") or title:find("reagent") then return TRACK .. "Reagents" end
+    if title:find("poison") then return TRACK .. "Poisons" end
+    return TRACK .. "Repair"
+  end
+  return ICON[kind] or (TRACK .. "None")
+end
+
+-- Fill a marker: frame has .ring and .icon textures.
+function M.Paint(frame, pin)
+  local c = M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
+  frame.ring:SetColorTexture(c[1], c[2], c[3], 0.55)
+  local ok = frame.icon:SetTexture(M.IconFor(pin))
+  if ok == false then
+    frame.icon:SetColorTexture(c[1], c[2], c[3], 1) -- missing file: plain round dot
+  else
+    frame.icon:SetVertexColor(1, 1, 1, 1)
+  end
+end
+
+-- Round ring + icon on a marker frame of the given size.
+function M.Decorate(frame, size)
+  frame:SetSize(size, size)
+  frame.ring = frame:CreateTexture(nil, "BACKGROUND")
+  frame.ring:SetAllPoints()
+  local mask = frame.CreateMaskTexture and frame:CreateMaskTexture()
+  if mask then
+    mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetAllPoints()
+    frame.ring:AddMaskTexture(mask)
+  end
+  frame.icon = frame:CreateTexture(nil, "ARTWORK")
+  frame.icon:SetPoint("TOPLEFT", 2, -2)
+  frame.icon:SetPoint("BOTTOMRIGHT", -2, 2)
+  if mask and frame.icon.AddMaskTexture then frame.icon:AddMaskTexture(mask) end
+end
+
 -- Pins for one map: { id, kind, x, y, name, npcID?, poi?, rare? } (pure).
 -- PinsFor is called 5x a second by the minimap while moving; building new
 -- tables each time made memory read 3 MB (2026-11-11). Results are cached
@@ -127,9 +203,7 @@ function M:AcquirePin(canvas)
   local pin = table.remove(self.pool)
   if not pin then
     pin = CreateFrame("Button", nil, canvas)
-    pin:SetSize(14, 14)
-    pin.dot = pin:CreateTexture(nil, "OVERLAY")
-    pin.dot:SetAllPoints()
+    M.Decorate(pin, 18)
     pin:SetScript("OnClick", function(self) M:ShowCard(self.data) end)
     pin:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -160,7 +234,7 @@ function M:Refresh()
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
     pin:SetScale(1 / (scale > 0 and scale or 1))
-    pin.dot:SetColorTexture(ns.Theme:Color(COLORS[data.kind] or "text"))
+    M.Paint(pin, data)
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", canvas, "TOPLEFT", data.x * w * scale, -data.y * h * scale)
     pin:Show()

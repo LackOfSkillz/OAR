@@ -72,6 +72,19 @@ ns.Hub:AddTab("map", "Map", function(p)
     end
   end)
   p.clear:SetPoint("TOPLEFT", 0, y - 100)
+  -- legend: group colours
+  local lx = 0
+  for _, g in ipairs({ "merchant", "trainer", "service", "rare" }) do
+    local c = ns.MapPins.GROUP_COLOR[g]
+    local sw = p:CreateTexture(nil, "ARTWORK")
+    sw:SetSize(12, 12)
+    sw:SetPoint("TOPLEFT", lx, y - 134)
+    sw:SetColorTexture(c[1], c[2], c[3], 1)
+    local t = UI.Text(p, "small", "text")
+    t:SetPoint("LEFT", sw, "RIGHT", 4, 0)
+    t:SetText(ns.MapPins.GROUP_LABEL[g])
+    lx = lx + 110
+  end
   function p:Refresh()
     for _, c in ipairs(self.checks) do c:Refresh() end
     self.disc:Refresh()
