@@ -117,7 +117,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P6-05 Upgrade sources pack · Claude · deps: P3-06
 - [ ] P6-06 Nearby upgrades · Claude · deps: P6-02, P6-05, P2-07, P3-01
 - [ ] P6-07 GearQuest bridge · Claude · deps: P6-06
-- [ ] P6-08 Alt handoffs · Claude · deps: P5-01, P6-02
+- [~] P6-08 Alt handoffs · Claude · deps: P5-01, P6-02 · 2026-11-11: Modules/Handoffs.lua: at login finds BoE upgrades in other characters' bags/bank (once per item toast, "if still unbound" since Inventory keeps IDs only); at the holder's mailbox a toast with Address (fills the name; Gary attaches and sends). C.ItemInfo now returns bindType. Waiting on: BoE item on the priest
 - [~] P6-09 Gear sets · Claude · deps: P6-02 — 2026-11-11: Modules/GearSets.lua (/ride gear save|<name>|list|delete; per char; out of combat; missing items reported); covers the P5-12 fishing outfit; 1 spec
 - [ ] P6-10 Gate G6 · Both · deps: all P6
 - [ ] **G6** gate: on Torrant and on the priest, the tooltip verdict agrees with Gary's own judgment on 10 test items each; quest reward highlight picks the item Gary would pick (or the best vendor value when nothing is usable); the Nearby list shows at least five sensible upgrades in the current zone with where to get them; no toast in combat or instances.

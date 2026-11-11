@@ -92,13 +92,13 @@ end
 function C.ItemInfo(item)
   local get = (C_Item and C_Item.GetItemInfo) or _G.GetItemInfo
   if not get then return nil end
-  local ok, name, link, quality, ilvl, reqLevel, class, subclass, maxStack, equipLoc, icon, sellPrice =
-    pcall(get, item)
+  local ok, name, link, quality, ilvl, reqLevel, class, subclass, maxStack, equipLoc, icon, sellPrice,
+    _, _, bindType = pcall(get, item)
   if not ok or not name then return nil end
   return {
     name = name, link = link, quality = quality, ilvl = ilvl, reqLevel = reqLevel,
     class = class, subclass = subclass, maxStack = maxStack, equipLoc = equipLoc,
-    icon = icon, sellPrice = sellPrice,
+    icon = icon, sellPrice = sellPrice, bindType = bindType, -- 1 BoP, 2 BoE, 3 on use
   }
 end
 

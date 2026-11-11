@@ -489,7 +489,7 @@ function M.new(opts)
   base.C_Item.GetItemInfo = function(id)
     id = idOf(id)
     local it = game.items and game.items[id]
-    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, it.equipLoc, nil, it.sell or 0 end
+    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, it.equipLoc, nil, it.sell or 0, nil, nil, it.bind end
   end
   base.C_Item.GetItemInfoInstant = function(id)
     id = idOf(id)
