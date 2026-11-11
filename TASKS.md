@@ -33,7 +33,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P1-02 Character awareness · Both · deps: P1-01
 - [ ] P1-03 Export, import, copy in game · Both · deps: P1-02
 - [x] P1-04 Throttle and timer helpers · Claude · deps: none — 2026-11-11: Core/Timer.lua (After, Ticker, Throttle with trailing run, OnUpdate fallback idle when empty); 8 specs
-- [ ] P1-05 Secure button pool · Claude · deps: P1-04
+- [~] P1-05 Secure button pool · Claude · deps: P1-04 — 2026-11-11: UI/SecureButtons.lua (pool of 4 prewarmed, combat-deferred SetMacro/Show/Place/Release), mock flags protected calls in combat; 8 specs. Waiting on Gary: /ride selftest button
 - [ ] P1-06 Toasts · Claude · deps: P1-04
 - [ ] P1-07 UI kit additions · Claude · deps: P1-06
 - [ ] P1-08 Hub with tabs · Claude · deps: P1-07

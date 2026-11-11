@@ -33,6 +33,7 @@ function Boot:OnLogin()
   ns.Conflicts:Detect()
   ns.Settings:Init()
   ns.MinimapButton:Init()
+  ns.SecureButtons:Init()
   ns.Modules:EnableAll()
   if ns.db.char.hub.shown then ns.Hub:Toggle() end
   local on = 0

@@ -111,12 +111,35 @@ local function buildMethods(game)
     local old = self.__scripts[what]
     self.__scripts[what] = function(...) if old then old(...) end fn(...) end
   end
+  local function guard(self, what)
+    if self.__protected and game.combat then
+      game.blocked[#game.blocked + 1] = what .. "(" .. tostring(self.__name) .. ")"
+    end
+  end
+  m.SetAttribute = function(self, k, v)
+    guard(self, "SetAttribute")
+    if not rawget(self, "__attrs") then rawset(self, "__attrs", {}) end
+    self.__attrs[k] = v
+  end
+  m.GetAttribute = function(self, k) local a = rawget(self, "__attrs") return a and a[k] end
+  m.RegisterForClicks = function(self, ...) self.__clicks = { ... } end
+  m.SetAllPoints = noop
+  m.SetColorTexture = noop
+  m.Click = function(self, button)
+    if self.__scripts.OnClick then self.__scripts.OnClick(self, button or "LeftButton", false) end
+    local a = rawget(self, "__attrs")
+    if self.__protected and a and a.type == "macro" then
+      game.macrosRun[#game.macrosRun + 1] = a.macrotext
+    end
+  end
   m.Show = function(self)
+    guard(self, "Show")
     local was = self.__shown
     self.__shown = true
     if not was and self.__scripts.OnShow then self.__scripts.OnShow(self) end
   end
   m.Hide = function(self)
+    guard(self, "Hide")
     local was = self.__shown
     self.__shown = false
     if was and self.__scripts.OnHide then self.__scripts.OnHide(self) end
@@ -141,7 +164,7 @@ local function buildMethods(game)
     if type(relPoint) == "number" then x, y, relPoint = relPoint, x, nil end
     self.__points[#self.__points + 1] = { point, rel, relPoint or point, x or 0, y or 0 }
   end
-  m.ClearAllPoints = function(self) self.__points = {} end
+  m.ClearAllPoints = function(self) guard(self, "ClearAllPoints") self.__points = {} end
   m.GetPoint = function(self, i)
     local p = self.__points[i or 1]
     if p then return p[1], p[2], p[3], p[4], p[5] end
@@ -179,6 +202,8 @@ function M.new(opts)
     combat = false,
     reloads = 0,
     blockedEvents = {},
+    blocked = {},
+    macrosRun = {},      -- macrotext of secure buttons Gary "clicked"        -- protected calls an addon made in combat (taint in game)
     globalsWritten = {},
     loadedAddons = {},
   }, Game)
@@ -248,7 +273,13 @@ function M.new(opts)
   base.issecurevariable = function() return true end
 
   -- frames and UI globals
-  base.CreateFrame = function(kind, name, parent) return newRegion(game, kind or "Frame", name, parent) end
+  base.CreateFrame = function(kind, name, parent, template)
+    local r = newRegion(game, kind or "Frame", name, parent)
+    r.__template = template
+    r.__protected = type(template) == "string" and template:find("Secure") ~= nil
+    if r.__protected and game.combat then game.blocked[#game.blocked + 1] = "CreateFrame(" .. tostring(name) .. ")" end
+    return r
+  end
   base.UIParent = newRegion(game, "Frame", nil, nil)
   base.Minimap = newRegion(game, "Frame", nil, nil)
   base.GameTooltip = newRegion(game, "GameTooltip", nil, nil)
