@@ -416,6 +416,16 @@ function M.new(opts)
   base.GetLootSlotLink = function(i) local l = game.loot[i] return l and ("|Hitem:" .. l.id .. "::|h[" .. l.name .. "]|h") end
   base.GetLootSlotInfo = function(i) local l = game.loot[i] return nil, l.name, l.count or 1 end
   base.IsFishingLoot = function() return game.fishingLoot or false end
+  -- inbox: game.inbox = { {money, cod, items = {itemID,...}} }
+  base.GetInboxNumItems = function() return game.inbox and #game.inbox or 0 end
+  base.GetInboxHeaderInfo = function(i)
+    local m = game.inbox[i]
+    local n = 0 for _ in pairs(m.items or {}) do n = n + 1 end
+    return nil, nil, "Sender", "Subject", m.money or 0, m.cod or 0, 30, n
+  end
+  base.GetInboxItemLink = function(i, a) local id = game.inbox[i].items and game.inbox[i].items[a] return id and ("|Hitem:" .. id .. "::|h[x]|h") end
+  base.TakeInboxMoney = function(i) game.money = (game.money or player.money) + game.inbox[i].money game.inbox[i].money = 0 end
+  base.TakeInboxItem = function(i, a) game.inbox[i].items[a] = nil end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]

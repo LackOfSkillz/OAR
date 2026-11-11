@@ -101,7 +101,7 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P5-07 Auction helper · Claude · deps: P5-05
 - [~] P5-08 Ledger · Claude · deps: P5-05 — 2026-11-11: Modules/Ledger.lua (money changes booked to vendor/AH/mail/training/flights/bank/loot, session net + gold per hour logged at logout, last 30 sessions per char); 1 spec. Loot value and AH mail detail still to do
 - [~] P5-09 Merchant helper · Claude · deps: P5-05 — 2026-11-11: Modules/Merchant.lua (panel beside the vendor: Sell junk greys only, 12 per click for buyback; Repair with cost, guild repair if allowed; never on open); vendor goods recorded by POICapture; 2 specs. Waiting on: Gary sells junk and repairs
-- [ ] P5-10 Mailbox collect · Claude · deps: P5-08
+- [~] P5-10 Mailbox collect · Claude · deps: P5-08 — 2026-11-11: Collect button beside the mailbox, one thing per click, COD skipped, ledger books it as mail; 1 spec. Waiting on: Gary collects mail
 - [~] P5-11 Fishing: one key · Both · deps: P1-05 — 2026-11-11: Modules/Fishing.lua (pole equipped = fishing mode; chosen key casts via pooled secure button, switches to INTERACTTARGET while the Fishing channel runs, out of combat only; loud splash with volumes restored); /ride fishkey; 3 specs. Waiting on: Gary picks a key and fishes. Lure step still to do
 - [~] P5-12 Fishing: gear, log, cooking · Claude · deps: P5-11, P5-01 — 2026-11-11: catch log by zone + session value (Modules/LootLog.lua); 1 spec. Gear sets, cooking links, bait reminders still to do
 - [~] P5-13 Gathering map · Claude · deps: P3-03 — 2026-11-11: herb/ore nodes from loot after Herb Gathering/Mining, merged within 0.6%, pins in a "Herbs & ore" group with filters; 2 specs. Waiting on: Gary gathers

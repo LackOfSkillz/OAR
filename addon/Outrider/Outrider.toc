@@ -61,6 +61,7 @@ Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
 Modules\LootLog.lua
+Modules\Mailbox.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua
