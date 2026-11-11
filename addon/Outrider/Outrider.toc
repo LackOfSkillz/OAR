@@ -59,6 +59,8 @@ Modules\PetStatus.lua
 Modules\Ammo.lua
 Modules\BeastInfo.lua
 Modules\Waypoints.lua
+Modules\POICapture.lua
+Modules\Nearest.lua
 Modules\Coords.lua
 
 Core\Slash.lua

@@ -67,8 +67,8 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 - [ ] P3-03 World map pins · Claude · deps: P0-08
 - [ ] P3-04 Minimap pins · Claude · deps: P3-03
 - [ ] P3-05 Pin cards · Claude · deps: P3-03
-- [ ] P3-06 POI capture · Claude · deps: P2-01
-- [ ] P3-07 Nearest · Claude · deps: P3-01, P3-06
+- [~] P3-06 POI capture · Claude · deps: P2-01 — 2026-11-11: Modules/POICapture.lua (vendor+repair, trainer, flight, bank, AH, stable, spirit healer, mailbox; averaged position; faction of capturer); 2 specs. Waiting on Gary: a town visit
+- [~] P3-07 Nearest · Claude · deps: P3-01, P3-06 — 2026-11-11: /ride near <kind>, nearest on continent by world yards, faction filter, auto spirit-healer waypoint on death; 3 specs. Hub quick buttons still to do
 - [ ] P3-08 Questie bridge · Claude · deps: P3-03
 - [ ] P3-09 Discovery privacy and controls · Claude · deps: P3-06
 - [~] P3-10 Coordinates · Claude · deps: P3-01 — 2026-11-11: Modules/Coords.lua (coords under minimap, ticking only while moving; /ride coords prints + logs); 2 specs. Cursor coords on world map still to do

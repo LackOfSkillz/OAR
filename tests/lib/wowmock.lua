@@ -360,6 +360,7 @@ function M.new(opts)
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  base.CanMerchantRepair = function() return game.canRepair or false end
   base.Enum = { TooltipDataType = { Unit = 2 } }
   base.TooltipDataProcessor = { AddTooltipPostCall = function(kind, fn)
     game.tooltipHooks = game.tooltipHooks or {}
