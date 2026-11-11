@@ -12,6 +12,7 @@
 | D6 | No automation; advice never acts | Blizzard ToS; Gary's account | 2026-11 |
 | D7 | AI advisor parked until Phase 9; snapshot and advice loader shipped dormant | Don't hold up the core; make the later step cheap | 2026-11 |
 | D8 | Name: **Outrider** (was the working name OAR). Globals and frames `Outrider_*`, internal messages `OTR_*`, export strings `OTR1:`, slash `/outrider` and `/ride` | A scout who rides ahead, spots what is coming, maps the land and reports back; fits every class; no CurseForge collision found on 2026-11-11 (Lodestar, Wayfarer, Vigil, Kindred, Hearthside were taken) | 2026-11-11 |
+| D9 | Place data: flight points come from the client (`C_TaxiMap`, every node on the zone map, verified); Questie's NPC database is read at runtime if Gary installs Questie (hook, never copied, zones Forever left unchanged only); discovery covers Forever's new and redrawn zones and confirms the rest. No bulk import from Wowhead or fan sites | Classic databases lack Forever's new zones (map 2521) and redrawn Mulgore; copying third-party data raises licence questions; the client's own data is exact | 2026-11-11 |
 
 ## Open questions for Gary
 

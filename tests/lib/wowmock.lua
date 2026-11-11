@@ -489,6 +489,9 @@ function M.new(opts)
     return 1, { GetXY = function() return v.x * 1000, v.y * 1000 end }
   end
   base.CreateVector2D = function(x, y) return { x = x, y = y } end
+  base.C_TaxiMap = { GetTaxiNodesForMap = function(mapID)
+    return game.taxi and game.taxi[mapID] or {}
+  end }
   base.C_Minimap = { GetViewRadius = function() return opts.minimapRadius or 200 end }
   base.GetPlayerFacing = function() return game.facing or 0 end
   base.UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, x = x, y = y } end }

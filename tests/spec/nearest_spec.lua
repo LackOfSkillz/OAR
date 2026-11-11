@@ -161,3 +161,22 @@ T.describe("title backfill", function()
     T.ok(ns2.db.global.pois["npc-6401-innkeeper"])
   end)
 end)
+
+T.describe("flight points from the client", function()
+  T.it("loads every flight point on the zone map at login, with faction, no discovery needed", function()
+    local game = mock.new()
+    game.taxi = { [1412] = {
+      { nodeID = 22, name = "Thunder Bluff, Mulgore", position = { x = 0.47, y = 0.50 }, faction = 1 },
+      { nodeID = 99, name = "Somewhere Alliance", position = { x = 0.10, y = 0.10 }, faction = 2 },
+    } }
+    local ns = game:loadAddon()
+    game:login()
+    local p = ns.db.global.pois["taxi-22"]
+    T.eq(p.kind, "flight_master")
+    T.eq(p.faction, "Horde")
+    T.eq(p.source, "client")
+    game:slash("near flight")
+    T.eq(ns.Waypoints.current.title, "Thunder Bluff, Mulgore", "the Alliance one is skipped")
+    T.eq(#ns.MapPins:PinsFor(1412), 1)
+  end)
+end)

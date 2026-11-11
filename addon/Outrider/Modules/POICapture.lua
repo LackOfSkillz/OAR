@@ -98,8 +98,44 @@ function M:Backfill()
   return added
 end
 
+-- Flight points straight from the client (Gary's choice, 2026-11-11): the
+-- game knows every node on a map with its position, discovered or not, so
+-- these need no discovery. Faction: Enum.FlightPathFaction 0 neutral,
+-- 1 Horde, 2 Alliance. Stored as "taxi-<nodeID>", source "client".
+local TAXI_FACTION = { [1] = "Horde", [2] = "Alliance" }
+
+function M:LoadTaxi(mapID)
+  if not mapID or self.taxiDone[mapID] then return 0 end
+  local get = C.Resolve("C_TaxiMap.GetTaxiNodesForMap") or C.Resolve("C_TaxiMap.GetAllTaxiNodes")
+  if type(get) ~= "function" then return 0 end
+  local ok, nodes = pcall(get, mapID)
+  if not ok or type(nodes) ~= "table" then return 0 end
+  self.taxiDone[mapID] = true
+  local added = 0
+  for _, n in ipairs(nodes) do
+    local x, y
+    if n.position and n.position.GetXY then x, y = n.position:GetXY()
+    elseif n.position then x, y = n.position.x, n.position.y end
+    if n.nodeID and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
+      local id = "taxi-" .. n.nodeID
+      if not self.db[id] then added = added + 1 end
+      local name = C.Readable(n.name)
+      self.db[id] = { id = id, kind = "flight_master", mapID = mapID, x = x, y = y, n = 1, name = name,
+        title = name, faction = TAXI_FACTION[n.faction], verified = true, source = "client", lastSeen = time() }
+    end
+  end
+  if added > 0 then
+    self:Info("loaded %d flight points from the client for map %d", added, mapID)
+    ns.Events:Fire("OTR_POI_ADDED", nil)
+  end
+  return added
+end
+
 function M:OnEnable()
+  self.taxiDone = {}
   self:Backfill()
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:LoadTaxi(C.PlayerPosition("player")) end)
+  self:On("ZONE_CHANGED_NEW_AREA", function(mod) mod:LoadTaxi(C.PlayerPosition("player")) end)
   for event, kind in pairs(EVENTS) do
     self:On(event, function(mod) mod:CaptureWindow(kind) end)
   end
