@@ -124,13 +124,17 @@ function M:Activity()
   return string.format("sharing %s; %d other Outrider users seen", self:Settings().hello and "on (version hello)" or "off", n)
 end
 
-ns.AddCommand("share", "hello on|off | rares guild|party on|off | nodes on|off  sharing (all off by default)", function(arg)
+ns.AddCommand("share", "hello on|off | rares guild|party on|off | nodes on|off | location on|off  sharing (all off by default)", function(arg)
   local what, state = (arg or ""):match("^(%S+)%s+(%S+)$")
   local where, st2 = (arg or ""):match("^rares%s+(%S+)%s+(%S+)$")
   if what == "hello" and (state == "on" or state == "off") then
     M:Settings().hello = state == "on"
     ns.Print("version hello %s", state)
     if state == "on" then M:Hello() end
+  elseif ns.LocationShare and what == "location" and (state == "on" or state == "off") then
+    ns.LocationShare:Settings().on = state == "on"
+    if state == "on" then ns.LocationShare:Start() else ns.LocationShare:Stop(true) end
+    ns.Print("location sharing %s. %s", state, ns.LocationShare.PRIVACY)
   elseif ns.GatherShare and what == "nodes" and (state == "on" or state == "off") then
     ns.GatherShare:Settings().guild = state == "on"
     ns.Print("sharing herb, ore and fishing spots with the guild %s", state)

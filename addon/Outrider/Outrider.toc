@@ -81,6 +81,7 @@ Modules\GearQuestBridge.lua
 Modules\Comm.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua
+Modules\LocationShare.lua
 Modules\Forecasts.lua
 Modules\Errands.lua
 Modules\Feed.lua

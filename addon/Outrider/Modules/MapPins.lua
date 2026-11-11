@@ -28,6 +28,7 @@ local LABELS = {
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot",
+  guildmate = "Guildmate",
 }
 M.LABELS = LABELS
 
@@ -40,11 +41,11 @@ local GROUP = {
   trainer = "trainer",
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
-  rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather",
+  rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", guildmate = "guild",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
-  quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 },
+  quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 }, guild = { 0.25, 1.00, 0.25 },
 }
 M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers", gather = "Herbs, ore & fish" }
 local ICON = {
@@ -63,6 +64,7 @@ function M.Group(kind) return GROUP[kind] or "service" end
 
 -- Texture path for a pin (pure: by kind, then title / goods for vendors and trainers).
 function M.IconFor(pin)
+  if pin.icon then return pin.icon end
   local kind, p = pin.kind, pin.poi or pin
   if kind == "trainer" then
     local title = p and p.title or ""
@@ -83,8 +85,8 @@ end
 
 -- Fill a marker: frame has .ring and .icon textures.
 function M.Paint(frame, pin)
-  local c = pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
-  frame.ring:SetColorTexture(c[1], c[2], c[3], pin.questColor and 0.95 or 0.55)
+  local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
+  frame.ring:SetColorTexture(c[1], c[2], c[3], (pin.questColor or pin.ringColor) and 0.95 or 0.55)
   local ok = frame.icon:SetTexture(M.IconFor(pin))
   if ok == false then
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1) -- missing file: plain round dot
@@ -122,6 +124,7 @@ ns.Events:On("OTR_SIGHTING_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_DATA_CHANGED", M, function() M:Invalidate() end)
 
 function M:PinsFor(mapID)
+  if ns.LocationShare and ns.LocationShare:Prune() then self:Invalidate() end
   -- also rebuild if places were added or removed without an event
   local n = 0
   for _ in pairs(ns.db.global.pois or {}) do n = n + 1 end
@@ -168,6 +171,17 @@ function M:BuildPins(mapID)
         local pin = { id = p.id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name, npcID = p.npcID, poi = p }
         if M.AddQuests(pin, p.kind == "quest_giver" and p) then out[#out + 1] = pin end
       end
+    end
+  end
+  -- Guildmates sharing their location (P8-04), class colored
+  if ns.LocationShare and ns.LocationShare.enabled and not hidden.guildmate then
+    local colors = rawget(_G, "RAID_CLASS_COLORS") or {}
+    for _, g in ipairs(ns.LocationShare:PeersOn(mapID)) do
+      local cc = g.class and colors[g.class]
+      local cls = g.class and (g.class:sub(1, 1) .. g.class:sub(2):lower())
+      out[#out + 1] = { id = "guild-" .. g.full, kind = "guildmate", mapID = mapID, x = g.x, y = g.y, name = g.name,
+        ringColor = cc and { cc.r, cc.g, cc.b } or nil,
+        icon = cls and ("Interface" .. "\\" .. "Icons" .. "\\" .. "ClassIcon_" .. cls) or nil }
     end
   end
   -- Gathering nodes Gary found (LootLog)
