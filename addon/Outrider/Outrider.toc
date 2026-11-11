@@ -60,6 +60,7 @@ Modules\Prices.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
+Modules\LootLog.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

@@ -27,7 +27,7 @@ local LABELS = {
   rare = "Rare", spirit_healer = "Spirit healer", flight_master = "Flight master", vendor = "Vendor",
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
-  tabard = "Tabard vendor", quest_giver = "Quest giver",
+  tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore",
 }
 M.LABELS = LABELS
 
@@ -40,13 +40,13 @@ local GROUP = {
   trainer = "trainer",
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
-  rare = "rare", quest_giver = "quest",
+  rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
-  quest = { 0.75, 0.45, 1.00 },
+  quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 },
 }
-M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers" }
+M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers", gather = "Herbs & ore" }
 local ICON = {
   innkeeper = TRACK .. "Innkeeper", bank = TRACK .. "Banker", auction = TRACK .. "Auctioneer",
   flight_master = TRACK .. "FlightMaster", stable_master = TRACK .. "StableMaster", mailbox = TRACK .. "Mailbox",
@@ -54,6 +54,7 @@ local ICON = {
   guild_master = "Interface\\Icons\\INV_Misc_Note_02", tabard = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
+  herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01",
 }
 -- class names that make a trainer a class trainer (else profession)
 local CLASSES = { "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "Mage", "Warlock", "Druid", "Pet" }
@@ -146,6 +147,15 @@ function M:BuildPins(mapID)
     for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do
       if not own[p.npcID] and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
         out[#out + 1] = { id = p.id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name, npcID = p.npcID, poi = p }
+      end
+    end
+  end
+  -- Gathering nodes Gary found (LootLog)
+  if ns.LootLog and ns.LootLog.enabled then
+    for i, n in ipairs(ns.LootLog:NodesFor(mapID)) do
+      if not hidden[n.kind] then
+        out[#out + 1] = { id = "node-" .. n.kind .. "-" .. i, kind = n.kind, mapID = mapID, x = n.x, y = n.y,
+          name = (n.name or n.kind) .. " (x" .. (n.count or 1) .. ")" }
       end
     end
   end

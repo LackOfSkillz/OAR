@@ -411,6 +411,11 @@ function M.new(opts)
   end
   base.ClearOverrideBindings = function() game.overrides = {} end
   base.SetCVar = function(k, v) opts.cvars = opts.cvars or {} opts.cvars[k] = v end
+  -- loot window: game.loot = { {id, name, count} }, game.fishingLoot = bool
+  base.GetNumLootItems = function() return game.loot and #game.loot or 0 end
+  base.GetLootSlotLink = function(i) local l = game.loot[i] return l and ("|Hitem:" .. l.id .. "::|h[" .. l.name .. "]|h") end
+  base.GetLootSlotInfo = function(i) local l = game.loot[i] return nil, l.name, l.count or 1 end
+  base.IsFishingLoot = function() return game.fishingLoot or false end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]

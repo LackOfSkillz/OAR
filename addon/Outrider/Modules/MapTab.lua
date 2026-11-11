@@ -7,7 +7,7 @@ local _, ns = ...
 local UI = ns.UI
 
 local KINDS = { "rare", "vendor", "repair", "trainer", "flight_master", "spirit_healer", "bank", "auction",
-  "stable_master", "mailbox", "innkeeper", "guild_master", "tabard", "quest_giver" }
+  "stable_master", "mailbox", "innkeeper", "guild_master", "tabard", "quest_giver", "herb", "ore" }
 
 local T = { name = "maptab" }
 ns.MapTab = T
@@ -74,7 +74,7 @@ ns.Hub:AddTab("map", "Map", function(p)
   p.clear:SetPoint("TOPLEFT", 0, y - 100)
   -- legend: group colours
   local lx = 0
-  for _, g in ipairs({ "merchant", "trainer", "service", "quest", "rare" }) do
+  for _, g in ipairs({ "merchant", "trainer", "service", "quest", "rare", "gather" }) do
     local c = ns.MapPins.GROUP_COLOR[g]
     local sw = p:CreateTexture(nil, "ARTWORK")
     sw:SetSize(12, 12)
@@ -83,7 +83,7 @@ ns.Hub:AddTab("map", "Map", function(p)
     local t = UI.Text(p, "small", "text")
     t:SetPoint("LEFT", sw, "RIGHT", 4, 0)
     t:SetText(ns.MapPins.GROUP_LABEL[g])
-    lx = lx + 100
+    lx = lx + 92
   end
   function p:Refresh()
     for _, c in ipairs(self.checks) do c:Refresh() end
