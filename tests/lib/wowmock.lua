@@ -430,6 +430,14 @@ function M.new(opts)
   -- quest rewards: game.choices = { itemID, ... }
   base.GetNumQuestChoices = function() return game.choices and #game.choices or 0 end
   base.GetQuestItemLink = function(kind, i) local id = game.choices and game.choices[i] return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r") end
+  base.C_ChatInfo = {
+    RegisterAddonMessagePrefix = function(p) game.prefixes = game.prefixes or {} game.prefixes[p] = true return true end,
+    SendAddonMessage = function(prefix, msg, channel, target)
+      game.sent = game.sent or {}
+      game.sent[#game.sent + 1] = { prefix = prefix, msg = msg, channel = channel, target = target }
+    end,
+  }
+  base.IsInGuild = function() return opts.inGuild or false end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]

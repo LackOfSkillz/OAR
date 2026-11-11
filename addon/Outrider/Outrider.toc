@@ -67,6 +67,7 @@ Modules\CraftQueue.lua
 Modules\GearScore.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua
+Modules\Comm.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua

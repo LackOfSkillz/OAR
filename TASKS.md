@@ -141,8 +141,8 @@ Regenerate the list after editing phase files: `python tools/build_tasks.py` (ke
 
 ## Phase 8: Sharing and social  ([phases/P8_sharing.md](phases/P8_sharing.md))
 
-- [ ] P8-01 Comm layer · Claude · deps: P1-04
-- [ ] P8-02 Version check · Claude · deps: P8-01
+- [~] P8-01 Comm layer · Claude · deps: P1-04 · 2026-11-11: Modules/Comm.lua, prefix Outrider, v1|TYPE|base64, 240-byte chunks, GUILD/PARTY/RAID/WHISPER only; sends nothing unless a sharing feature is on
+- [~] P8-02 Version check · Claude · deps: P8-01 · 2026-11-11: HELLO on login when /ride share hello on (off by default); one chat line when a guildmate runs newer
 - [ ] P8-03 Rare sightings sharing · Both · deps: P8-01, P2-07
 - [ ] P8-04 Location sharing (opt-in) · Both · deps: P8-01, P3-03
 - [ ] P8-05 Gathering and fishing sharing · Claude · deps: P8-01, P5-13
