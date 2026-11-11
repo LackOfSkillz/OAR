@@ -158,7 +158,7 @@ function M:BuildPins(mapID)
     if p.npcID then own[p.npcID] = true end
     if p.mapID == mapID and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
       local pin = { id = id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name or LABELS[p.kind], npcID = p.npcID, poi = p }
-      if M.AddQuests(pin, p.kind == "quest_giver" and ns.NPCPack and p.npcID and ns.NPCPack:Npc(p.npcID)) then out[#out + 1] = pin end
+      if M.AddQuests(pin, p.kind == "quest_giver" and ns.NPCPack and p.npcID and ns.NPCPack:Npc(p.npcID, mapID)) then out[#out + 1] = pin end
     end
   end
   -- Optional private NPC pack (D10); NPCs Gary visited himself win.

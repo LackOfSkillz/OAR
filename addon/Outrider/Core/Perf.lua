@@ -5,7 +5,10 @@
 -- 10000). Results go to the log and ns.db.global.perf for Claude to read.
 
 local ADDON, ns = ...
-local Perf = { name = "perf", BUDGET_KB = 1536, TIMER_CAP = 500 }
+-- Memory budget for Outrider itself (data packs are their own addons). Raised
+-- from 1.5 MB on 2026-11-11: core measured 1.3 MB with 45 modules, plus map
+-- places built on demand (~130 KB per visited map).
+local Perf = { name = "perf", BUDGET_KB = 3072, TIMER_CAP = 500 }
 ns.Perf = Perf
 
 function Perf:MemoryKB()

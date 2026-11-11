@@ -43,32 +43,55 @@ function M:OnEnable()
   ns.Events:Fire("OTR_DATA_CHANGED", "npcpack")
 end
 
+-- Places are built per map the first time that map is needed (building all
+-- 52 maps at login cost 2.8 MB, 2026-11-11 perf "over budget: memory").
+-- Build only counts; the pack's own rows stay in the data addon.
 function M:Build(maps)
-  local rank = {}
-  for i, k in ipairs(self.PRIORITY) do rank[k] = i end
-  self.maps, self.count, self.mapCount, self.byNpc = {}, 0, 0, {}
-  for mapID, rows in pairs(maps) do
-    local byNpc = {}
+  self.raw, self.maps, self.byNpc = maps, {}, {}
+  self.count, self.mapCount = 0, 0
+  for _, rows in pairs(maps) do
+    local seen = {}
     for _, r in ipairs(rows) do
-      local npcID, kind = r[1], r[2]
-      local cur = byNpc[npcID]
-      if not cur then
-        cur = { id = "q-" .. npcID, npcID = npcID, mapID = mapID, x = r[3], y = r[4], name = r[5], title = r[6],
-          faction = r[7], kinds = {}, verified = false, source = "questie" }
-        byNpc[npcID] = cur
-      end
-      cur.kinds[#cur.kinds + 1] = kind
-      if r[8] then cur.quests = r[8] self.byNpc[npcID] = cur end
-      if not cur.kind or (rank[kind] or 99) < (rank[cur.kind] or 99) then cur.kind = kind end
+      if not seen[r[1]] then seen[r[1]] = true self.count = self.count + 1 end
     end
-    local list = {}
-    for _, p in pairs(byNpc) do list[#list + 1] = p self.count = self.count + 1 end
-    self.maps[mapID] = list
     self.mapCount = self.mapCount + 1
   end
 end
 
-function M:PlacesFor(mapID) return self.maps[mapID] or {} end
+local RANK
+function M:BuildMap(mapID)
+  local rows = self.raw and self.raw[mapID]
+  if not rows then return {} end
+  if not RANK then
+    RANK = {}
+    for i, k in ipairs(self.PRIORITY) do RANK[k] = i end
+  end
+  local byNpc = {}
+  for _, r in ipairs(rows) do
+    local npcID, kind = r[1], r[2]
+    local cur = byNpc[npcID]
+    if not cur then
+      cur = { id = "q-" .. npcID, npcID = npcID, mapID = mapID, x = r[3], y = r[4], name = r[5], title = r[6],
+        faction = r[7], kinds = {}, verified = false, source = "questie" }
+      byNpc[npcID] = cur
+    end
+    cur.kinds[#cur.kinds + 1] = kind
+    if r[8] then cur.quests = r[8] self.byNpc[npcID] = cur end
+    if not cur.kind or (RANK[kind] or 99) < (RANK[cur.kind] or 99) then cur.kind = kind end
+  end
+  local list = {}
+  for _, p in pairs(byNpc) do list[#list + 1] = p end
+  return list
+end
+
+function M:PlacesFor(mapID)
+  local list = self.maps[mapID]
+  if not list then
+    list = self:BuildMap(mapID)
+    self.maps[mapID] = list
+  end
+  return list
+end
 
 -- ---------------------------------------------------------------- quest levels
 -- Quest givers carry the quests they start (Gary, 2026-11-11: "hard to tell
@@ -137,7 +160,10 @@ function M:QuestsFor(p)
 end
 
 -- Quest pack entry for an NPC (for givers Gary discovered himself).
-function M:Npc(npcID) return self.byNpc and self.byNpc[npcID] end
+function M:Npc(npcID, mapID)
+  if mapID then self:PlacesFor(mapID) end
+  return self.byNpc and self.byNpc[npcID]
+end
 
 function M.QuestLine(q)
   local c = M.DIFF_COLOR[q.diff] or { 1, 1, 1 }
@@ -145,11 +171,14 @@ function M.QuestLine(q)
 end
 
 -- Places of one kind on any map (for /ride near).
+-- Reads the pack rows directly so a search does not build every map.
 function M:OfKind(kind)
   local out = {}
-  for _, list in pairs(self.maps) do
-    for _, p in ipairs(list) do
-      for _, k in ipairs(p.kinds) do if k == kind then out[#out + 1] = p break end end
+  for mapID, rows in pairs(self.raw or {}) do
+    for _, r in ipairs(rows) do
+      if r[2] == kind then
+        out[#out + 1] = { npcID = r[1], kind = kind, mapID = mapID, x = r[3], y = r[4], name = r[5], title = r[6], faction = r[7] }
+      end
     end
   end
   return out
