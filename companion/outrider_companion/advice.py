@@ -13,6 +13,7 @@ from . import luadata
 
 SCHEMA = 1
 MAX_ITEMS = 12
+MAX_BYTES = 64 * 1024
 ALLOWED = {
     "waypoint": {"mapID": "id", "x": "frac", "y": "frac"},
     "track_quest": {"questID": "id"},
@@ -97,6 +98,8 @@ def write(path, advice):
         raise ValueError("Outrider is not installed at %s" % folder)
     text = ("-- Advisor/Advice.lua (written by the Outrider companion app; DATA ONLY)\n"
             + luadata.dumps("Outrider_Advice", advice))
+    if len(text.encode("utf-8")) > MAX_BYTES:
+        raise ValueError("advice is larger than %d KB; refusing to write it" % (MAX_BYTES // 1024))
     fd, tmp = tempfile.mkstemp(dir=folder, prefix=".advice-", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:

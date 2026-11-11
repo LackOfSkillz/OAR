@@ -156,6 +156,43 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(a["answersSnapshot"], 1731300500)
 
 
+class SafetyTests(unittest.TestCase):
+    """P9-05: oversized input and output are refused."""
+
+    def test_oversized_savedvariables_not_read(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            p = os.path.join(tmp, "Outrider.lua")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write("Outrider_DB = { }\n")
+            old = store.MAX_FILE
+            store.MAX_FILE = 5
+            try:
+                with self.assertRaises(RuntimeError):
+                    store.Store(p).load()
+            finally:
+                store.MAX_FILE = old
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_oversized_advice_not_written(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            folder = os.path.join(tmp, "Interface", "AddOns", "Outrider", "Advisor")
+            os.makedirs(folder)
+            data = {"schema": 1, "forCharacter": "A-B", "answersSnapshot": 1,
+                    "items": [{"title": "x" * 120, "why": "y" * 400, "action": "show_item", "args": {"itemID": 1}}] * 200}
+            with self.assertRaises(ValueError):
+                advice.write(os.path.join(folder, "Advice.lua"), data)
+            self.assertFalse(os.path.exists(os.path.join(folder, "Advice.lua")))
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_deep_nesting_refused(self):
+        with self.assertRaises(luadata.LuaDataError):
+            luadata.parse("X = " + "{" * 100 + "}" * 100)
+
+
 class ConfigTests(unittest.TestCase):
     def test_never_runs_unconfigured(self):
         tmp = tempfile.mkdtemp()
