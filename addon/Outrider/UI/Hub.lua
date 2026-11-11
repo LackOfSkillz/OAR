@@ -113,7 +113,8 @@ Hub:AddTab("overview", L.overview, function(p)
   p.errors = textLine(p, "normal", "text", -72)
   p.probe = textLine(p, "normal", "text", -94)
   p.mods = textLine(p, "normal", "text", -116)
-  p.addons = textLine(p, "small", "muted", -148)
+  p.layer = textLine(p, "normal", "text", -138)
+  p.addons = textLine(p, "small", "muted", -164)
   function p:Refresh()
     local meta = ns.db.char.meta
     self.who:SetText(string.format("%s  |  %s %s %s", ns.db.key, tostring(meta.race or ""), tostring(meta.class),
@@ -127,6 +128,8 @@ Hub:AddTab("overview", L.overview, function(p)
     local on, total = 0, 0
     for _, s in ipairs(ns.Modules:Status()) do total = total + 1 if s.enabled then on = on + 1 end end
     self.mods:SetText(string.format("Modules on for this character: %d of %d", on, total))
+    local id, conf, label = ns.Layers:Current()
+    self.layer:SetText(id and string.format("Layer: %s (%.0f%% sure)", label, conf * 100) or "Layer: not known yet (look at a few mobs)")
     local names = {}
     for _, k in ipairs(ns.Conflicts:Detect()) do names[#names + 1] = k.addon .. " (" .. k.relation .. ")" end
     self.addons:SetText("Detected addons: " .. (#names > 0 and table.concat(names, ", ") or "none"))

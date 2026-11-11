@@ -58,6 +58,13 @@ Probe 2026-11-11 11:09 (build 70888): 78 present, 21 missing. The client is a mo
 | TooltipDataProcessor.AddTooltipPostCall, C_TooltipInfo | present | P2-10, P5 | Modern tooltip hooks |
 | C_ChatInfo addon messages, guild/friends APIs | present | P8 | |
 | Masque | missing | P7 | optional addon, not installed |
+| C_StableInfo.GetStablePetInfo, GetNumActivePets, GetNumStablePets | present (2026-11-11 11:19) | P2-08, P2-09 | Use for stable/free-slot checks |
+| C_UnitAuras.GetAuraDataByIndex, UnitPower | present | P2-09 | Pet happiness may be an aura on Forever; focus via UnitPower("pet") |
+| GetPetFoodList | missing | P2-09 | Diet must come from a data pack or the pet's tooltip |
+| C_PetInfo.GetPetTamersForMap | present | P2 | (battle-pet tamers; not hunter pets) |
+| C_Spell.PickupSpell, C_SpellBook.PickupSpellBookItem, C_SpellBook.GetNumSpellBookSkillLines | present | P4 | Modern spellbook API |
+| C_Item.EquipItemByName | present | P6 | |
+| C_EventUtils.IsEventValid | present | P0 | Probe checks events without registering them |
 
 ## Events
 

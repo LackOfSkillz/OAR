@@ -49,6 +49,7 @@ Data\Macros_Hunter.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
 Modules\Discovery.lua
+Modules\Layers.lua
 Modules\RareScan.lua
 Modules\RareAlerts.lua
 Modules\TameHelper.lua
