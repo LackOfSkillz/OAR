@@ -70,6 +70,7 @@ Modules\GearScore.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua
 Modules\Handoffs.lua
+Modules\Nearby.lua
 Modules\Comm.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua
