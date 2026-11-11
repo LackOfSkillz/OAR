@@ -19,6 +19,7 @@
 | D13 | Gear sources (P6-05) come from the same private QuestieDB copy (D10) through `tools/import_gear.py`, into the load-on-demand addon `Outrider_Data_Gear` (git-ignored, deployed with `--deploy`, never released). Only sources are copied (quest, vendor, named drop with positions); stats are read in game. Dungeon drops are missing until Questie dungeon areas map to client maps | Spec asked for a gear pack from cited sources; Questie is the cited source Gary already approved | 2026-11-11 |
 | D14 | Visual direction: **Clean dark** (flat dark panels, 1px borders, blue accent; the existing Theme.lua tokens) | Gary picked it from the three-way mockup (Clean dark / Classic+ / Minimal), 2026-11-11 | 2026-11-11 |
 | D15 | Fonts: keep the game font (Fonts\FRIZQT__.TTF); no bundled font, so no font licence to carry. Textures stay WHITE8x8 (own flat bars and 1px borders), registered with LibSharedMedia when it is loaded | Gary chose "Keep the game font" over Inter / Roboto Condensed, 2026-11-11 | 2026-11-11 |
+| D16 | Companion app (P9-03) in Python, standard library only (Gary chose Python). It reads Outrider.lua as plain data (never executed) and may write exactly one file, `Interface\AddOns\Outrider\Advisor\Advice.lua`, as the P9 design says; that is the one planned exception to "only deploy.ps1 writes there". Off until companion/config.json says enabled; no network | Gary picked Python, 2026-11-11 | 2026-11-11 |
 
 ## Open questions for Gary
 
