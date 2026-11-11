@@ -58,3 +58,22 @@ T.describe("minimap pin hover", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("minimap pins direction", function()
+  T.it("a place north-east of you is up-right, and the dot moves toward the centre as you walk to it", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    -- player at map 0.46,0.37; place at 0.50 (east), 0.33 (north): map y grows south
+    ns.db.global.pois["npc-2-vendor"] = { id = "npc-2-vendor", kind = "vendor", mapID = 1412, x = 0.50, y = 0.33, name = "NE", verified = false }
+    local M = ns.Modules:Get("MinimapPins")
+    M:Update()
+    local _, _, _, x1, y1 = M.used[1]:GetPoint(1)
+    T.ok(x1 > 0 and y1 > 0, "up and to the right")
+    game.opts.x, game.opts.y = 0.48, 0.35 -- walk half way toward it
+    M:Update()
+    local _, _, _, x2, y2 = M.used[1]:GetPoint(1)
+    T.ok(x2 > 0 and x2 < x1 and y2 > 0 and y2 < y1, "closer to the centre")
+  end)
+end)

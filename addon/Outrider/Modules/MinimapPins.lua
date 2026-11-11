@@ -81,11 +81,14 @@ end
 function M:Update()
   if not Minimap or not ns.MapPins then return end
   local W = ns.Waypoints
-  local mapID = C.PlayerPosition("player")
-  local _, pN, pW = W.PlayerWorldPos()
+  -- Offsets come from map coordinates (x grows east, y grows south on every
+  -- map) times the map's size in yards; no world-axis guessing.
+  local mapID, px, py = C.PlayerPosition("player")
+  local mapW, mapH
+  if mapID then mapW, mapH = W.MapSize(mapID) end
   for _, d in ipairs(self.used) do d:Hide() end
   self.used = {}
-  if not (mapID and pN) then return end
+  if not (mapID and px and mapW and mapH) then return end
   local radius = C.Call("C_Minimap.GetViewRadius")
   local half = (Minimap:GetWidth() or 140) / 2
   local facing
@@ -94,15 +97,15 @@ function M:Update()
   local n = 0
   local nearest
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
-    local _, wN, wW = W.WorldPos(mapID, pin.x, pin.y)
-    if wN then
-      local x, y, dist = M.Offset(wN - pN, wW - pW, radius, half, facing)
+    do
+      local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
+      local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
       if x then
         n = n + 1
         local d = self:Dot(n)
         d.pin, d.dist = pin, dist
         if not nearest or dist < nearest.dist then
-          nearest = { name = pin.name, dist = dist, dN = wN - pN, dW = wW - pW, x = x, y = y }
+          nearest = { name = pin.name, dist = dist, dN = -dSouth, dW = -dEast, x = x, y = y }
         end
         d.tex:SetColorTexture(ns.Theme:Color(pin.kind == "rare" and "warn" or "accent"))
         d:ClearAllPoints()
@@ -120,9 +123,9 @@ function M:Update()
     self.lastDiag = now
     local _, mx, my = C.PlayerPosition("player")
     local uy, ux = C.Call("UnitPosition", "player")
-    self:Info("diag %s dist=%.0f dN=%.0f dW=%.0f dot=%.0f,%.0f map=%.4f,%.4f unitpos=%.1f,%.1f facing=%s rotate=%s radius=%.0f half=%.0f",
+    self:Info("diag %s dist=%.0f dN=%.0f dW=%.0f dot=%.0f,%.0f map=%.4f,%.4f unitpos=%.1f,%.1f facing=%s rotate=%s radius=%.0f half=%.0f mapsize=%.0fx%.0f",
       tostring(nearest.name), nearest.dist, nearest.dN, nearest.dW, nearest.x, nearest.y, mx or -1, my or -1,
-      uy or -1, ux or -1, tostring(facing and string.format("%.2f", facing)), tostring(rotate), radius or -1, half)
+      uy or -1, ux or -1, tostring(facing and string.format("%.2f", facing)), tostring(rotate), radius or -1, half, mapW, mapH)
   end
   if n ~= self.lastCount then
     self.lastCount = n

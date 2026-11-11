@@ -46,6 +46,24 @@ function M.WorldPos(mapID, x, y)
   return continent, a, b
 end
 
+-- Width and height of a map in yards, measured between its corners. Uses
+-- only distances, so it does not matter which world axis is north (the
+-- minimap dots drifted the wrong way when that was assumed, 2026-11-11).
+local sizes = {}
+function M.MapSize(mapID)
+  local s = sizes[mapID]
+  if s then return s[1], s[2] end
+  local _, ax, ay = rawWorld(mapID, 0, 0)
+  local _, bx, by = rawWorld(mapID, 1, 0)
+  local _, cx, cy = rawWorld(mapID, 0, 1)
+  if not (ax and bx and cx) then return nil end
+  local w = math.sqrt((bx - ax) ^ 2 + (by - ay) ^ 2)
+  local h = math.sqrt((cx - ax) ^ 2 + (cy - ay) ^ 2)
+  if w <= 0 or h <= 0 then return nil end
+  sizes[mapID] = { w, h }
+  return w, h
+end
+
 function M.PlayerWorldPos()
   local y, x, _, instance = C.Call("UnitPosition", "player")
   if not x then return nil end
