@@ -36,8 +36,8 @@ Read this file fully before every session. **If `HANDOFF.md` exists, read it nex
 2. **Build.** Write the code and the unit tests for anything with logic in it (`tests/spec/*_spec.lua`). Extend `tests/lib/wowmock.lua` when you need a new fake API, and keep fakes close to the real API's shape.
 3. **Test.** `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1` (syntax check of every file, no stray globals, no overwritten Blizzard globals, all specs). Fix until green.
 4. **Deploy.** `powershell -NoProfile -ExecutionPolicy Bypass -File tools/deploy.ps1`. It prints whether Gary needs `/reload` or a **full game restart** (a restart is needed whenever the TOC changed or files were added or removed).
-5. **Ask Gary** for the in-game step in a short numbered list he can follow while playing. Always end with `/reload` so the results are written to disk. Example:
-   > 1. `/reload`  2. `/ride mark P2-04`  3. target The Rake  4. `/reload`  5. say done
+5. **Ask Gary** for the in-game step in a short numbered list he can follow while playing. **Tests are self-collecting (Gary's rule, 2026-11-11):** the addon must log everything Claude needs by itself from events (login, combat, target, NPC windows, logout; see `Modules/AutoCheck.lua`). Gary's steps are only plain game actions: log in, do the thing (fight, talk to a vendor, find a rare), log out. No slash commands in test steps, never anything to type mid-fight. If a check needs data that isn't captured yet, build the capture first. Example:
+   > 1. Log in on Torrant  2. find The Rake and mouse over it  3. log out  4. say done
 6. **Read.** `tools/read-logs.ps1` (add `-Mark P2-04` to see only what happened after the marker, `-Bugs` for BugGrabber, `-Section probe|chars|errors|all`). For visuals: `tools/screenshot-latest.ps1`, then open the printed path with the Read tool.
 7. **Close out.** Tick the task in `TASKS.md` with the date and one line of notes (what was verified, what changed). Commit. If something new was learned about the client, write it into `docs/PROBE_RESULTS.md` or `docs/FOREVER_CONSTRAINTS.md`.
 

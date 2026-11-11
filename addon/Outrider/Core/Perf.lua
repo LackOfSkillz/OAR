@@ -47,7 +47,7 @@ function Perf:Collect()
   return r
 end
 
-function Perf:Report()
+function Perf:Report(quiet)
   local r = self:Collect()
   ns.db.global.perf = r
   local mem = r.memoryKB and string.format("%.0f KB", r.memoryKB) or "unknown"
@@ -59,6 +59,7 @@ function Perf:Report()
   ns.Log:Info("perf", "busiest events: %s", #busy > 0 and table.concat(busy, ", ") or "none")
   for _, s in ipairs(r.slow) do ns.Log:Info("perf", "slow handler %s max %.2f ms (%d calls)", s.where, s.ms, s.calls) end
   if #r.overBudget > 0 then ns.Log:Warn("perf", "over budget: %s", table.concat(r.overBudget, ", ")) end
+  if quiet then return r end
   ns.Print("memory %s | timers %d | handlers %d | modules %d/%d%s. /reload to save for Claude.", mem, r.timers,
     r.handlers, r.modulesOn, r.modules, #r.overBudget > 0 and (" | over budget: " .. table.concat(r.overBudget, ", ")) or "")
   return r

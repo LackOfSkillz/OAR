@@ -9,7 +9,13 @@
 --     second in, a sample on the first target change during the fight, and a
 --     combat-queue job that must run when the fight ends. If the secure test
 --     button exists, its macro swap is queued too (tests the deferral).
--- Results land in the saved log; Gary only needs to /reload afterwards.
+--   * Until verified: the secure test button and the sample toast appear by
+--     themselves at login (out of combat), so Gary only clicks or drags.
+--     The button counts as verified once a click runs the macro that was
+--     queued during combat.
+--   * At every logout or /reload: a /ride perf report and a character
+--     snapshot, so P1-10 and P1-11 need no typing either.
+-- Results land in the saved log; Gary only needs to log out afterwards.
 
 local _, ns = ...
 local M = ns:NewModule("AutoCheck", {
@@ -26,13 +32,44 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", self.OnEnteringWorld)
   self:On("PLAYER_REGEN_DISABLED", self.OnCombatStart)
   self:On("PLAYER_TARGET_CHANGED", self.OnTarget)
+  self:On("PLAYER_LOGOUT", self.OnLogout)
+  self:On("OTR_TESTBUTTON_CLICKED", self.OnTestClick)
+  local g = ns.db.global
+  g.autocheck = type(g.autocheck) == "table" and g.autocheck or {}
+  self.state = g.autocheck
+end
+
+function M:ShowTestsAtLogin()
+  if ns.Compat.InCombat() then return end
+  if not self.state.buttonDone and not ns.SecureButtons.test then ns.SecureButtons:SelfTest() end
+  if self.state.toastBuild ~= ns.build then
+    self.state.toastBuild = ns.build
+    ns.Toast:SelfTest()
+  end
+end
+
+function M:OnTestClick(_, macro)
+  if self.swapped and macro == self.swapped and not ns.Compat.InCombat() then
+    self.state.buttonDone = true
+    self.swapped = nil
+    self:Info("test button verified: macro %s set during combat ran after combat", tostring(macro))
+  end
+end
+
+function M:OnLogout()
+  ns.Perf:Report(true)
+  ns.Snapshot:Collect()
 end
 
 function M:OnDisable()
   if self.probeTimer then self.probeTimer:Cancel() self.probeTimer = nil end
+  if self.testsTimer then self.testsTimer:Cancel() self.testsTimer = nil end
 end
 
-function M:OnEnteringWorld()
+function M:OnEnteringWorld(_, isLogin, isReload)
+  if (isLogin or isReload) and not self.testsTimer then
+    self.testsTimer = ns.Timer.After(3, function() M.testsTimer = nil M:ShowTestsAtLogin() end, "autocheck:tests")
+  end
   local p = ns.db.global.probe
   if p and p.addonBuild == ns.build then return end
   if self.probeTimer then return end
@@ -81,6 +118,7 @@ function M:OnCombatStart()
     local macro = (sb.test.wantMacro == "/wave") and "/cheer" or "/wave"
     local now = sb:SetMacro(sb.test, macro)
     sb:SetLabel(sb.test, macro)
+    self.swapped = macro
     self:Info("test button macro %s %s", macro, now and "set" or "queued until combat ends")
   end
 end

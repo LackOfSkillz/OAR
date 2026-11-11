@@ -122,6 +122,7 @@ function SB:SelfTest()
     t:HookScript("OnClick", function(_, button, down)
       ns.Log:Info("selftest", "secure button clicked (%s) button=%s down=%s keydownCVar=%s", tostring(t.macro), tostring(button),
         tostring(down), tostring(C_CVar and C_CVar.GetCVar and C_CVar.GetCVar("ActionButtonUseKeyDown")))
+      ns.Events:Fire("OTR_TESTBUTTON_CLICKED", t.macro, down)
     end)
     self:Place(t, "CENTER", UIParent, "CENTER", 0, 120)
     self:SetShown(t, true)
