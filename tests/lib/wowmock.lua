@@ -451,6 +451,15 @@ function M.new(opts)
   game.chatFilters = {}
   base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
   base.SetItemRef = function() end
+  -- chat windows: game.chatWindows[i] = name; FCF_OpenNewWindow adds one
+  game.chatWindows = { "General", "Combat Log" }
+  base.GetChatWindowInfo = function(i) return game.chatWindows[i] end
+  base.FCF_OpenNewWindow = function(name)
+    if game.combat then error("FCF_OpenNewWindow in combat") end
+    game.chatWindows[#game.chatWindows + 1] = name
+    return base.CreateFrame("ScrollingMessageFrame", "ChatFrame" .. #game.chatWindows, base.UIParent)
+  end
+  base.ChatFrame_AddChannel = function(frame, name) game.addedChannels = game.addedChannels or {} game.addedChannels[name] = frame end
   -- nameplates: one fake plate frame per nameplate unit
   base.C_NamePlate = { GetNamePlateForUnit = function(unit)
     if type(unit) ~= "string" or not unit:match("^nameplate") then return nil end
@@ -775,10 +784,10 @@ M.Game = Game
 
 -- Run a chat line through the registered message filters, like ChatFrame does.
 -- Returns hidden, text.
-function Game:chatLine(event, msg, author)
+function Game:chatLine(event, msg, author, frame, base, lineID)
   local text = msg
   for _, fn in ipairs(self.chatFilters[event] or {}) do
-    local r = { fn(nil, event, text, author) }
+    local r = { fn(frame, event, text, author, nil, nil, nil, nil, nil, nil, base, nil, lineID) }
     if r[1] then return true end
     if r[2] then text = r[2] end
   end

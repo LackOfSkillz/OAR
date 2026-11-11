@@ -11,8 +11,14 @@
 --   * /ride copychat: the last 100 lines of the main chat window to copy.
 --   * Timestamps: /ride chat time on|off sets Blizzard's own showTimestamps.
 -- Secret message text (Midnight restricted chat) is left untouched.
--- Not done here: short channel names (would need to replace AddMessage)
--- and a separate LFG/Trade tab (changes Gary's chat layout; ask first).
+-- P8-07 triage (Gary chose "own chat tab", 2026-11-11): once, out of combat,
+-- a chat tab named LFG is opened (or reused); Trade/LookingForGroup channel
+-- lines and LFG/LFM lines from any channel show only there. Lines asking
+-- for this character's role ("LF dps", "LF hunter") are marked [for you]
+-- and go to the Feed. /ride chat lfgtab on|off switches the routing.
+-- The game runs filters once per chat window, so each line is decided once
+-- (by its line ID) and the decision reused for every window.
+-- Not done here: short channel names (would need to replace AddMessage).
 
 local _, ns = ...
 local C = ns.Compat
@@ -20,7 +26,7 @@ local M = ns:NewModule("Chat", {
   title = "Chat highlights and spam filter",
   phase = "P7",
   order = 96,
-  defaults = { words = {}, spam = true, highlight = true, urls = true },
+  defaults = { words = {}, spam = true, highlight = true, urls = true, lfgTab = true },
 })
 ns.Chat = M
 
@@ -30,7 +36,37 @@ M.SPAM_WINDOW = 60
 local SPAM_EVENTS = { CHAT_MSG_CHANNEL = true, CHAT_MSG_SAY = true, CHAT_MSG_YELL = true }
 local URL = "(https?://[%w%-%._~:/%?#@!%$&%*%+,;=%%]+)"
 
-function M:OnInitialize() self.recent, self.fed = {}, {} end
+function M:OnInitialize() self.recent, self.fed, self.decided, self.decidedN, self.subscribed = {}, {}, {}, 0, {} end
+
+-- Looking-for-group wording: lfg, lfm, lf, lf1m, lf2m...
+function M.IsLFG(lower)
+  return lower:find("%f[%w]lf[gm]?%f[%W]") or lower:find("%f[%w]lf%d+m%f[%W]") or lower:find("%f[%w]lfg$")
+    or lower:find("%f[%w]lf[gm]?$") or false
+end
+
+local ROLE_WORDS = {
+  WARRIOR = { "tank", "dps", "warrior", "warr" }, PALADIN = { "heal", "tank", "dps", "paladin", "pally" },
+  HUNTER = { "dps", "hunter", "hunt", "ranged" }, ROGUE = { "dps", "rogue" }, PRIEST = { "heal", "priest" },
+  SHAMAN = { "heal", "dps", "shaman", "shammy" }, MAGE = { "dps", "mage" }, WARLOCK = { "dps", "warlock", "lock" },
+  DRUID = { "heal", "tank", "dps", "druid" },
+}
+M.ROLE_WORDS = ROLE_WORDS
+
+function M.ForMe(lower)
+  if not M.IsLFG(lower) then return false end
+  for _, w in ipairs(ROLE_WORDS[ns.PlayerClass()] or {}) do
+    if lower:find("%f[%w]" .. w) then return true end
+  end
+  return false
+end
+
+-- Does this channel line belong in the LFG tab?
+function M.Routed(event, msg, base)
+  if event ~= "CHAT_MSG_CHANNEL" or type(msg) ~= "string" then return false end
+  local b = type(base) == "string" and base:lower() or ""
+  if b:find("^trade") or b:find("lookingforgroup") or b:find("^lfg") then return true end
+  return M.IsLFG(msg:lower()) and true or false
+end
 
 -- lowercase keyword -> label
 function M:Keywords()
@@ -68,7 +104,16 @@ function M:Process(event, msg, author)
     end
   end
   local out, hit = msg, nil
-  if s.highlight and not msg:find("|H", 1, true) then
+  local lowerMsg = msg:lower()
+  if s.highlight and M.ForMe(lowerMsg) then
+    out = "|cff66d980[for you]|r " .. out
+    hit = "lfg"
+    if not self.fed["lfg:" .. tostring(author)] or now - self.fed["lfg:" .. tostring(author)] > 300 then
+      self.fed["lfg:" .. tostring(author)] = now
+      if ns.Feed then ns.Feed:Add(nil, { title = "Group wants you", text = tostring(author) .. ": " .. msg }) end
+    end
+  end
+  if s.highlight and not hit and not msg:find("|H", 1, true) then
     local lower = msg:lower()
     for word, label in pairs(self:Keywords()) do
       local i = lower:find(word, 1, true)
@@ -90,13 +135,59 @@ function M:Process(event, msg, author)
   return false, out, hit
 end
 
-local function filter(_, event, msg, author, ...)
+local function filter(frame, event, ...)
   if not M.enabled then return false end
-  local ok, hide, text = pcall(M.Process, M, event, msg, author)
-  if not ok then return false end
-  if hide then return true end
-  if text then return false, text, author, ... end
+  local msg, author = ...
+  local base, lineID = select(9, ...), select(11, ...)
+  local d = lineID and M.decided[lineID]
+  if not d then
+    local ok, hide, text = pcall(M.Process, M, event, msg, author)
+    if not ok then hide, text = false, nil end
+    d = { hide = hide, text = text, route = M.Routed(event, msg, base) }
+    if lineID then
+      M.decided[lineID] = d
+      M.decidedN = M.decidedN + 1
+      if M.decidedN > 300 then M.decided, M.decidedN = {}, 0 end
+    end
+  end
+  if d.hide then return true end
+  local lfg = M.lfgFrame
+  if lfg and event == "CHAT_MSG_CHANNEL" and M:Settings().lfgTab then
+    if frame == lfg then
+      if not d.route then return true end
+    elseif d.route then
+      return true
+    end
+  end
+  if d.text then return false, d.text, select(2, ...) end
   return false
+end
+
+-- Opens (or finds) the LFG chat tab once, out of combat.
+function M:EnsureTab()
+  if self.lfgFrame or not self:Settings().lfgTab or C.InCombat() then return self.lfgFrame end
+  for i = 1, (rawget(_G, "NUM_CHAT_WINDOWS") or 10) do
+    local ok, name = pcall(GetChatWindowInfo, i)
+    if ok and name == "LFG" then self.lfgFrame = rawget(_G, "ChatFrame" .. i) break end
+  end
+  if not self.lfgFrame then
+    local open = rawget(_G, "FCF_OpenNewWindow")
+    if type(open) ~= "function" then self:Info("can't open a chat tab on this client: LFG lines stay in main chat") return end
+    local ok, frame = pcall(open, "LFG", true) -- true: no default say/yell/guild groups, only routed channels
+    if not ok or not frame then self:Info("LFG chat tab not created (%s)", tostring(frame)) return end
+    self.lfgFrame = frame
+    self:Info("LFG chat tab created")
+  end
+  return self.lfgFrame
+end
+
+-- Make sure the LFG tab receives a channel we route (it may not be joined there).
+function M:OnChannel(_, _, _, _, _, _, _, _, _, base)
+  local lfg = self.lfgFrame
+  if not lfg or type(base) ~= "string" or self.subscribed[base] then return end
+  self.subscribed[base] = true
+  local add = rawget(_G, "ChatFrame_AddChannel")
+  if type(add) == "function" then pcall(add, lfg, base) end
 end
 
 function M:OnEnable()
@@ -105,6 +196,9 @@ function M:OnEnable()
   if type(add) ~= "function" then self:Warn("chat filters not available on this client") return end
   self.hooked = true
   for _, e in ipairs(self.EVENTS) do pcall(add, e, filter) end
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:EnsureTab() end)
+  self:On("PLAYER_REGEN_ENABLED", function(mod) if not mod.lfgFrame then mod:EnsureTab() end end)
+  self:On("CHAT_MSG_CHANNEL", self.OnChannel)
   if type(rawget(_G, "SetItemRef")) == "function" then
     hooksecurefunc("SetItemRef", function(link)
       local url = type(link) == "string" and link:match("^addon:Outrider:url:(.+)$")
@@ -142,7 +236,7 @@ ns.AddCommand("copychat", "copy the last 100 lines of the main chat window", fun
   ns.UI:TextDialog("Chat", text, "copy")
 end)
 
-ns.AddCommand("chat", "word add|remove <text> | spam on|off | time on|off  chat options", function(arg)
+ns.AddCommand("chat", "word add|remove <text> | spam on|off | lfgtab on|off | time on|off  chat options", function(arg)
   local s = M:Settings()
   local cmd, rest = (arg or ""):match("^(%S+)%s*(.*)$")
   if cmd == "word" then
@@ -153,6 +247,10 @@ ns.AddCommand("chat", "word add|remove <text> | spam on|off | time on|off  chat 
   elseif cmd == "spam" and (rest == "on" or rest == "off") then
     s.spam = rest == "on"
     ns.Print("repeated spam %s", s.spam and "hidden" or "shown")
+  elseif cmd == "lfgtab" and (rest == "on" or rest == "off") then
+    s.lfgTab = rest == "on"
+    if s.lfgTab then M:EnsureTab() end
+    ns.Print("LFG and Trade lines %s", s.lfgTab and "go to the LFG tab" or "stay in your main chat")
   elseif cmd == "time" and (rest == "on" or rest == "off") then
     C.Call("C_CVar.SetCVar", "showTimestamps", rest == "on" and "%H:%M " or "none")
     ns.Print("timestamps %s", rest)
