@@ -162,6 +162,20 @@ def main():
     deploy = "--deploy" in sys.argv
     cfg = json.load(open(os.path.join(ROOT, "tools", "local.json"), encoding="utf-8-sig"))
     questiedb = args[0] if args else os.path.join(cfg["addonsDir"], "QuestieDB")
+    if not os.path.isdir(questiedb):
+        # Questie uninstalled: fall back to the saved download (private/questie-source, D10).
+        import glob, tempfile, zipfile
+        zips = sorted(glob.glob(os.path.join(ROOT, "private", "questie-source", "Questie-*.zip")))
+        if not zips:
+            sys.exit("No QuestieDB installed and no saved Questie zip in private/questie-source")
+        tmp = tempfile.mkdtemp(prefix="questiedb_")
+        with zipfile.ZipFile(zips[-1]) as z:
+            for name in z.namelist():
+                if name.startswith("QuestieDB/") and (name.endswith("QuestieDB_Forever.toc")
+                                                     or "/support/Forever/Zones/" in name):
+                    z.extract(name, tmp)
+        questiedb = os.path.join(tmp, "QuestieDB")
+        print("using saved download", os.path.basename(zips[-1]))
     toc = os.path.join(questiedb, "QuestieDB_Forever.toc")
     meta, get = read_meta(toc)
     area_map = read_area_map(questiedb)
