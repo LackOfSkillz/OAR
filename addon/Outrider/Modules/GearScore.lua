@@ -32,6 +32,7 @@ local RANGED = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THRO
 -- armor subclass: 1 cloth, 2 leather, 3 mail, 4 plate; best each class wears (by level)
 local ARMOR = { PRIEST = 1, MAGE = 1, WARLOCK = 1, ROGUE = 2, DRUID = 2 }
 local ARMOR40 = { HUNTER = { 2, 3 }, SHAMAN = { 2, 3 }, WARRIOR = { 3, 4 }, PALADIN = { 3, 4 } }
+M.MIN_BASE, M.MAX_PCT = 5, 300
 local SHIELD_CLASSES = { WARRIOR = true, PALADIN = true, SHAMAN = true }
 local OFFHAND = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true, INVTYPE_HOLDABLE = true }
 
@@ -121,10 +122,14 @@ function M:Compare(link)
     end
   end
   old = old or 0
-  local pct
-  if old > 0 then pct = (new - old) / old * 100 elseif new > 0 then pct = 100 else pct = 0 end
+  -- A worn item that scores near zero (e.g. a melee weapon for a hunter) made
+  -- anything look like "+5617%" (Gary's snapshot, 2026-11-11): compare against
+  -- at least MIN_BASE points and cap the result at MAX_PCT ("big upgrade").
+  local pct, capped = 0, false
+  if new ~= old then pct = (new - old) / math.max(old, M.MIN_BASE) * 100 end
+  if pct > M.MAX_PCT then pct, capped = M.MAX_PCT, true end
   local why, futureLevel = self:Usable(link, info)
-  return { pct = pct, new = new, old = old, slot = slots[1], why = why, future = futureLevel, empty = empty }
+  return { pct = pct, new = new, old = old, slot = slots[1], why = why, future = futureLevel, empty = empty, capped = capped }
 end
 
 function M:Verdict(link)
@@ -139,6 +144,7 @@ function M:Verdict(link)
     if pct > 0 then return string.format("usable at %d (+%d%%)", r.future or 0, pct), "warn" end
     return nil
   end
+  if r.capped then return string.format("big upgrade (%s)", role), "good" end
   if pct >= 1 then return string.format("+%d%% upgrade (%s)", pct, role), "good" end
   if pct <= -1 then return string.format("downgrade %d%%", pct), "muted" end
   return "about the same as yours", "muted"
