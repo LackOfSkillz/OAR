@@ -105,3 +105,5 @@ Combat timing: `PLAYER_REGEN_DISABLED` fires while `InCombatLockdown()` is still
 - Not Edit Mode systems: MicroMenu (its container is), StatusTrackingBarManager, TimerTracker, ArenaEnemyFramesContainer.
 - Protected (never touch in combat): action bars, PlayerFrame, TargetFrame, FocusFrame, PetFrame, PartyFrame, BossTargetFrameContainer, MicroMenuContainer, ArenaEnemyFramesContainer.
 - Consequence for P7: position and size of all of these belong to Edit Mode (Gary moves them there). Outrider's skin (P7-04/06) only changes textures, colors and fonts, out of combat, and never calls SetPoint/SetSize on them. Context layouts (P7-09) can switch layouts with C_EditMode.SetActiveLayout out of combat.
+
+- 2026-11-11 21:10: memory measured after a full garbage collection at logout: 2677 KB live (4171 KB before collection). The earlier 6.3 MB was uncollected garbage; Outrider is under the 3 MB budget.
