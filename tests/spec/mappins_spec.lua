@@ -81,3 +81,23 @@ T.describe("marker symbols and colours", function()
     T.eq(MP.Group("rare"), "rare")
   end)
 end)
+
+T.describe("map declutter", function()
+  T.it("merges same-group pins that sit together, never rares, and clears the player's spot", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local pins = {
+      { kind = "vendor", x = 0.401, y = 0.401, name = "A" }, { kind = "repair", x = 0.405, y = 0.408, name = "B" },
+      { kind = "trainer", x = 0.402, y = 0.402, name = "T" },
+      { kind = "rare", x = 0.403, y = 0.403, name = "R1" }, { kind = "rare", x = 0.404, y = 0.404, name = "R2" },
+      { kind = "bank", x = 0.70, y = 0.70, name = "Bank under you" },
+    }
+    local out = ns.MapPins.Declutter(pins, 0.70, 0.705)
+    local names = {}
+    for _, p in ipairs(out) do names[#names + 1] = p.name .. (p.more and ("+" .. #p.more) or "") end
+    table.sort(names)
+    T.same(names, { "A+1", "R1", "R2", "T" })
+    T.eq(pins[1].more, nil, "the cached pins are not changed")
+  end)
+end)

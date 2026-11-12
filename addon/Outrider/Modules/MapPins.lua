@@ -246,11 +246,47 @@ function M:ReleaseAll()
   self.used = {}
 end
 
+-- World map readability (Gary, 2026-11-11: "having trouble seeing my position
+-- and direction on the map"): smaller pins, drawn under Blizzard's pins, a
+-- clear circle around the player, and pins of the same group that sit
+-- within CLUSTER of each other merged into one ("and 3 more here" on hover).
+-- Rares and guildmates are never merged.
+M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
+local NO_MERGE = { rare = true, guild = true }
+
+function M.Declutter(pins, px, py)
+  local out, cells = {}, {}
+  for _, p in ipairs(pins) do
+    local dx, dy = px and (p.x - px), py and (p.y - py)
+    local nearPlayer = dx and (dx * dx + dy * dy) < M.CLEAR * M.CLEAR
+    if not nearPlayer then
+      local group = M.Group(p.kind)
+      if NO_MERGE[group] then
+        out[#out + 1] = p
+      else
+        local key = group .. ":" .. math.floor(p.x / M.CLUSTER) .. ":" .. math.floor(p.y / M.CLUSTER)
+        local head = cells[key]
+        if head then
+          head.more = head.more or {}
+          head.more[#head.more + 1] = p
+        else
+          local copy = {}
+          for k, v in pairs(p) do copy[k] = v end
+          copy.more = nil
+          cells[key] = copy
+          out[#out + 1] = copy
+        end
+      end
+    end
+  end
+  return out
+end
+
 function M:AcquirePin(canvas)
   local pin = table.remove(self.pool)
   if not pin then
     pin = CreateFrame("Button", nil, canvas)
-    M.Decorate(pin, 18)
+    M.Decorate(pin, M.PIN_SIZE)
     pin:SetScript("OnClick", function(self) M:ShowCard(self.data) end)
     pin:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -259,12 +295,18 @@ function M:AcquirePin(canvas)
       GameTooltip:AddLine(first, ns.Theme:Color("muted"))
       if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
       for _, l in ipairs(M.QuestLines(self.data)) do GameTooltip:AddLine(l) end
+      local more = self.data.more
+      if more and #more > 0 then
+        GameTooltip:AddLine(string.format("and %d more here:", #more), ns.Theme:Color("muted"))
+        for i = 1, math.min(6, #more) do GameTooltip:AddLine("  " .. tostring(more[i].name or more[i].kind), ns.Theme:Color("text")) end
+      end
       GameTooltip:Show()
     end)
     pin:SetScript("OnLeave", function() GameTooltip:Hide() end)
   end
   pin:SetParent(canvas)
-  pin:SetFrameLevel((canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 20)
+  -- just above the map art, below Blizzard's own pins (player arrow, party, quests)
+  pin:SetFrameLevel((canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 1)
   self.used[#self.used + 1] = pin
   return pin
 end
@@ -277,7 +319,9 @@ function M:Refresh()
   local canvas = self.map:GetCanvas()
   local w, h = canvas:GetWidth(), canvas:GetHeight()
   local scale = (canvas.GetScale and canvas:GetScale() or 1)
-  for _, data in ipairs(self:PinsFor(mapID)) do
+  local pmap, px, py = C.PlayerPosition("player")
+  if pmap ~= mapID then px, py = nil, nil end
+  for _, data in ipairs(M.Declutter(self:PinsFor(mapID), px, py)) do
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
