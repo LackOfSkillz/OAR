@@ -112,5 +112,26 @@ end
 function Snap:AskAdvisor()
   if ns.Compat.InCombat() then ns.Print("not in combat") return end
   self:Collect(true)
+  self.askedThisSession = time()
+  ns.db.char.askPending = time()
   ReloadUI()
+end
+
+-- At logout: keep the /ride ask snapshot if it was taken in the last 10
+-- minutes (data read during logout is often empty: no position, quest levels
+-- 0, Gary's report 2026-11-11), else refresh it.
+function Snap:OnLogout()
+  if self.askedThisSession and time() - self.askedThisSession < 600 then return false end
+  self:Collect()
+  return true
+end
+
+-- One line after the reload that /ride ask causes, so Gary knows what next.
+function Snap:AfterLogin()
+  local t = ns.db.char.askPending
+  if not t then return end
+  ns.db.char.askPending = nil
+  if time() - t < 300 then
+    ns.Print("snapshot saved for your advisor. Ask Claude for advice, then /reload and open the Advisor tab (/ride hub).")
+  end
 end

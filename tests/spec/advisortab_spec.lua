@@ -71,3 +71,32 @@ T.describe("advisor across reloads", function()
     T.eq(why2, "advice is stale")
   end)
 end)
+
+T.describe("advisor ask flow", function()
+  T.it("the logout right after /ride ask keeps the asked snapshot; a hint shows after the reload", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    game:slash("ask")
+    local asked = game.env.Outrider_Snapshots[ns.db.key]
+    game.now = game.now + 2
+    game:fire("PLAYER_LOGOUT")
+    T.eq(game.env.Outrider_Snapshots[ns.db.key], asked, "not overwritten by the logout snapshot")
+    game:fire("PLAYER_ENTERING_WORLD", false, true)
+    T.contains(game:chatText(), "Ask Claude for advice")
+  end)
+
+  T.it("old snapshots without askedAt accept advice for a recent logout refresh", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    game.env.Outrider_Snapshots = { [ns.db.key] = { takenAt = 1000 + 60 } }
+    game.env.Outrider_Advice = { schema = 1, forCharacter = ns.db.key, answersSnapshot = 1000, items = {
+      { title = "x", action = "open_panel", args = { panel = "gear" } } } }
+    local items = ns.Advice:Load()
+    T.eq(#items, 1)
+    game.env.Outrider_Snapshots[ns.db.key].takenAt = 1000 + 7 * 3600
+    local _, why = ns.Advice:Load()
+    T.eq(why, "advice is stale")
+  end)
+end)

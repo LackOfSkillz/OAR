@@ -79,7 +79,15 @@ function Advice:Load()
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
   local snaps = rawget(_G, "Outrider_Snapshots")
   local snap = type(snaps) == "table" and snaps[ns.db.key]
-  if not snap or a.answersSnapshot ~= (snap.askedAt or snap.takenAt) then return {}, "advice is stale" end
+  if not snap then return {}, "advice is stale" end
+  if snap.askedAt then
+    if a.answersSnapshot ~= snap.askedAt then return {}, "advice is stale" end
+  else
+    -- snapshots from before askedAt existed: accept advice for this one or a
+    -- logout refresh of it from the last 6 hours
+    local age = (snap.takenAt or 0) - (tonumber(a.answersSnapshot) or 0)
+    if age < 0 or age > 6 * 3600 then return {}, "advice is stale" end
+  end
   local out = {}
   if type(a.items) == "table" then
     for _, item in ipairs(a.items) do

@@ -58,7 +58,7 @@ end
 
 function M:OnLogout()
   ns.Perf:Report(true)
-  ns.Snapshot:Collect()
+  ns.Snapshot:OnLogout()
 end
 
 function M:OnDisable()
@@ -67,6 +67,7 @@ function M:OnDisable()
 end
 
 function M:OnEnteringWorld(_, isLogin, isReload)
+  if isLogin or isReload then ns.Safe("Snapshot:AfterLogin", ns.Snapshot.AfterLogin, ns.Snapshot) end
   if (isLogin or isReload) and not self.testsTimer then
     self.testsTimer = ns.Timer.After(3, function() M.testsTimer = nil M:ShowTestsAtLogin() end, "autocheck:tests")
   end
