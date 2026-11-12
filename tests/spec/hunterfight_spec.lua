@@ -91,7 +91,16 @@ T.describe("hunter fight macro", function()
     game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9002)
     game:advance(2)
     game:fire("UNIT_SPELLCAST_SUCCEEDED", "target", "x", 9001)
+    game:fire("UNIT_SPELLCAST_FAILED", "player", "x", 9002)
+    game:fire("UI_ERROR_MESSAGE", 50, "Out of range.")
+    game:fire("UI_ERROR_MESSAGE", 50, "Out of range.")
     game:setCombat(false)
+    local refused
+    for _, l in ipairs(ns.Log:Tail(10)) do
+      local s = ns.Log:FormatLine(l)
+      if s:find("failed Serpent Sting x1; errors Out of range. x2", 1, true) then refused = true end
+    end
+    T.ok(refused, "refusals logged")
     local found
     for _, l in ipairs(ns.Log:Tail(10)) do
       local s = ns.Log:FormatLine(l)
@@ -107,6 +116,21 @@ T.describe("hunter fight macro", function()
     for _, e in ipairs(ns.MacroLibrary:Entries()) do if e.id == "hunter-fight" then listed = true end end
     T.ok(listed)
     T.eq(ns.MacroLibrary:State(ns.HunterFight:Entry()), "ready")
+  end)
+
+  T.it("logs Blizzard's one-button rotation when the client has it", function()
+    local game = mock.new()
+    game.env.C_AssistedCombat = { GetNextCastSpell = function() return 9001 end, IsAvailable = function() return true end,
+      GetActionSpell = function() return 9003 end, GetRotationSpells = function() return { 9001, 9002 } end }
+    game.spells = sp("Auto Shot", "Serpent Sting", "Single-Button Assistant")
+    local ns = game:loadAddon()
+    game:login()
+    local found
+    for _, l in ipairs(ns.Log:Tail(80)) do
+      local s = ns.Log:FormatLine(l)
+      if s:find("assisted combat: available true, button spell Single-Button Assistant (9003), rotation 2", 1, true) then found = true end
+    end
+    T.ok(found)
   end)
 
   T.it("won't overwrite a macro called Fight that Gary made", function()

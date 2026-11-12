@@ -124,7 +124,7 @@ end
 -- ------------------------------------------------------- fight log (self-check)
 function M:OnCombatStart()
   if not M.enabled then return end
-  M.fight = { t0 = C.Call("GetTime") or 0, casts = {} }
+  M.fight = { t0 = C.Call("GetTime") or 0, casts = {}, failed = {}, errors = {} }
 end
 
 function M:OnCast(_, unit, _, spellID)
@@ -135,13 +135,52 @@ function M:OnCast(_, unit, _, spellID)
   f.casts[#f.casts + 1] = string.format("%s@%.1f", name, (C.Call("GetTime") or 0) - f.t0)
 end
 
+-- What a press tried and the game refused (failed cast, red error text), to
+-- see why a line was skipped (2026-11-12: Serpent Sting never went out).
+function M:OnFailed(_, unit, _, spellID)
+  local f = M.fight
+  if unit ~= "player" or not f then return end
+  local name = C.SpellName(spellID)
+  if name then f.failed[name] = (f.failed[name] or 0) + 1 end
+end
+
+function M:OnUIError(_, _, message)
+  local f = M.fight
+  local msg = C.Readable(message)
+  if not f or type(msg) ~= "string" then return end
+  f.errors[msg] = (f.errors[msg] or 0) + 1
+end
+
+local function counts(t)
+  local out = {}
+  for k, n in pairs(t) do out[#out + 1] = string.format("%s x%d", k, n) end
+  table.sort(out)
+  return #out > 0 and table.concat(out, ", ") or "none"
+end
+
 function M:OnCombatEnd()
   local f = M.fight
   M.fight = nil
-  if not f or #f.casts == 0 then return end
+  if not f or (#f.casts == 0 and not next(f.failed)) then return end
   M.fights = (M.fights or 0) + 1
   if M.fights > 15 then return end -- enough to judge the order; keep the log small
   M:Info("fight %.0fs, ranged %s: %s", (C.Call("GetTime") or 0) - f.t0, tostring(M:Ranged()), table.concat(f.casts, ", "))
+  M:Info("fight refused: failed %s; errors %s", counts(f.failed), counts(f.errors))
+end
+
+-- Blizzard's own one-button rotation (Single-Button Assistant). The API is on
+-- Forever (probe 2026-11-12); log whether hunters can use it, once per login.
+function M:AssistedCombat()
+  if not (C_AssistedCombat and C_AssistedCombat.GetNextCastSpell) then return nil end
+  local available = C.Call("C_AssistedCombat.IsAvailable")
+  local actionSpell = C.Call("C_AssistedCombat.GetActionSpell")
+  local rotation = C.Call("C_AssistedCombat.GetRotationSpells")
+  local names = {}
+  if type(rotation) == "table" then
+    for _, id in ipairs(rotation) do names[#names + 1] = C.SpellName(id) or tostring(id) end
+  end
+  return { available = available, actionSpell = actionSpell, actionName = actionSpell and C.SpellName(actionSpell),
+    rotation = names }
 end
 
 function M:OnEnable()
@@ -149,6 +188,16 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod, _, isLogin)
     if not mod:Settings().auto then return end
     later(isLogin and "login" or "reload")
+    if not mod.assistLogged then
+      mod.assistLogged = true
+      local a = mod:AssistedCombat()
+      if a then
+        mod:Info("assisted combat: available %s, button spell %s (%s), rotation %d: %s", tostring(a.available),
+          tostring(a.actionName), tostring(a.actionSpell), #a.rotation, table.concat(a.rotation, ", "))
+      else
+        mod:Info("assisted combat: not on this client")
+      end
+    end
   end)
   self:On("SPELLS_CHANGED", function(mod) if mod:Settings().auto then later("spells") end end)
   self:On("PLAYER_LEVEL_UP", function(mod) if mod:Settings().auto then later("level") end end)
@@ -158,6 +207,8 @@ function M:OnEnable()
   self:On("PLAYER_REGEN_DISABLED", self.OnCombatStart)
   self:On("UNIT_SPELLCAST_SUCCEEDED", self.OnCast)
   self:On("PLAYER_REGEN_ENABLED", self.OnCombatEnd)
+  self:On("UNIT_SPELLCAST_FAILED", self.OnFailed)
+  self:On("UI_ERROR_MESSAGE", self.OnUIError)
 end
 
 function M:OnDisable() ns.ThrottleCancel("hunterfight") end

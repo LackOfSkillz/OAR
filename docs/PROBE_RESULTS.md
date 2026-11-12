@@ -64,6 +64,7 @@ Probe 2026-11-11 11:09 (build 70888): 78 present, 21 missing. The client is a mo
 | C_NamePlate.*, UnitClassification, UnitCreatureFamily, UnitCreatureType, UnitGUID, issecretvalue | present | P2 | |
 | C_Map.*, C_SuperTrack, UiMapPoint, WorldMapFrame.AddDataProvider, MapCanvas mixins, C_TaxiMap | present | P3 | Native waypoints and map pins available |
 | CreateMacro, EditMacro, GetMacroIndexByName, GetNumMacros | present | P2-08, P4 | Used by /ride tamemacro |
+| C_AssistedCombat.GetNextCastSpell | present (2026-11-12) | P4 | Blizzard one-button rotation API exists; whether hunters get the button is logged at login by HunterFight |
 | TooltipDataProcessor.AddTooltipPostCall, C_TooltipInfo | present | P2-10, P5 | Modern tooltip hooks |
 | C_ChatInfo addon messages, guild/friends APIs | present | P8 | |
 | Masque | missing | P7 | optional addon, not installed |
