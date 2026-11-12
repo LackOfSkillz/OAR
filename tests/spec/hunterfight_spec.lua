@@ -60,7 +60,7 @@ T.describe("hunter fight macro", function()
     T.eq(#game.macros, count, "same macros, no new ones")
     local a, b, c, d, e = body:find("Hunter's Mark", 1, true), body:find("Serpent", 1, true),
       body:find("Concussive", 1, true), body:find("/cast Arcane", 1, true), body:find("!Auto Shot", 1, true)
-    T.ok(a < b and b < c and c < d and d < e, "priority order")
+    T.ok(a < c and c < b and b < d and d < e, "Mark, Concussive, Serpent, Arcane, Auto Shot")
     local melee = macro(game, "Strike").body
     local w, r, g = melee:find("Wing Clip,null", 1, true), melee:find("Raptor", 1, true), melee:find("Mongoose", 1, true)
     T.ok(w < r and r < g, "melee order: Wing Clip once, Raptor on cooldown, Mongoose last")

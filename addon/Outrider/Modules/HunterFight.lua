@@ -4,7 +4,7 @@
 -- rewritten out of combat whenever a spell is learned or the ranged weapon
 -- changes. Each is an ordinary macro: every press does what a hand-written
 -- macro would do (hard rule 1). Outrider never casts anything.
---   Fight  - ranged: Hunter's Mark, Serpent Sting, Concussive Shot, Arcane Shot, Auto Shot
+--   Fight  - ranged: Hunter's Mark, Concussive Shot, Serpent Sting, Arcane Shot, Auto Shot
 --   Strike - melee:  Raptor Strike, Wing Clip, Mongoose Bite
 --
 -- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
@@ -69,11 +69,11 @@ function M:Lines(kind)
   end
   if self:Ranged() ~= "bow" then return L end
   if known("Hunter's Mark") then add(5, "/castsequence reset=30/target Hunter's Mark,null", "once per pull (again after 30 s)") end
+  if s.concussive and known("Concussive Shot") then
+    add(8, "/castsequence reset=20/target Concussive Shot,null", "first shot after Mark: slows it on the way in, more shots before it reaches you (Gary, 2026-11-12)")
+  end
   if known("Serpent Sting") then
     add(3, "/castsequence reset=15/target Serpent Sting,null", "once per target, again after 15 s")
-  end
-  if s.concussive and known("Concussive Shot") then
-    add(8, "/castsequence reset=20/target Concussive Shot,null", "slows once per pull (again after 20 s) so it reaches you later")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
   if known("Auto Shot") then add(2, "/cast !Auto Shot", "last: keeps shooting (never toggles off)") end
