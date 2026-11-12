@@ -30,13 +30,13 @@ local M = ns:NewModule("HunterFight", {
   phase = "P4",
   order = 64,
   classes = { HUNTER = true },
-  defaults = { auto = true, name = "Fight", meleeName = "Strike", concussive = true, wingclip = true, pet = true },
+  defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", concussive = true, wingclip = true, pet = true },
 })
 ns.HunterFight = M
 
 local SHOOTERS = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } -- bow / gun / crossbow
 M.MAX = 255
-M.KINDS = { "ranged", "melee" }
+M.KINDS = { "ranged", "melee", "pet" }
 
 local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
 
@@ -57,8 +57,19 @@ function M:Lines(kind)
   local s = self:Settings()
   local L = {}
   local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
+  -- Pet key (Gary got his pet, 2026-11-12): one button for pet care, out of
+  -- the spam keys because Mend Pet is a channel. Dead pet: Revive Pet; no pet
+  -- out: Call Pet; otherwise Mend Pet.
+  if kind == "pet" then
+    local c = {}
+    if known("Revive Pet") then c[#c + 1] = "[@pet,dead] Revive Pet" end
+    if known("Call Pet") then c[#c + 1] = "[nopet] Call Pet" end
+    if known("Mend Pet") then c[#c + 1] = "Mend Pet" end
+    if #c > 0 then add(1, "/cast " .. table.concat(c, "; "), "dead pet: Revive; no pet: Call; otherwise Mend") end
+    return L
+  end
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
-  if s.pet then add(9, "/petattack [harm]", "sends the pet") end
+  if s.pet then add(9, "/petattack [pet,harm]", "sends the pet at your target every press, so it pulls aggro off you") end
   if kind == "melee" then
     add(1, "/startattack", "keeps swinging")
     if s.wingclip and known("Wing Clip") then
@@ -112,6 +123,11 @@ function M:Entry(kind)
   kind = kind or "ranged"
   local s = self:Settings()
   local body = self:Body(kind)
+  if kind == "pet" then
+    return { id = "hunter-pet", name = s.petName, class = "HUNTER", body = body, scope = "char",
+      tags = { "pet" }, dynamic = true, empty = #self:Lines("pet") == 0,
+      explain = "Pet care: Revive a dead pet, Call it when it's away, otherwise Mend Pet. Not a spam key." }
+  end
   if kind == "melee" then
     return { id = "hunter-strike", name = s.meleeName, class = "HUNTER", body = body, scope = "char",
       tags = { "combat" }, dynamic = true,
@@ -134,7 +150,7 @@ function M:Update(why)
       -- Created only from Gary's click (Macros tab Install or /ride fight), like
       -- every library macro; once ours, it follows the spellbook by itself.
       -- Strike also comes along once Fight is ours (Gary asked for both, 2026-11-12).
-      local wanted = installed[entry.name] or why == "command" or (kind == "melee" and installed[self:Settings().name])
+      local wanted = not entry.empty and (installed[entry.name] or why == "command" or (kind ~= "ranged" and installed[self:Settings().name]))
       if wanted and lib:State(entry) ~= "installed" then
         local ok, msg = lib:Install(entry)
         if ok then
@@ -163,7 +179,7 @@ M.PRE = 6
 function M:OnCombatStart()
   if not M.enabled then return end
   local now = C.Call("GetTime") or 0
-  M.fight = { t0 = now, casts = {}, failed = {}, errors = {} }
+  M.fight = { t0 = now, casts = {}, failed = {}, errors = {}, pet = C.Readable(C.Call("UnitExists", "pet")) == true }
   for _, p in ipairs(M.pre or {}) do
     if now - p.t <= M.PRE then M.fight.casts[#M.fight.casts + 1] = string.format("%s@%.1f", p.name, p.t - now) end
   end
@@ -214,6 +230,7 @@ function M:Tally(f, secs)
   local t = M.tally or { fights = 0, secs = 0, castIn = {}, failed = {}, errors = {} }
   M.tally = t
   t.fights, t.secs = t.fights + 1, t.secs + secs
+  if f.pet then t.withPet = (t.withPet or 0) + 1 end
   local seen = {}
   for _, c in ipairs(f.casts) do
     local name = c:match("^(.-)@")
@@ -229,7 +246,8 @@ function M:OnLogout()
   local cast = {}
   for k, n in pairs(t.castIn) do cast[#cast + 1] = string.format("%s %d/%d", k, n, t.fights) end
   table.sort(cast)
-  M:Info("fights this session: %d, average %.0fs; cast in: %s", t.fights, t.secs / t.fights, table.concat(cast, ", "))
+  M:Info("fights this session: %d, average %.0fs, pet out in %d; cast in: %s", t.fights, t.secs / t.fights, t.withPet or 0,
+    table.concat(cast, ", "))
   if t.autoGaps and t.autoGaps > 0 then
     local speed = C.Call("UnitRangedDamage", "player")
     M:Info("auto shot: %d gaps, average %.2fs (weapon speed %s)", t.autoGaps, t.autoGapSum / t.autoGaps,

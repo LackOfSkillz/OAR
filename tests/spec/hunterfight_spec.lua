@@ -136,6 +136,32 @@ T.describe("hunter fight macro", function()
     T.ok(found, "Mark logged with a negative time")
   end)
 
+  T.it("pet: Fight sends it, a Pet key cares for it, the log counts fights with it", function()
+    local game, ns = session(sp("Auto Shot", "Raptor Strike", "Hunter's Mark", "Call Pet", "Revive Pet", "Mend Pet"), BOW)
+    T.contains(macro(game, "Fight").body, "/petattack [pet,harm]")
+    T.contains(macro(game, "Strike").body, "/petattack [pet,harm]")
+    local p = macro(game, "Pet")
+    T.ok(p, "Pet macro made with the others")
+    T.eq(p.body, "#showtooltip\n/cast [@pet,dead] Revive Pet; [nopet] Call Pet; Mend Pet")
+    T.eq(ns.MacroEngine.Errors(p.body), 0)
+    game.units = { pet = { name = "Crawler" } }
+    game:setCombat(true)
+    game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9003)
+    game:setCombat(false)
+    game:fire("PLAYER_LOGOUT")
+    local found
+    for _, l in ipairs(ns.Log:Tail(20)) do
+      if ns.Log:FormatLine(l):find("pet out in 1;", 1, true) then found = true end
+    end
+    T.ok(found, "fights with the pet out counted")
+  end)
+
+  T.it("no pet spells yet: no Pet macro", function()
+    local game, ns = session(sp("Auto Shot", "Raptor Strike"), BOW)
+    T.eq(macro(game, "Pet"), nil)
+    for _, e in ipairs(ns.MacroLibrary:Entries()) do T.ok(e.id ~= "hunter-pet") end
+  end)
+
   T.it("measures the gaps between Auto Shots", function()
     local g = (select(3, session(sp("Auto Shot"), BOW))).AutoGaps({ "Auto Shot@0.5", "Arcane Shot@1.0", "Auto Shot@3.3", "Auto Shot@6.1" })
     T.eq(g.n, 2)
@@ -157,7 +183,7 @@ T.describe("hunter fight macro", function()
     local cast, refused
     for _, l in ipairs(ns.Log:Tail(20)) do
       local s = ns.Log:FormatLine(l)
-      if s:find("fights this session: 20, average 4s; cast in: Hunter's Mark 10/20, Serpent Sting 20/20", 1, true) then cast = true end
+      if s:find("fights this session: 20, average 4s, pet out in 0; cast in: Hunter's Mark 10/20, Serpent Sting 20/20", 1, true) then cast = true end
       if s:find("fights refused this session: failed none; errors Target too close x20", 1, true) then refused = true end
     end
     T.ok(cast, "cast tally")
