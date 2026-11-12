@@ -49,7 +49,7 @@ Probe.APIS = {
   -- professions, bags, auction, fishing
   { "C_Container.GetContainerNumSlots", "P5" }, { "C_Container.GetContainerItemInfo", "P5" },
   { "GetContainerNumSlots", "P5", "Classic bag API" }, { "C_TradeSkillUI.GetAllRecipeIDs", "P5" },
-  { "C_TradeSkillUI.CraftRecipe", "P5" }, { "C_TradeSkillUI.OpenTradeSkill", "P5" }, { "C_TradeSkillUI.IsTradeSkillReady", "P5" },
+  { "C_TradeSkillUI.CraftRecipe", "P5" }, { "C_TradeSkillUI.GetCraftableCount", "P5" }, { "C_TradeSkillUI.OpenTradeSkill", "P5" }, { "C_TradeSkillUI.IsTradeSkillReady", "P5" },
   { "GetNumTradeSkills", "P5", "Classic trade skill API" }, { "GetTradeSkillInfo", "P5" },
   { "GetNumCrafts", "P5", "Classic enchanting API" }, { "GetProfessions", "P5" }, { "GetSkillLineInfo", "P5" },
   { "C_AuctionHouse.SendSearchQuery", "P5", "modern AH" }, { "C_AuctionHouse.ReplicateItems", "P5" },

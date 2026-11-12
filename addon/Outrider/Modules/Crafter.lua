@@ -83,9 +83,9 @@ function M:Pick()
       table.sort(keys)
       self:Debug("recipe info fields: %s", table.concat(keys, ","))
     end
-    local skip = type(info) ~= "table" or info.learned == false
+    local skip = type(info) ~= "table" or info.learned == false or info.craftable == false
     if not skip then for k in pairs(SKIP) do if info[k] then skip = true end end end
-    local n = not skip and tonumber(C.Readable(info.numAvailable)) or 0
+    local n = not skip and self:Count(id, info) or 0
     if not skip then
       craftable = craftable + 1
       local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
@@ -104,7 +104,7 @@ function M:Pick()
   if best then return best.id, best.name, best.n, best.diff end
 end
 
-local function have(itemID)
+function M.Have(itemID)
   local n = C.Call("C_Item.GetItemCount", itemID)
   if n == nil then n = C.Call("GetItemCount", itemID) end
   return tonumber(C.Readable(n)) or 0
@@ -116,7 +116,7 @@ function M:Missing(recipeID)
   if type(reagents) ~= "table" then return nil end
   local parts = {}
   for itemID, need in pairs(reagents) do
-    local got = have(itemID)
+    local got = M.Have(itemID)
     if got < need then
       local info = C.ItemInfo(itemID)
       parts[#parts + 1] = string.format("%s x%d (you have %d)", info and info.name or ("item " .. itemID), need, got)
@@ -124,6 +124,23 @@ function M:Missing(recipeID)
   end
   table.sort(parts)
   return #parts > 0 and table.concat(parts, ", ") or nil
+end
+
+-- How many we can make now. Forever's recipe info has no numAvailable
+-- (fields measured 2026-11-12), so ask GetCraftableCount, else count the bags.
+function M:Count(id, info)
+  local n = tonumber(C.Readable(info and info.numAvailable))
+  if n then return n end
+  n = tonumber(C.Readable(C.Call("C_TradeSkillUI.GetCraftableCount", id)))
+  if n then return n end
+  local reagents = ns.Professions and ns.Professions.Reagents and ns.Professions.Reagents(id)
+  if type(reagents) ~= "table" or not next(reagents) then return 0 end
+  local fit
+  for itemID, need in pairs(reagents) do
+    local k = math.floor(M.Have(itemID) / math.max(need, 1))
+    fit = fit and math.min(fit, k) or k
+  end
+  return fit or 0
 end
 
 local COLOURS = { [0] = "orange", [1] = "yellow", [2] = "green", [3] = "grey" }
@@ -138,7 +155,7 @@ function M:Make(prof)
     local line = owned[prof]
     local canOpen = type(line) == "number" and C_TradeSkillUI and type(C_TradeSkillUI.OpenTradeSkill) == "function"
     if canOpen then pcall(C_TradeSkillUI.OpenTradeSkill, line) end
-    if not self:OpenFor(prof) then
+    do
       if canOpen then
         ns.Print("%s window opened: press again to make", prof)
       else

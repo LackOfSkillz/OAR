@@ -412,7 +412,8 @@ function M.new(opts)
       local p = game.prof
       return p and { professionName = p.name, skillLevel = p.skill, maxSkillLevel = p.max }
     end,
-    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff, numAvailable = r.have or 0, isGatheringRecipe = r.gather } end,
+    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff, craftable = not r.gather, isGatheringRecipe = r.gather or false } end,
+    GetCraftableCount = function(id) local r = game.prof.recipes[id] return r and r.have or 0 end,
     IsTradeSkillReady = function() return game.tradeOpen == true end,
     OpenTradeSkill = function(line) if game.prof and game.prof.line == line and not game.noAutoOpen then game.tradeOpen = true end end,
     CraftRecipe = function(id, n) game.crafted = game.crafted or {} game.crafted[#game.crafted + 1] = { id = id, n = n } end,

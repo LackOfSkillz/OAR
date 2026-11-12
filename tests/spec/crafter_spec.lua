@@ -8,6 +8,7 @@ local function session(prof, opts)
   game:login()
   ns.Modules:SetEnabled("AutoCheck", false)
   game:advance(3)
+  game.tradeOpen = true -- window already open (the opening press has its own test)
   return game, ns
 end
 
@@ -43,7 +44,10 @@ T.describe("crafter", function()
 
   T.it("first press opens the window, next press makes the best skill-up recipe you have everything for", function()
     local game, ns = session(cooking())
-    T.eq(ns.Crafter:Make("Cooking"), "made", "OpenTradeSkill is immediate here")
+    game.tradeOpen = false
+    T.eq(ns.Crafter:Make("Cooking"), "opened", "first press opens the window")
+    T.ok(said(game, "Cooking window opened: press again to make"))
+    T.eq(ns.Crafter:Make("Cooking"), "made")
     T.eq(#game.crafted, 1)
     T.eq(game.crafted[1].id, 102, "yellow Roasted Boar beats grey Charred Wolf; orange Spiced Wolf has no spice")
     T.eq(game.crafted[1].n, 2, "all you can make, like Create All")
@@ -53,6 +57,7 @@ T.describe("crafter", function()
   T.it("when the window can't load at once, the press only opens it", function()
     local game, ns = session(cooking(), { })
     game.noAutoOpen = true
+    game.tradeOpen = false
     T.eq(ns.Crafter:Make("Cooking"), "opened")
     T.eq(game.crafted, nil)
     game.tradeOpen = true

@@ -108,3 +108,6 @@ Combat timing: `PLAYER_REGEN_DISABLED` fires while `InCombatLockdown()` is still
 - Consequence for P7: position and size of all of these belong to Edit Mode (Gary moves them there). Outrider's skin (P7-04/06) only changes textures, colors and fonts, out of combat, and never calls SetPoint/SetSize on them. Context layouts (P7-09) can switch layouts with C_EditMode.SetActiveLayout out of combat.
 
 - 2026-11-11 21:10: memory measured after a full garbage collection at logout: 2677 KB live (4171 KB before collection). The earlier 6.3 MB was uncollected garbage; Outrider is under the 3 MB budget.
+
+## C_TradeSkillUI.GetRecipeInfo fields (measured 2026-11-12, Alchemy/Herbalism window)
+alwaysUsesLowestQuality, canCreateMultiple, canSkillUp, categoryID, craftable, disabled, favorite, firstCraft, hasSingleItemOutput, hyperlink, icon, isDummyRecipe, isEnchantingRecipe, isGatheringRecipe, isRecraft, isSalvageRecipe, itemLevel, learned, maxTrivialLevel, name, numSkillUps, recipeID, relativeDifficulty, skillLineAbilityID, supportsCraftingStats, supportsQualities. **No numAvailable**: Crafter asks GetCraftableCount, else counts reagents in the bags.
