@@ -18,6 +18,7 @@ Probe.APIS = {
   { "Settings.RegisterAddOnCategory", "P1" }, { "InterfaceOptions_AddCategory", "P1", "old options API" },
   { "UpdateAddOnMemoryUsage", "P1" }, { "GetAddOnMemoryUsage", "P1" }, { "C_AddOns.GetAddOnMemoryUsage", "P1" },
   -- units, rares, hunter
+  { "C_AssistedCombat.GetNextCastSpell", "P4", "Blizzard one-button rotation" },
   { "UnitGUID", "P2" }, { "UnitClassification", "P2" }, { "UnitCreatureFamily", "P2" },
   { "UnitCreatureType", "P2" }, { "C_NamePlate.GetNamePlates", "P2" }, { "C_NamePlate.GetNamePlateForUnit", "P2" },
   { "C_VignetteInfo.GetVignettes", "P2", "expected absent/empty for rares" },

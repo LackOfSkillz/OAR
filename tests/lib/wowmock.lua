@@ -388,8 +388,8 @@ function M.new(opts)
     CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
   }
   base.GetInventoryItemLink = function(_, slot)
-    if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
     if game.worn and game.worn[slot] then return "|cffffffff|Hitem:" .. game.worn[slot] .. "::::::::24:::::|h[w]|h|r" end
+    if slot == 18 and not game.noRanged then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
     if slot == 16 and game.pole then return "|cffffffff|Hitem:6256::::::::24:::::|h[Fishing Pole]|h|r" end
     if slot == 0 and (game.ammo or opts.ammo) then return "|cffffffff|Hitem:2512::::::::24:::::|h[Rough Arrow]|h|r" end
   end
