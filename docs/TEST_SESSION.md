@@ -17,7 +17,8 @@ needs; at the end, log out and say "done".
    blocked in combat).
 8. Walk into a town: the errand toast. Talk to a vendor (Merchant panel).
 9. If you pass one: a Merchant's Favor quartermaster window (Durotar Supply
-   and Logistics). Just open it; Outrider records what the window shows.
+   and Logistics). Open it and press Print Screen; Outrider does not read
+   that window yet, the screenshot tells Claude what to build.
 10. Log out. Say "done".
 
 What it confirms: P7-04/05/06 skins, P7-11 feed, P8-06 errands, P9-02/04
