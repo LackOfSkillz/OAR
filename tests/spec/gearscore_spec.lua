@@ -86,6 +86,23 @@ T.describe("gear advisor off-hand", function()
   end)
 end)
 
+T.describe("gear advisor hunter ranged", function()
+  T.it("a thrown weapon is never a hunter upgrade, however high its numbers", function()
+    local game = mock.new({ class = "HUNTER" })
+    game.items = {
+      [801] = { name = "Worn Shortbow", equipLoc = "INVTYPE_RANGED", class = 2, subclass = 2 },
+      [802] = { name = "Balanced Throwing Dagger", equipLoc = "INVTYPE_THROWN", class = 2, subclass = 16 },
+    }
+    game.itemStats = { [801] = { ITEM_MOD_AGILITY_SHORT = 1 }, [802] = { ITEM_MOD_AGILITY_SHORT = 9 } }
+    game.worn = { [18] = 801 }
+    local ns = game:loadAddon()
+    game:login()
+    local link = "|cffffffff|Hitem:802::::::::24:::::|h[x]|h|r"
+    T.eq((ns.GearScore:Verdict(link)), "no Auto Shot with a thrown weapon")
+    T.eq(ns.GearScore:Compare(link).why, "hunter thrown")
+  end)
+end)
+
 T.describe("gear advisor percentages", function()
   T.it("a near-zero worn item does not produce absurd percentages", function()
     local game = mock.new()

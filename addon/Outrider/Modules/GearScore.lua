@@ -85,6 +85,9 @@ function M:Usable(link, info)
   if info and info.reqLevel and info.reqLevel > level then return "level " .. info.reqLevel, info.reqLevel end
   local equipLoc, class, subclass = itemClass(link)
   if class == 4 and subclass == 6 and not SHIELD_CLASSES[ns.PlayerClass()] then return "can't wear" end
+  -- Hunter shots and Auto Shot need a bow, gun or crossbow: a thrown weapon in the ranged
+  -- slot turns them off (Gary's Khreos was offered throwing daggers at +86%, 2026-11-12)
+  if ns.PlayerClass() == "HUNTER" and (equipLoc or (info and info.equipLoc)) == "INVTYPE_THROWN" then return "hunter thrown" end
   -- off-hand items do nothing while a two-hander is in the main hand
   -- (Gary's hunter was told an orb was a +100% upgrade, 2026-11-11)
   if OFFHAND[equipLoc or (info and info.equipLoc) or ""] then
@@ -141,6 +144,7 @@ function M:Verdict(link)
   local role = (ns.StatWeights[ns.PlayerClass()] or {}).role or ""
   if r.why == "can't wear" then return "can't wear this armor type", "muted" end
   if r.why == "two-hander" then return "not with your two-hander", "muted" end
+  if r.why == "hunter thrown" then return "no Auto Shot with a thrown weapon", "muted" end
   local pct = math.floor(r.pct + 0.5)
   -- "fills an empty slot (Ranged (levelling))" on a belt read like the slot was Ranged (Gary's log, 2026-11-11)
   if not r.why and r.empty and r.new > 0 then

@@ -34,3 +34,5 @@
 
 - 2026-11-11: P6-07 GearQuest bridge skipped: GearQuest Forever is not installed on Gary's PC. If he installs it, check for a public API and add a read-only bridge.
 - 2026-11-11: GearQuest Forever v1.1.3 installed at Gary's request (zip kept in private/gearquest-source). Its licence is All Rights Reserved, so Outrider only reads its global table in game (GearQuestBridge) and never copies its data. Outrider's nearby-upgrade toast yields to GearQuest's own toasts.
+
+- 2026-11-12 (Claude): thrown weapons are never a hunter upgrade (Auto Shot and hunter shots need a bow, gun or crossbow). Rule from Classic; check on Forever if Gary ever wants thrown for a hunter.
