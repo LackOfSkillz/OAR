@@ -4,7 +4,7 @@
 -- rewritten out of combat whenever a spell is learned or the ranged weapon
 -- changes. Each is an ordinary macro: every press does what a hand-written
 -- macro would do (hard rule 1). Outrider never casts anything.
---   Fight  - ranged: Auto Shot (once), Hunter's Mark, Concussive Shot, Serpent Sting, Arcane Shot
+--   Fight  - ranged: Hunter's Mark, Concussive Shot, Auto Shot (once), Serpent Sting, then Arcane Shot
 --   Strike - melee:  Raptor Strike, Wing Clip, Mongoose Bite
 --
 -- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
@@ -69,23 +69,21 @@ function M:Lines(kind)
     return L
   end
   if self:Ranged() ~= "bow" then return L end
-  -- Auto Shot starts once per pull and is never pressed again: re-sending
-  -- /cast !Auto Shot on every press restarted the shot (Gary saw the hunter
-  -- reach back for a new arrow, 2026-11-12). First line: the first press
-  -- of a pull starts shooting (no global cooldown), later presses skip it.
-  if known("Auto Shot") then
-    add(2, "/castsequence reset=combat/target !Auto Shot,null", "first press of a pull starts shooting; never pressed again, so the shot isn't restarted")
-  end
-  -- Mark, Concussive, Serpent: one sequence, each once per pull, in that order
-  -- (Concussive right after Mark, Gary 2026-11-12). A spell on cooldown falls
-  -- through to Arcane Shot without moving the sequence on.
+  -- One sequence per pull: Hunter's Mark, Concussive Shot, then Auto Shot,
+  -- then Serpent Sting (Gary 2026-11-12: open with Mark and Concussive, not a
+  -- plain arrow). Auto Shot sits inside the sequence so it starts once, right
+  -- after Concussive, and is never re-sent ("!Auto Shot" in a castsequence
+  -- works and moves on, measured 2026-11-12; re-sending it every press
+  -- restarted the shot). A spell on cooldown or the global cooldown holds the
+  -- sequence and the press falls through to Arcane Shot.
   local seq = {}
   if known("Hunter's Mark") then seq[#seq + 1] = "Hunter's Mark" end
   if s.concussive and known("Concussive Shot") then seq[#seq + 1] = "Concussive Shot" end
+  if known("Auto Shot") then seq[#seq + 1] = "!Auto Shot" end
   if known("Serpent Sting") then seq[#seq + 1] = "Serpent Sting" end
   if #seq > 0 then
-    add(3, "/castsequence reset=combat/target " .. table.concat(seq, ",") .. ",null",
-      table.concat(seq, ", then ") .. ": once each per pull (and per new target)")
+    add(2, "/castsequence reset=combat/target " .. table.concat(seq, ",") .. ",null",
+      (table.concat(seq, ", then "):gsub("!", "")) .. ": once each per pull (and per new target)")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
   return L
