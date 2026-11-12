@@ -1,37 +1,38 @@
 -- Modules/HunterFight.lua
--- One "Fight" macro for hunters that Gary spams. Outrider writes its text from
--- what this character knows right now (Spellbook) and what is in the ranged
--- slot, and rewrites it out of combat whenever a spell is learned, the level
--- changes or the ranged weapon changes. The macro itself is an ordinary macro:
--- each press does what a hand-written macro would do (hard rule 1). Outrider
--- never casts anything.
+-- Two macros for hunters that Gary spams, written by Outrider from what this
+-- character knows right now (Spellbook) and what is in the ranged slot, and
+-- rewritten out of combat whenever a spell is learned or the ranged weapon
+-- changes. Each is an ordinary macro: every press does what a hand-written
+-- macro would do (hard rule 1). Outrider never casts anything.
+--   Fight  - ranged: Hunter's Mark, Serpent Sting, Concussive Shot, Arcane Shot, Auto Shot
+--   Strike - melee:  Raptor Strike, Wing Clip, Mongoose Bite
 --
--- How one press picks the attack (a macro can't read cooldowns or debuffs, so
--- the order of the lines does the choosing):
---   * every /cast line is tried top to bottom; a spell that is on cooldown,
---     out of range or too close simply fails and the next line is tried; only
---     one global-cooldown spell can go off per press;
---   * at range the melee strikes fail (too far), in melee the shots fail (too
---     close): that is the ranged/melee switch;
---   * spells that should go out once per target use "/castsequence ... ,null":
---     after the one cast the line stays on "null" and does nothing until the
---     target changes (reset=target); Serpent Sting also resets after 15 s.
--- Each fight's casts are logged (UNIT_SPELLCAST_SUCCEEDED, not the combat
--- log) so we can check the order in game without Gary typing anything.
+-- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
+--   * one spell attempt per press: a line that casts, or is refused for a real
+--     reason ("Target too close", "Out of range"), ends the press; only "Spell
+--     is not ready yet" (cooldown, global cooldown) moves on to the next line;
+--   * a macro can't see range, so ranged and melee are two keys.
+-- So each macro is ordered: once-per-target spells first ("/castsequence
+-- reset=target X,null": one cast, then the line is null until the target
+-- changes; Serpent Sting also every 15 s), cooldown spells next (they fall
+-- through while cooling down), and the always-usable spell last.
+-- Each fight's casts and refusals are logged (UNIT_SPELLCAST_*, UI_ERROR_MESSAGE,
+-- not the combat log) so the order can be checked without Gary typing anything.
 
 local _, ns = ...
 local C = ns.Compat
 local M = ns:NewModule("HunterFight", {
-  title = "Hunter Fight macro (one key)",
+  title = "Hunter Fight and Strike macros",
   phase = "P4",
   order = 64,
   classes = { HUNTER = true },
-  defaults = { auto = true, name = "Fight", concussive = true, wingclip = false, pet = true },
+  defaults = { auto = true, name = "Fight", meleeName = "Strike", concussive = true, wingclip = true, pet = true },
 })
 ns.HunterFight = M
 
 local SHOOTERS = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } -- bow / gun / crossbow
 M.MAX = 255
+M.KINDS = { "ranged", "melee" }
 
 local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
 
@@ -48,33 +49,37 @@ end
 
 -- The lines in press order, each with a keep rank (lower = kept when the
 -- macro has to shrink under 255 characters) and why it is there.
-function M:Lines()
+function M:Lines(kind)
   local s = self:Settings()
-  local shooter = self:Ranged() == "bow"
   local L = {}
   local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
   if s.pet then add(9, "/petattack [pet,harm]", "sends the pet") end
-  if shooter and known("Auto Shot") then add(2, "/cast !Auto Shot", "keeps shooting (never toggles off)") end
-  if known("Mongoose Bite") then add(6, "/cast Mongoose Bite", "melee: only after the target dodges") end
-  if known("Raptor Strike") then add(3, "/cast Raptor Strike", "melee: your next swing hits harder") end
-  if s.wingclip and known("Wing Clip") then
-    add(10, "/castsequence reset=target Wing Clip,null", "melee: slows once so you can step back")
+  if kind == "melee" then
+    add(1, "/startattack", "keeps swinging")
+    if s.wingclip and known("Wing Clip") then
+      add(5, "/castsequence reset=target Wing Clip,null", "slows once per target so you can step back and shoot")
+    end
+    if known("Raptor Strike") then add(2, "/cast Raptor Strike", "whenever it is off cooldown") end
+    if known("Mongoose Bite") then add(4, "/cast Mongoose Bite", "only after the target dodges") end
+    return L
   end
+  if self:Ranged() ~= "bow" then return L end
   if known("Hunter's Mark") then add(5, "/castsequence reset=target Hunter's Mark,null", "once per target") end
-  if shooter and known("Serpent Sting") then
-    add(4, "/castsequence reset=15/target Serpent Sting,null", "once per target, again after 15 s")
+  if known("Serpent Sting") then
+    add(3, "/castsequence reset=15/target Serpent Sting,null", "once per target, again after 15 s")
   end
-  if shooter and s.concussive and known("Concussive Shot") then
+  if s.concussive and known("Concussive Shot") then
     add(8, "/castsequence reset=target Concussive Shot,null", "slows once per target so it reaches you later")
   end
-  if shooter and known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
+  if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
+  if known("Auto Shot") then add(2, "/cast !Auto Shot", "last: keeps shooting (never toggles off)") end
   return L
 end
 
 -- Body text; drops the lowest-priority lines until it fits. Returns body, dropped lines.
-function M:Body()
-  local lines = self:Lines()
+function M:Body(kind)
+  local lines = self:Lines(kind or "ranged")
   local dropped = {}
   local function build()
     local t = { "#showtooltip" }
@@ -91,32 +96,48 @@ function M:Body()
   return body, dropped
 end
 
-function M:Entry()
-  local body = self:Body()
-  return { id = "hunter-fight", name = self:Settings().name, class = "HUNTER", body = body, scope = "char",
+function M:Entry(kind)
+  kind = kind or "ranged"
+  local s = self:Settings()
+  local body = self:Body(kind)
+  if kind == "melee" then
+    return { id = "hunter-strike", name = s.meleeName, class = "HUNTER", body = body, scope = "char",
+      tags = { "combat" }, dynamic = true,
+      explain = "Melee key: press it when the mob reaches you. Outrider rewrites it when you learn a spell." }
+  end
+  return { id = "hunter-fight", name = s.name, class = "HUNTER", body = body, scope = "char",
     tags = { "combat" }, dynamic = true,
-    explain = "One key for every fight: spam it. Outrider rewrites it when you learn a spell or change your ranged weapon." }
+    explain = "Ranged key: spam it. Outrider rewrites it when you learn a spell or change your ranged weapon." }
 end
 
--- Writes or rewrites the macro (out of combat; waits for combat to end).
+-- Writes or rewrites both macros (out of combat; waits for combat to end).
 function M:Update(why)
   if not ns.MacroLibrary then return end
   ns.Combat:Run("HunterFight", function()
-    local entry = self:Entry()
     local lib = ns.MacroLibrary
-    -- Created only from Gary's click (Macros tab Install or /ride fight), like
-    -- every library macro; once it is ours, it follows the spellbook by itself.
-    if not lib:Settings().installed[entry.name] and why ~= "command" then return end
-    if lib:State(entry) == "installed" then return end
-    local ok, msg = ns.MacroLibrary:Install(entry)
-    if ok then
-      self:Info("Fight macro written (%s): %d chars, %d lines", tostring(why), #entry.body, select(2, entry.body:gsub("\n", "")))
-      self:Debug("Fight macro text: %s", (entry.body:gsub("\n", " | ")))
-      if why == "command" then
-        ns.Print("macro %s is ready: open the macro window (/macro), Character tab, and drag it to your bar", entry.name)
+    local installed = lib:Settings().installed
+    local made = {}
+    for _, kind in ipairs(M.KINDS) do
+      local entry = self:Entry(kind)
+      -- Created only from Gary's click (Macros tab Install or /ride fight), like
+      -- every library macro; once ours, it follows the spellbook by itself.
+      -- Strike also comes along once Fight is ours (Gary asked for both, 2026-11-12).
+      local wanted = installed[entry.name] or why == "command" or (kind == "melee" and installed[self:Settings().name])
+      if wanted and lib:State(entry) ~= "installed" then
+        local ok, msg = lib:Install(entry)
+        if ok then
+          made[#made + 1] = entry.name
+          self:Info("%s macro written (%s): %d chars, %d lines", entry.name, tostring(why), #entry.body,
+            select(2, entry.body:gsub("\n", "")))
+          self:Debug("%s macro text: %s", entry.name, (entry.body:gsub("\n", " | ")))
+        else
+          self:Warn("%s macro not written: %s", entry.name, tostring(msg))
+        end
       end
-    else
-      self:Warn("Fight macro not written: %s", tostring(msg))
+    end
+    if why == "command" and #made > 0 then
+      ns.Print("macros %s ready: open the macro window (/macro), Character tab, and drag them to your bar",
+        table.concat(made, " and "))
     end
   end, "hunterfight")
 end
@@ -214,12 +235,12 @@ end
 function M:OnDisable() ns.ThrottleCancel("hunterfight") end
 
 function M:Activity()
-  local body = self:Body()
-  return string.format("%s macro: %d lines, %d chars", self:Settings().name, select(2, body:gsub("\n", "")), #body)
+  local f, m = self:Body("ranged"), self:Body("melee")
+  return string.format("%s %d chars, %s %d chars", self:Settings().name, #f, self:Settings().meleeName, #m)
 end
 
 local OPTIONS = { concussive = true, wingclip = true, pet = true, auto = true }
-ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  show or change the one-key hunter Fight macro", function(arg)
+ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change the hunter Fight (ranged) and Strike (melee) macros", function(arg)
   if ns.PlayerClass() ~= "HUNTER" or not M.enabled then ns.Print("the Fight macro is for hunters") return end
   local key, val = (arg or ""):lower():match("^(%a+)%s+(%a+)$")
   if key and OPTIONS[key] and (val == "on" or val == "off") then
@@ -227,8 +248,11 @@ ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  show or change th
     ns.Print("Fight macro: %s %s", key, val)
   end
   M:Update("command")
-  local body, dropped = M:Body()
-  ns.Print("Fight macro (%d chars), top line first:", #body)
-  for _, l in ipairs(M:Lines()) do ns.Print("  %s  |cffbbbbbb%s|r", l.text, l.why) end
-  if #dropped > 0 then ns.Print("left out to fit 255 characters: %s", table.concat(dropped, "; ")) end
+  for _, kind in ipairs(M.KINDS) do
+    local entry = M:Entry(kind)
+    local body, dropped = M:Body(kind)
+    ns.Print("%s (%s, %d chars), top line first:", entry.name, kind, #body)
+    for _, l in ipairs(M:Lines(kind)) do ns.Print("  %s  |cffbbbbbb%s|r", l.text, l.why) end
+    if #dropped > 0 then ns.Print("left out to fit 255 characters: %s", table.concat(dropped, "; ")) end
+  end
 end)

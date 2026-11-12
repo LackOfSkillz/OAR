@@ -26,7 +26,10 @@ function M:Entries()
     if e.class == class or e.class == "ALL" then out[#out + 1] = e end
   end
   -- the hunter Fight macro is written from the spellbook, not a pack
-  if ns.HunterFight and ns.HunterFight.enabled then out[#out + 1] = ns.HunterFight:Entry() end
+  if ns.HunterFight and ns.HunterFight.enabled then
+    out[#out + 1] = ns.HunterFight:Entry("ranged")
+    out[#out + 1] = ns.HunterFight:Entry("melee")
+  end
   table.sort(out, function(a, b) return a.name < b.name end)
   return out
 end
