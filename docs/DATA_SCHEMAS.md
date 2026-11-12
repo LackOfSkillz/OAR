@@ -99,6 +99,11 @@ Packs register with `ns.Data:Register(kind, packName, entries)`. Every kind also
 { itemID = 6291, mapID = 1412, minSkill = 1, pool = false, verified = false }
 ```
 
+## herb (where each herb grows, from guides; keyed by name)
+`{ name, source, verified, skill = n | nil, zones = { "Zone", ... }, note }`. Keyed by name, not item ID: no
+cited item IDs, and names are what node tooltips and loot show. `skill` only where a guide states it.
+Zones are guide text, never coordinates (Forever redrew zones). `verified = true` only after Gary picks one.
+
 ## Captured at runtime (not packs)
 
 `ns.db.global.discovered.npcs[npcID]`:

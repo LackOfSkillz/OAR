@@ -18,7 +18,7 @@ local M = ns:NewModule("HerbHelper", {
   title = "Herbalism helper (Find Herbs reminder, pin herbs you see)",
   phase = "P5",
   order = 77,
-  defaults = { remind = true, pinOnSight = true },
+  defaults = { remind = true, pinOnSight = true, hints = true },
 })
 ns.HerbHelper = M
 
@@ -101,6 +101,7 @@ function M:OnObjectTooltip(tip, data)
     end
   end
   if not kind then return end
+  if kind == "herb" then self:AddSkillLine(tip, text[1]) end
   local mapID, x, y = C.PlayerPosition("player")
   if not (mapID and x) then return end
   local key = string.format("%s:%d:%.0f:%.0f", text[1], mapID, x * 200, y * 200)
@@ -110,6 +111,49 @@ function M:OnObjectTooltip(tip, data)
   local node, new = ns.LootLog:AddNode(kind, mapID, x, y, text[1])
   if node and new then node.seenOnly = true end
 end
+
+-- ------------------------------------------------ guide hints (Data/Herbs.lua)
+function M:Guide(name) return type(name) == "string" and ns.Data:Get("herb", name) or nil end
+
+function M:MySkill()
+  local p = ns.db.char.professions and ns.db.char.professions.Herbalism
+  return p and tonumber(p.skill) or nil
+end
+
+-- "Herbalism 15 needed (you have 4)" on a herb node, when a guide states the skill.
+function M:SkillLine(name)
+  local g = self:Guide(name)
+  if not (g and g.skill) then return nil end
+  local mine = self:MySkill()
+  if not mine then return string.format("Herbalism %d needed (guide)", g.skill), "muted" end
+  return string.format("Herbalism %d needed (you have %d)", g.skill, mine), mine >= g.skill and "good" or "bad"
+end
+
+function M:AddSkillLine(tip, name)
+  if not self:Settings().hints then return end
+  local text, color = self:SkillLine(name)
+  if not text or not tip.AddLine then return end
+  local r, g, b = ns.Theme:Color(color)
+  tip:AddLine(text, r, g, b)
+  if tip.Show then tip:Show() end
+end
+
+-- "Grows in: ..." on a herb item (bags, loot, auction house).
+function M:ItemLines(name)
+  local g = self:Guide(name)
+  if not g or not self:Settings().hints then return nil end
+  local out = {}
+  if g.zones and #g.zones > 0 then out[#out + 1] = { "Grows in: " .. table.concat(g.zones, ", "), "muted" } end
+  if g.skill then out[#out + 1] = { string.format("Herbalism %d to pick (guide)", g.skill), "muted" } end
+  if g.note then out[#out + 1] = { g.note, "muted" } end
+  return #out > 0 and out or nil
+end
+
+ns.TooltipLines:Add("item", "herb", M, function(tip)
+  if not tip.GetItem then return nil end
+  local name = tip:GetItem()
+  return M:ItemLines(C.Readable(name))
+end)
 
 function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:CheckTracking() end)
@@ -132,3 +176,16 @@ function M:Activity()
   for _, n in ipairs(ns.db.global.nodes or {}) do if n.seenOnly then seen = seen + 1 end end
   return string.format("%d nodes pinned on sight", seen)
 end
+
+ns.AddCommand("herbs", "  where each herb grows and the skill it needs (from guides, unverified)", function()
+  local mine = M:MySkill()
+  ns.Print("Herbs by guide (unverified on Forever)%s:", mine and (", your Herbalism " .. mine) or "")
+  local list = {}
+  for _, packs in pairs(ns.Data.packs.herb or {}) do for _, h in ipairs(packs) do list[#list + 1] = h end end
+  for _, h in ipairs(list) do
+    local skill = h.skill and (" " .. h.skill) or ""
+    local where = h.zones and #h.zones > 0 and table.concat(h.zones, ", ") or (h.note or "zones not documented")
+    local mark = (mine and h.skill and mine >= h.skill) and "|cff7fff7f" or ""
+    ns.Print("  %s%s%s|r: %s", mark, h.name, skill, where)
+  end
+end)

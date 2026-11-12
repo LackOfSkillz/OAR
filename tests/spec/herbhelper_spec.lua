@@ -56,4 +56,22 @@ T.describe("herb helper", function()
     T.ok(n.seenOnly and n.verified == false)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("guide hints: skill line on the herb node, zones on the herb item, /ride herbs lists them", function()
+    local game, ns = session({})
+    ns.db.char.professions.Herbalism = { skill = 4, max = 75, recipes = {} }
+    local text, color = ns.HerbHelper:SkillLine("Earthroot")
+    T.eq(text, "Herbalism 15 needed (you have 4)")
+    T.eq(color, "bad")
+    T.eq(ns.HerbHelper:SkillLine("Peacebloom"), nil, "no skill stated by the guides")
+    local lines = ns.HerbHelper:ItemLines("Mageroyal")
+    T.contains(lines[1][1], "Grows in: Silverpine Forest")
+    local e = ns.Data:Get("herb", "Earthroot")
+    T.eq(e.verified, false)
+    game:slash("herbs")
+    local listed
+    for _, l in ipairs(game.chat) do if l:find("Khadgar's Whisker 185", 1, true) then listed = true end end
+    T.ok(listed)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
