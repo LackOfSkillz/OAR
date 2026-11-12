@@ -31,6 +31,12 @@ M.FRAMES = {
 -- decorative children faded on each window (whichever exist)
 M.PARTS = { "NineSlice", "Bg", "Background", "TitleBg", "TopTileStreaks", "Portrait", "PortraitContainer",
   "BorderFrame", "Border", "Inset" }
+-- Windows whose text is dark brown on parchment (Gary, 2026-11-11: gossip
+-- became "unreadable" on the dark panel): keep the parchment page, restyle
+-- only the frame (border, title bar, portrait).
+M.PARCHMENT = { GossipFrame = true, QuestFrame = true, QuestLogFrame = true, OpenMailFrame = true,
+  ItemTextFrame = true, BookFrame = true }
+M.FRAME_ONLY = { "NineSlice", "TitleBg", "TopTileStreaks", "Portrait", "PortraitContainer" }
 
 function M:OnInitialize() self.done, self.faded, self.panels, self.hooked = {}, {}, {}, {} end
 
@@ -38,7 +44,7 @@ function M:OnEnable()
   for _, name in ipairs(self.FRAMES) do self:Hook(name) end
   -- windows from load-on-demand Blizzard addons appear later
   self:On("ADDON_LOADED", function(mod) for _, name in ipairs(mod.FRAMES) do mod:Hook(name) end end)
-  for _, p in pairs(self.panels) do p:Show() end
+  for key, p in pairs(self.panels) do if not self.PARCHMENT[key] then p:Show() end end
   for region, alpha in pairs(self.faded) do pcall(region.SetAlpha, region, 0) end
 end
 
@@ -71,13 +77,15 @@ function M:Apply(name, frame)
   if self.done[name] or not self.enabled or C.InCombat() then return false end
   if frame.IsForbidden and frame:IsForbidden() then return false end
   local n = 0
-  for _, key in ipairs(self.PARTS) do
+  local parchment = self.PARCHMENT[name]
+  for _, key in ipairs(parchment and self.FRAME_ONLY or self.PARTS) do
     local part = frame[key]
     if type(part) == "table" then n = n + fade(self, part) end
   end
   local panel = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
   panel:SetAllPoints(frame)
   panel:SetColorTexture(Theme:Color("bg"))
+  if parchment then panel:Hide() end -- the parchment page stays the background
   local edges = {}
   for i, side in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" }, { "TOPLEFT", "BOTTOMLEFT" },
       { "TOPRIGHT", "BOTTOMRIGHT" } }) do
