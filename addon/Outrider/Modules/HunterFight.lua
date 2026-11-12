@@ -182,10 +182,36 @@ local function counts(t)
   return #out > 0 and table.concat(out, ", ") or "none"
 end
 
+-- Whole-session tally, logged once at logout: the per-fight lines stop after
+-- 15 fights and a long session pushes them out of the 600-line log (2026-11-12).
+function M:Tally(f, secs)
+  local t = M.tally or { fights = 0, secs = 0, castIn = {}, failed = {}, errors = {} }
+  M.tally = t
+  t.fights, t.secs = t.fights + 1, t.secs + secs
+  local seen = {}
+  for _, c in ipairs(f.casts) do
+    local name = c:match("^(.-)@")
+    if name and not seen[name] then seen[name] = true; t.castIn[name] = (t.castIn[name] or 0) + 1 end
+  end
+  for k, n in pairs(f.failed) do t.failed[k] = (t.failed[k] or 0) + n end
+  for k, n in pairs(f.errors) do t.errors[k] = (t.errors[k] or 0) + n end
+end
+
+function M:OnLogout()
+  local t = M.tally
+  if not t or t.fights == 0 then return end
+  local cast = {}
+  for k, n in pairs(t.castIn) do cast[#cast + 1] = string.format("%s %d/%d", k, n, t.fights) end
+  table.sort(cast)
+  M:Info("fights this session: %d, average %.0fs; cast in: %s", t.fights, t.secs / t.fights, table.concat(cast, ", "))
+  M:Info("fights refused this session: failed %s; errors %s", counts(t.failed), counts(t.errors))
+end
+
 function M:OnCombatEnd()
   local f = M.fight
   M.fight = nil
   if not f or (#f.casts == 0 and not next(f.failed)) then return end
+  M:Tally(f, (C.Call("GetTime") or 0) - f.t0)
   M.fights = (M.fights or 0) + 1
   if M.fights > 15 then return end -- enough to judge the order; keep the log small
   M:Info("fight %.0fs, ranged %s: %s", (C.Call("GetTime") or 0) - f.t0, tostring(M:Ranged()), table.concat(f.casts, ", "))
@@ -233,6 +259,7 @@ function M:OnEnable()
   self:On("PLAYER_REGEN_ENABLED", self.OnCombatEnd)
   self:On("UNIT_SPELLCAST_FAILED", self.OnFailed)
   self:On("UI_ERROR_MESSAGE", self.OnUIError)
+  self:On("PLAYER_LOGOUT", self.OnLogout)
 end
 
 function M:OnDisable() ns.ThrottleCancel("hunterfight") end

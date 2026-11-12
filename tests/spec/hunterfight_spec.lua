@@ -119,6 +119,28 @@ T.describe("hunter fight macro", function()
     T.ok(found, "fight line logged")
   end)
 
+  T.it("logs a whole-session tally at logout, past the 15-fight cap", function()
+    local game, ns = session(sp("Auto Shot", "Serpent Sting", "Hunter's Mark"), BOW)
+    for i = 1, 20 do
+      game:setCombat(true)
+      if i % 2 == 0 then game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9003) end
+      game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9002)
+      game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9002)
+      game:fire("UI_ERROR_MESSAGE", 50, "Target too close")
+      game:advance(4)
+      game:setCombat(false)
+    end
+    game:fire("PLAYER_LOGOUT")
+    local cast, refused
+    for _, l in ipairs(ns.Log:Tail(20)) do
+      local s = ns.Log:FormatLine(l)
+      if s:find("fights this session: 20, average 4s; cast in: Hunter's Mark 10/20, Serpent Sting 20/20", 1, true) then cast = true end
+      if s:find("fights refused this session: failed none; errors Target too close x20", 1, true) then refused = true end
+    end
+    T.ok(cast, "cast tally")
+    T.ok(refused, "refusal tally")
+  end)
+
   T.it("not created until Gary asks; listed in the Macros tab", function()
     local game, ns = session(sp("Auto Shot", "Raptor Strike"), BOW, { noInstall = true })
     T.eq(macro(game, "Fight"), nil)
