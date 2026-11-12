@@ -11,7 +11,10 @@
 --   * one spell attempt per press: a line that casts, or is refused for a real
 --     reason ("Target too close", "Out of range"), ends the press; only "Spell
 --     is not ready yet" (cooldown, global cooldown) moves on to the next line;
---   * a macro can't see range, so ranged and melee are two keys.
+--   * a macro can't see range, so ranged and melee are two keys;
+--   * "reset=target" alone did not re-arm a castsequence reliably (Hunter's Mark went
+--     out in 3 of 16 fights; Serpent Sting with a 15 s timer went out fine), so
+--     every once-per-pull line also has a timer.
 -- So each macro is ordered: once-per-target spells first ("/castsequence
 -- reset=target X,null": one cast, then the line is null until the target
 -- changes; Serpent Sting also every 15 s), cooldown spells next (they fall
@@ -58,19 +61,19 @@ function M:Lines(kind)
   if kind == "melee" then
     add(1, "/startattack", "keeps swinging")
     if s.wingclip and known("Wing Clip") then
-      add(5, "/castsequence reset=target Wing Clip,null", "slows once per target so you can step back and shoot")
+      add(5, "/castsequence reset=10/target Wing Clip,null", "slows once per pull (again after 10 s) so you can step back and shoot")
     end
     if known("Raptor Strike") then add(2, "/cast Raptor Strike", "whenever it is off cooldown") end
     if known("Mongoose Bite") then add(4, "/cast Mongoose Bite", "only after the target dodges") end
     return L
   end
   if self:Ranged() ~= "bow" then return L end
-  if known("Hunter's Mark") then add(5, "/castsequence reset=target Hunter's Mark,null", "once per target") end
+  if known("Hunter's Mark") then add(5, "/castsequence reset=30/target Hunter's Mark,null", "once per pull (again after 30 s)") end
   if known("Serpent Sting") then
     add(3, "/castsequence reset=15/target Serpent Sting,null", "once per target, again after 15 s")
   end
   if s.concussive and known("Concussive Shot") then
-    add(8, "/castsequence reset=target Concussive Shot,null", "slows once per target so it reaches you later")
+    add(8, "/castsequence reset=20/target Concussive Shot,null", "slows once per pull (again after 20 s) so it reaches you later")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
   if known("Auto Shot") then add(2, "/cast !Auto Shot", "last: keeps shooting (never toggles off)") end
