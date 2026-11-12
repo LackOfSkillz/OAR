@@ -50,10 +50,21 @@ function Perf:Collect()
   return r
 end
 
+-- quiet = the logout report. It first reads memory as is (live data plus
+-- garbage not yet collected), then runs one full garbage collection and reads
+-- again: the second number is what the budget checks. Before this the logout
+-- figure swung between 2.8 and 6.3 MB with chat traffic (2026-11-11).
 function Perf:Report(quiet)
+  local raw
+  if quiet then
+    raw = self:MemoryKB()
+    pcall(collectgarbage, "collect")
+  end
   local r = self:Collect()
+  r.memoryRawKB = raw
   ns.db.global.perf = r
   local mem = r.memoryKB and string.format("%.0f KB", r.memoryKB) or "unknown"
+  if r.memoryRawKB then mem = mem .. string.format(" live (%.0f KB before garbage collection)", r.memoryRawKB) end
   ns.Log:Info("perf", "mem %s, %d events/%d handlers, timers %d (driver %s), combat queue %d, modules %d/%d, secure %d (%d free), uptime %ss",
     mem, r.events, r.handlers, r.timers, tostring(r.timerDriver), r.combatQueue, r.modulesOn, r.modules,
     r.secureButtons, r.secureFree, tostring(r.uptime or "?"))
