@@ -119,6 +119,22 @@ T.describe("hunter fight macro", function()
     T.ok(found, "fight line logged")
   end)
 
+  T.it("counts Hunter's Mark cast just before combat starts", function()
+    local game, ns = session(sp("Auto Shot", "Serpent Sting", "Hunter's Mark"), BOW)
+    game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9003)
+    game:advance(2)
+    game:setCombat(true)
+    game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 9002)
+    game:setCombat(false)
+    game:fire("PLAYER_LOGOUT")
+    local found
+    for _, l in ipairs(ns.Log:Tail(20)) do
+      local s = ns.Log:FormatLine(l)
+      if s:find("Hunter's Mark@-2.0, Serpent Sting@0.0", 1, true) then found = true end
+    end
+    T.ok(found, "Mark logged with a negative time")
+  end)
+
   T.it("logs a whole-session tally at logout, past the 15-fight cap", function()
     local game, ns = session(sp("Auto Shot", "Serpent Sting", "Hunter's Mark"), BOW)
     for i = 1, 20 do

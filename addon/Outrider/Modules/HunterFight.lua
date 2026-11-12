@@ -147,16 +147,33 @@ function M:Update(why)
 end
 
 -- ------------------------------------------------------- fight log (self-check)
+-- Casts in the 6 s before combat count too: Hunter's Mark doesn't start
+-- combat, so it lands before PLAYER_REGEN_DISABLED (Mark looked missing in
+-- 12 of 14 fights while the next line, Concussive, went out in 11).
+M.PRE = 6
+
 function M:OnCombatStart()
   if not M.enabled then return end
-  M.fight = { t0 = C.Call("GetTime") or 0, casts = {}, failed = {}, errors = {} }
+  local now = C.Call("GetTime") or 0
+  M.fight = { t0 = now, casts = {}, failed = {}, errors = {} }
+  for _, p in ipairs(M.pre or {}) do
+    if now - p.t <= M.PRE then M.fight.casts[#M.fight.casts + 1] = string.format("%s@%.1f", p.name, p.t - now) end
+  end
+  M.pre = {}
 end
 
 function M:OnCast(_, unit, _, spellID)
-  local f = M.fight
-  if unit ~= "player" or not f or #f.casts >= 40 then return end
+  if unit ~= "player" then return end
   local name = C.SpellName(spellID)
   if not name then return end
+  local f = M.fight
+  if not f then
+    M.pre = M.pre or {}
+    if #M.pre >= 5 then table.remove(M.pre, 1) end
+    M.pre[#M.pre + 1] = { name = name, t = C.Call("GetTime") or 0 }
+    return
+  end
+  if #f.casts >= 40 then return end
   f.casts[#f.casts + 1] = string.format("%s@%.1f", name, (C.Call("GetTime") or 0) - f.t0)
 end
 
