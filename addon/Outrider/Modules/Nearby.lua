@@ -58,7 +58,31 @@ local function stats(id)
   return ok and type(s) == "table" and next(s) and s or nil
 end
 
--- { {itemID, name, pct, kind, where = {mapID, x, y, who, qlevel}, reqLevel} } best first
+-- Can this character do the quest behind a quest source? (Gary asked where
+-- Bow of Hours was: a level 11 quest after an earlier one, shown to a level 4.)
+-- Returns false for done or far-too-high quests; else true and a note when
+-- it is not available yet ("from level 5", "after 1 earlier quest").
+function M.QuestOpen(s, level)
+  if s[1] ~= "quest" or not s[8] then return true, nil end
+  local qid, qreq, preAny, preAll, qlvl = s[8], s[9] or 1, s[10] or {}, s[11] or {}, s[6]
+  local function done(id) return C.Call("C_QuestLog.IsQuestFlaggedCompleted", id) == true end
+  if done(qid) then return false end
+  if qlvl and qlvl > level + 4 then return false end
+  local missing = 0
+  if #preAny > 0 then
+    local any = false
+    for _, p in ipairs(preAny) do if done(p) then any = true break end end
+    if not any then missing = missing + 1 end
+  end
+  for _, p in ipairs(preAll) do if not done(p) then missing = missing + 1 end end
+  local notes = {}
+  if qreq > level then notes[#notes + 1] = "from level " .. qreq end
+  if missing > 0 then notes[#notes + 1] = string.format("after %d earlier quest%s", missing, missing == 1 and "" or "s") end
+  return true, #notes > 0 and table.concat(notes, ", ") or nil
+end
+
+-- { {itemID, name, pct, kind, where = {mapID, x, y, who, qlevel, note}, reqLevel} } best first;
+-- quests you cannot take yet come after the ones you can
 function M:Candidates()
   local out, missing = {}, 0
   if not ns.GearScore then return out end
@@ -86,8 +110,11 @@ function M:Candidates()
       if req <= level + 3 and req >= level - 6 then
         for _, s in ipairs(it[4]) do
           if s[2] == mapID and (s[7] == nil or s[7] == faction) then
-            add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6] }, req)
-            break
+            local ok, note = M.QuestOpen(s, level)
+            if ok then
+              add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note }, req)
+              break
+            end
           end
         end
       end
@@ -117,6 +144,8 @@ function M:Candidates()
     end
   end
   table.sort(out, function(a, b)
+    local la, lb = (a.where and a.where.note) and 1 or 0, (b.where and b.where.note) and 1 or 0
+    if la ~= lb then return la < lb end
     local pa, pb = math.floor(a.pct + 0.5), math.floor(b.pct + 0.5)
     if pa ~= pb then return pa > pb end
     return (M.EFFORT[a.kind] or 9) < (M.EFFORT[b.kind] or 9)
@@ -146,6 +175,7 @@ function M.Describe(c)
     src = "GearQuest: " .. tostring(c.via or "") .. " " .. who .. (c.zone and (", " .. c.zone) or "")
   end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end
+  if w.note then src = src .. ", " .. w.note end
   return string.format("+%d%%  %s  |cffbbbbbb%s|r", math.floor(c.pct + 0.5), tostring(c.name), src)
 end
 
