@@ -92,6 +92,7 @@ function UI:Check(parent, label, get, set)
   local row = CreateFrame("Button", nil, parent)
   row:SetSize(300, 22)
   local box = CreateFrame("Frame", nil, row, Theme:BackdropTemplate())
+  row.box = box
   box:SetSize(14, 14)
   box:SetPoint("LEFT", 2, 0)
   Theme:ApplyPanel(box, "raised")

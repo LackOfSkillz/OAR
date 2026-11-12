@@ -13,8 +13,9 @@ local Hub = { name = "hub", tabs = {}, byId = {} }
 ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
-local MAX_ROWS = 18 -- visible module rows; the list scrolls with the mouse wheel
-local W, H = 600, 480
+local MAX_ROWS = 19 -- visible module rows; the list scrolls with the mouse wheel
+local W, H = 780, 500
+local SIDE = 112 -- sidebar of tabs on the left; panels to its right
 
 local L = {
   overview = "Overview", modules = "Modules", characters = "Characters", tools = "Tools",
@@ -49,9 +50,9 @@ function Hub:Build()
   local f = UI:Window("Outrider_Hub", "Outrider", W, H, ns.db.char.hub)
   self.frame = f
   local c = f.content
-  f.tabBar = UI:Tabs(c, {}, function(id) Hub:ShowTab(id) end)
+  f.tabBar = UI:Tabs(c, {}, function(id) Hub:ShowTab(id) end, SIDE)
   f.tabBar:SetPoint("TOPLEFT", 0, 0)
-  f.tabBar:SetPoint("RIGHT", 0, 0)
+  f.tabBar:SetPoint("BOTTOMLEFT", 0, 0)
   for _, t in ipairs(self.tabs) do self:AddTabButton(t) end
 
   f:SetScript("OnShow", function()
@@ -65,7 +66,7 @@ end
 function Hub:Panel(t)
   if t.panel then return t.panel end
   local p = CreateFrame("Frame", nil, self.frame.content)
-  p:SetPoint("TOPLEFT", 0, -32)
+  p:SetPoint("TOPLEFT", SIDE + 12, 0)
   p:SetPoint("BOTTOMRIGHT", 0, 0)
   p:Hide()
   t.panel = p
@@ -137,6 +138,12 @@ Hub:AddTab("overview", L.overview, function(p)
 end, 10)
 
 -- ------------------------------------------------------------- Modules
+-- Modules grouped by phase, with a header line per group; status text in a
+-- quiet color, cut to one line (the full text shows on hover).
+local GROUPS = { P0 = "Core", P1 = "Core", P2 = "Rares and hunter tools", P3 = "Maps and places", P4 = "Macros",
+  P5 = "Professions and gold", P6 = "Gear", P7 = "Interface", P8 = "Sharing and town", P9 = "Advisor" }
+local PANEL_W = W - SIDE - 40
+
 Hub:AddTab("modules", L.modules, function(p)
   local heading = UI.Text(p, "large", "accent")
   heading:SetPoint("TOPLEFT", 0, 0)
@@ -152,24 +159,47 @@ Hub:AddTab("modules", L.modules, function(p)
         p:Refresh()
       end)
     row:SetPoint("TOPLEFT", 0, -24 - (i - 1) * 21)
-    row:SetWidth(W - 40)
+    row:SetWidth(PANEL_W)
+    row.label:SetWidth(210) row.label:SetJustifyH("LEFT") row.label:SetWordWrap(false)
+    row.note:SetWidth(PANEL_W - 240) row.note:SetJustifyH("LEFT") row.note:SetWordWrap(false)
+    row.head = UI.Text(row, "normal", "accent")
+    row.head:SetPoint("LEFT", 0, 0)
+    row:SetScript("OnEnter", function(self)
+      if not self.full then return end
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(self.label:GetText() or "")
+      GameTooltip:AddLine(self.full, 1, 1, 1, true)
+      GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     p.rows[i] = row
   end
   p:EnableMouseWheel(true)
   p:SetScript("OnMouseWheel", function(self, delta) self.offset = (self.offset or 0) - delta * 3 self:Refresh() end)
   function p:Refresh()
-    local status = ns.Modules:Status()
+    local lines, last = {}, nil
+    for _, s in ipairs(ns.Modules:Status()) do
+      local mod = ns.Modules:Get(s.name)
+      local group = GROUPS[mod and mod.spec.phase or ""] or "Other"
+      if group ~= last then lines[#lines + 1] = { header = group } last = group end
+      lines[#lines + 1] = s
+    end
+    local status = lines
     self.offset = math.max(0, math.min(self.offset or 0, #status - #self.rows))
     for i, row in ipairs(self.rows) do
       local s = status[i + (self.offset or 0)]
-      if s then
+      if s and s.header then
+        row.mod, row.full = nil, nil
+        row.head:SetText(s.header) row.head:Show()
+        row.box:Hide() row.label:SetText("") row.note:SetText("")
+        row:Show()
+      elseif s then
+        row.head:Hide() row.box:Show()
         row.mod = ns.Modules:Get(s.name)
         row.label:SetText(s.title)
-        if s.enabled then
-          row.note:SetText(s.activity and (ns.Theme:Hex("good") .. s.activity .. "|r") or "")
-        else
-          row.note:SetText(tostring(s.reason))
-        end
+        local text = s.enabled and (s.activity or "") or ("off: " .. tostring(s.reason))
+        row.full = text ~= "" and text or nil
+        row.note:SetText(ns.Theme:Hex(s.enabled and "muted" or "warn") .. text .. "|r")
         row:Refresh()
         row:Show()
       else

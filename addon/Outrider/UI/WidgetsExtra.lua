@@ -74,15 +74,27 @@ end
 
 -- ------------------------------------------------------------ Tabs
 -- tabs = { { id, title }, ... }; onSelect(id). :Select(id) switches.
-function UI:Tabs(parent, tabs, onSelect)
+-- vertical = width of a sidebar: one tab per line, growing downward (the hub
+-- outgrew one row of tabs, Gary's screenshot 2026-11-11).
+function UI:Tabs(parent, tabs, onSelect, vertical)
   local bar = CreateFrame("Frame", nil, parent)
   bar:SetHeight(24)
+  if vertical then bar:SetWidth(vertical) end
   bar.buttons, bar.order = {}, {}
   local prev
+  local function place(b, after)
+    b:ClearAllPoints()
+    if vertical then
+      if after then b:SetPoint("TOPLEFT", after, "BOTTOMLEFT", 0, -3) else b:SetPoint("TOPLEFT", 0, 0) end
+    else
+      if after then b:SetPoint("LEFT", after, "RIGHT", 4, 0) else b:SetPoint("LEFT", 0, 0) end
+    end
+  end
   function bar:Add(id, title)
-    local b = UI:Button(self, title, math.max(70, #title * 7 + 20), function() self:Select(id) end)
+    local b = UI:Button(self, title, vertical or math.max(70, #title * 7 + 20), function() self:Select(id) end)
     b:SetHeight(22)
-    if prev then b:SetPoint("LEFT", prev, "RIGHT", 4, 0) else b:SetPoint("LEFT", 0, 0) end
+    if vertical and b.label then b.label:ClearAllPoints() b.label:SetPoint("LEFT", 10, 0) end
+    place(b, prev)
     prev = b
     b.id = id
     self.buttons[id] = b
@@ -98,8 +110,7 @@ function UI:Tabs(parent, tabs, onSelect)
     local last
     for _, id in ipairs(order) do
       local b = self.buttons[id]
-      b:ClearAllPoints()
-      if last then b:SetPoint("LEFT", last, "RIGHT", 4, 0) else b:SetPoint("LEFT", 0, 0) end
+      place(b, last)
       last = b
     end
     prev = last
