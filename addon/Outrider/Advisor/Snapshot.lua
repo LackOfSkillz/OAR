@@ -67,12 +67,18 @@ local function fromModules()
   return out
 end
 
-function Snap:Collect()
+-- asked = true for /ride ask and /ride snap. askedAt marks the question the
+-- advice answers; the automatic logout snapshot refreshes the data but keeps
+-- askedAt, so advice stays valid across /reload until the next /ride ask.
+function Snap:Collect(asked)
   Outrider_Snapshots = type(Outrider_Snapshots) == "table" and Outrider_Snapshots or {}
   local meta = ns.db.char.meta
+  local prev = Outrider_Snapshots[ns.db.key]
+  local now = time()
   local s = {
     schema = self.SCHEMA,
-    takenAt = time(),
+    takenAt = now,
+    askedAt = asked and now or (type(prev) == "table" and (prev.askedAt or prev.takenAt)) or now,
     addon = ns.version, build = ns.build,
     level = UnitLevel and UnitLevel("player"),
     class = meta.class, race = meta.race, faction = meta.faction,
@@ -105,6 +111,6 @@ end
 -- a key press, so ReloadUI from here is allowed.
 function Snap:AskAdvisor()
   if ns.Compat.InCombat() then ns.Print("not in combat") return end
-  self:Collect()
+  self:Collect(true)
   ReloadUI()
 end

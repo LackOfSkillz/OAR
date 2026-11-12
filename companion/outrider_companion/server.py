@@ -55,7 +55,8 @@ class Server:
             return self.store.professions(char)
         if name == "write_advice":
             snap = self.store.snapshot(char)
-            data, rejected = advice.build(char, snap.get("takenAt"), args.get("items"))
+            # advice answers the last /ride ask (askedAt survives the logout snapshot)
+            data, rejected = advice.build(char, snap.get("askedAt") or snap.get("takenAt"), args.get("items"))
             if not data["items"]:
                 raise ValueError("no valid items: %s" % json.dumps(rejected))
             size = advice.write(self.cfg["adviceFile"], data)

@@ -10,7 +10,7 @@
 -- Outrider_Advice = {
 --   schema = 1,
 --   forCharacter = "Torrant-Realm",
---   answersSnapshot = 1731300000,      -- must equal Outrider_Snapshots[char].takenAt
+--   answersSnapshot = 1731300000,      -- must equal Outrider_Snapshots[char].askedAt (or takenAt)
 --   items = {
 --     { title = "Tame The Rake", why = "...", action = "waypoint", confidence = "verified",
 --       args = { mapID = 1412, x = 0.46, y = 0.37 } },
@@ -79,7 +79,7 @@ function Advice:Load()
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
   local snaps = rawget(_G, "Outrider_Snapshots")
   local snap = type(snaps) == "table" and snaps[ns.db.key]
-  if not snap or a.answersSnapshot ~= snap.takenAt then return {}, "advice is stale" end
+  if not snap or a.answersSnapshot ~= (snap.askedAt or snap.takenAt) then return {}, "advice is stale" end
   local out = {}
   if type(a.items) == "table" then
     for _, item in ipairs(a.items) do

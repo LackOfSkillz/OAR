@@ -50,3 +50,24 @@ T.describe("advisor tab", function()
     T.eq(game.reloads, 1)
   end)
 end)
+
+T.describe("advisor across reloads", function()
+  T.it("advice stays valid after the logout snapshot, and goes stale after a new /ride ask", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local asked = ns.Snapshot:Collect(true)
+    game.env.Outrider_Advice = { schema = 1, forCharacter = ns.db.key, answersSnapshot = asked.askedAt, items = {
+      { title = "Look at gear", action = "open_panel", args = { panel = "gear" } } } }
+    game.now = game.now + 30
+    local logout = ns.Snapshot:Collect() -- what PLAYER_LOGOUT does on /reload
+    T.ok(logout.takenAt > asked.takenAt)
+    T.eq(logout.askedAt, asked.askedAt)
+    local items, why = ns.Advice:Load()
+    T.eq(#items, 1, tostring(why))
+    game.now = game.now + 30
+    ns.Snapshot:Collect(true)
+    local _, why2 = ns.Advice:Load()
+    T.eq(why2, "advice is stale")
+  end)
+end)

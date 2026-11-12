@@ -110,7 +110,7 @@ add("minimap", "on|off  show or hide the minimap button", function(arg)
 end)
 
 add("snap", "save a snapshot of this character (for the future advisor)", function()
-  ns.Snapshot:Collect()
+  ns.Snapshot:Collect(true)
   ns.Print("snapshot taken. It is written to disk on /reload or logout.")
 end)
 
