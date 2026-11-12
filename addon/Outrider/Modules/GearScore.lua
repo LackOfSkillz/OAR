@@ -28,6 +28,9 @@ local SLOTS = {
   INVTYPE_THROWN = { 18 }, INVTYPE_RELIC = { 18 },
 }
 M.SLOTS = SLOTS
+M.SLOT_NAMES = { [1] = "head", [2] = "neck", [3] = "shoulder", [4] = "shirt", [5] = "chest", [6] = "waist", [7] = "legs",
+  [8] = "feet", [9] = "wrist", [10] = "hands", [11] = "ring", [12] = "ring", [13] = "trinket", [14] = "trinket",
+  [15] = "back", [16] = "weapon", [17] = "off-hand", [18] = "ranged" }
 local RANGED = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THROWN = true }
 -- armor subclass: 1 cloth, 2 leather, 3 mail, 4 plate; best each class wears (by level)
 local ARMOR = { PRIEST = 1, MAGE = 1, WARLOCK = 1, ROGUE = 2, DRUID = 2 }
@@ -139,7 +142,11 @@ function M:Verdict(link)
   if r.why == "can't wear" then return "can't wear this armor type", "muted" end
   if r.why == "two-hander" then return "not with your two-hander", "muted" end
   local pct = math.floor(r.pct + 0.5)
-  if not r.why and r.empty and r.new > 0 then return "fills an empty slot (" .. role .. ")", "good" end
+  -- "fills an empty slot (Ranged (levelling))" on a belt read like the slot was Ranged (Gary's log, 2026-11-11)
+  if not r.why and r.empty and r.new > 0 then
+    local name = M.SLOT_NAMES[r.slot]
+    return name and ("fills your empty " .. name .. " slot") or "fills an empty slot", "good"
+  end
   if r.why then
     if pct > 0 then return string.format("usable at %d (+%d%%)", r.future or 0, pct), "warn" end
     return nil

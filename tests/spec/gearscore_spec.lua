@@ -81,7 +81,7 @@ T.describe("gear advisor off-hand", function()
     local link = function(id) return "|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r" end
     T.eq((G:Verdict(link(702))), "not with your two-hander")
     T.eq((G:Verdict(link(703))), "can't wear this armor type", "hunters can't use shields")
-    T.contains((G:Verdict(link(704))), "fills an empty slot")
+    T.eq((G:Verdict(link(704))), "fills your empty hands slot")
     T.eq(#ns.Errors.list, 0)
   end)
 end)
