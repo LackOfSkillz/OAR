@@ -546,7 +546,7 @@ function M.new(opts)
     if it and it.class then return id, nil, nil, it.equipLoc, nil, it.class, it.subclass end
     return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
   end
-  base.Enum = { TooltipDataType = { Unit = 2, Item = 0 }, SpellBookSpellBank = { Player = 0 } }
+  base.Enum = { TooltipDataType = { Unit = 2, Item = 0, Object = 33 }, SpellBookSpellBank = { Player = 0 } }
   -- spellbook: game.spells = { { name, id, rank, passive } } in one skill line
   game.spells = opts.spells or {
     { name = "Auto Shot", id = 75 }, { name = "Arcane Shot", id = 14282, rank = 3 },
@@ -668,7 +668,9 @@ function M.new(opts)
   base.C_TaxiMap = { GetTaxiNodesForMap = function(mapID)
     return game.taxi and game.taxi[mapID] or {}
   end }
-  base.C_Minimap = { GetViewRadius = function() return opts.minimapRadius or 200 end }
+  base.C_Minimap = { GetViewRadius = function() return opts.minimapRadius or 200 end,
+    GetNumTrackingTypes = function() return game.tracking and #game.tracking or 0 end,
+    GetTrackingInfo = function(i) return game.tracking and game.tracking[i] end }
   base.GetPlayerFacing = function() return game.facing or 0 end
   base.UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, x = x, y = y } end }
   base.C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) game.superTracked = on end }

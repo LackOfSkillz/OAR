@@ -45,3 +45,8 @@
 - The window opens on the first press if it is closed (`OpenTradeSkill` with the skill line from `GetProfessions`, no typed-in IDs); crafting needs the window loaded, so that press may only open it.
 - Herbalism in Classic is gathering only; its macro says "no recipes" unless Forever gives it recipes. Unverified on Forever.
 - Cooking is not in GetProfessions on Forever (measured 2026-11-12: /ride make made Brew and Herb only); Crafter also counts professions whose window was opened. Herbalism's window lists 196 gathering entries, nothing craftable.
+
+## Herbalism helper (2026-11-12, Gary asked to borrow from herbalism addons)
+- Looked at GatherMate2 (node map + Wowhead data import) and the skill-tooltip addons (Can I Gather It?, GatherSkillTooltip, NodeInfo). Borrowed ideas only: no code (licences not checked) and no imported node data (Classic coordinates are wrong on Forever, hard rule 7).
+- Built: Find Herbs off reminder (once per session), pin a node on mouseover (not only after gathering), object tooltip lines logged to learn Forever's wording.
+- Not yet: required-skill line on herb tooltips. Needs a cited skill table (Icy Veins blocked the fetch) or Forever's own tooltip text; the logged tooltips decide which.
