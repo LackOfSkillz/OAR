@@ -13,11 +13,12 @@
 --     is not ready yet" (cooldown, global cooldown) moves on to the next line;
 --   * a macro can't see range, so ranged and melee are two keys;
 --   * "reset=target" alone did not re-arm a castsequence reliably (Hunter's Mark went
---     out in 3 of 16 fights; Serpent Sting with a 15 s timer went out fine), so
---     every once-per-pull line also has a timer.
--- So each macro is ordered: once-per-target spells first ("/castsequence
--- reset=target X,null": one cast, then the line is null until the target
--- changes; Serpent Sting also every 15 s), cooldown spells next (they fall
+--     out in 3 of 16 fights), and a reset=N timer never runs out while the key
+--     is spammed (Mark 3 of 14 with reset=30/target), so once-per-pull lines
+--     use reset=combat/target: they re-arm when combat ends or the target changes.
+-- So each macro is ordered: once-per-pull spells first ("/castsequence
+-- reset=combat/target X,null": one cast, then the line is null until combat
+-- ends or the target changes), cooldown spells next (they fall
 -- through while cooling down), and the always-usable spell last.
 -- Each fight's casts and refusals are logged (UNIT_SPELLCAST_*, UI_ERROR_MESSAGE,
 -- not the combat log) so the order can be checked without Gary typing anything.
@@ -57,23 +58,23 @@ function M:Lines(kind)
   local L = {}
   local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
-  if s.pet then add(9, "/petattack [pet,harm]", "sends the pet") end
+  if s.pet then add(9, "/petattack [harm]", "sends the pet") end
   if kind == "melee" then
     add(1, "/startattack", "keeps swinging")
     if s.wingclip and known("Wing Clip") then
-      add(5, "/castsequence reset=10/target Wing Clip,null", "slows once per pull (again after 10 s) so you can step back and shoot")
+      add(5, "/castsequence reset=combat/target Wing Clip,null", "slows once per pull so you can step back and shoot")
     end
     if known("Raptor Strike") then add(2, "/cast Raptor Strike", "whenever it is off cooldown") end
     if known("Mongoose Bite") then add(4, "/cast Mongoose Bite", "only after the target dodges") end
     return L
   end
   if self:Ranged() ~= "bow" then return L end
-  if known("Hunter's Mark") then add(5, "/castsequence reset=30/target Hunter's Mark,null", "once per pull (again after 30 s)") end
+  if known("Hunter's Mark") then add(5, "/castsequence reset=combat/target Hunter's Mark,null", "once per pull (and per new target)") end
   if s.concussive and known("Concussive Shot") then
-    add(8, "/castsequence reset=20/target Concussive Shot,null", "first shot after Mark: slows it on the way in, more shots before it reaches you (Gary, 2026-11-12)")
+    add(8, "/castsequence reset=combat/target Concussive Shot,null", "first shot after Mark: slows it on the way in, more shots before it reaches you (Gary, 2026-11-12)")
   end
   if known("Serpent Sting") then
-    add(3, "/castsequence reset=15/target Serpent Sting,null", "once per target, again after 15 s")
+    add(3, "/castsequence reset=combat/target Serpent Sting,null", "once per pull (and per new target)")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
   if known("Auto Shot") then add(2, "/cast !Auto Shot", "last: keeps shooting (never toggles off)") end
