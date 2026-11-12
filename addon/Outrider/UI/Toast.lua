@@ -148,6 +148,7 @@ function Toast:Show(opts)
     f:SetBackdropBorderColor(ns.Theme:Color("border"))
   end
   f:SetAlpha(1)
+  if ns.Theme.uiScale and ns.Theme.uiScale ~= 1 then f:SetScale(ns.Theme.uiScale) end
   f.opts = opts
   if opts.button and opts.button.macro then
     local b = ns.SecureButtons:Acquire("toast")
@@ -192,6 +193,7 @@ function Toast:Fade(f)
     f.timer = ns.Timer.After(2, function() Toast:Fade(f) end, "toast:expire")
     return
   end
+  if ns.Theme.reducedMotion then Toast:Dismiss(f) return end
   local alpha = 1
   f.timer = ns.Timer.Ticker(0.05, function(h)
     alpha = alpha - 0.1

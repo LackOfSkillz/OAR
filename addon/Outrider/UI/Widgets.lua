@@ -20,6 +20,7 @@ UI.Text = text
 function UI:Window(globalName, title, width, height, pos)
   local f = CreateFrame("Frame", globalName, UIParent, Theme:BackdropTemplate())
   f:SetSize(width, height)
+  if Theme.uiScale and Theme.uiScale ~= 1 then f:SetScale(Theme.uiScale) end
   f:SetFrameStrata("DIALOG")
   f:SetClampedToScreen(true)
   f:SetMovable(true)

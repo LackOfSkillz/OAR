@@ -83,3 +83,41 @@ function Theme:RegisterMedia()
   self.mediaRegistered = true
   return true
 end
+
+-- P7-12 accessibility (per character, ns.db.char.access; applied at login):
+--   fontScale     0.8 .. 1.5  multiplies every Outrider font size
+--   uiScale       0.7 .. 1.5  scale of Outrider windows and toasts
+--   colorblind    good/bad become blue/orange instead of green/red
+--   highContrast  opaque panels, bright borders and text
+--   reducedMotion toasts disappear without fading
+Theme.ACCESS_DEFAULTS = { fontScale = 1, uiScale = 1, colorblind = false, highContrast = false, reducedMotion = false }
+
+function Theme:Access()
+  local c = ns.db and ns.db.char
+  if not c then return self.ACCESS_DEFAULTS end
+  c.access = type(c.access) == "table" and c.access or {}
+  for k, v in pairs(self.ACCESS_DEFAULTS) do if c.access[k] == nil then c.access[k] = v end end
+  return c.access
+end
+
+function Theme:ApplyAccessibility()
+  local a = self:Access()
+  self.baseFont = self.baseFont or { small = self.font.small, normal = self.font.normal, large = self.font.large, title = self.font.title }
+  local fs = math.max(0.8, math.min(1.5, tonumber(a.fontScale) or 1))
+  for k, v in pairs(self.baseFont) do self.font[k] = math.floor(v * fs + 0.5) end
+  self.uiScale = math.max(0.7, math.min(1.5, tonumber(a.uiScale) or 1))
+  if a.colorblind then
+    self.colors.good = { 0.35, 0.65, 1.00, 1 }
+    self.colors.bad = { 1.00, 0.60, 0.15, 1 }
+    self.colors.warn = { 1.00, 0.90, 0.40, 1 }
+  end
+  if a.highContrast then
+    self.colors.bg = { 0, 0, 0, 1 }
+    self.colors.panel = { 0.05, 0.05, 0.06, 1 }
+    self.colors.border = { 0.75, 0.78, 0.85, 1 }
+    self.colors.text = { 1, 1, 1, 1 }
+    self.colors.muted = { 0.86, 0.88, 0.92, 1 }
+  end
+  self.reducedMotion = a.reducedMotion and true or false
+  return a
+end

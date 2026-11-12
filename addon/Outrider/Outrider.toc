@@ -94,6 +94,7 @@ Modules\Skin.lua
 Modules\Tooltips.lua
 Modules\UnitLook.lua
 Modules\ContextLayouts.lua
+Modules\Setup.lua
 Modules\SpellCheck.lua
 Modules\Welcome.lua
 Modules\AutoCheck.lua
