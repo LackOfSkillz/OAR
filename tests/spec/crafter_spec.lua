@@ -72,7 +72,7 @@ T.describe("crafter", function()
     for _, r in pairs(p.recipes) do r.have = 0 end
     local game, ns = session(p)
     T.eq(ns.Crafter:Make("Cooking"), "nothing")
-    T.ok(said(game, "nothing you have every ingredient for"))
+    T.ok(said(game, "Cooking: nothing to make yet. Spiced Wolf Meat needs"))
     game.casting = "Roasted Boar Meat"
     T.eq(ns.Crafter:Make("Cooking"), "busy")
     game.casting = nil
@@ -88,6 +88,31 @@ T.describe("crafter", function()
     end
     T.ok(found, "refusal logged")
     T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("Cooking missing from GetProfessions still gets its macro once its window was opened", function()
+    local game, ns = session(cooking())
+    game.prof = nil -- GetProfessions now lists nothing
+    ns.db.char.professions = { Cooking = { skill = 6, max = 75, line = 777, recipes = { [1] = {} } } }
+    game:slash("make")
+    T.ok(macro(game, "Cook"), "Cook made from the recorded profession")
+  end)
+
+  T.it("says which reagent is missing for the closest recipe", function()
+    local p = { name = "Alchemy", skill = 1, max = 75, line = 171, recipes = {
+      [201] = { name = "Minor Healing Potion", diff = 0, have = 0, reagents = { [10] = 1, [11] = 1 } } } }
+    local game, ns = session(p)
+    game.items = { [10] = { name = "Peacebloom" }, [11] = { name = "Empty Vial" } }
+    game.counts = { [10] = 3 }
+    T.eq(ns.Crafter:Make("Alchemy"), "nothing")
+    T.ok(said(game, "Minor Healing Potion needs Empty Vial x1 (you have 0)"))
+  end)
+
+  T.it("a profession that only gathers says so", function()
+    local game, ns = session({ name = "Herbalism", skill = 4, max = 75, line = 778, recipes = {
+      [301] = { name = "Peacebloom", gather = true, reagents = {} } } })
+    T.eq(ns.Crafter:Make("Herbalism"), "nothing")
+    T.ok(said(game, "Herbalism has no recipes to make (it only gathers)"))
   end)
 
   T.it("a profession with no recipes says so", function()

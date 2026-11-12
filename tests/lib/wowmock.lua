@@ -412,7 +412,7 @@ function M.new(opts)
       local p = game.prof
       return p and { professionName = p.name, skillLevel = p.skill, maxSkillLevel = p.max }
     end,
-    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff, numAvailable = r.have or 0 } end,
+    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff, numAvailable = r.have or 0, isGatheringRecipe = r.gather } end,
     IsTradeSkillReady = function() return game.tradeOpen == true end,
     OpenTradeSkill = function(line) if game.prof and game.prof.line == line and not game.noAutoOpen then game.tradeOpen = true end end,
     CraftRecipe = function(id, n) game.crafted = game.crafted or {} game.crafted[#game.crafted + 1] = { id = id, n = n } end,
@@ -530,6 +530,7 @@ function M.new(opts)
     local id = tonumber(tostring(link):match("item:(%d+)"))
     return game.itemStats and game.itemStats[id] or {}
   end
+  base.C_Item.GetItemCount = function(id) return game.counts and game.counts[id] or 0 end
   base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
   local function idOf(v) return tonumber(tostring(v):match("item:(%d+)")) or v end
   base.C_Item.GetItemInfo = function(id)

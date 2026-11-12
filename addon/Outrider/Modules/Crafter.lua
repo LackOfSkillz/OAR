@@ -36,6 +36,11 @@ function M:Owned()
     local ok2, name, _, _, _, _, _, line = pcall(info, idx)
     if ok2 and type(name) == "string" then out[name] = line or true end
   end
+  -- Forever leaves Cooking out of GetProfessions (2026-11-12): also count any
+  -- profession whose window was opened (Professions records it with its line).
+  for name, p in pairs(ns.db.char.professions or {}) do
+    if out[name] == nil and type(p) == "table" and (p.skill or next(p.recipes or {})) then out[name] = p.line or true end
+  end
   return out
 end
 
@@ -67,7 +72,8 @@ local SKIP = { isRecraft = true, isSalvageRecipe = true, isGatheringRecipe = tru
 function M:Pick()
   local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
   if type(ids) ~= "table" then return nil end
-  local best
+  local best, closest
+  local craftable = 0
   for _, id in ipairs(ids) do
     local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)
     if type(info) == "table" and not self.shapeLogged then
@@ -80,6 +86,13 @@ function M:Pick()
     local skip = type(info) ~= "table" or info.learned == false
     if not skip then for k in pairs(SKIP) do if info[k] then skip = true end end end
     local n = not skip and tonumber(C.Readable(info.numAvailable)) or 0
+    if not skip then
+      craftable = craftable + 1
+      local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
+      if n == 0 and (not closest or diff < closest.diff) then
+        closest = { id = id, name = C.Readable(info.name) or tostring(id), diff = diff }
+      end
+    end
     if n > 0 then
       local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
       if not best or diff < best.diff or (diff == best.diff and n > best.n) then
@@ -87,7 +100,30 @@ function M:Pick()
       end
     end
   end
+  self.craftable, self.closest = craftable, closest
   if best then return best.id, best.name, best.n, best.diff end
+end
+
+local function have(itemID)
+  local n = C.Call("C_Item.GetItemCount", itemID)
+  if n == nil then n = C.Call("GetItemCount", itemID) end
+  return tonumber(C.Readable(n)) or 0
+end
+
+-- "Empty Vial x1 (you have 0), Peacebloom x2 (you have 1)" for a recipe.
+function M:Missing(recipeID)
+  local reagents = ns.Professions and ns.Professions.Reagents and ns.Professions.Reagents(recipeID)
+  if type(reagents) ~= "table" then return nil end
+  local parts = {}
+  for itemID, need in pairs(reagents) do
+    local got = have(itemID)
+    if got < need then
+      local info = C.ItemInfo(itemID)
+      parts[#parts + 1] = string.format("%s x%d (you have %d)", info and info.name or ("item " .. itemID), need, got)
+    end
+  end
+  table.sort(parts)
+  return #parts > 0 and table.concat(parts, ", ") or nil
 end
 
 local COLOURS = { [0] = "orange", [1] = "yellow", [2] = "green", [3] = "grey" }
@@ -115,12 +151,21 @@ function M:Make(prof)
   local id, name, n, diff = self:Pick()
   if not id then
     local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
-    if type(ids) ~= "table" or #ids == 0 then
-      ns.Print("%s has no recipes to make", prof)
+    local total = type(ids) == "table" and #ids or 0
+    if (self.craftable or 0) == 0 then
+      ns.Print("%s has no recipes to make%s", prof, total > 0 and " (it only gathers)" or "")
+      self:Info("make %s: no recipes to make (%d entries, none craftable)", prof, total)
+      return "nothing"
+    end
+    local c = self.closest
+    local missing = c and self:Missing(c.id)
+    if c and missing then
+      ns.Print("%s: nothing to make yet. %s needs %s", prof, c.name, missing)
     else
       ns.Print("%s: nothing you have every ingredient for", prof)
     end
-    self:Info("make %s: nothing to make (%d recipes)", prof, type(ids) == "table" and #ids or 0)
+    self:Info("make %s: nothing to make (%d recipes); closest %s needs %s", prof, self.craftable, c and c.name or "-",
+      tostring(missing))
     return "nothing"
   end
   local ok = pcall(C_TradeSkillUI.CraftRecipe, id, n)

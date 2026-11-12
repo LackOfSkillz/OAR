@@ -44,3 +44,4 @@
 - Picks the learned recipe you have every reagent for, best skill-up colour first (orange, yellow, green, grey last). Grey is still made when nothing better is possible, because Gary asked for "whatever you have ingredients for".
 - The window opens on the first press if it is closed (`OpenTradeSkill` with the skill line from `GetProfessions`, no typed-in IDs); crafting needs the window loaded, so that press may only open it.
 - Herbalism in Classic is gathering only; its macro says "no recipes" unless Forever gives it recipes. Unverified on Forever.
+- Cooking is not in GetProfessions on Forever (measured 2026-11-12: /ride make made Brew and Herb only); Crafter also counts professions whose window was opened. Herbalism's window lists 196 gathering entries, nothing craftable.

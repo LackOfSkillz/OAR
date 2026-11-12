@@ -50,6 +50,7 @@ function M:ScanSkills()
 end
 
 local function reagentsModern(recipeID)
+  -- also used by Crafter to say what is missing
   local schem = C.Call("C_TradeSkillUI.GetRecipeSchematic", recipeID, false)
   if type(schem) ~= "table" or type(schem.reagentSlotSchematics) ~= "table" then return nil end
   local out = {}
@@ -76,10 +77,13 @@ function M:ScanModern()
         diff = C.Readable(info.relativeDifficulty), skillUps = C.Readable(info.numSkillUps) }
     end
   end
+  M.lastLine = type(base) == "table" and C.Readable(base.professionID) or nil
   local skill = type(base) == "table" and base.skillLevel or nil
   local max = type(base) == "table" and base.maxSkillLevel or nil
   return name, recipes, skill, max
 end
+
+M.Reagents = reagentsModern
 
 function M:ScanClassic()
   local n = C.Call("GetNumTradeSkills")
@@ -117,6 +121,7 @@ function M:Scan(why)
   local p = store[name] or {}
   p.recipes, p.at = recipes, time()
   p.skill, p.max = skill or p.skill, max or p.max
+  if how == "C_TradeSkillUI" and type(M.lastLine) == "number" then p.line = M.lastLine end
   store[name] = p
   local n, withReagents = 0, 0
   for _, r in pairs(recipes) do n = n + 1 if r.reagents and next(r.reagents) then withReagents = withReagents + 1 end end
