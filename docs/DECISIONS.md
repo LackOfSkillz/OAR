@@ -38,3 +38,9 @@
 - 2026-11-12 (Claude): thrown weapons are never a hunter upgrade (Auto Shot and hunter shots need a bow, gun or crossbow). Rule from Classic; check on Forever if Gary ever wants thrown for a hunter.
 - 2026-11-12 (Claude): hunter Fight macro is a priority list, not logic. A macro can't read cooldowns or debuffs, so line order decides: melee strikes before shots (range makes one set fail), once-per-target spells as `/castsequence reset=target X,null`, Serpent Sting `reset=15/target`. Created only from Gary's click, then kept current automatically (it is our own macro). Unverified on Forever: that a failed line falls through to the next, and the reset=15 timing; the per-fight cast log checks both. Blizzard's own one-button rotation (C_AssistedCombat) is in the probe; if Forever has it, it's an alternative.
 - 2026-11-12 (Claude, Gary had no preference): hunter macros split into Fight (ranged) and Strike (melee), two keys, because Forever allows one spell attempt per press and a macro can't see range (C16b). Supersedes the one-key design above.
+
+## One-press profession macros (2026-11-12, Claude, Gary asked)
+- "Cook", "Brew", "Herb" macros run `/ride make <Profession>`. One press = one `C_TradeSkillUI.CraftRecipe(id, all you can make)`, the same as Blizzard's Create All button, only from Gary's press (hard rule 1).
+- Picks the learned recipe you have every reagent for, best skill-up colour first (orange, yellow, green, grey last). Grey is still made when nothing better is possible, because Gary asked for "whatever you have ingredients for".
+- The window opens on the first press if it is closed (`OpenTradeSkill` with the skill line from `GetProfessions`, no typed-in IDs); crafting needs the window loaded, so that press may only open it.
+- Herbalism in Classic is gathering only; its macro says "no recipes" unless Forever gives it recipes. Unverified on Forever.

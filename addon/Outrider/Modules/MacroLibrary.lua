@@ -30,6 +30,9 @@ function M:Entries()
     out[#out + 1] = ns.HunterFight:Entry("ranged")
     out[#out + 1] = ns.HunterFight:Entry("melee")
   end
+  if ns.Crafter and ns.Crafter.enabled then
+    for _, e in ipairs(ns.Crafter:Entries()) do out[#out + 1] = e end
+  end
   table.sort(out, function(a, b) return a.name < b.name end)
   return out
 end

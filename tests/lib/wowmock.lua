@@ -399,7 +399,8 @@ function M.new(opts)
   base.WOW_PROJECT_ID = 99
   -- professions: game.prof = { name, skill, max, recipes = { [id] = { name, reagents = {[itemID]=n} } } }
   base.GetProfessions = function() if game.prof then return 1 end end
-  base.GetProfessionInfo = function() local p = game.prof if p then return p.name, nil, p.skill, p.max end end
+  base.GetProfessionInfo = function() local p = game.prof if p then return p.name, nil, p.skill, p.max, 0, 0, p.line end end
+  base.UnitCastingInfo = function(unit) if unit == "player" then return game.casting end end
   base.C_TradeSkillUI = {
     GetAllRecipeIDs = function()
       local ids = {}
@@ -411,7 +412,10 @@ function M.new(opts)
       local p = game.prof
       return p and { professionName = p.name, skillLevel = p.skill, maxSkillLevel = p.max }
     end,
-    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff } end,
+    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff, numAvailable = r.have or 0 } end,
+    IsTradeSkillReady = function() return game.tradeOpen == true end,
+    OpenTradeSkill = function(line) if game.prof and game.prof.line == line and not game.noAutoOpen then game.tradeOpen = true end end,
+    CraftRecipe = function(id, n) game.crafted = game.crafted or {} game.crafted[#game.crafted + 1] = { id = id, n = n } end,
     GetRecipeSchematic = function(id)
       local r = game.prof.recipes[id]
       local slots = {}

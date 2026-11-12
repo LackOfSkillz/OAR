@@ -1,0 +1,175 @@
+-- Modules/Crafter.lua
+-- One-press profession macros (Gary, 2026-11-12): "Cook", "Brew", "Herb".
+-- Each press of the macro runs "/ride make <Profession>", which:
+--   * opens that profession's window if it isn't open (press again to make);
+--   * picks the learned recipe you have every reagent for, best skill-up
+--     colour first (orange, yellow, green, then grey), and makes as many as
+--     your bags allow: the same as Blizzard's "Create All" button.
+-- One craft request per press, only from Gary's press (hard rule 1); nothing
+-- on a timer or an event. A refusal (no cooking fire nearby, bags full) is
+-- logged from UI_ERROR_MESSAGE so a test needs only plain play.
+
+local _, ns = ...
+local C = ns.Compat
+local M = ns:NewModule("Crafter", {
+  title = "One-press profession macros",
+  phase = "P5",
+  order = 73,
+  defaults = {},
+})
+ns.Crafter = M
+
+M.MACROS = {
+  { prof = "Cooking", name = "Cook", explain = "Stand by a fire and press: cooks what you have ingredients for, best skill-up first." },
+  { prof = "Alchemy", name = "Brew", explain = "Press: brews what you have herbs and vials for, best skill-up first." },
+  { prof = "Herbalism", name = "Herb", explain = "Press: makes whatever Herbalism can make from your bags (if Forever gives it recipes)." },
+}
+
+-- Professions this character has: name -> skillLine (from GetProfessions; no IDs typed in by hand).
+function M:Owned()
+  local out = {}
+  local get, info = rawget(_G, "GetProfessions"), rawget(_G, "GetProfessionInfo")
+  if type(get) ~= "function" or type(info) ~= "function" then return out end
+  local ok, a, b, c, d, e = pcall(get)
+  if not ok then return out end
+  for _, idx in ipairs({ a, b, c, d, e }) do
+    local ok2, name, _, _, _, _, _, line = pcall(info, idx)
+    if ok2 and type(name) == "string" then out[name] = line or true end
+  end
+  return out
+end
+
+function M:Entry(def)
+  return { id = "craft-" .. def.prof:lower(), name = def.name, class = "ALL", scope = "char", tags = { "profession" },
+    body = "#showtooltip " .. def.prof .. "\n/ride make " .. def.prof, explain = def.explain }
+end
+
+-- Library entries for the professions this character has.
+function M:Entries()
+  local owned, out = self:Owned(), {}
+  for _, def in ipairs(M.MACROS) do
+    if owned[def.prof] then out[#out + 1] = self:Entry(def) end
+  end
+  return out
+end
+
+-- Is the profession window open and loaded for this profession?
+function M:OpenFor(prof)
+  if not C.Call("C_TradeSkillUI.IsTradeSkillReady") then return false end
+  local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
+  local name = type(base) == "table" and (base.professionName or base.parentProfessionName)
+  return name == prof
+end
+
+local SKIP = { isRecraft = true, isSalvageRecipe = true, isGatheringRecipe = true, isDummyRecipe = true }
+
+-- The best recipe to make now: returns recipeID, name, count, colour (0 orange .. 3 grey), or nil.
+function M:Pick()
+  local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
+  if type(ids) ~= "table" then return nil end
+  local best
+  for _, id in ipairs(ids) do
+    local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)
+    if type(info) == "table" and not self.shapeLogged then
+      self.shapeLogged = true
+      local keys = {}
+      for k in pairs(info) do keys[#keys + 1] = tostring(k) end
+      table.sort(keys)
+      self:Debug("recipe info fields: %s", table.concat(keys, ","))
+    end
+    local skip = type(info) ~= "table" or info.learned == false
+    if not skip then for k in pairs(SKIP) do if info[k] then skip = true end end end
+    local n = not skip and tonumber(C.Readable(info.numAvailable)) or 0
+    if n > 0 then
+      local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
+      if not best or diff < best.diff or (diff == best.diff and n > best.n) then
+        best = { id = id, name = C.Readable(info.name) or tostring(id), n = n, diff = diff }
+      end
+    end
+  end
+  if best then return best.id, best.name, best.n, best.diff end
+end
+
+local COLOURS = { [0] = "orange", [1] = "yellow", [2] = "green", [3] = "grey" }
+
+-- One press of a profession macro.
+function M:Make(prof)
+  if C.InCombat() then ns.Print("%s: not in combat", prof) return "combat" end
+  if C.Call("UnitCastingInfo", "player") then return "busy" end -- still making the last batch
+  local owned = self:Owned()
+  if not owned[prof] then ns.Print("you don't have %s", prof) return "unknown" end
+  if not self:OpenFor(prof) then
+    local line = owned[prof]
+    local canOpen = type(line) == "number" and C_TradeSkillUI and type(C_TradeSkillUI.OpenTradeSkill) == "function"
+    if canOpen then pcall(C_TradeSkillUI.OpenTradeSkill, line) end
+    if not self:OpenFor(prof) then
+      if canOpen then
+        ns.Print("%s window opened: press again to make", prof)
+      else
+        ns.Print("open %s once from your spellbook, then press again", prof)
+      end
+      self:Info("make %s: window was closed (%s)", prof, canOpen and "opened it" or "can't open it from code")
+      return "opened"
+    end
+  end
+  local id, name, n, diff = self:Pick()
+  if not id then
+    local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
+    if type(ids) ~= "table" or #ids == 0 then
+      ns.Print("%s has no recipes to make", prof)
+    else
+      ns.Print("%s: nothing you have every ingredient for", prof)
+    end
+    self:Info("make %s: nothing to make (%d recipes)", prof, type(ids) == "table" and #ids or 0)
+    return "nothing"
+  end
+  local ok = pcall(C_TradeSkillUI.CraftRecipe, id, n)
+  self.lastCraft = { t = C.Call("GetTime") or 0, prof = prof, name = name }
+  self:Info("make %s: %d x %s (%s)%s", prof, n, name, COLOURS[diff] or tostring(diff), ok and "" or " - CraftRecipe failed")
+  ns.Print("%s: making %d x %s", prof, n, name)
+  return ok and "made" or "failed"
+end
+
+-- Why the game refused (no fire nearby, bags full...), within 3 s of a press.
+function M:OnUIError(_, _, message)
+  local last = self.lastCraft
+  local msg = C.Readable(message)
+  if not last or type(msg) ~= "string" then return end
+  if (C.Call("GetTime") or 0) - last.t > 3 then self.lastCraft = nil return end
+  self:Info("make %s refused: %s (%s)", last.prof, msg, last.name)
+  self.lastCraft = nil
+end
+
+function M:OnEnable()
+  self:On("UI_ERROR_MESSAGE", self.OnUIError)
+end
+
+function M:Activity()
+  local names = {}
+  for _, e in ipairs(self:Entries()) do names[#names + 1] = e.name end
+  return #names > 0 and ("macros for: " .. table.concat(names, ", ")) or "no crafting profession yet"
+end
+
+ns.AddCommand("make", "[Profession]  make what you have ingredients for (no name: create the Cook / Brew / Herb macros)", function(arg)
+  if not M.enabled then ns.Print("the Crafter module is off") return end
+  arg = (arg or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if arg ~= "" then
+    M:Make(ns.TitleCase(arg:lower()))
+    return
+  end
+  local made, lib = {}, ns.MacroLibrary
+  if not lib then return end
+  for _, e in ipairs(M:Entries()) do
+    if lib:State(e) ~= "installed" then
+      local ok, why = lib:Install(e)
+      if ok then made[#made + 1] = e.name else ns.Print("%s not made: %s", e.name, tostring(why)) end
+    end
+  end
+  if #made > 0 then
+    ns.Print("macros %s ready: open the macro window (/macro), Character tab, and drag them to your bar", table.concat(made, ", "))
+  elseif #M:Entries() == 0 then
+    ns.Print("no Cooking, Alchemy or Herbalism on this character")
+  else
+    ns.Print("your profession macros are already made")
+  end
+end)
