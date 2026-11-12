@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "outrider": {
+      "command": "py",
+      "args": ["-I", "companion/run.py"]
+    }
+  }
+}

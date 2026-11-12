@@ -20,6 +20,7 @@
 | D14 | Visual direction: **Clean dark** (flat dark panels, 1px borders, blue accent; the existing Theme.lua tokens) | Gary picked it from the three-way mockup (Clean dark / Classic+ / Minimal), 2026-11-11 | 2026-11-11 |
 | D15 | Fonts: keep the game font (Fonts\FRIZQT__.TTF); no bundled font, so no font licence to carry. Textures stay WHITE8x8 (own flat bars and 1px borders), registered with LibSharedMedia when it is loaded | Gary chose "Keep the game font" over Inter / Roboto Condensed, 2026-11-11 | 2026-11-11 |
 | D16 | Companion app (P9-03) in Python, standard library only (Gary chose Python). It reads Outrider.lua as plain data (never executed) and may write exactly one file, `Interface\AddOns\Outrider\Advisor\Advice.lua`, as the P9 design says; that is the one planned exception to "only deploy.ps1 writes there". Off until companion/config.json says enabled; no network | Gary picked Python, 2026-11-11 | 2026-11-11 |
+| D17 | Advisor model: Claude in the Claude Code app (Gary chose it over a local model). The companion is a project MCP server (`.mcp.json`, `py -I companion/run.py`); `/advise` (.claude/commands/advise.md) tells Claude how to read the snapshot and write advice. No API key, no extra install; companion/config.json enabled on this PC. Watch mode (ask automatically on every snapshot) is not used: Gary asks with /advise | 2026-11-11 | 2026-11-11 |
 
 ## Open questions for Gary
 
