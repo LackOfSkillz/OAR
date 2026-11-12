@@ -109,12 +109,29 @@ end
 
 -- Phase 9 entry point (not bound to anything yet). Typing a slash command is
 -- a key press, so ReloadUI from here is allowed.
-function Snap:AskAdvisor()
+-- The snapshot as a copyable code (no reload needed).
+function Snap:Code()
+  local s = Outrider_Snapshots and Outrider_Snapshots[ns.db.key]
+  if not s then return nil end
+  return ns.Serialize.Export({ kind = "snapshot", character = ns.db.key, snapshot = s })
+end
+
+-- /ride ask: fresh snapshot shown as a code to copy (Ctrl+C), no reload.
+-- /ride ask reload: the older way, written to disk by a reload.
+function Snap:AskAdvisor(mode)
   if ns.Compat.InCombat() then ns.Print("not in combat") return end
   self:Collect(true)
   self.askedThisSession = time()
-  ns.db.char.askPending = time()
-  ReloadUI()
+  if mode == "reload" then
+    ns.db.char.askPending = time()
+    ReloadUI()
+    return
+  end
+  local code = self:Code()
+  ns.UI:TextDialog("Copy for your advisor", code, "copy")
+  local d = ns.UI.dialog
+  if d and d.hint then d.hint:SetText("Ctrl+C, then tell Claude 'advise'. Paste the answer in the Advisor tab.") end
+  ns.Log:Info("snapshot", "ask: snapshot code shown (%d characters)", #code)
 end
 
 -- At logout: keep the /ride ask snapshot if it was taken in the last 10

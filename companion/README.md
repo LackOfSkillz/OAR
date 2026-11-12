@@ -15,7 +15,8 @@ nothing to install, no network.
   - `get_rare_log(character)`: rare sightings and the watchlist.
   - `get_gear(character)`: worn items, stat weights, best nearby upgrades.
   - `get_professions(character)`: skills, recipe names, craft queue.
-  - `write_advice(character, items)`: the only write. It accepts 4 actions
+  - `read_clipboard_snapshot` / `advice_to_clipboard(character, answersSnapshot, items)`: the no-reload route (Windows clipboard, local only).
+  - `write_advice(character, items)`: the only file write. It accepts 4 actions
     (waypoint, track_quest, open_panel, show_item), drops anything else, and
     writes only `Interface\AddOns\Outrider\Advisor\Advice.lua`.
 - Stays off until `companion/config.json` says `"enabled": true`.
@@ -38,12 +39,18 @@ nothing to install, no network.
        "args": ["-I", "C:\\Users\\Administrator\\Dev\\OAR\\companion\\run.py"] } } }
    ```
 
-## Use
+## Use (no reload)
 
-1. In game, out of combat: `/ride ask` (takes a snapshot and reloads).
-2. Ask the model for advice; it reads the snapshot and calls `write_advice`.
-3. In game: `/reload`, then open the hub's **Advisor** tab. Click a suggestion
-   to do it. Nothing happens on its own.
+1. In game, out of combat: `/ride ask` (or the Ask button in the Advisor tab)
+   shows a snapshot code, already selected. Press Ctrl+C.
+2. Tell Claude "advise" (or `/advise`). It reads the code from the clipboard
+   (`read_clipboard_snapshot`) and puts an advice code on the clipboard
+   (`advice_to_clipboard`).
+3. In the Advisor tab: **Paste advice**, Ctrl+V, Accept. The suggestions show
+   at once. Click one to do it. Nothing happens on its own.
+
+Older route (needs a reload): `/ride ask reload`, then `write_advice`, then
+`/reload` in game.
 
 Advice answers one snapshot: after the next `/ride ask` the old advice shows as
 stale until the model writes new advice.

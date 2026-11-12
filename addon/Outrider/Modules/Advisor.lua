@@ -1,7 +1,8 @@
 -- Modules/Advisor.lua  (P9-02 /ride ask and the Advisor tab)
--- /ride ask (out of combat): takes a fresh snapshot and reloads, so it is
--- written to disk for the companion app (P9-03). Typing the command is
--- Gary's key press; nothing else ever reloads.
+-- /ride ask (out of combat): takes a fresh snapshot and shows it as a code
+-- to copy (Ctrl+C); Claude answers with an advice code that Gary pastes with
+-- the tab's "Paste advice" button. No reload (Gary, 2026-11-11). The older
+-- disk route stays: /ride ask reload, then Advice.lua after a /reload.
 -- Advisor hub tab: the items ns.Advice:Load() accepted (whitelisted actions
 -- only), each with title, why, confidence and a "Do it" button. Buttons only
 -- do harmless, non-protected things:
@@ -59,8 +60,8 @@ function M:Perform(item)
 end
 
 M.REASON_TEXT = {
-  ["no advice file"] = "No advice yet. Type /ride ask, then let your companion app answer and /reload.",
-  ["advice is stale"] = "The advice answers an older snapshot. Type /ride ask again.",
+  ["no advice file"] = "No advice yet. Click Ask, press Ctrl+C, tell Claude 'advise', then Paste advice.",
+  ["advice is stale"] = "The advice answers an older snapshot. Click Ask again.",
   ["advice is for another character"] = "That advice is for another character.",
   ["wrong schema"] = "The advice file is from another version and was ignored.",
 }
@@ -88,6 +89,18 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   })
   p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
   p.list:SetWidth(560)
+  p.paste = UI:Button(p, "Paste advice", 120, function()
+    UI:TextDialog("Paste advice", "", "paste", function(text)
+      local n, why = ns.Advice:Paste(text)
+      if n == 0 then return false, M.REASON_TEXT[why] or why end
+      M:Info("pasted advice: %d suggestions", n)
+      p:Refresh()
+      return true
+    end)
+  end)
+  p.paste:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -8)
+  p.ask = UI:Button(p, "Ask (copy snapshot)", 150, function() ns.Snapshot:AskAdvisor() end)
+  p.ask:SetPoint("LEFT", p.paste, "RIGHT", 8, 0)
   function p:Refresh()
     local items, why = M:Items()
     self.list:SetItems(items)
@@ -96,7 +109,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   end
 end, 50)
 
-ns.AddCommand("ask", "snapshot this character for your advisor and reload (out of combat)", function()
+ns.AddCommand("ask", "[reload]  snapshot for your advisor: shows a code to copy (or 'reload' to save it to disk)", function(arg)
   if C.InCombat() then ns.Print("not in combat") return end
-  ns.Snapshot:AskAdvisor()
+  ns.Snapshot:AskAdvisor(arg == "reload" and "reload" or nil)
 end)

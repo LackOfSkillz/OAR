@@ -12,7 +12,7 @@ Run:  py -I companion/run.py     (from an MCP client config; see README.md)
 import json
 import sys
 
-from . import advice, store
+from . import advice, clipboard, codes, store
 
 PROTOCOL = "2025-06-18"
 CHAR = {"type": "object", "properties": {"character": {"type": "string", "description": "Character key exactly as list_characters returns it (Name-Realm)"}},
@@ -33,6 +33,16 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {
          "character": {"type": "string"},
          "items": {"type": "array", "items": {"type": "object"}}}, "required": ["character", "items"]}},
+    {"name": "read_clipboard_snapshot",
+     "description": ("No-reload route: Gary typed /ride ask in game and pressed Ctrl+C on the code. Reads that "
+                     "snapshot code from the Windows clipboard and returns {character, snapshot}."),
+     "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "advice_to_clipboard",
+     "description": ("No-reload route: same items as write_advice, answering the clipboard snapshot. Puts an advice "
+                     "code on the Windows clipboard; Gary clicks Paste advice in the Advisor tab and presses Ctrl+V."),
+     "inputSchema": {"type": "object", "properties": {
+         "character": {"type": "string"}, "answersSnapshot": {"type": "number"},
+         "items": {"type": "array", "items": {"type": "object"}}}, "required": ["character", "answersSnapshot", "items"]}},
 ]
 
 
@@ -62,7 +72,28 @@ class Server:
             size = advice.write(self.cfg["adviceFile"], data)
             return {"written": len(data["items"]), "rejected": rejected, "bytes": size,
                     "next": "Gary types /reload in game to see the Advisor tab"}
+        if name == "read_clipboard_snapshot":
+            data = codes.import_code(self.read_clipboard())
+            if not isinstance(data, dict) or data.get("kind") != "snapshot":
+                raise ValueError("the clipboard does not hold an Outrider snapshot code (type /ride ask, then Ctrl+C)")
+            return {"character": data.get("character"), "snapshot": data.get("snapshot")}
+        if name == "advice_to_clipboard":
+            data, rejected = advice.build(char, args.get("answersSnapshot"), args.get("items"))
+            if not data["items"]:
+                raise ValueError("no valid items: %s" % json.dumps(rejected))
+            data["kind"] = "advice"
+            code = codes.export(data)
+            self.write_clipboard(code)
+            return {"written": len(data["items"]), "rejected": rejected, "characters": len(code),
+                    "next": "Gary clicks Paste advice in the Advisor tab and presses Ctrl+V"}
         raise KeyError("unknown tool %s" % name)
+
+    # overridable in tests
+    def read_clipboard(self):
+        return clipboard.read()
+
+    def write_clipboard(self, text):
+        return clipboard.write(text)
 
     def handle(self, msg):
         """One JSON-RPC message in, a response dict (or None for notifications) out."""

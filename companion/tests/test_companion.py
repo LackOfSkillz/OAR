@@ -7,7 +7,10 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from outrider_companion import advice, luadata, server, store  # noqa: E402
+from outrider_companion import advice, codes, luadata, server, store  # noqa: E402
+import subprocess  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 SV = r'''
 Outrider_DB = {
@@ -127,7 +130,8 @@ class ServerTests(unittest.TestCase):
     def test_handshake_and_tool_list(self):
         self.assertEqual(self.rpc("initialize", {"protocolVersion": "2025-06-18"})["result"]["serverInfo"]["name"], "outrider-companion")
         names = [t["name"] for t in self.rpc("tools/list")["result"]["tools"]]
-        self.assertEqual(names, ["list_characters", "get_snapshot", "get_rare_log", "get_gear", "get_professions", "write_advice"])
+        self.assertEqual(names, ["list_characters", "get_snapshot", "get_rare_log", "get_gear", "get_professions", "write_advice",
+                                 "read_clipboard_snapshot", "advice_to_clipboard"])
         self.assertIsNone(self.srv.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}))
         self.assertEqual(self.rpc("nope")["error"]["code"], -32601)
 
@@ -191,6 +195,58 @@ class SafetyTests(unittest.TestCase):
     def test_deep_nesting_refused(self):
         with self.assertRaises(luadata.LuaDataError):
             luadata.parse("X = " + "{" * 100 + "}" * 100)
+
+
+class CodeTests(unittest.TestCase):
+    """No-reload route: Python and the game's Serialize.lua read each other's codes."""
+
+    def test_round_trip_python(self):
+        v = {"kind": "advice", "items": [{"title": "é ]] -- \"q\"", "args": {"x": 0.25}}], "n": 3, "b": True}
+        self.assertEqual(codes.import_code(codes.export(v)), v)
+        with self.assertRaises(codes.CodeError):
+            codes.import_code(codes.export(v)[:-4])
+
+    def test_lua_reads_python_and_python_reads_lua(self):
+        script = os.path.join(ROOT, "tests", ".tmp_codes.lua")
+        with open(script, "w", encoding="utf-8") as f:
+            f.write("\n".join([
+                'local ns = {}',
+                'assert(loadfile("addon/Outrider/Core/Serialize.lua"))(nil, ns)',
+                'local v = assert(ns.Serialize.Import(arg[1]))',
+                'print(v.kind .. "|" .. v.items[1].title .. "|" .. v.items[1].args.mapID)',
+                'print(ns.Serialize.Export({ kind = "snapshot", character = "Torrant-Mcluvin", '
+                'snapshot = { askedAt = 1794443553, quests = { { id = 747 } } } }))',
+            ]) + "\n")
+        try:
+            code = codes.export({"kind": "advice", "items": [{"title": "Hunt", "args": {"mapID": 2521}}]})
+            out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "lua.py"), script, code],  # lupa lives in user site-packages
+                                 capture_output=True, text=True, cwd=ROOT, timeout=120)
+            if out.returncode != 0 and "lupa" in (out.stderr or ""):
+                self.skipTest("lupa not installed")
+            lines = out.stdout.strip().splitlines()
+            self.assertEqual(lines[0], "advice|Hunt|2521")
+            back = codes.import_code(lines[1])
+            self.assertEqual(back["snapshot"]["askedAt"], 1794443553)
+            self.assertEqual(back["snapshot"]["quests"][0]["id"], 747)
+        finally:
+            os.remove(script)
+
+    def test_clipboard_tools(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            srv = server.Server({"savedVariablesFile": os.path.join(tmp, "x.lua"), "adviceFile": os.path.join(tmp, "a.lua")})
+            board = {"text": codes.export({"kind": "snapshot", "character": "Torrant-Mcluvin", "snapshot": {"askedAt": 77}})}
+            srv.read_clipboard = lambda: board["text"]
+            srv.write_clipboard = lambda t: board.update(text=t)
+            got = srv.call("read_clipboard_snapshot", {})
+            self.assertEqual(got["snapshot"]["askedAt"], 77)
+            res = srv.call("advice_to_clipboard", {"character": "Torrant-Mcluvin", "answersSnapshot": 77, "items": [
+                {"title": "Gear", "action": "open_panel", "args": {"panel": "gear"}}, {"title": "x", "action": "cast", "args": {}}]})
+            self.assertEqual(res["written"], 1)
+            adv = codes.import_code(board["text"])
+            self.assertEqual((adv["kind"], adv["answersSnapshot"], adv["items"][0]["args"]["panel"]), ("advice", 77, "gear"))
+        finally:
+            shutil.rmtree(tmp)
 
 
 class ConfigTests(unittest.TestCase):

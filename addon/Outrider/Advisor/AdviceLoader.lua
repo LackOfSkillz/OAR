@@ -71,9 +71,8 @@ local function clean(item)
   return { title = title, why = plain(item.why, 400) or "", action = item.action, args = args, confidence = confidence }
 end
 
--- Returns list of clean items (possibly empty) and a reason string.
-function Advice:Load()
-  local a = rawget(_G, "Outrider_Advice")
+-- Clean items and "ok", or {} and the reason, for one advice table.
+function Advice:Check(a)
   if type(a) ~= "table" then return {}, "no advice file" end
   if a.schema ~= self.SCHEMA then return {}, "wrong schema" end
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
@@ -97,6 +96,29 @@ function Advice:Load()
     end
   end
   return out, "ok"
+end
+
+-- Pasted advice (no reload, ns.db.char.pastedAdvice) wins over Advice.lua
+-- when it is valid and answers the current snapshot.
+function Advice:Load()
+  local pasted = ns.db and ns.db.char and ns.db.char.pastedAdvice
+  if type(pasted) == "table" then
+    local items, why = self:Check(pasted)
+    if why == "ok" then return items, why end
+  end
+  return self:Check(rawget(_G, "Outrider_Advice"))
+end
+
+-- Accept an advice code pasted from the companion; returns count, reason.
+function Advice:Paste(text)
+  local data, err = ns.Serialize.Import(text)
+  if type(data) ~= "table" then return 0, err or "not an Outrider code" end
+  if data.kind ~= "advice" then return 0, "that code is not advice" end
+  local items, why = self:Check(data)
+  if why ~= "ok" then return 0, why end
+  if #items == 0 then return 0, "no usable suggestions in that code" end
+  ns.db.char.pastedAdvice = data
+  return #items, "ok"
 end
 
 Advice._clean = clean

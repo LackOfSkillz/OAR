@@ -43,10 +43,10 @@ T.describe("advisor tab", function()
     ns.Hub:ShowTab("advisor")
     T.contains(ns.Hub.byId.advisor.panel.head:GetText(), "No advice yet")
     game.combat = true
-    game:slash("ask")
+    game:slash("ask reload")
     T.eq(game.reloads, 0)
     game.combat = false
-    game:slash("ask")
+    game:slash("ask reload")
     T.eq(game.reloads, 1)
   end)
 end)
@@ -77,7 +77,7 @@ T.describe("advisor ask flow", function()
     local game = mock.new()
     local ns = game:loadAddon()
     game:login()
-    game:slash("ask")
+    game:slash("ask reload")
     local asked = game.env.Outrider_Snapshots[ns.db.key]
     game.now = game.now + 2
     game:fire("PLAYER_LOGOUT")
@@ -98,5 +98,29 @@ T.describe("advisor ask flow", function()
     game.env.Outrider_Snapshots[ns.db.key].takenAt = 1000 + 7 * 3600
     local _, why = ns.Advice:Load()
     T.eq(why, "advice is stale")
+  end)
+end)
+
+T.describe("advisor without reload", function()
+  T.it("/ride ask shows a snapshot code; a pasted advice code shows at once, no reload", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    game:slash("ask")
+    T.eq(game.reloads, 0, "no reload")
+    local code = ns.UI.dialog.edit:GetText()
+    local back = ns.Serialize.Import(code)
+    T.eq(back.kind, "snapshot")
+    T.eq(back.character, ns.db.key)
+    local advice = { kind = "advice", schema = 1, forCharacter = ns.db.key, answersSnapshot = back.snapshot.askedAt,
+      items = { { title = "Look at gear", why = "x", action = "open_panel", args = { panel = "gear" } },
+                { title = "Cast", action = "cast", args = {} } } }
+    local n, why = ns.Advice:Paste(ns.Serialize.Export(advice))
+    T.eq(n, 1, tostring(why))
+    T.eq(#(ns.Advice:Load()), 1)
+    T.eq(select(2, ns.Advice:Paste("garbage")), "not an Outrider export string")
+    advice.kind = "snapshot"
+    T.eq(select(2, ns.Advice:Paste(ns.Serialize.Export(advice))), "that code is not advice")
+    T.eq(#ns.Errors.list, 0)
   end)
 end)
