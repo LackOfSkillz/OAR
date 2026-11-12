@@ -4,7 +4,7 @@
 -- rewritten out of combat whenever a spell is learned or the ranged weapon
 -- changes. Each is an ordinary macro: every press does what a hand-written
 -- macro would do (hard rule 1). Outrider never casts anything.
---   Fight  - ranged: Hunter's Mark, Concussive Shot, Serpent Sting, Arcane Shot, Auto Shot
+--   Fight  - ranged: Auto Shot (once), Hunter's Mark, Concussive Shot, Serpent Sting, Arcane Shot
 --   Strike - melee:  Raptor Strike, Wing Clip, Mongoose Bite
 --
 -- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
@@ -69,15 +69,25 @@ function M:Lines(kind)
     return L
   end
   if self:Ranged() ~= "bow" then return L end
-  if known("Hunter's Mark") then add(5, "/castsequence reset=combat/target Hunter's Mark,null", "once per pull (and per new target)") end
-  if s.concussive and known("Concussive Shot") then
-    add(8, "/castsequence reset=combat/target Concussive Shot,null", "first shot after Mark: slows it on the way in, more shots before it reaches you (Gary, 2026-11-12)")
+  -- Auto Shot starts once per pull and is never pressed again: re-sending
+  -- /cast !Auto Shot on every press restarted the shot (Gary saw the hunter
+  -- reach back for a new arrow, 2026-11-12). First line: the first press
+  -- of a pull starts shooting (no global cooldown), later presses skip it.
+  if known("Auto Shot") then
+    add(2, "/castsequence reset=combat/target !Auto Shot,null", "first press of a pull starts shooting; never pressed again, so the shot isn't restarted")
   end
-  if known("Serpent Sting") then
-    add(3, "/castsequence reset=combat/target Serpent Sting,null", "once per pull (and per new target)")
+  -- Mark, Concussive, Serpent: one sequence, each once per pull, in that order
+  -- (Concussive right after Mark, Gary 2026-11-12). A spell on cooldown falls
+  -- through to Arcane Shot without moving the sequence on.
+  local seq = {}
+  if known("Hunter's Mark") then seq[#seq + 1] = "Hunter's Mark" end
+  if s.concussive and known("Concussive Shot") then seq[#seq + 1] = "Concussive Shot" end
+  if known("Serpent Sting") then seq[#seq + 1] = "Serpent Sting" end
+  if #seq > 0 then
+    add(3, "/castsequence reset=combat/target " .. table.concat(seq, ",") .. ",null",
+      table.concat(seq, ", then ") .. ": once each per pull (and per new target)")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
-  if known("Auto Shot") then add(2, "/cast !Auto Shot", "last: keeps shooting (never toggles off)") end
   return L
 end
 
@@ -222,7 +232,27 @@ function M:OnLogout()
   for k, n in pairs(t.castIn) do cast[#cast + 1] = string.format("%s %d/%d", k, n, t.fights) end
   table.sort(cast)
   M:Info("fights this session: %d, average %.0fs; cast in: %s", t.fights, t.secs / t.fights, table.concat(cast, ", "))
+  if t.autoGaps and t.autoGaps > 0 then
+    local speed = C.Call("UnitRangedDamage", "player")
+    M:Info("auto shot: %d gaps, average %.2fs (weapon speed %s)", t.autoGaps, t.autoGapSum / t.autoGaps,
+      type(C.Readable(speed)) == "number" and string.format("%.2fs", speed) or "?")
+  end
   M:Info("fights refused this session: failed %s; errors %s", counts(t.failed), counts(t.errors))
+end
+
+-- Gaps between Auto Shots in one fight's cast list: a clipped shot shows as
+-- gaps longer than the weapon speed. Returns { n, sum } or nil.
+function M.AutoGaps(casts)
+  local last, n, sum
+  for _, c in ipairs(casts or {}) do
+    local t = c:match("^Auto Shot@(%-?[%d%.]+)$")
+    t = tonumber(t)
+    if t then
+      if last and t - last < 10 then n, sum = (n or 0) + 1, (sum or 0) + (t - last) end
+      last = t
+    end
+  end
+  return n and { n = n, sum = sum } or nil
 end
 
 function M:OnCombatEnd()
@@ -230,6 +260,11 @@ function M:OnCombatEnd()
   M.fight = nil
   if not f or (#f.casts == 0 and not next(f.failed)) then return end
   M:Tally(f, (C.Call("GetTime") or 0) - f.t0)
+  local gap = M.AutoGaps(f.casts)
+  if gap then
+    local t = M.tally
+    t.autoGaps, t.autoGapSum = (t.autoGaps or 0) + gap.n, (t.autoGapSum or 0) + gap.sum
+  end
   M.fights = (M.fights or 0) + 1
   if M.fights > 15 then return end -- enough to judge the order; keep the log small
   M:Info("fight %.0fs, ranged %s: %s", (C.Call("GetTime") or 0) - f.t0, tostring(M:Ranged()), table.concat(f.casts, ", "))

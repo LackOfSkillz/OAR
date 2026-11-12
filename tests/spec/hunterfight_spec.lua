@@ -32,7 +32,8 @@ T.describe("hunter fight macro", function()
     local m, k = macro(game, "Fight"), macro(game, "Strike")
     T.ok(m and k, "both macros created by /ride fight")
     T.ok(m.perChar and k.perChar, "character macros")
-    T.contains(m.body, "/cast !Auto Shot")
+    T.contains(m.body, "/castsequence reset=combat/target !Auto Shot,null")
+    T.ok(not m.body:find("/cast !Auto Shot", 1, true), "Auto Shot never re-sent on each press")
     T.contains(m.body, "/castsequence reset=combat/target Serpent Sting,null")
     T.ok(not m.body:find("Raptor", 1, true), "no melee in the ranged key")
     T.ok(not m.body:find("Concussive", 1, true))
@@ -58,9 +59,9 @@ T.describe("hunter fight macro", function()
     game:advance(1)
     local body = macro(game, "Fight").body
     T.eq(#game.macros, count, "same macros, no new ones")
-    local a, b, c, d, e = body:find("Hunter's Mark", 1, true), body:find("Serpent", 1, true),
-      body:find("Concussive", 1, true), body:find("/cast Arcane", 1, true), body:find("!Auto Shot", 1, true)
-    T.ok(a < c and c < b and b < d and d < e, "Mark, Concussive, Serpent, Arcane, Auto Shot")
+    T.contains(body, "/castsequence reset=combat/target Hunter's Mark,Concussive Shot,Serpent Sting,null")
+    local auto, mark, arcane = body:find("!Auto Shot,null", 1, true), body:find("Hunter's Mark", 1, true), body:find("/cast Arcane", 1, true)
+    T.ok(auto < mark and mark < arcane, "Auto Shot once first, then Mark-Concussive-Serpent, then Arcane")
     local melee = macro(game, "Strike").body
     local w, r, g = melee:find("Wing Clip,null", 1, true), melee:find("Raptor", 1, true), melee:find("Mongoose", 1, true)
     T.ok(w < r and r < g, "melee order: Wing Clip once, Raptor on cooldown, Mongoose last")
@@ -133,6 +134,12 @@ T.describe("hunter fight macro", function()
       if s:find("Hunter's Mark@-2.0, Serpent Sting@0.0", 1, true) then found = true end
     end
     T.ok(found, "Mark logged with a negative time")
+  end)
+
+  T.it("measures the gaps between Auto Shots", function()
+    local g = (select(3, session(sp("Auto Shot"), BOW))).AutoGaps({ "Auto Shot@0.5", "Arcane Shot@1.0", "Auto Shot@3.3", "Auto Shot@6.1" })
+    T.eq(g.n, 2)
+    T.ok(math.abs(g.sum - 5.6) < 0.01)
   end)
 
   T.it("logs a whole-session tally at logout, past the 15-fight cap", function()
