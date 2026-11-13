@@ -129,6 +129,16 @@ local function hasBit(mask, bitNo) return math.floor(mask / 2 ^ (bitNo - 1)) % 2
 
 local function done(qid) return C.Call("C_QuestLog.IsQuestFlaggedCompleted", qid) == true end
 
+-- Race-only quests (the pack's 9th field, Questie's race mask; bit = raceID).
+-- No mask, or a race the client doesn't name: allowed (faction still applies).
+function M.RaceOK(mask)
+  if not mask or mask == 0 then return true end
+  local _, _, raceID = C.Call("UnitRace", "player")
+  raceID = C.Readable(raceID)
+  if type(raceID) ~= "number" or raceID < 1 then return true end
+  return hasBit(mask, raceID)
+end
+
 -- { {id, name, level, diff} } quests this giver offers you now, best first
 function M:QuestsFor(p)
   local out = {}
@@ -141,7 +151,7 @@ function M:QuestsFor(p)
     local qid, name, req, qlvl, qfac, cls, preAny, preAll = q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8]
     local ok = req <= level and (qfac == nil or qfac == faction)
       and (not cls or cls == 0 or not classID or hasBit(cls, classID))
-      and not done(qid) and C.Call("C_QuestLog.IsOnQuest", qid) ~= true
+      and M.RaceOK(q[9]) and not done(qid) and C.Call("C_QuestLog.IsOnQuest", qid) ~= true
     if ok and preAny and #preAny > 0 then
       local any = false
       for _, pq in ipairs(preAny) do if done(pq) then any = true break end end
@@ -207,6 +217,7 @@ function M:ZoneReport(mapID, nosave)
     for _, q in ipairs(type(r[8]) == "table" and r[8] or {}) do
       local qid, name, req, qlvl, qfac, cls, preAny, preAll = q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8]
       local mine = (qfac == nil or qfac == faction) and (not cls or cls == 0 or not classID or hasBit(cls, classID))
+        and M.RaceOK(q[9])
       if mine and not seen[qid] then
         seen[qid] = true
         local entry = { id = qid, name = name, level = qlvl, giver = r[5], x = r[3], y = r[4] }

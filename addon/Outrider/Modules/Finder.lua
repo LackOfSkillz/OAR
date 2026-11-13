@@ -29,13 +29,13 @@ ns.Finder = M
 
 M.MOBS_ADDON = "Outrider_Data_Mobs"
 M.CAP = 300
-M.KINDS = { "all", "gear", "item", "quest", "rare", "mob", "npc", "place" }
-M.KIND_LABEL = { all = "All", gear = "Gear", item = "Items", quest = "Quests", rare = "Rares", mob = "Creatures",
+M.KINDS = { "all", "zone", "gear", "item", "quest", "rare", "mob", "npc", "place" }
+M.KIND_LABEL = { all = "All", zone = "Zones", gear = "Gear", item = "Items", quest = "Quests", rare = "Rares", mob = "Creatures",
   npc = "NPCs", place = "Places" }
 M.SORTS = { "nearest", "xpmin", "xp", "gain", "level", "name", "zone" }
 M.SORT_LABEL = { nearest = "nearest", xpmin = "XP per minute", xp = "most XP", gain = "best gear", level = "your level",
   name = "name", zone = "zone" }
-M.DEFAULT_SORT = { gear = "gain", quest = "xpmin", item = "nearest", rare = "nearest", mob = "level", npc = "nearest",
+M.DEFAULT_SORT = { zone = "xp", gear = "gain", quest = "xpmin", item = "nearest", rare = "nearest", mob = "level", npc = "nearest",
   place = "nearest", all = "nearest" }
 local RANK = { [1] = "elite", [2] = "rare elite", [3] = "boss", [4] = "rare" }
 
@@ -54,6 +54,36 @@ local function add(out, kind, name, mapID, x, y, t)
   t = t or {}
   t.kind, t.name, t.mapID, t.x, t.y = kind, name, mapID, x, y
   out[#out + 1] = t
+end
+
+-- ------------------------------------------------------------ awareness
+-- Everything suggested must suit THIS character (Gary, 2026-11-13: race,
+-- level, faction and class aware; never send Alliance to Horde NPCs or the
+-- other way round). Quests: faction, class, race and level in NPCPack.
+-- Gear: faction and level in Nearby, class in GearScore. Places and NPCs
+-- below: the NPC's own faction where known, else the pack's, else the
+-- faction of the character who found it.
+local function myFaction() return C.Call("UnitFactionGroup", "player") end
+
+local packFaction
+local function factionOf(npcID)
+  if not packFaction then
+    packFaction = {}
+    for _, rows in pairs(ns.NPCPack and ns.NPCPack.raw or {}) do
+      for _, r in ipairs(rows) do if r[7] then packFaction[r[1]] = r[7] end end
+    end
+  end
+  return packFaction[npcID]
+end
+
+function M.ForMe(faction, mine)
+  return faction == nil or faction == "Neutral" or faction == (mine or myFaction())
+end
+
+-- quests open to you, shared by the quest and zone lists in one search
+local function available()
+  if not M.availCache then M.availCache = ns.NPCPack and ns.NPCPack:AvailableEverywhere() or {} end
+  return M.availCache
 end
 
 -- ------------------------------------------------------------ providers
@@ -85,9 +115,32 @@ end
 
 function P.quest(out)
   local level = C.Call("UnitLevel", "player") or 1
-  for _, q in ipairs(ns.NPCPack and ns.NPCPack:AvailableEverywhere() or {}) do
+  for _, q in ipairs(available()) do
     add(out, "quest", q.name, q.mapID, q.x, q.y, { level = q.level, diff = q.diff, questID = q.id,
       xp = ns.Journey.XP(q.level, level), sub = "from " .. tostring(q.giver) })
+  end
+end
+
+-- Zones worth going to now: maps with quests your faction, race and class can
+-- take at your level (green to orange), centred on their givers. A zone of
+-- the other faction has no quests for you, so it never shows.
+function P.zone(out)
+  local level = C.Call("UnitLevel", "player") or 1
+  local by = {}
+  for _, q in ipairs(available()) do
+    if q.diff == "green" or q.diff == "yellow" or q.diff == "orange" then
+      local z = by[q.mapID]
+      if not z then z = { n = 0, xp = 0, sx = 0, sy = 0, lo = q.level, hi = q.level } by[q.mapID] = z end
+      z.n, z.xp = z.n + 1, z.xp + ns.Journey.XP(q.level, level)
+      z.sx, z.sy = z.sx + q.x, z.sy + q.y
+      z.lo, z.hi = math.min(z.lo, q.level), math.max(z.hi, q.level)
+    end
+  end
+  for mapID, z in pairs(by) do
+    if z.n >= 2 then
+      add(out, "zone", ns.Travel.ZoneName(mapID), mapID, z.sx / z.n, z.sy / z.n, { level = math.floor((z.lo + z.hi) / 2),
+        xp = z.xp, sub = string.format("%d quests for you, levels %d-%d", z.n, z.lo, z.hi) })
+    end
   end
 end
 
@@ -99,10 +152,12 @@ end
 
 local function creatures(out, want, text, level)
   local seen = {}
+  local mine = myFaction()
   for npcID, e in pairs(met()) do
+    if not M.ForMe(e.faction or factionOf(npcID), mine) then seen[npcID] = true end -- the other side's guards and folk
     local cls = e.classification
     local isRare = cls == "rare" or cls == "rareelite"
-    if e.mapID and e.x and ((want == "rare" and isRare) or (want == "mob" and not isRare and e.creatureType and not e.title and not (e.roles and next(e.roles)))) then
+    if not seen[npcID] and e.mapID and e.x and ((want == "rare" and isRare) or (want == "mob" and not isRare and e.creatureType and not e.title and not (e.roles and next(e.roles)))) then
       seen[npcID] = true
       add(out, want, e.name, e.mapID, e.x, e.y, { npcID = npcID, level = tonumber(e.level), seenByYou = true,
         sub = (isRare and (cls == "rareelite" and "rare elite" or "rare") or tostring(e.creatureType or "")) .. ", seen" })
@@ -131,8 +186,11 @@ function P.mob(out, text, level) creatures(out, "mob", text, level) end
 
 function P.npc(out, text)
   local seen = {}
+  local mine = myFaction()
   for npcID, e in pairs(met()) do
-    if e.mapID and e.x and (e.title or (e.roles and next(e.roles))) then
+    if not M.ForMe(e.faction or factionOf(npcID), mine) then
+      seen[npcID] = true
+    elseif e.mapID and e.x and (e.title or (e.roles and next(e.roles))) then
       seen[npcID] = true
       add(out, "npc", e.name, e.mapID, e.x, e.y, { npcID = npcID, level = tonumber(e.level), seenByYou = true,
         sub = (e.title and ("<" .. e.title .. ">") or "") .. ", seen" })
@@ -154,8 +212,12 @@ function P.npc(out, text)
 end
 
 function P.place(out)
+  local mine = myFaction()
+  local d = met()
   for _, p in pairs(ns.db.global.pois or {}) do
-    if p.mapID and p.x then
+    local npc = p.npcID and d[p.npcID]
+    local fac = (npc and npc.faction) or (p.npcID and factionOf(p.npcID)) or p.faction
+    if p.mapID and p.x and M.ForMe(fac, mine) then
       add(out, "place", p.title or p.name or p.kind, p.mapID, p.x, p.y, { sub = tostring(p.kind):gsub("_", " "),
         seenByYou = p.source ~= "client" or nil })
     end
@@ -166,8 +228,8 @@ function P.place(out)
 end
 
 -- ---------------------------------------------------------------- search
-local ALL_BASE = { "gear", "quest", "rare", "place" }      -- "All" with no search text
-local ALL_TEXT = { "gear", "item", "quest", "rare", "mob", "npc", "place" }
+local ALL_BASE = { "zone", "gear", "quest", "rare", "place" }      -- "All" with no search text
+local ALL_TEXT = { "zone", "gear", "item", "quest", "rare", "mob", "npc", "place" }
 
 local SORTERS = {
   nearest = function(a, b) return (a.seconds or 1e12) < (b.seconds or 1e12) end,
@@ -184,6 +246,7 @@ local SORTERS = {
 -- opts = { kind = "all", text = "", sort = nil (kind's default) }. Returns list (capped), total.
 function M:Find(opts)
   opts = opts or {}
+  M.availCache = nil
   local kind = opts.kind or "all"
   local text = opts.text and opts.text:lower():gsub("^%s+", ""):gsub("%s+$", "") or ""
   if text == "" then text = nil end
@@ -225,7 +288,7 @@ function M:Find(opts)
   return out, total, sort
 end
 
-local KIND_TAG = { gear = "gear", item = "item", quest = "quest", rare = "RARE", mob = "creature", npc = "npc", place = "place" }
+local KIND_TAG = { zone = "zone", gear = "gear", item = "item", quest = "quest", rare = "RARE", mob = "creature", npc = "npc", place = "place" }
 
 function M.Line(e)
   local parts = {}

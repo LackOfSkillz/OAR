@@ -363,7 +363,7 @@ function M.new(opts)
       return false
     end,
   }
-  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race end end
+  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
   base.UnitLevel = function(unit)
     if unit == "player" then return player.level end
     return game.units and game.units[unit] and game.units[unit].level

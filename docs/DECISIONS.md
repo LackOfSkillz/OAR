@@ -69,3 +69,10 @@
 - Sidebar groups: Home; Explore (Journey, Map, Waypoints, Rares, Rare alerts); Character (Hunter for hunters, Gear, Gear sets, Professions, Crafting, Macros); Town (Errands, Forecasts, Feed); Social (Chat, Sharing); Outrider (Settings, Modules, Characters, Advisor, Status, Tools, All commands).
 - Controls run the same code as the typed command (UI.Run -> ns.Slash:Run), so a button and a slash command can never behave differently. All commands lists every /ride command with a box for its arguments, so nothing needs the chat line.
 - The top bar's search box opens Journey with that search. Home opens first.
+
+## Suggestions suit the character (2026-11-13, Gary: race, level, faction and class aware, all classes)
+- Quests: faction, class mask, race mask (new 9th pack field from Questie's requiredRaces; bit = raceID from UnitRace) and level, everywhere quests are suggested (Finder, Journey, quest pins, zone report).
+- Zones (new Finder kind): maps with quests open to this character at green-to-orange level, so the other faction's zones never appear.
+- NPCs and places: Discovery now stores each NPC's faction; the Finder hides NPCs and places of the other faction (NPC's own faction, else the NPC pack's, else the finder character's). Neutral ones show for everyone.
+- Gear: faction and level in Nearby, class (armor, weapons, stat weights for all nine classes) in GearScore. Herbs: the guide's skill vs yours.
+- Class tools: macro library packs exist for all nine classes; the Fight/Strike/Pet rotation generator is hunter-only so far.

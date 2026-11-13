@@ -97,6 +97,9 @@ function M:Capture(unit, how, role)
   e.family = C.Readable(C.Call("UnitCreatureFamily", unit)) or e.family
   e.creatureType = ctype or e.creatureType
   e.title = C.UnitTitle(unit) or e.title
+  -- the NPC's own faction, so suggestions never send an Alliance character to a Horde NPC (2026-11-13)
+  local fac = C.Readable(C.Call("UnitFactionGroup", unit))
+  if fac == "Alliance" or fac == "Horde" then e.faction = fac elseif fac then e.faction = "Neutral" end
   if g.zoneUID and not inInstance() then e.layer = g.zoneUID end
 
   local upgraded = self:UpdatePosition(e, how)
