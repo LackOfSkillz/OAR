@@ -151,6 +151,12 @@ function M:Lines(kind)
   -- works and moves on, measured 2026-11-12; re-sending it every press
   -- restarted the shot). A spell on cooldown or the global cooldown holds the
   -- sequence and the press falls through to Arcane Shot.
+  -- Aspect of the Hawk before the pull (more ranged damage; Gary learned it,
+  -- 2026-11-13). Out of combat only, and "!" never turns it off. Distracting
+  -- Shot stays out: it pulls the mob off the pet onto you.
+  if known("Aspect of the Hawk") then
+    add(6, "/cast [nocombat] !Aspect of the Hawk", "before the pull: Hawk on (never turned off)")
+  end
   local seq = {}
   if known("Hunter's Mark") then seq[#seq + 1] = "Hunter's Mark" end
   if s.concussive and known("Concussive Shot") then seq[#seq + 1] = "Concussive Shot" end

@@ -229,4 +229,14 @@ T.describe("hunter fight macro", function()
     T.eq(game.macros[1].body, "/cast Raptor Strike")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("Aspect of the Hawk goes on before the pull, never in combat; Distracting Shot stays out", function()
+    local game = session(sp("Auto Shot", "Hunter's Mark", "Serpent Sting", "Aspect of the Hawk", "Distracting Shot",
+      "Arcane Shot", "Concussive Shot"), BOW)
+    local body = macro(game, "Fight").body
+    T.contains(body, "/cast [nocombat] !Aspect of the Hawk")
+    T.ok(body:find("Aspect of the Hawk", 1, true) < body:find("Hunter's Mark", 1, true))
+    T.ok(not body:find("Distracting", 1, true))
+    T.ok(#body <= 255)
+  end)
 end)
