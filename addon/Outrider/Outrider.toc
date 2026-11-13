@@ -112,6 +112,7 @@ Modules\RareAlerts.lua
 Modules\Sightings.lua
 Modules\RareProfile.lua
 Modules\SpawnLog.lua
+Modules\RareTimer.lua
 Modules\RaresTab.lua
 Modules\TameHelper.lua
 Modules\PetStatus.lua

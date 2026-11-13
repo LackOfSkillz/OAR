@@ -91,7 +91,10 @@ ns.Hub:AddTab("home", "Home", function(p)
     lines = {}
     for k in pairs(set("RareScan").watch or {}) do lines[#lines + 1] = ns.TitleCase(tostring(k)) end
     table.sort(lines)
-    self.rares.body:SetText(#lines > 0 and ("Watching: " .. table.concat(lines, ", ")) or "Not watching any rare. Add one in Rare alerts.")
+    local timers = {}
+    for npcID in pairs(ns.db.global.rareTimers or {}) do timers[#timers + 1] = ns.RareTimer and ns.RareTimer:Line(npcID) end
+    self.rares.body:SetText((#lines > 0 and ("Watching: " .. table.concat(lines, ", ")) or "Not watching any rare. Add one in Rare alerts.")
+      .. (#timers > 0 and ("\n" .. table.concat(timers, "\n")) or ""))
     lines = {}
     for _, e in ipairs(ns.Errands and ns.Errands:List() or {}) do lines[#lines + 1] = e.text end
     self.errands.body:SetText(#lines > 0 and table.concat(lines, "\n") or "Nothing to do in town.")
@@ -152,6 +155,8 @@ ns.Hub:AddTab("rarealerts", "Rare alerts", function(p)
     { "note", "Click a name to stop watching it." },
     { "list", 5, function(row, k) row.text:SetText(ns.TitleCase(tostring(k))) end,
       function(k) ns.Slash:Run("unwatch " .. tostring(k)) p:Refresh() end, watched },
+    { "header", "Timers" },
+    { "note", function() return ns.RareTimer and ns.RareTimer:Activity() or "" end, 36 },
     { "header", "How you're told" },
     { "check", "Sound", function() return set("RareAlerts").sound end, function(on) set("RareAlerts").sound = on end },
     { "check", "Pop-up", function() return set("RareAlerts").toast end, function(on) set("RareAlerts").toast = on end },
