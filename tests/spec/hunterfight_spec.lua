@@ -247,4 +247,18 @@ T.describe("hunter fight macro", function()
     game:advance(3)
     T.contains(macro(game, "Fight").body, "Hunter's Mark,Concussive Shot,!Auto Shot,Serpent Sting,null")
   end)
+
+  T.it("the Hawk line is only there while Hawk is off; Fight is rewritten when Hawk flips", function()
+    local game = session(sp("Auto Shot", "Hunter's Mark", "Aspect of the Hawk"), BOW)
+    T.contains(macro(game, "Fight").body, "!Aspect of the Hawk")
+    game.units = game.units or {}
+    game.units.player = { auras = { { name = "Aspect of the Hawk", spellId = 13165 } } }
+    game:fire("UNIT_AURA", "player")
+    game:advance(3)
+    T.ok(not macro(game, "Fight").body:find("Aspect of the Hawk", 1, true), "no wasted press while Hawk is on")
+    game.units.player = { auras = {} }
+    game:fire("UNIT_AURA", "player")
+    game:advance(3)
+    T.contains(macro(game, "Fight").body, "!Aspect of the Hawk")
+  end)
 end)

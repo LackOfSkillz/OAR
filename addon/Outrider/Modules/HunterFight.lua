@@ -49,6 +49,18 @@ M.KINDS = { "ranged", "melee", "pet" } -- the hunter's; see M:Kinds()
 M.CLASS_KINDS = { HUNTER = { "ranged", "melee", "pet" }, MAGE = { "ranged", "melee" }, PRIEST = { "ranged", "heal" } }
 M.SUFFIX = { ranged = "fight", melee = "strike", pet = "pet", heal = "heal" }
 
+-- Is Aspect of the Hawk on the player? (buff names; secret or unreadable = assume off)
+function M.HawkOn()
+  local get = C.Resolve("C_UnitAuras.GetAuraDataByIndex")
+  if type(get) ~= "function" then return false end
+  for i = 1, 40 do
+    local ok, a = pcall(get, "player", i, "HELPFUL")
+    if not ok or type(a) ~= "table" then break end
+    if C.Readable(a.name) == "Aspect of the Hawk" then return true end
+  end
+  return false
+end
+
 function M:Kinds() return M.CLASS_KINDS[ns.PlayerClass()] or {} end
 function M:Supported() return M.CLASS_KINDS[ns.PlayerClass()] ~= nil end
 
@@ -154,7 +166,10 @@ function M:Lines(kind)
   -- Aspect of the Hawk before the pull (more ranged damage; Gary learned it,
   -- 2026-11-13). Out of combat only, and "!" never turns it off. Distracting
   -- Shot stays out: it pulls the mob off the pet onto you.
-  if known("Aspect of the Hawk") then
+  -- Only while Hawk is off: a macro can't test buffs, so Outrider rewrites
+  -- Fight (out of combat) when Hawk turns on or off (Gary, 2026-11-13: a
+  -- press spent on Hawk when it was already on wasted a click).
+  if known("Aspect of the Hawk") and not M.HawkOn() then
     add(6, "/cast [nocombat] !Aspect of the Hawk", "before the pull: Hawk on (never turned off)")
   end
   local seq = {}
@@ -419,6 +434,15 @@ function M:OnEnable()
   end)
   self:On("SPELLS_CHANGED", function(mod) if mod:Settings().auto then later("spells") end end)
   self:On("PLAYER_LEVEL_UP", function(mod) if mod:Settings().auto then later("level") end end)
+  -- Hawk on or off changes Fight: rewrite when it flips (out of combat)
+  self:On("UNIT_AURA", function(mod, _, unit)
+    if unit ~= "player" or not mod:Settings().auto or ns.PlayerClass() ~= "HUNTER" then return end
+    local on = M.HawkOn()
+    if on ~= mod.hawkWas then
+      mod.hawkWas = on
+      later(on and "hawk on" or "hawk off")
+    end
+  end)
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod, _, slot)
     if slot == 18 and mod:Settings().auto then later("ranged weapon") end
   end)
