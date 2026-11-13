@@ -162,6 +162,26 @@ function M:OnEnable()
   self:On("UNIT_SPELLCAST_SUCCEEDED", self.OnSpell)
   self:On("LOADING_SCREEN_ENABLED", self.OnLoadingStart)
   self:On("PLAYER_ENTERING_WORLD", self.OnArrive)
+  self:On("PLAYER_ENTERING_WORLD", function(mod) if not mod.checked then mod.checked = true mod:CheckZones() end end)
+end
+
+-- Self-check at login: which guide zone names Forever's map tree doesn't know.
+function M:CheckZones()
+  local missing, total, seen = {}, 0, {}
+  for _, packs in pairs(ns.Data.packs.link or {}) do
+    for _, l in ipairs(packs) do
+      for _, z in ipairs({ l.from.zone, l.to.zone }) do
+        if not seen[z] then
+          seen[z] = true
+          total = total + 1
+          if not self:MapByName(z) then missing[#missing + 1] = z end
+        end
+      end
+    end
+  end
+  table.sort(missing)
+  self:Info("travel: %d of %d guide zones found on the map%s", total - #missing, total,
+    #missing > 0 and ("; not found: " .. table.concat(missing, ", ")) or "")
 end
 
 -- ---------------------------------------------------------------- graph
