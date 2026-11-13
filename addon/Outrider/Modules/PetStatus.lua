@@ -24,7 +24,7 @@ local M = ns:NewModule("PetStatus", {
   phase = "P2",
   order = 36,
   classes = { HUNTER = true },
-  defaults = { pos = {}, warnUnhappy = true },
+  defaults = { pos = {}, warnUnhappy = true, show = true },
 })
 ns.PetStatus = M
 
@@ -198,7 +198,8 @@ function M:Build()
   if self.frame then return self.frame end
   local s = self:Settings()
   local f = UI:Window("Outrider_PetStatus", "Pet", 280, 200, s.pos)
-  f.close:Hide()
+  -- x hides the panel (Gary, 2026-11-13); the Hunter page brings it back
+  f.close:SetScript("OnClick", function() M:SetPanel(false) end)
   local c = f.content
   f.line1 = UI.Text(c, "normal", "text") f.line1:SetPoint("TOPLEFT", 0, 0)
   f.line2 = UI.Text(c, "small", "muted") f.line2:SetPoint("TOPLEFT", 0, -18)
@@ -262,9 +263,23 @@ function M:SetFood()
   self.foodCount = n
 end
 
+-- Show or hide the pet panel (and its Feed button), remembered per character.
+function M:SetPanel(on)
+  self:Settings().show = on and true or false
+  self:Info("pet panel %s", on and "shown" or "hidden")
+  if on then
+    self:Update()
+  else
+    if self.frame then self.frame:Hide() end
+    if self.feed then ns.SecureButtons:SetShown(self.feed, false) end
+    ns.Print("pet panel hidden. Show it again on your Hunter page in Outrider.")
+  end
+end
+
 function M:Refresh(why)
   local d = self:Read()
   if self.logPending then self.logPending = false self:LogPet(d) end
+  if not self:Settings().show then d = nil end
   if not d then
     if self.frame then self.frame:Hide() end
     if self.feed then ns.SecureButtons:SetShown(self.feed, false) end

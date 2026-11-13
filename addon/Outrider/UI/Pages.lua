@@ -193,6 +193,8 @@ local function classRows(cls)
     r({ "input", "Tame macro for", "Mystmane", "Make macro", function(t) ns.Slash:Run("tamemacro " .. t) end })
     r({ "note", "Press: send the pet in. Shift-press: dismiss it. Press again: Tame Beast." })
     r({ "header", "Pet and ammo" })
+    r({ "check", "Show the pet panel", function() return set("PetStatus").show end,
+      function(on) if ns.PetStatus then ns.PetStatus:SetPanel(on) end end })
     r({ "note", function() local m = mod("PetStatus") return m and m.enabled and m:Activity() or "" end })
     r({ "note", function() local m = mod("Ammo") return m and m.enabled and m:Activity() or "" end })
   end
