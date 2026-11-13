@@ -24,7 +24,7 @@ local M = ns:NewModule("PetStatus", {
   phase = "P2",
   order = 36,
   classes = { HUNTER = true },
-  defaults = { pos = {}, warnUnhappy = true, show = true },
+  defaults = { pos = {}, warnUnhappy = true, show = true, collapsed = false },
 })
 ns.PetStatus = M
 
@@ -197,9 +197,14 @@ end
 function M:Build()
   if self.frame then return self.frame end
   local s = self:Settings()
-  local f = UI:Window("Outrider_PetStatus", "Pet", 280, 200, s.pos)
-  -- x hides the panel (Gary, 2026-11-13); the Hunter page brings it back
-  f.close:SetScript("OnClick", function() M:SetPanel(false) end)
+  local f = UI:Window("Outrider_PetStatus", "Pet", 280, M.OPEN_H, s.pos)
+  -- the corner button folds the panel up to its header and opens it again
+  -- (Gary, 2026-11-13: "an up or down arrow, the header stays on screen")
+  f.close.label:Hide()
+  f.close.arrow = f.close:CreateTexture(nil, "ARTWORK")
+  f.close.arrow:SetSize(16, 16)
+  f.close.arrow:SetPoint("CENTER")
+  f.close:SetScript("OnClick", function() M:SetCollapsed(not M:Settings().collapsed) end)
   local c = f.content
   f.line1 = UI.Text(c, "normal", "text") f.line1:SetPoint("TOPLEFT", 0, 0)
   f.line2 = UI.Text(c, "small", "muted") f.line2:SetPoint("TOPLEFT", 0, -18)
@@ -264,6 +269,33 @@ function M:SetFood()
 end
 
 -- Show or hide the pet panel (and its Feed button), remembered per character.
+M.OPEN_H, M.HEADER_H = 200, 28
+
+-- Fold to the header bar or open again. The header's top-left corner stays
+-- put: the panel is pinned by TOPLEFT before its height changes.
+function M:ApplyCollapsed()
+  local f = self.frame
+  if not f then return end
+  local s = self:Settings()
+  local left, top, parentTop = f:GetLeft(), f:GetTop(), UIParent and UIParent:GetTop()
+  if left and top and parentTop then
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", left, top - parentTop)
+    s.pos.point, s.pos.x, s.pos.y = "TOPLEFT", math.floor(left + 0.5), math.floor(top - parentTop + 0.5)
+  end
+  f:SetHeight(s.collapsed and M.HEADER_H or M.OPEN_H)
+  f.content:SetShown(not s.collapsed)
+  f.close.arrow:SetTexture(s.collapsed and "Interface\\Buttons\\Arrow-Down-Up" or "Interface\\Buttons\\Arrow-Up-Up")
+  if self.feed then
+    if s.collapsed then ns.SecureButtons:SetShown(self.feed, false) else self:PlaceFeed() end
+  end
+end
+
+function M:SetCollapsed(on)
+  self:Settings().collapsed = on and true or false
+  self:ApplyCollapsed()
+end
+
 function M:SetPanel(on)
   self:Settings().show = on and true or false
   self:Info("pet panel %s", on and "shown" or "hidden")
@@ -331,8 +363,8 @@ function M:Refresh(why)
   f.diet:SetText((food and ("Feeds: " .. food .. (self.foodCount and (" (" .. self.foodCount .. ")") or "")) or "No food it eats in your bags")
     .. (#yes > 0 and ("\nEats: " .. table.concat(yes, ", ")) or ""))
   self:CheckUnhappy(d)
-  if not f:IsShown() then f:Show() end
-  self:PlaceFeed()
+  if not f:IsShown() then f:Show() self:ApplyCollapsed() end
+  if not self:Settings().collapsed then self:PlaceFeed() end
 end
 
 function M:CheckUnhappy(d)

@@ -167,6 +167,8 @@ local function buildMethods(game)
   m.GetWidth = function(self) return self.__w > 0 and self.__w or 140 end
   m.GetHeight = function(self) return self.__h > 0 and self.__h or 140 end
   m.GetCenter = function() return 0, 0 end
+  m.GetLeft = function() return 100 end
+  m.GetTop = function() return 700 end
   m.GetEffectiveScale = function() return 1 end
   m.GetScale = function() return 1 end
   m.SetPoint = function(self, point, a, b, c, d)
