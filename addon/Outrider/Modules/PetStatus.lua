@@ -201,6 +201,10 @@ function M:Build()
   -- the corner button folds the panel up to its header and opens it again
   -- (Gary, 2026-11-13: "an up or down arrow, the header stays on screen")
   f.close.label:Hide()
+  -- the title stops before the Feed button that sits in the folded header
+  f.title:SetPoint("RIGHT", f.bar, "RIGHT", -100, 0)
+  f.title:SetJustifyH("LEFT")
+  if f.title.SetWordWrap then f.title:SetWordWrap(false) end
   f.close.arrow = f.close:CreateTexture(nil, "ARTWORK")
   f.close.arrow:SetSize(16, 16)
   f.close.arrow:SetPoint("CENTER")
@@ -355,7 +359,7 @@ function M:Refresh(why)
     local _, rlo, rhi = C.Call("UnitRangedDamage", "player")
     local rspeed = C.Call("UnitRangedDamage", "player")
     local mine = M.DPS(C.Readable(rlo), C.Readable(rhi), C.Readable(rspeed))
-    f.title:SetText(string.format("%s  |cffbbbbbb%.1f DPS|r", d.name or "Pet", dps))
+    f.title:SetText(string.format("%s  |cffbbbbbb%d DPS|r", d.name or "Pet", math.floor(dps + 0.5)))
     f.fight:SetText(string.format("About %.1f damage per second from its attacks%s. %s", dps,
       mine and string.format(" (your ranged weapon: %.1f)", mine) or "", table.concat(fight, ", ")))
   end
