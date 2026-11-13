@@ -39,7 +39,7 @@ Hub.PLACE = {
   waypoints   = { "Explore", 12, "Ability_Tracking" },
   rares       = { "Explore", 13, "Ability_Hunter_SniperShot" },
   rarealerts  = { "Explore", 14, "INV_Misc_Spyglass_02" },
-  hunter      = { "Character", 20, "Ability_Hunter_BeastTaming" },
+  class       = { "Character", 20 }, -- icon and title follow the character's class
   gear        = { "Character", 21, "INV_Chest_Chain" },
   gearsets    = { "Character", 22, "INV_Shoulder_02" },
   professions = { "Character", 23, "Trade_Alchemy" },
@@ -65,7 +65,7 @@ function Hub:AddTab(id, title, build, order, opts)
   local t = { id = id, title = title, build = build, opts = opts,
     group = place and place[1] or (opts and opts.group) or "More",
     order = place and place[2] or order or (100 + #self.tabs),
-    icon = place and (ICON .. place[3]) or (opts and opts.icon) }
+    icon = (place and place[3] and (ICON .. place[3])) or (opts and opts.icon) }
   self.tabs[#self.tabs + 1] = t
   self.byId[id] = t
   local rank = {}
@@ -328,7 +328,7 @@ end, 10)
 -- ------------------------------------------------------------- Modules
 -- Modules grouped by phase, with a header line per group; status text in a
 -- quiet color, cut to one line (the full text shows on hover).
-local GROUPS = { P0 = "Core", P1 = "Core", P2 = "Rares and hunter tools", P3 = "Maps and places", P4 = "Macros",
+local GROUPS = { P0 = "Core", P1 = "Core", P2 = "Rares and class tools", P3 = "Maps and places", P4 = "Macros",
   P5 = "Professions and gold", P6 = "Gear", P7 = "Interface", P8 = "Sharing and town", P9 = "Advisor" }
 local PANEL_W = W - SIDE - 40
 
@@ -366,11 +366,16 @@ Hub:AddTab("modules", L.modules, function(p)
   p:SetScript("OnMouseWheel", function(self, delta) self.offset = (self.offset or 0) - delta * 3 self:Refresh() end)
   function p:Refresh()
     local lines, last = {}, nil
+    local myClass = ns.PlayerClass()
     for _, s in ipairs(ns.Modules:Status()) do
       local mod = ns.Modules:Get(s.name)
-      local group = GROUPS[mod and mod.spec.phase or ""] or "Other"
-      if group ~= last then lines[#lines + 1] = { header = group } last = group end
-      lines[#lines + 1] = s
+      local classes = mod and mod.spec.classes
+      if classes and not classes[myClass] then mod = nil end -- other classes' modules stay out of sight
+      local group = mod and (GROUPS[mod.spec.phase or ""] or "Other")
+      if group then
+        if group ~= last then lines[#lines + 1] = { header = group } last = group end
+        lines[#lines + 1] = s
+      end
     end
     local status = lines
     self.offset = math.max(0, math.min(self.offset or 0, #status - #self.rows))

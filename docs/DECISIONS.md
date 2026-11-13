@@ -76,3 +76,8 @@
 - NPCs and places: Discovery now stores each NPC's faction; the Finder hides NPCs and places of the other faction (NPC's own faction, else the NPC pack's, else the finder character's). Neutral ones show for everyone.
 - Gear: faction and level in Nearby, class (armor, weapons, stat weights for all nine classes) in GearScore. Herbs: the guide's skill vs yours.
 - Class tools: macro library packs exist for all nine classes; the Fight/Strike/Pet rotation generator is hunter-only so far.
+
+## Class aware everywhere (2026-11-13, Gary: "dynamic, relevant to the character being played")
+- One Class page per character, named and iconed for its class (Hunter, Mage...). It shows only that class's sections: Fight macros (hunter, mage, priest so far), hunter-only taming, pet and ammo, and a link to the class's macro library.
+- Fight macros are data-driven per class (Modules/HunterFight.lua keeps its file name): HUNTER Fight/Strike/Pet, MAGE Fight (Frostbolt, else Fireball) and Strike (Frost Nova, Fire Blast, Arcane Explosion), PRIEST Fight (Shadow Word: Pain once per pull, Mind Blast, Holy Fire, Smite) and Heal (best heal on mouseover, friendly target or you). Mage and priest orders are unverified until their fight logs are read.
+- Other classes' modules are hidden on the Modules page; Home shows the pet card only for classes with a pet; Professions shows only professions the character has.

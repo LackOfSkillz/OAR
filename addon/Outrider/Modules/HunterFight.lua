@@ -1,5 +1,13 @@
--- Modules/HunterFight.lua
--- Two macros for hunters that Gary spams, written by Outrider from what this
+-- Modules/HunterFight.lua  (class Fight macros; the file keeps its first name)
+-- Spam macros per class (Gary, 2026-11-13: "class aware, only what is relevant
+-- to the character being played"). Each class has its own keys, built only
+-- from spells this character knows:
+--   HUNTER  Fight (ranged), Strike (melee), Pet (care)
+--   MAGE    Fight (ranged nuke), Strike (close: Frost Nova, Fire Blast, Arcane Explosion)
+--   PRIEST  Fight (Shadow Word: Pain once, Mind Blast, Smite), Heal (best heal on mouseover, target or you)
+-- Mage and priest orders follow the same one-spell-per-press rule as the
+-- hunter's and are unverified until their fight logs are read.
+-- Original hunter notes: two macros for hunters that Gary spams, written by Outrider from what this
 -- character knows right now (Spellbook) and what is in the ranged slot, and
 -- rewritten out of combat whenever a spell is learned or the ranged weapon
 -- changes. Each is an ordinary macro: every press does what a hand-written
@@ -26,17 +34,23 @@
 local _, ns = ...
 local C = ns.Compat
 local M = ns:NewModule("HunterFight", {
-  title = "Hunter Fight and Strike macros",
+  title = "Fight macros for your class",
   phase = "P4",
   order = 64,
-  classes = { HUNTER = true },
-  defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", concussive = true, wingclip = true, pet = true },
+  classes = { HUNTER = true, MAGE = true, PRIEST = true },
+  defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", healName = "Heal",
+    concussive = true, wingclip = true, pet = true },
 })
 ns.HunterFight = M
 
 local SHOOTERS = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } -- bow / gun / crossbow
 M.MAX = 255
-M.KINDS = { "ranged", "melee", "pet" }
+M.KINDS = { "ranged", "melee", "pet" } -- the hunter's; see M:Kinds()
+M.CLASS_KINDS = { HUNTER = { "ranged", "melee", "pet" }, MAGE = { "ranged", "melee" }, PRIEST = { "ranged", "heal" } }
+M.SUFFIX = { ranged = "fight", melee = "strike", pet = "pet", heal = "heal" }
+
+function M:Kinds() return M.CLASS_KINDS[ns.PlayerClass()] or {} end
+function M:Supported() return M.CLASS_KINDS[ns.PlayerClass()] ~= nil end
 
 local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
 
@@ -65,10 +79,47 @@ end
 
 -- The lines in press order, each with a keep rank (lower = kept when the
 -- macro has to shrink under 255 characters) and why it is there.
+local CASTER = {}
+
+-- Mage: one ranged nuke key and one close key.
+function CASTER.MAGE(kind, add)
+  add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
+  if kind == "melee" then
+    if known("Frost Nova") then add(2, "/cast Frost Nova", "freezes it in place when it reaches you") end
+    if known("Fire Blast") then add(3, "/cast Fire Blast", "whenever it is off cooldown") end
+    if known("Arcane Explosion") then add(4, "/cast Arcane Explosion", "close-range filler") end
+    return
+  end
+  if known("Frostbolt") then add(2, "/cast Frostbolt", "main nuke, slows it on the way in")
+  elseif known("Fireball") then add(2, "/cast Fireball", "main nuke until you learn Frostbolt") end
+end
+
+-- Priest: damage key with the DoT once per pull, and a heal key.
+function CASTER.PRIEST(kind, add)
+  if kind == "heal" then
+    local heal = known("Heal") and "Heal" or known("Lesser Heal") and "Lesser Heal" or nil
+    if heal then
+      add(1, "/cast [@mouseover,help,nodead][@target,help,nodead][@player] " .. heal,
+        "heals who you point at, your friendly target, or you")
+    end
+    return
+  end
+  add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
+  if known("Shadow Word: Pain") then
+    add(2, "/castsequence reset=combat/target Shadow Word: Pain,null", "once per pull (and per new target)")
+  end
+  if known("Mind Blast") then add(3, "/cast Mind Blast", "whenever it is off cooldown") end
+  if known("Holy Fire") then add(4, "/cast Holy Fire", "whenever it is off cooldown") end
+  if known("Smite") then add(2, "/cast Smite", "filler") end
+end
+
 function M:Lines(kind)
   local s = self:Settings()
   local L = {}
   local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
+  local cls = ns.PlayerClass()
+  if CASTER[cls] then CASTER[cls](kind, add) return L end
+  if cls ~= "HUNTER" then return L end
   -- Pet key (Gary got his pet, 2026-11-12): one button for pet care, out of
   -- the spam keys because Mend Pet is a channel. Dead pet: Revive Pet; no pet
   -- out: Call Pet; otherwise Mend Pet.
@@ -132,10 +183,31 @@ function M:Body(kind)
   return body, dropped
 end
 
+local EXPLAIN = {
+  MAGE = { ranged = "Ranged key: spam it. Frostbolt (or Fireball before you learn it).",
+    melee = "Close key: when it reaches you. Frost Nova, Fire Blast, then Arcane Explosion." },
+  PRIEST = { ranged = "Damage key: spam it. Shadow Word: Pain once, Mind Blast on cooldown, Smite between.",
+    heal = "Heal key: heals who you point at, your friendly target, or you." },
+}
+
+-- Lines that cast something (targeting lines alone don't make a macro worth writing).
+function M.Spells(lines)
+  local n = 0
+  for _, l in ipairs(lines) do if not l.text:find("^/targetenemy") then n = n + 1 end end
+  return n
+end
+
 function M:Entry(kind)
   kind = kind or "ranged"
   local s = self:Settings()
   local body = self:Body(kind)
+  local cls = ns.PlayerClass()
+  if cls ~= "HUNTER" then
+    local name = kind == "heal" and s.healName or kind == "melee" and s.meleeName or s.name
+    return { id = cls:lower() .. "-" .. (M.SUFFIX[kind] or kind), name = name, class = cls, body = body, scope = "char",
+      tags = { "combat" }, dynamic = true, empty = M.Spells(self:Lines(kind)) == 0,
+      explain = (EXPLAIN[cls] or {})[kind] or "Outrider rewrites it when you learn a spell." }
+  end
   if kind == "pet" then
     return { id = "hunter-pet", name = s.petName, class = "HUNTER", body = body, scope = "char",
       tags = { "pet" }, dynamic = true, empty = #self:Lines("pet") == 0,
@@ -158,7 +230,7 @@ function M:Update(why)
     local lib = ns.MacroLibrary
     local installed = lib:Settings().installed
     local made = {}
-    for _, kind in ipairs(M.KINDS) do
+    for _, kind in ipairs(self:Kinds()) do
       local entry = self:Entry(kind)
       -- Created only from Gary's click (Macros tab Install or /ride fight), like
       -- every library macro; once ours, it follows the spellbook by itself.
@@ -351,20 +423,24 @@ end
 function M:OnDisable() ns.ThrottleCancel("hunterfight") end
 
 function M:Activity()
-  local f, m = self:Body("ranged"), self:Body("melee")
-  return string.format("%s %d chars, %s %d chars", self:Settings().name, #f, self:Settings().meleeName, #m)
+  local parts = {}
+  for _, k in ipairs(self:Kinds()) do
+    local e = self:Entry(k)
+    if not e.empty then parts[#parts + 1] = string.format("%s %d chars", e.name, #e.body) end
+  end
+  return #parts > 0 and table.concat(parts, ", ") or "no spells for these keys yet"
 end
 
 local OPTIONS = { concussive = true, wingclip = true, pet = true, auto = true }
-ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change the hunter Fight (ranged) and Strike (melee) macros", function(arg)
-  if ns.PlayerClass() ~= "HUNTER" or not M.enabled then ns.Print("the Fight macro is for hunters") return end
+ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change your class's Fight macros (hunter, mage, priest)", function(arg)
+  if not M:Supported() or not M.enabled then ns.Print("no Fight macros for your class yet") return end
   local key, val = (arg or ""):lower():match("^(%a+)%s+(%a+)$")
   if key and OPTIONS[key] and (val == "on" or val == "off") then
     M:Settings()[key] = val == "on"
     ns.Print("Fight macro: %s %s", key, val)
   end
   M:Update("command")
-  for _, kind in ipairs(M.KINDS) do
+  for _, kind in ipairs(M:Kinds()) do
     local entry = M:Entry(kind)
     local body, dropped = M:Body(kind)
     ns.Print("%s (%s, %d chars), top line first:", entry.name, kind, #body)

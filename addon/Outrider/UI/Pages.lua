@@ -92,7 +92,15 @@ ns.Hub:AddTab("home", "Home", function(p)
     for _, e in ipairs(ns.Errands and ns.Errands:List() or {}) do lines[#lines + 1] = e.text end
     self.errands.body:SetText(#lines > 0 and table.concat(lines, "\n") or "Nothing to do in town.")
     local pet = mod("PetStatus")
-    self.pet.body:SetText(pet and pet.enabled and pet:Activity() or "No pet tools for this class.")
+    if pet and pet.enabled then
+      self.pet.title:SetText("Pet")
+      self.pet.body:SetText(pet:Activity())
+    else
+      local HF = ns.HunterFight
+      self.pet.title:SetText("Your class keys")
+      self.pet.body:SetText(HF and HF.enabled and HF:Supported() and HF:Activity()
+        or "Your class page has your class macros.")
+    end
   end
 end)
 
@@ -147,27 +155,60 @@ ns.Hub:AddTab("rarealerts", "Rare alerts", function(p)
   })
 end)
 
--- ---------------------------------------------------------------- Hunter
-ns.Hub:AddTab("hunter", "Hunter", function(p)
+-- ------------------------------------------------------------ Class page
+-- One page named after the character's class (Gary, 2026-11-13: "class aware,
+-- dynamic, relevant to the character being played"). A hunter sees hunter
+-- tools only, a mage mage tools only. Sections appear when the class has them.
+local CLASS_ICON = "Interface\\Icons\\ClassIcon_"
+local CLASS_NAME = { WARRIOR = "Warrior", PALADIN = "Paladin", HUNTER = "Hunter", ROGUE = "Rogue", PRIEST = "Priest",
+  SHAMAN = "Shaman", MAGE = "Mage", WARLOCK = "Warlock", DRUID = "Druid" }
+local KEY_NOTE = {
+  HUNTER = "Fight (ranged), Strike (melee) and Pet (care) follow your spellbook and ranged weapon.",
+  MAGE = "Fight (Frostbolt) and Strike (close: Frost Nova, Fire Blast, Arcane Explosion) follow your spellbook.",
+  PRIEST = "Fight (Shadow Word: Pain once, Mind Blast, Smite) and Heal follow your spellbook.",
+}
+
+local function classRows(cls)
+  local rows = {}
+  local function r(t) rows[#rows + 1] = t end
   local F = function() return set("HunterFight") end
   local function opt(key) return function(on) ns.Slash:Run("fight " .. key .. " " .. onoff(on)) end end
-  UI:FormPage(p, {
-    { "header", "Fight, Strike and Pet macros" },
-    { "note", "Fight (ranged) and Strike (melee) follow your spellbook; Pet revives, calls or mends your pet." },
-    { "buttons", { { "Make or show the macros", Run("fight") }, { "Open macro window", function()
-      if C.Call("ShowMacroFrame") == nil then C.Call("MacroFrame_LoadUI") C.Call("ShowMacroFrame") end end } } },
-    { "check", "Concussive Shot in Fight", function() return F().concussive end, opt("concussive") },
-    { "check", "Wing Clip in Strike", function() return F().wingclip end, opt("wingclip") },
-    { "check", "Send the pet in", function() return F().pet end, opt("pet") },
-    { "check", "Rewrite when you learn a spell", function() return F().auto end, opt("auto") },
-    { "header", "Taming" },
-    { "input", "Tame macro for", "Mystmane", "Make macro", function(t) ns.Slash:Run("tamemacro " .. t) end },
-    { "note", "Press: send the pet in. Shift-press: dismiss it. Press again: Tame Beast." },
-    { "header", "Pet and ammo" },
-    { "note", function() local m = mod("PetStatus") return m and m.enabled and m:Activity() or "" end },
-    { "note", function() local m = mod("Ammo") return m and m.enabled and m:Activity() or "" end },
-  })
-end, nil, { class = "HUNTER" })
+  local fight = ns.HunterFight and ns.HunterFight:Supported()
+  if fight then
+    r({ "header", "Fight macros" })
+    r({ "note", KEY_NOTE[cls] or "" })
+    r({ "buttons", { { "Make or show the macros", Run("fight") }, { "Open macro window", function()
+      if C.Call("ShowMacroFrame") == nil then C.Call("MacroFrame_LoadUI") C.Call("ShowMacroFrame") end end } } })
+    if cls == "HUNTER" then
+      r({ "check", "Concussive Shot in Fight", function() return F().concussive end, opt("concussive") })
+      r({ "check", "Wing Clip in Strike", function() return F().wingclip end, opt("wingclip") })
+      r({ "check", "Send the pet in", function() return F().pet end, opt("pet") })
+    end
+    r({ "check", "Rewrite when you learn a spell", function() return F().auto end, opt("auto") })
+  end
+  if cls == "HUNTER" then
+    r({ "header", "Taming" })
+    r({ "input", "Tame macro for", "Mystmane", "Make macro", function(t) ns.Slash:Run("tamemacro " .. t) end })
+    r({ "note", "Press: send the pet in. Shift-press: dismiss it. Press again: Tame Beast." })
+    r({ "header", "Pet and ammo" })
+    r({ "note", function() local m = mod("PetStatus") return m and m.enabled and m:Activity() or "" end })
+    r({ "note", function() local m = mod("Ammo") return m and m.enabled and m:Activity() or "" end })
+  end
+  r({ "header", "Your class macros" })
+  r({ "note", "Ready-made macros for your class only, in the Macros page: click one to see what it does, then Install." })
+  r({ "buttons", { { "Open Macros", function() ns.Hub.frame.tabBar:Select("macros") end } } })
+  if not fight then
+    r({ "note", "Fight macros that follow your spellbook exist for hunters, mages and priests so far." })
+  end
+  return rows
+end
+
+do
+  local cls = ns.PlayerClass and ns.PlayerClass() or nil
+  ns.Hub:AddTab("class", CLASS_NAME[cls or ""] or "Class", function(p)
+    UI:FormPage(p, classRows(ns.PlayerClass()))
+  end, nil, { icon = cls and (CLASS_ICON .. (CLASS_NAME[cls] or "")) or nil })
+end
 
 -- -------------------------------------------------------------- Gear sets
 ns.Hub:AddTab("gearsets", "Gear sets", function(p)
@@ -190,24 +231,48 @@ ns.Hub:AddTab("gearsets", "Gear sets", function(p)
 end)
 
 -- ------------------------------------------------------------ Professions
-ns.Hub:AddTab("professions", "Professions", function(p)
+-- Only the professions this character has (sections appear as you learn them;
+-- the page is rebuilt at the next login).
+local function profRows()
+  local owned = ns.Crafter and ns.Crafter:Owned() or {}
   local function make(prof) return function() if ns.Crafter then ns.Crafter:Make(prof) end end end
-  UI:FormPage(p, {
-    { "header", "Make what you can" },
-    { "note", "Each click makes the best skill-up recipe you have every ingredient for (Create All). Stand by a fire to cook." },
-    { "buttons", { { "Cook", make("Cooking") }, { "Brew", make("Alchemy") }, { "Make bar macros (Cook, Brew, Herb)", Run("make") } } },
-    { "header", "Skill-up planner" },
-    { "input", "Profession and target", "Alchemy 75", "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true },
-    { "header", "Herbalism" },
-    { "buttons", { { "Where each herb grows", Run("herbs") } } },
-    { "note", function() local m = mod("HerbHelper") return m and m.enabled and m:Activity() or "" end },
-    { "header", "Fishing" },
-    { "input", "Fishing key", "F, or off", "Set key", function(t) ns.Slash:Run("fishkey " .. t) end },
-    { "note", function() return "Current key: " .. tostring(set("Fishing").key or "none") end },
-    { "header", "Auction house" },
-    { "input", "Undercut by", "2% or 50c", "Set", function(t) ns.Slash:Run("undercut " .. t) end },
-    { "note", function() local s = set("AuctionHelper") return "Now: " .. (s.undercutCopper and (s.undercutCopper .. " copper") or ((s.undercutPct or 2) .. "%")) end },
-  })
+  local rows = {}
+  local function r(t) rows[#rows + 1] = t end
+  local crafts = {}
+  if owned.Cooking then crafts[#crafts + 1] = { "Cook", make("Cooking") } end
+  if owned.Alchemy then crafts[#crafts + 1] = { "Brew", make("Alchemy") } end
+  if #crafts > 0 then
+    r({ "header", "Make what you can" })
+    r({ "note", "Each click makes the best skill-up recipe you have every ingredient for (Create All). Stand by a fire to cook." })
+    crafts[#crafts + 1] = { "Make bar macros", Run("make") }
+    r({ "buttons", crafts })
+  end
+  if next(owned) then
+    r({ "header", "Skill-up planner" })
+    r({ "input", "Profession and target", "Alchemy 75", "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
+  end
+  if owned.Herbalism then
+    r({ "header", "Herbalism" })
+    r({ "buttons", { { "Where each herb grows", Run("herbs") } } })
+    r({ "note", function() local m = mod("HerbHelper") return m and m.enabled and m:Activity() or "" end })
+  end
+  if owned.Fishing then
+    r({ "header", "Fishing" })
+    r({ "input", "Fishing key", "F, or off", "Set key", function(t) ns.Slash:Run("fishkey " .. t) end })
+    r({ "note", function() return "Current key: " .. tostring(set("Fishing").key or "none") end })
+  end
+  if not next(owned) then
+    r({ "header", "Professions" })
+    r({ "note", "No professions yet. Visit a trainer; their tools appear here once you've learned one." })
+  end
+  r({ "header", "Auction house" })
+  r({ "input", "Undercut by", "2% or 50c", "Set", function(t) ns.Slash:Run("undercut " .. t) end })
+  r({ "note", function() local s = set("AuctionHelper") return "Now: " .. (s.undercutCopper and (s.undercutCopper .. " copper") or ((s.undercutPct or 2) .. "%")) end })
+  return rows
+end
+
+ns.Hub:AddTab("professions", "Professions", function(p)
+  UI:FormPage(p, profRows())
 end)
 
 -- ----------------------------------------------------------------- Chat

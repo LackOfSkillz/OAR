@@ -27,10 +27,10 @@ function M:Entries()
   end
   -- the hunter Fight macro is written from the spellbook, not a pack
   if ns.HunterFight and ns.HunterFight.enabled then
-    out[#out + 1] = ns.HunterFight:Entry("ranged")
-    out[#out + 1] = ns.HunterFight:Entry("melee")
-    local pet = ns.HunterFight:Entry("pet")
-    if not pet.empty then out[#out + 1] = pet end
+    for _, kind in ipairs(ns.HunterFight:Kinds()) do
+      local e = ns.HunterFight:Entry(kind)
+      if not e.empty then out[#out + 1] = e end
+    end
   end
   if ns.Crafter and ns.Crafter.enabled then
     for _, e in ipairs(ns.Crafter:Entries()) do out[#out + 1] = e end

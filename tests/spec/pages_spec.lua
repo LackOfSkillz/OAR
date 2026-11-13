@@ -25,7 +25,7 @@ end
 T.describe("hub pages", function()
   T.it("Hunter page toggles the Fight options like /ride fight", function()
     local _, ns = session()
-    local p = page(ns, "hunter")
+    local p = page(ns, "class")
     local wing
     for _, c in ipairs(checks(p)) do if c.label:GetText() == "Wing Clip in Strike" then wing = c end end
     T.ok(wing, "Wing Clip toggle")
@@ -67,15 +67,26 @@ T.describe("hub pages", function()
     T.ok(ns.db.char.marker, "nothing reset after one click")
   end)
 
-  T.it("Home shows its cards without errors, and the hunter page hides for other classes", function()
+  T.it("Home shows its cards; the class page follows the character's class", function()
     local _, ns = session()
     local p = page(ns, "home")
     T.ok(p.near and p.quests and p.pet)
     T.eq(#ns.Errors.list, 0)
+    T.eq(ns.Hub.byId.class.title, "Hunter")
     local game2 = mock.new({ class = "MAGE" })
     local ns2 = game2:loadAddon()
     game2:login()
     game2:slash("")
-    T.eq(ns2.Hub.frame.tabBar.buttons.hunter, nil)
+    T.eq(ns2.Hub.byId.class.title, "Mage")
+    ns2.Hub.frame.tabBar:Select("class")
+    local texts = {}
+    for _, f in ipairs(game2.frames) do
+      if f.__kind == "FontString" and f.__text then texts[#texts + 1] = f.__text end
+    end
+    local all = table.concat(texts, " | ")
+    T.ok(all:find("Frost Nova", 1, true), "mage keys described")
+    T.ok(not all:find("Taming", 1, true), "no hunter taming on a mage")
+    T.ok(not all:find("Wing Clip", 1, true), "no hunter options on a mage")
+    T.eq(#ns2.Errors.list, 0)
   end)
 end)
