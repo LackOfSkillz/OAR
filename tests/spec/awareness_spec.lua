@@ -74,4 +74,18 @@ T.describe("awareness", function()
     T.eq(places["Horde Vendor"], nil)
     T.ok(places["Neutral Smith"], "a neutral NPC found by a Horde character still shows")
   end)
+
+  T.it("a new race (Skyborne) still gets quests open to its whole faction", function()
+    local game = mock.new({ faction = "Alliance", raceID = 85, level = 12, mapID = 1429, x = 0.5, y = 0.5 })
+    game.base.Outrider_DataNPC = { source = "test", maps = { [1429] = {
+      { 811, "quest_giver", 0.5, 0.5, "Giver", nil, "Alliance", {
+        { 921, "For All Alliance", 1, 12, "Alliance", 0, {}, {}, 77 },
+        { 922, "Humans Only", 1, 12, "Alliance", 0, {}, {}, 1 } } } } } }
+    rawset(game.env, "Outrider_DataNPC", game.base.Outrider_DataNPC)
+    local ns = game:loadAddon()
+    game:login()
+    local q = names(ns.Finder:Find({ kind = "quest" }))
+    T.ok(q["For All Alliance"], "faction-wide mask counts for a new race")
+    T.eq(q["Humans Only"], nil)
+  end)
 end)

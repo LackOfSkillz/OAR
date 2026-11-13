@@ -31,7 +31,15 @@ function M:OnEnable()
   for _, e in ipairs({ "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED", "PLAYER_LEVEL_UP" }) do
     self:On(e, function() ns.Events:Fire("OTR_DATA_CHANGED", "quests") end)
   end
-  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:LogZoneReport("login") end)
+  self:On("PLAYER_ENTERING_WORLD", function(mod)
+    if not mod.raceLogged then
+      mod.raceLogged = true
+      local name, file, raceID = C.Call("UnitRace", "player")
+      mod:Info("race %s (%s) id %s, faction %s", tostring(C.Readable(name)), tostring(C.Readable(file)),
+        tostring(C.Readable(raceID)), tostring(C.Call("UnitFactionGroup", "player")))
+    end
+    mod:LogZoneReport("login")
+  end)
   self:On("QUEST_TURNED_IN", function(mod) ns.Throttle("npcpack:zone", 3, function() mod:LogZoneReport("turned in") end) end)
   if not rawget(_G, "Outrider_DataNPC") then C.LoadAddOn(self.ADDON) end
   local data = rawget(_G, "Outrider_DataNPC")
@@ -131,12 +139,20 @@ local function done(qid) return C.Call("C_QuestLog.IsQuestFlaggedCompleted", qid
 
 -- Race-only quests (the pack's 9th field, Questie's race mask; bit = raceID).
 -- No mask, or a race the client doesn't name: allowed (faction still applies).
+-- A mask that names every original race of your faction means "the whole
+-- faction": new races (Skyborne on Forever) are missing from those old masks,
+-- and failed every such quest until this check (2026-11-13: 70 done showed as 54).
+M.FACTION_RACES = { Alliance = { 1, 3, 4, 7 }, Horde = { 2, 5, 6, 8 } } -- raceIDs: human dwarf nelf gnome / orc undead tauren troll
 function M.RaceOK(mask)
   if not mask or mask == 0 then return true end
   local _, _, raceID = C.Call("UnitRace", "player")
   raceID = C.Readable(raceID)
   if type(raceID) ~= "number" or raceID < 1 then return true end
-  return hasBit(mask, raceID)
+  if hasBit(mask, raceID) then return true end
+  local all = M.FACTION_RACES[C.Call("UnitFactionGroup", "player") or ""]
+  if not all then return false end
+  for _, r in ipairs(all) do if not hasBit(mask, r) then return false end end
+  return true -- open to the whole faction
 end
 
 -- { {id, name, level, diff} } quests this giver offers you now, best first

@@ -14,7 +14,7 @@ T.describe("ammo", function()
   T.it("logs the count at login", function()
     local game, ns = session({ ammo = 800 })
     local found = false
-    for _, l in ipairs(ns.Log:Tail(10)) do if ns.Log:FormatLine(l):find("ammo at login: 800", 1, true) then found = true end end
+    for _, l in ipairs(ns.Log:Tail(30)) do if ns.Log:FormatLine(l):find("ammo at login: 800", 1, true) then found = true end end
     T.ok(found)
     T.eq(ns.Toast:Count(), 0)
   end)
