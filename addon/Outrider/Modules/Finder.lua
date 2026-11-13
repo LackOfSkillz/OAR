@@ -215,7 +215,7 @@ end
 -- at its spawn nearest to you when it's your zone.
 function P.node(out)
   local NP = ns.NodePack
-  if not (NP and NP.enabled and NP:Load()) then return end
+  if not (NP and NP.enabled and NP:Settings().show and NP:Load()) then return end
   local here, px, py = C.PlayerPosition("player")
   for mapID in pairs(NP.maps) do
     for _, node in ipairs(NP:For(mapID)) do

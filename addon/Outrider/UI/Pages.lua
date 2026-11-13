@@ -128,6 +128,8 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
       function(on) ns.Slash:Run("minipins quests " .. onoff(on)) end },
     { "check", "Grey quests (no XP) on the map", function() return set("NPCPack").grey end,
       function(on) ns.Slash:Run("questpins grey " .. onoff(on)) end },
+    { "check", "Herb and ore spots from the database", function() return set("NodePack").show end,
+      function(on) ns.NodePack:SetShown(on) end, "off: only nodes you gathered" },
   })
 end)
 
@@ -250,6 +252,11 @@ local function profRows()
   if next(owned) then
     r({ "header", "Skill-up planner" })
     r({ "input", "Profession and target", "Alchemy 75", "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
+  end
+  if owned.Herbalism or owned.Mining then
+    r({ "header", "Herb and ore map" })
+    r({ "check", "Herb and ore spots from the database", function() return set("NodePack").show end,
+      function(on) ns.NodePack:SetShown(on) end, "off: only nodes you gathered" })
   end
   if owned.Herbalism then
     r({ "header", "Herbalism" })

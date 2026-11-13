@@ -102,11 +102,21 @@ function M:Nearest(px, py, mapID, node)
   return pts[best], pts[best + 1], #pts / 2
 end
 
+-- Gary's switch (2026-11-13: "in case I'm wrong"): off = only nodes Outrider
+-- saw you gather. Redraws the map and minimap at once.
+function M:SetShown(on)
+  self:Settings().show = on and true or false
+  ns.Events:Fire("OTR_DATA_CHANGED", "nodes")
+  ns.Events:Fire("OTR_POI_ADDED", nil)
+  self:Info("database nodes %s", on and "on" or "off")
+end
+
 function M:Activity()
   local k = self:Kinds()
   local list = {}
   if k.herb then list[#list + 1] = "herbs" .. (type(k.herb) == "number" and (" up to skill " .. k.herb) or "") end
   if k.ore then list[#list + 1] = "ore" end
   if #list == 0 then return "learn Herbalism or Mining to see nodes on the map" end
+  if not self:Settings().show then return "database nodes off: only nodes you gathered show" end
   return "showing " .. table.concat(list, " and ") .. " from the node pack"
 end

@@ -50,3 +50,21 @@ T.describe("node pack", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("node pack switch", function()
+  T.it("off: only nodes you gathered on the map and in the finder", function()
+    local game = mock.new({ mapID = 1412, x = 0.5, y = 0.5 })
+    game.prof = { name = "Herbalism", skill = 5, max = 75, line = 1, recipes = {} }
+    game.base.Outrider_DataNodes = { source = "test", maps = { [1412] = { { "Peacebloom", "herb", { 0.80, 0.80 } } } } }
+    rawset(game.env, "Outrider_DataNodes", game.base.Outrider_DataNodes)
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions.Herbalism = { skill = 5, max = 75, recipes = {} }
+    T.eq(#ns.NodePack:Pins(1412), 1)
+    ns.NodePack:SetShown(false)
+    T.eq(#ns.NodePack:Pins(1412), 0)
+    T.eq(#ns.Finder:Find({ kind = "node" }), 0)
+    ns.NodePack:SetShown(true)
+    T.eq(#ns.NodePack:Pins(1412), 1)
+  end)
+end)
