@@ -118,7 +118,12 @@ function M:Step(why)
   local goal = self.goal
   if not goal then return nil end
   local route, whyNot = ns.Travel:Route(goal.target)
-  if not route then say(self, whyNot) return nil end
+  if not route then
+    say(self, whyNot)
+    local t = goal.target
+    ns.Waypoints:Set(t.mapID, t.x, t.y, tostring(goal.name), { journey = true }) -- the marker still shows where it is
+    return nil
+  end
   local first = route.steps[1]
   if #route.steps == 1 then
     local here = ns.Travel.Here()
@@ -184,7 +189,7 @@ ns.Hub:AddTab("journey", "Journey", function(p)
   p.list = UI:ScrollList(p, {
     rows = 16, rowHeight = 22,
     render = function(row, e) row.text:SetText(F.Line(e)) end,
-    onClick = function(e) p:ShowRoute(e) end,
+    onClick = function(e) p:ShowRoute(e) if e.target then M:Go(e) end end, -- one click: route, marker and arrow
   })
   p.list:SetPoint("TOPLEFT", p.kindBtns.all, "BOTTOMLEFT", 0, -6)
   p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0) -- as wide as the window
@@ -192,8 +197,8 @@ ns.Hub:AddTab("journey", "Journey", function(p)
   p.route:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -6)
   p.route:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   p.route:SetJustifyH("LEFT")
-  p.go = UI:Button(p, "Guide me", 100, function() if p.current then M:Go(p.current) end end)
-  p.go:SetPoint("BOTTOMLEFT", 0, 0)
+  p.go = UI:Button(p, "Guide me again", 130, function() if p.current then M:Go(p.current) end end)
+  p.go:SetPoint("TOPLEFT", p.route, "BOTTOMLEFT", 0, -8) -- right under the route, never off the bottom
   p.stop = UI:Button(p, "Stop", 80, function() M:Stop("button") end)
   p.stop:SetPoint("LEFT", p.go, "RIGHT", 6, 0)
   function p:ShowRoute(e)
@@ -218,7 +223,7 @@ ns.Hub:AddTab("journey", "Journey", function(p)
     self.count:SetText(string.format("%d found%s", total, total > #list and (", first " .. #list .. " shown") or ""))
     self.list:SetItems(list)
     self.route:SetText(#list == 0 and "Nothing found (item data may still be loading: try again in a moment)."
-      or "Click a line for its route, then Guide me. Community data is unverified; 'seen' means you met it.")
+      or "Click a line: the route shows here and the marker and arrow go up. Community data is unverified; 'seen' means you met it.")
   end
 end, 45)
 
