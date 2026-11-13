@@ -82,3 +82,7 @@
 - One Class page per character, named and iconed for its class (Hunter, Mage...). It shows only that class's sections: Fight macros (hunter, mage, priest so far), hunter-only taming, pet and ammo, and a link to the class's macro library.
 - Fight macros are data-driven per class (Modules/HunterFight.lua keeps its file name): HUNTER Fight/Strike/Pet, MAGE Fight (Frostbolt, else Fireball) and Strike (Frost Nova, Fire Blast, Arcane Explosion), PRIEST Fight (Shadow Word: Pain once per pull, Mind Blast, Holy Fire, Smite) and Heal (best heal on mouseover, friendly target or you). Mage and priest orders are unverified until their fight logs are read.
 - Other classes' modules are hidden on the Modules page; Home shows the pet card only for classes with a pet; Professions shows only professions the character has.
+
+## Hunter Fight order follows the guides (2026-11-13, Gary chose "guide order")
+- Researched: warcrafttavern.com Forever hunter guide (BM: Aspect of the Hawk, Auto Shot with the pet sent in, Serpent Sting, Arcane Shot on cooldown; Wing Clip/Concussive when the pet loses threat), Classic/Forever leveling guides (Mark first; Serpent only when the mob lives long enough).
+- Fight is now: pet in every press, Aspect of the Hawk before the pull, Hunter's Mark, Auto Shot, Serpent Sting, then Arcane Shot on cooldown. Concussive left the spam key (off by default; the Class page toggle puts it back after Mark). Distracting Shot stays out (pulls the mob off the pet).

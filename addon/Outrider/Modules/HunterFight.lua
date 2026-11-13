@@ -39,7 +39,7 @@ local M = ns:NewModule("HunterFight", {
   order = 64,
   classes = { HUNTER = true, MAGE = true, PRIEST = true },
   defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", healName = "Heal",
-    concussive = true, wingclip = true, pet = true },
+    concussive = false, wingclip = true, pet = true }, -- Concussive off: guides keep it for when the pet loses aggro
 })
 ns.HunterFight = M
 
@@ -398,6 +398,10 @@ function M:OnEnable()
   -- /ride fight wingclip on|off is his to change again.
   local s = self:Settings()
   if not s.wingclipOn20261112 then s.wingclipOn20261112, s.wingclip = true, true end
+  -- One time: guide order (Gary chose it, 2026-11-13): Hawk, Mark, Auto Shot,
+  -- Serpent, Arcane; Concussive leaves the spam key (the Class page toggle
+  -- brings it back).
+  if not s.guideOrder20261113 then s.guideOrder20261113, s.concussive = true, false end
   local function later(why) ns.Throttle("hunterfight", 2, function() M:Update(why) end) end
   self:On("PLAYER_ENTERING_WORLD", function(mod, _, isLogin)
     if not mod:Settings().auto then return end
