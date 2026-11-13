@@ -8,7 +8,7 @@ T.describe("spawn log", function()
     game:login()
     ns.Modules:Get("RareScan"):Watch("mystmane", true)
     ns.db.global.sightings = { [259388] = { { mapID = 2521, x = 0.598, y = 0.341, state = "alive", t = 1 } } }
-    ns.db.global.rareProfiles[259388] = { name = "Mystmane", spells = {} }
+    ns.db.global.discovered = { npcs = { [259388] = { name = "Mystmane", mapID = 2521 } }, recent = {} } -- no profile yet
     game.units = { nameplate1 = { name = "Shadowgale Ursera", guid = "Creature-0-1-2521-0-250927-00000000AA", level = 11 } }
     game:fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
     game:fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
@@ -21,7 +21,7 @@ T.describe("spawn log", function()
     game.units.nameplate1 = { name = "Shadowgale Ursera", guid = "Creature-0-1-2521-0-250927-00000000BB", level = 11 }
     game:fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
     T.eq(#list, 2)
-    T.contains(ns.SpawnLog:Summary(259388), "Mystmane")
+    T.contains(ns.SpawnLog:Summary(259388), "Shadowgale Ursera")
     T.eq(#ns.Errors.list, 0)
   end)
 

@@ -17,7 +17,7 @@ local M = ns:NewModule("Discovery", {
 })
 
 local QUALITY = { nameplate = 1, mouseover = 2, target = 2, interact = 3 }
-local RECENT_MAX = 50
+local RECENT_MAX = 300 -- enough history to read respawn timings back (50 lasted 40 minutes, 2026-11-13)
 
 -- NPC windows: event -> role tag. The unit is "npc" while the window is open.
 local ROLE_EVENTS = {

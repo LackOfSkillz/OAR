@@ -33,7 +33,11 @@ function M:SpotHere()
   local scan = ns.Modules:Get("RareScan")
   local r = self:Settings().radius
   for npcID, list in pairs(ns.db.global.sightings or {}) do
-    local name = ns.RareProfile and ns.db.global.rareProfiles[npcID] and ns.db.global.rareProfiles[npcID].name
+    -- the rare's name from what Outrider recorded (its profile only exists once
+    -- the rare itself was seen, so the spot was never recognized: 2026-11-13)
+    local prof = ns.db.global.rareProfiles and ns.db.global.rareProfiles[npcID]
+    local met = ns.db.global.discovered and ns.db.global.discovered.npcs and ns.db.global.discovered.npcs[npcID]
+    local name = (prof and prof.name) or (met and met.name)
     if not scan or scan:IsWatched(npcID, name) then
       for _, s in ipairs(list) do
         if s.mapID == mapID and math.abs(s.x - px) < r and math.abs(s.y - py) < r then return npcID end
