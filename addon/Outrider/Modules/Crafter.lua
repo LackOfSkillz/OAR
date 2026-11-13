@@ -22,7 +22,10 @@ ns.Crafter = M
 M.MACROS = {
   { prof = "Cooking", name = "Cook", explain = "Stand by a fire and press: cooks what you have ingredients for, best skill-up first." },
   { prof = "Alchemy", name = "Brew", explain = "Press: brews what you have herbs and vials for, best skill-up first." },
-  { prof = "Herbalism", name = "Herb", explain = "Press: makes whatever Herbalism can make from your bags (if Forever gives it recipes)." },
+  -- Herbalism only gathers on Forever (196 gathering entries, nothing to make,
+  -- 2026-11-12), so its button turns on Find Herbs instead ("!" never turns it off).
+  { prof = "Herbalism", name = "Herb", body = "#showtooltip Find Herbs\n/cast !Find Herbs",
+    explain = "Press: turns on Find Herbs so herbs show on the minimap (never turns it off)." },
 }
 
 -- Professions this character has: name -> skillLine (from GetProfessions; no IDs typed in by hand).
@@ -46,7 +49,7 @@ end
 
 function M:Entry(def)
   return { id = "craft-" .. def.prof:lower(), name = def.name, class = "ALL", scope = "char", tags = { "profession" },
-    body = "#showtooltip " .. def.prof .. "\n/ride make " .. def.prof, explain = def.explain }
+    body = def.body or ("#showtooltip " .. def.prof .. "\n/ride make " .. def.prof), explain = def.explain }
 end
 
 -- Library entries for the professions this character has.
@@ -202,8 +205,31 @@ function M:OnUIError(_, _, message)
   self.lastCraft = nil
 end
 
+-- A craft macro Outrider made whose text changed in a new build gets the new
+-- text at login, unless Gary edited it himself (his text then differs from
+-- what Outrider wrote, and it is left alone).
+function M:Refresh()
+  local lib = ns.MacroLibrary
+  if not lib then return end
+  ns.Combat:Run("Crafter", function()
+    local installed = lib:Settings().installed
+    for _, e in ipairs(self:Entries()) do
+      local rec = installed[e.name]
+      local index = rec and C.Call("GetMacroIndexByName", e.name) or 0
+      if rec and index > 0 then
+        local _, _, body = C.Call("GetMacroInfo", index)
+        if body == rec.body and rec.body ~= e.body then
+          local ok = lib:Install(e)
+          self:Info("%s macro updated to the new text: %s", e.name, tostring(ok))
+        end
+      end
+    end
+  end, "crafter:refresh")
+end
+
 function M:OnEnable()
   self:On("UI_ERROR_MESSAGE", self.OnUIError)
+  self:On("PLAYER_ENTERING_WORLD", self.Refresh)
 end
 
 function M:Activity()

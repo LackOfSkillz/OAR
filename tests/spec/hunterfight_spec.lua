@@ -156,6 +156,11 @@ T.describe("hunter fight macro", function()
     T.ok(found, "fights with the pet out counted")
   end)
 
+  T.it("Pet key uses Forever's renamed call spell (Call <pet name>)", function()
+    local game = session(sp("Auto Shot", "Raptor Strike", "Call TempMystMane", "Revive Pet", "Mend Pet"), BOW)
+    T.contains(macro(game, "Pet").body, "[nopet] Call TempMystMane; Mend Pet")
+  end)
+
   T.it("no pet spells yet: no Pet macro", function()
     local game, ns = session(sp("Auto Shot", "Raptor Strike"), BOW)
     T.eq(macro(game, "Pet"), nil)

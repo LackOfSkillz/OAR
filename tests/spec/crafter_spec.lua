@@ -128,3 +128,27 @@ T.describe("crafter", function()
     T.ok(said(game, "Herbalism has no recipes to make"))
   end)
 end)
+
+T.describe("crafter herb button", function()
+  T.it("Herb turns on Find Herbs, and an old Herb macro Outrider made is updated at login", function()
+    local game = mock.new({ macros = { { name = "Herb", icon = "x", body = "#showtooltip Herbalism\n/ride make Herbalism", perChar = true } } })
+    game.prof = { name = "Herbalism", skill = 4, max = 75, line = 778, recipes = {} }
+    local ns = game:loadAddon()
+    game:login()
+    ns.MacroLibrary:Settings().installed.Herb = { id = "craft-herbalism", body = "#showtooltip Herbalism\n/ride make Herbalism", t = 0 }
+    game:fire("PLAYER_ENTERING_WORLD", false, true)
+    game:advance(1)
+    T.eq(game.macros[1].body, "#showtooltip Find Herbs\n/cast !Find Herbs")
+  end)
+
+  T.it("leaves a Herb macro Gary edited alone", function()
+    local game = mock.new({ macros = { { name = "Herb", icon = "x", body = "/cast Find Herbs\n/say hi", perChar = true } } })
+    game.prof = { name = "Herbalism", skill = 4, max = 75, line = 778, recipes = {} }
+    local ns = game:loadAddon()
+    game:login()
+    ns.MacroLibrary:Settings().installed.Herb = { id = "craft-herbalism", body = "#showtooltip Herbalism\n/ride make Herbalism", t = 0 }
+    game:fire("PLAYER_ENTERING_WORLD", false, true)
+    game:advance(1)
+    T.eq(game.macros[1].body, "/cast Find Herbs\n/say hi")
+  end)
+end)

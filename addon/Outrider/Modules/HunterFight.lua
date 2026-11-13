@@ -40,6 +40,18 @@ M.KINDS = { "ranged", "melee", "pet" }
 
 local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
 
+-- The call-pet spell's name as the spellbook shows it. Forever renames it
+-- after the pet ("Call TempMystMane", measured 2026-11-12), so "Call Pet" or
+-- any known spell named "Call <something>".
+function M.CallPetName()
+  if known("Call Pet") then return "Call Pet" end
+  local best
+  for _, sp in pairs(ns.Spellbook and ns.Spellbook.spells or {}) do
+    if type(sp.name) == "string" and sp.name:match("^Call %S") and (not best or sp.name < best) then best = sp.name end
+  end
+  return best
+end
+
 -- "bow", "thrown" or nil (empty ranged slot)
 function M:Ranged()
   local link = C.Call("GetInventoryItemLink", "player", 18)
@@ -63,7 +75,8 @@ function M:Lines(kind)
   if kind == "pet" then
     local c = {}
     if known("Revive Pet") then c[#c + 1] = "[@pet,dead] Revive Pet" end
-    if known("Call Pet") then c[#c + 1] = "[nopet] Call Pet" end
+    local call = M.CallPetName()
+    if call then c[#c + 1] = "[nopet] " .. call end
     if known("Mend Pet") then c[#c + 1] = "Mend Pet" end
     if #c > 0 then add(1, "/cast " .. table.concat(c, "; "), "dead pet: Revive; no pet: Call; otherwise Mend") end
     return L
