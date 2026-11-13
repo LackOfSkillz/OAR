@@ -33,6 +33,7 @@ UI\WidgetsExtra.lua
 UI\SecureButtons.lua
 UI\Toast.lua
 UI\TooltipLines.lua
+UI\Form.lua
 UI\Hub.lua
 UI\MinimapButton.lua
 UI\Settings.lua
@@ -124,6 +125,7 @@ Modules\Coords.lua
 Modules\Travel.lua
 Modules\Journey.lua
 Modules\Finder.lua
+UI\Pages.lua
 
 Core\Slash.lua
 Core\Boot.lua

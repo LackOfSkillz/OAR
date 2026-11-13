@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **New Outrider window:** grouped sidebar with icons, your class color, resizable, a search box at the top, and a Home page (nearest places, where you are headed, best quests, upgrades, rare watch, errands, pet). Every /ride command now has a button, toggle or field (new pages: Waypoints, Rare alerts, Hunter, Gear sets, Professions, Chat, Sharing, Settings, All commands).
 - **Cook / Brew / Herb** macros (`/ride make` creates them): one press makes everything you have ingredients for, best skill-up recipe first. The first press opens the profession window if it is closed.
 - Hunter **Fight** macro: one key to spam. Outrider writes it from your spellbook and ranged weapon and rewrites it out of combat when you learn a spell, level up or swap the ranged weapon. Install it once from the Macros tab or `/ride fight`; `/ride fight concussive|wingclip|pet off` trims it. Each fight's casts are logged so the order can be checked.
 - Gear advisor: thrown weapons are never a hunter upgrade; the empty-slot line names the slot.

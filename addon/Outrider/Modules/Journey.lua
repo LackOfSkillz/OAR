@@ -206,6 +206,13 @@ ns.Hub:AddTab("journey", "Journey", function(p)
     self.route:SetText(table.concat(lines, "\n"))
   end
   function p:Refresh()
+    -- a search typed in the hub's top bar lands here
+    local pending = ns.Hub.pendingSearch
+    if pending then
+      ns.Hub.pendingSearch = nil
+      self.kind, self.sort, self.text = "all", nil, pending
+      self.search:SetText(pending)
+    end
     local list, total, sort = F:Find({ kind = self.kind, text = self.text, sort = self.sort })
     self.sortBtn.label:SetText("Sort: " .. (F.SORT_LABEL[sort] or sort))
     self.count:SetText(string.format("%d found%s", total, total > #list and (", first " .. #list .. " shown") or ""))

@@ -63,3 +63,9 @@
 - Journey tab = Finder: search box, kinds (All, Gear, Items, Quests, Rares, Creatures, NPCs, Places), Sort button cycling nearest / XP per minute / most XP / best gear / your level / name / zone. Each kind opens on its most useful sort.
 - Sources: gear and item packs (D13), NPC pack quests and NPCs (D10), creature pack (D14), plus what Gary met (Discovery, POIs, gathering nodes, marked "seen").
 - To stay quick, "All" without a search shows gear, quests, rares and places; creatures show around your level unless searched; the whole NPC pack only when searching. Up to 300 rows shown.
+
+## Hub redesign: everything in the window (2026-11-13, Gary)
+- Gary's choices: grouped sidebar, dark look with the class color as accent (now the default; Settings can turn it off), resizable window (860x520 to 1400x1000, saved per character).
+- Sidebar groups: Home; Explore (Journey, Map, Waypoints, Rares, Rare alerts); Character (Hunter for hunters, Gear, Gear sets, Professions, Crafting, Macros); Town (Errands, Forecasts, Feed); Social (Chat, Sharing); Outrider (Settings, Modules, Characters, Advisor, Status, Tools, All commands).
+- Controls run the same code as the typed command (UI.Run -> ns.Slash:Run), so a button and a slash command can never behave differently. All commands lists every /ride command with a box for its arguments, so nothing needs the chat line.
+- The top bar's search box opens Journey with that search. Home opens first.

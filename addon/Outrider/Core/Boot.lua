@@ -32,7 +32,7 @@ end
 function Boot:OnLogin()
   ns.Errors:HookBugGrabber()
   ns.Conflicts:Detect()
-  if ns.db.char.classAccent then ns.Theme:UseClassAccent() end
+  if ns.db.char.classAccent ~= false then ns.Theme:UseClassAccent() end -- class color by default (Gary, 2026-11-13)
   ns.Safe("Theme:ApplyAccessibility", ns.Theme.ApplyAccessibility, ns.Theme)
   ns.Safe("Theme:RegisterMedia", ns.Theme.RegisterMedia, ns.Theme)
   ns.Settings:Init()

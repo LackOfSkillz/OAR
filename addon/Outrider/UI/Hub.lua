@@ -1,5 +1,8 @@
 -- UI/Hub.lua
--- The one Outrider window, in tabs:
+-- The one Outrider window: a top bar (who you are, one search box), a grouped
+-- sidebar (Home, Explore, Character, Town, Social, Outrider) and one page at a
+-- time. Every /ride command has a control on some page (UI/Pages.lua; the
+-- All commands page lists the rest). Core pages defined here:
 --   Overview    who you are, saved-settings check, errors, probe, detected addons
 --   Modules     which modules are on for THIS character and why
 --   Characters  every character Outrider knows, copy settings from one
@@ -14,22 +17,63 @@ ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 19 -- visible module rows; the list scrolls with the mouse wheel
-local W, H = 780, 500
-local SIDE = 112 -- sidebar of tabs on the left; panels to its right
+local W, H = 900, 600        -- starting size; the window is resizable (Gary, 2026-11-13)
+local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1400, 1000
+local SIDE = 160             -- grouped sidebar on the left; pages to its right
 
 local L = {
-  overview = "Overview", modules = "Modules", characters = "Characters", tools = "Tools",
+  overview = "Status", modules = "Modules", characters = "Characters", tools = "Tools",
   modulesHeading = "Modules for this character",
   charsHint = "Click Copy to take that character's settings (then /reload).",
   noOthers = "no other characters saved yet: log in on another character once.",
 }
 
-function Hub:AddTab(id, title, build, order)
+-- Where each page sits in the sidebar (Gary chose a grouped sidebar,
+-- 2026-11-13). Pages not listed land under "More" in the order they ask for.
+Hub.GROUPS = { "", "Explore", "Character", "Town", "Social", "Outrider", "More" }
+local ICON = "Interface\\Icons\\"
+Hub.PLACE = {
+  home        = { "", 1, "INV_Misc_Book_09" },
+  journey     = { "Explore", 10, "INV_Misc_Map_01" },
+  map         = { "Explore", 11, "INV_Misc_Map02" },
+  waypoints   = { "Explore", 12, "Ability_Tracking" },
+  rares       = { "Explore", 13, "Ability_Hunter_SniperShot" },
+  rarealerts  = { "Explore", 14, "INV_Misc_Spyglass_02" },
+  hunter      = { "Character", 20, "Ability_Hunter_BeastTaming" },
+  gear        = { "Character", 21, "INV_Chest_Chain" },
+  gearsets    = { "Character", 22, "INV_Shoulder_02" },
+  professions = { "Character", 23, "Trade_Alchemy" },
+  crafting    = { "Character", 24, "Trade_BlackSmithing" },
+  macros      = { "Character", 25, "INV_Misc_Note_01" },
+  errands     = { "Town", 30, "INV_Misc_Bag_08" },
+  forecasts   = { "Town", 31, "INV_Misc_Coin_01" },
+  feed        = { "Town", 32, "INV_Letter_15" },
+  chat        = { "Social", 40, "INV_Misc_Note_02" },
+  sharing     = { "Social", 41, "INV_Letter_09" },
+  settings    = { "Outrider", 50, "Trade_Engineering" },
+  modules     = { "Outrider", 51, "INV_Gizmo_01" },
+  characters  = { "Outrider", 52, "INV_Misc_Head_Human_01" },
+  advisor     = { "Outrider", 53, "INV_Misc_Book_11" },
+  overview    = { "Outrider", 54, "INV_Misc_QuestionMark" },
+  tools       = { "Outrider", 55, "INV_Misc_Wrench_01" },
+  commands    = { "Outrider", 56, "INV_Misc_Note_06" },
+}
+
+function Hub:AddTab(id, title, build, order, opts)
   if self.byId[id] then return self.byId[id] end
-  local t = { id = id, title = title, build = build, order = order or (100 + #self.tabs) }
+  local place = self.PLACE[id]
+  local t = { id = id, title = title, build = build, opts = opts,
+    group = place and place[1] or (opts and opts.group) or "More",
+    order = place and place[2] or order or (100 + #self.tabs),
+    icon = place and (ICON .. place[3]) or (opts and opts.icon) }
   self.tabs[#self.tabs + 1] = t
   self.byId[id] = t
-  table.sort(self.tabs, function(a, b) return a.order < b.order end)
+  local rank = {}
+  for i, g in ipairs(self.GROUPS) do rank[g] = i end
+  table.sort(self.tabs, function(a, b)
+    if a.group ~= b.group then return (rank[a.group] or 99) < (rank[b.group] or 99) end
+    return a.order < b.order
+  end)
   if self.frame then self:AddTabButton(t) end
   return t
 end
@@ -37,27 +81,171 @@ end
 -- Old name kept for anything written against the pre-tab hub.
 function Hub:AddSection(title, build) return self:AddTab(title:lower(), title, build) end
 
+-- Pages a character can't use (the Hunter page for a mage) stay out of the sidebar.
+function Hub:Visible(t)
+  local o = t.opts
+  if o and o.class and o.class ~= ns.PlayerClass() then return false end
+  return true
+end
+
+-- ------------------------------------------------------------- sidebar
+-- Same interface the old tab bar had (Add, SetOrder, Select, order, buttons),
+-- plus group headings and icons.
+local function Sidebar(parent, onSelect)
+  local bar = CreateFrame("Frame", nil, parent, Theme:BackdropTemplate())
+  bar:SetWidth(SIDE)
+  Theme:ApplyPanel(bar, "panel")
+  bar.buttons, bar.order, bar.heads = {}, {}, {}
+  function bar:Add(id, title, icon)
+    local b = CreateFrame("Button", nil, self)
+    b:SetSize(SIDE - 8, 22)
+    b.bg = b:CreateTexture(nil, "BACKGROUND")
+    b.bg:SetAllPoints()
+    b.bg:SetColorTexture(Theme:Color("raised"))
+    b.bg:Hide()
+    local hl = b:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetAllPoints()
+    hl:SetColorTexture(Theme:Color("raised"))
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetSize(16, 16)
+    b.icon:SetPoint("LEFT", 6, 0)
+    if icon then b.icon:SetTexture(icon) b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+    b.label = UI.Text(b, "normal", "text")
+    b.label:SetPoint("LEFT", 28, 0)
+    b.label:SetText(title)
+    b.id = id
+    b:SetScript("OnClick", function() self:Select(id) end)
+    self.buttons[id] = b
+    self.order[#self.order + 1] = id
+    return b
+  end
+  local function head(self, i, text)
+    local h = self.heads[i]
+    if not h then h = UI.Text(self, "small", "muted") self.heads[i] = h end
+    h:SetText(text)
+    h:Show()
+    return h
+  end
+  function bar:SetOrder(ids, groups)
+    local seen, order = {}, {}
+    for _, id in ipairs(ids) do if self.buttons[id] and not seen[id] then order[#order + 1] = id seen[id] = true end end
+    for _, id in ipairs(self.order) do if not seen[id] then order[#order + 1] = id end end
+    self.order = order
+    for _, h in ipairs(self.heads) do h:Hide() end
+    local y, last, nh = -6, nil, 0
+    for _, id in ipairs(order) do
+      local b = self.buttons[id]
+      local g = groups and groups[id] or ""
+      if g ~= last and g ~= "" then
+        nh = nh + 1
+        local h = head(self, nh, g)
+        h:ClearAllPoints()
+        h:SetPoint("TOPLEFT", 10, y - 6)
+        y = y - 22
+      end
+      last = g
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", 4, y)
+      y = y - 23
+    end
+  end
+  function bar:Select(id)
+    if not self.buttons[id] then id = self.order[1] end
+    if not id then return end
+    self.selected = id
+    for tid, b in pairs(self.buttons) do
+      b.label:SetTextColor(Theme:Color(tid == id and "accent" or "text"))
+      b.bg:SetShown(tid == id)
+    end
+    if onSelect then ns.Safe("tabs:select", onSelect, id) end
+  end
+  return bar
+end
+
 function Hub:AddTabButton(t)
   local bar = self.frame.tabBar
-  bar:Add(t.id, t.title)
-  local ids = {}
-  for i, o in ipairs(self.tabs) do ids[i] = o.id end
-  bar:SetOrder(ids)
+  if not self:Visible(t) then return end
+  bar:Add(t.id, t.title, t.icon)
+  local ids, groups = {}, {}
+  for _, o in ipairs(self.tabs) do
+    if bar.buttons[o.id] then ids[#ids + 1] = o.id groups[o.id] = o.group end
+  end
+  bar:SetOrder(ids, groups)
+end
+
+-- Top bar: who you are, and one search box for everything (Enter opens the
+-- Journey page with that search).
+function Hub:TopBar(f)
+  f.title:SetText("Outrider")
+  f.title:SetTextColor(Theme:Color("accent"))
+  f.who = UI.Text(f.bar, "small", "muted")
+  f.who:SetPoint("LEFT", f.title, "RIGHT", 12, 0)
+  f.search = UI:SearchBox(f.bar, 240, "Search anything (Enter)")
+  f.search:SetHeight(20)
+  f.search:SetPoint("RIGHT", f.close, "LEFT", -8, 0)
+  f.search:SetScript("OnEnterPressed", function(box)
+    local text = box:GetText() or ""
+    box:ClearFocus()
+    Hub:Search(text)
+  end)
+end
+
+function Hub:Search(text)
+  local f = self:Build()
+  f:Show()
+  self.pendingSearch = text
+  f.tabBar:Select("journey")
+end
+
+function Hub:UpdateWho()
+  local f = self.frame
+  if not f or not f.who then return end
+  local meta = ns.db.char.meta or {}
+  local mapID = ns.Compat.PlayerPosition("player")
+  local zone = mapID and ns.Travel and ns.Travel.ZoneName(mapID) or ""
+  f.who:SetText(string.format("%s, level %s %s%s", tostring(ns.db.key):match("^[^-]+") or "?",
+    tostring(meta.level or "?"), tostring(meta.class or ""):lower(), zone ~= "" and (", " .. zone) or ""))
+end
+
+-- Drag the bottom-right corner to resize; the size is saved per character.
+function Hub:Resizer(f)
+  local saved = ns.db.char.hub
+  if f.SetResizable then f:SetResizable(true) end
+  if f.SetResizeBounds then f:SetResizeBounds(MIN_W, MIN_H, MAX_W, MAX_H)
+  elseif f.SetMinResize then f:SetMinResize(MIN_W, MIN_H) f:SetMaxResize(MAX_W, MAX_H) end
+  if saved.w and saved.h then
+    f:SetSize(math.max(MIN_W, math.min(MAX_W, saved.w)), math.max(MIN_H, math.min(MAX_H, saved.h)))
+  end
+  local grip = CreateFrame("Button", nil, f)
+  grip:SetSize(16, 16)
+  grip:SetPoint("BOTTOMRIGHT", -2, 2)
+  grip.tex = grip:CreateTexture(nil, "OVERLAY")
+  grip.tex:SetAllPoints()
+  grip.tex:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+  grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
+  grip:SetScript("OnMouseUp", function()
+    f:StopMovingOrSizing()
+    saved.w, saved.h = math.floor(f:GetWidth() + 0.5), math.floor(f:GetHeight() + 0.5)
+  end)
+  f.grip = grip
 end
 
 function Hub:Build()
   if self.frame then return self.frame end
   local f = UI:Window("Outrider_Hub", "Outrider", W, H, ns.db.char.hub)
   self.frame = f
+  self:TopBar(f)
+  self:Resizer(f)
   local c = f.content
-  f.tabBar = UI:Tabs(c, {}, function(id) Hub:ShowTab(id) end, SIDE)
+  f.tabBar = Sidebar(c, function(id) Hub:ShowTab(id) end)
   f.tabBar:SetPoint("TOPLEFT", 0, 0)
   f.tabBar:SetPoint("BOTTOMLEFT", 0, 0)
   for _, t in ipairs(self.tabs) do self:AddTabButton(t) end
 
   f:SetScript("OnShow", function()
     ns.db.char.hub.shown = true
-    f.tabBar:Select(ns.db.char.hub.tab or "overview")
+    Hub:UpdateWho()
+    f.tabBar:Select(ns.db.char.hub.tab or "home")
   end)
   f:SetScript("OnHide", function() ns.db.char.hub.shown = false end)
   return f
@@ -66,8 +254,8 @@ end
 function Hub:Panel(t)
   if t.panel then return t.panel end
   local p = CreateFrame("Frame", nil, self.frame.content)
-  p:SetPoint("TOPLEFT", SIDE + 12, 0)
-  p:SetPoint("BOTTOMRIGHT", 0, 0)
+  p:SetPoint("TOPLEFT", SIDE + 14, -2)
+  p:SetPoint("BOTTOMRIGHT", -6, 14)
   p:Hide()
   t.panel = p
   if t.build then ns.Safe("hub:build:" .. t.id, t.build, p) end
@@ -102,7 +290,7 @@ end
 local function textLine(p, size, color, y)
   local fs = UI.Text(p, size, color)
   fs:SetPoint("TOPLEFT", 0, y)
-  fs:SetWidth(W - 20)
+  fs:SetWidth(W - SIDE - 40)
   fs:SetJustifyH("LEFT")
   return fs
 end
@@ -275,16 +463,16 @@ Hub:AddTab("tools", L.tools, function(p)
   p.debug = UI:Check(p, "Debug logging", function() return ns.db.global.debug end,
     function(on) ns.db.global.debug = on and true or false end)
   p.debug:SetPoint("TOPLEFT", 0, -66)
-  p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent end,
+  p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent ~= false end,
     function(on) ns.db.char.classAccent = on and true or false end)
   p.accent:SetPoint("TOPLEFT", 0, -90)
   p.probe = UI.Text(p, "small", "muted")
   p.probe:SetPoint("TOPLEFT", 0, -122)
-  p.probe:SetWidth(W - 20)
+  p.probe:SetWidth(W - SIDE - 40)
   p.probe:SetJustifyH("LEFT")
   p.recent = UI.Text(p, "small", "muted")
   p.recent:SetPoint("TOPLEFT", 0, -144)
-  p.recent:SetWidth(W - 20)
+  p.recent:SetWidth(W - SIDE - 40)
   p.recent:SetJustifyH("LEFT")
   function p:Refresh()
     self.errorsBtn.label:SetText("Errors (" .. #ns.Errors.list .. ")")

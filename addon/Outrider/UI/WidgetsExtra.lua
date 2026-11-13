@@ -264,7 +264,7 @@ function UI:WidgetTest()
     w.slider = self:Slider(c, "Volume", 0, 100, 5, function() return val end, function(v) val = v end, "%d%%")
     w.slider:SetPoint("TOPLEFT", 220, -76)
     w.slider:SetWidth(200)
-    w.accent = self:Check(c, "Class color accent", function() return ns.db.char.classAccent end, function(on)
+    w.accent = self:Check(c, "Class color accent", function() return ns.db.char.classAccent ~= false end, function(on)
       ns.db.char.classAccent = on
       ns.Print("class accent %s. /reload to apply.", on and "on" or "off")
     end)
