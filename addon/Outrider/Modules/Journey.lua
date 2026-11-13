@@ -147,7 +147,71 @@ function M:Step(why)
   return route
 end
 
+-- ------------------------------------------------------------ pin tooltip
+-- Gary (2026-11-13): hovering the map marker only said "Map Pin Sharing".
+-- Blizzard's own waypoint pin keeps its tooltip; we add our lines under it:
+-- what the marker is for, the step you're on, distance and time, what's next.
+M.PIN_TEMPLATE = "WaypointLocationPinTemplate"
+
+function M:PinLines()
+  local w = ns.Waypoints.current
+  if not w then return nil end
+  local out = {}
+  local goal = self.goal
+  if goal then
+    out[#out + 1] = { "Outrider: " .. tostring(goal.name), "accent" }
+    if goal.sub and goal.sub ~= "" then out[#out + 1] = { tostring(goal.sub):gsub("|c%x+", ""):gsub("|r", ""), "muted" } end
+  else
+    out[#out + 1] = { "Outrider: " .. tostring(w.title), "accent" }
+  end
+  local d = ns.Waypoints:Distance()
+  if d then
+    out[#out + 1] = { string.format("%d yards away, about %s on foot", math.floor(d + 0.5), ns.Travel.Minutes(d / ns.Travel.RUN)), "text" }
+  end
+  local r = goal and self.route
+  if r and r.steps then
+    out[#out + 1] = { string.format("Now: %s", r.steps[1].text), "text" }
+    if r.steps[2] then out[#out + 1] = { string.format("Then: %s", r.steps[2].text), "muted" } end
+    if #r.steps > 2 then out[#out + 1] = { string.format("%d steps in all, about %s", #r.steps, ns.Travel.Minutes(r.seconds)), "muted" } end
+  end
+  out[#out + 1] = { "Stop the guide on Outrider's Journey page.", "muted" }
+  return out
+end
+
+function M:HookPins()
+  local map = rawget(_G, "WorldMapFrame")
+  if not (map and map.EnumeratePinsByTemplate) then return 0 end
+  local n = 0
+  local ok = pcall(function()
+    for pin in map:EnumeratePinsByTemplate(M.PIN_TEMPLATE) do
+      if not pin.outriderHooked and pin.HookScript then
+        pin.outriderHooked = true
+        pin:HookScript("OnEnter", function()
+          local lines = M.enabled and M:PinLines()
+          local tip = rawget(_G, "GameTooltip")
+          if not (lines and tip and tip:IsShown()) then return end
+          for _, l in ipairs(lines) do
+            local r, g, b = ns.Theme:Color(l[2])
+            tip:AddLine(l[1], r, g, b, true)
+          end
+          tip:Show()
+        end)
+      end
+      n = n + 1
+    end
+  end)
+  if not ok and not self.pinWarned then self.pinWarned = true self:Info("map pin tooltip: could not reach the waypoint pins") end
+  return n
+end
+
 function M:OnEnable()
+  -- the waypoint pin exists once a waypoint is set and the map is open
+  self:On("OTR_WAYPOINT_SET", function(mod) mod:HookPins() end)
+  local map = rawget(_G, "WorldMapFrame")
+  if map and map.HookScript and not M.mapHooked then
+    M.mapHooked = true
+    map:HookScript("OnShow", function() if M.enabled then ns.Safe("journey:pins", M.HookPins, M) end end)
+  end
   local function again(why) return function(mod) if mod.goal then ns.Throttle("journey", 2, function() mod:Step(why) end) end end end
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
     if mod.goal and why == "arrived" and w and w.opts and w.opts.journey then mod:Step("arrived") end

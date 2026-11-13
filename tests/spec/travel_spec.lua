@@ -98,4 +98,18 @@ T.describe("travel", function()
     T.ok(ns.Journey.XP(13, 13) > ns.Journey.XP(10, 13))
     T.eq(ns.Journey.XP(3, 13), math.floor(ns.Journey.XP(3, 3) * 0.1 / 10 + 0.5) * 10)
   end)
+
+  T.it("the map marker's tooltip says what it leads to, the step, distance and what's next", function()
+    local game, ns = session()
+    ns.db.global.travelLinks = { { kind = "learned", from = { mapID = 200, x = 0.5, y = 0.9 }, to = { mapID = 300, x = 0.1, y = 0.1 }, oneWay = true } }
+    ns.Journey:Go({ name = "The Strange Hermit", sub = "quest from Strange Hermit", target = ns.Travel.Point(300, 0.5, 0.5, "Hermit"), seconds = 600 })
+    local text = {}
+    for _, l in ipairs(ns.Journey:PinLines()) do text[#text + 1] = l[1] end
+    local all = table.concat(text, " | ")
+    T.contains(all, "Outrider: The Strange Hermit")
+    T.contains(all, "quest from Strange Hermit")
+    T.contains(all, "yards away")
+    T.contains(all, "Now: Go to")
+    T.contains(all, "Then: Take the ride you took before")
+  end)
 end)
