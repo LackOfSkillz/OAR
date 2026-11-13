@@ -574,6 +574,7 @@ function M.new(opts)
   local function u(unit) return game.units and game.units[unit] end
   base.UnitHealth = function(unit) return u(unit) and u(unit).hp end
   base.UnitHealthMax = function(unit) return u(unit) and u(unit).hpMax end
+  base.UnitAttackSpeed = function(unit) return u(unit) and u(unit).attackSpeed end
   base.UnitPower = function(unit) return u(unit) and u(unit).focus end
   base.UnitPowerMax = function(unit) return u(unit) and u(unit).focusMax end
   base.GetPetExperience = function() local p = u("pet") if p then return p.xp or 0, p.xpMax or 0 end return 0, 0 end

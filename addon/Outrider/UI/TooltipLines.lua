@@ -14,7 +14,7 @@ local C = ns.Compat
 local TL = { providers = { item = {}, unit = {} }, hooked = {} }
 ns.TooltipLines = TL
 
-TL.ORDER = { verdict = 10, value = 20, owned = 30, needed = 40, beast = 50, target = 60 }
+TL.ORDER = { verdict = 10, value = 20, owned = 30, needed = 40, beast = 50, rarefight = 55, target = 60 }
 local ENUM = { item = "Enum.TooltipDataType.Item", unit = "Enum.TooltipDataType.Unit" }
 
 function TL:Add(kind, key, owner, fn)
