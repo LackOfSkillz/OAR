@@ -163,7 +163,7 @@ end
 ns.Hub:AddTab("journey", "Journey", function(p)
   local F = ns.Finder
   p.kind, p.text = "all", ""
-  p.search = UI:SearchBox(p, 220, "Search: item, quest, rare, NPC, place...", function(t) p.text = t p:Refresh() end)
+  p.search = UI:SearchBox(p, 220, "Search anything", function(t) p.text = t p:Refresh() end)
   p.search:SetPoint("TOPLEFT", 0, 0)
   p.sortBtn = UI:Button(p, "Sort: nearest", 150, function()
     local cur, nxt = p.sort or F.DEFAULT_SORT[p.kind], 1
@@ -182,15 +182,15 @@ ns.Hub:AddTab("journey", "Journey", function(p)
     p.kindBtns[k], prev = b, b
   end
   p.list = UI:ScrollList(p, {
-    rows = 9, rowHeight = 22,
+    rows = 16, rowHeight = 22,
     render = function(row, e) row.text:SetText(F.Line(e)) end,
     onClick = function(e) p:ShowRoute(e) end,
   })
   p.list:SetPoint("TOPLEFT", p.kindBtns.all, "BOTTOMLEFT", 0, -6)
-  p.list:SetWidth(600)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0) -- as wide as the window
   p.route = UI.Text(p, "small", "text")
   p.route:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -6)
-  p.route:SetWidth(600)
+  p.route:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   p.route:SetJustifyH("LEFT")
   p.go = UI:Button(p, "Guide me", 100, function() if p.current then M:Go(p.current) end end)
   p.go:SetPoint("BOTTOMLEFT", 0, 0)

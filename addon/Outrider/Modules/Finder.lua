@@ -93,7 +93,7 @@ function P.gear(out)
   for _, c in ipairs(ns.Nearby and ns.Nearby:Candidates({ world = true }) or {}) do
     local w = c.where or {}
     add(out, "gear", c.name, w.mapID, w.x, w.y, { gain = c.pct, level = c.reqLevel, itemID = c.itemID,
-      sub = ns.Nearby.Describe(c):gsub("^%+%d+%%%s+", ""), note = w.note })
+      sub = ns.Nearby.Describe(c):match("|cffbbbbbb(.-)|r") or "", note = w.note })
   end
 end
 

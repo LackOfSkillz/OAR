@@ -17,7 +17,7 @@ ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 19 -- visible module rows; the list scrolls with the mouse wheel
-local W, H = 900, 600        -- starting size; the window is resizable (Gary, 2026-11-13)
+local W, H = 900, 640        -- starting size; the window is resizable (Gary, 2026-11-13)
 local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1400, 1000
 local SIDE = 160             -- grouped sidebar on the left; pages to its right
 
@@ -95,17 +95,26 @@ local function Sidebar(parent, onSelect)
   local bar = CreateFrame("Frame", nil, parent, Theme:BackdropTemplate())
   bar:SetWidth(SIDE)
   Theme:ApplyPanel(bar, "panel")
-  bar.buttons, bar.order, bar.heads = {}, {}, {}
+  if bar.SetClipsChildren then bar:SetClipsChildren(true) end -- nothing spills out of the window
+  bar.buttons, bar.order, bar.heads, bar.scroll = {}, {}, {}, 0
+  -- the list scrolls with the mouse wheel when it is taller than the window
+  bar:EnableMouseWheel(true)
+  bar:SetScript("OnMouseWheel", function(self, delta)
+    local over = math.max(0, (self.listHeight or 0) - ((self:GetHeight() or 0) - 8))
+    self.scroll = math.max(0, math.min(over, self.scroll - delta * 40))
+    self:SetOrder(self.order, self.groups)
+  end)
   function bar:Add(id, title, icon)
     local b = CreateFrame("Button", nil, self)
-    b:SetSize(SIDE - 8, 22)
+    b:SetSize(SIDE - 8, 20)
     b.bg = b:CreateTexture(nil, "BACKGROUND")
     b.bg:SetAllPoints()
     b.bg:SetColorTexture(Theme:Color("raised"))
     b.bg:Hide()
     local hl = b:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
-    hl:SetColorTexture(Theme:Color("raised"))
+    local hr, hg, hb = Theme:Color("accent")
+    hl:SetColorTexture(hr, hg, hb, 0.15) -- see-through, or the hovered row looks blank
     b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetSize(16, 16)
     b.icon:SetPoint("LEFT", 6, 0)
@@ -127,12 +136,15 @@ local function Sidebar(parent, onSelect)
     return h
   end
   function bar:SetOrder(ids, groups)
+    self.groups = groups or self.groups
+    groups = self.groups
     local seen, order = {}, {}
     for _, id in ipairs(ids) do if self.buttons[id] and not seen[id] then order[#order + 1] = id seen[id] = true end end
     for _, id in ipairs(self.order) do if not seen[id] then order[#order + 1] = id end end
     self.order = order
     for _, h in ipairs(self.heads) do h:Hide() end
-    local y, last, nh = -6, nil, 0
+    local y, last, nh = -4 + (self.scroll or 0), nil, 0
+    local top = y
     for _, id in ipairs(order) do
       local b = self.buttons[id]
       local g = groups and groups[id] or ""
@@ -140,14 +152,15 @@ local function Sidebar(parent, onSelect)
         nh = nh + 1
         local h = head(self, nh, g)
         h:ClearAllPoints()
-        h:SetPoint("TOPLEFT", 10, y - 6)
-        y = y - 22
+        h:SetPoint("TOPLEFT", 10, y - 4)
+        y = y - 18
       end
       last = g
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", 4, y)
-      y = y - 23
+      y = y - 21
     end
+    self.listHeight = top - y
   end
   function bar:Select(id)
     if not self.buttons[id] then id = self.order[1] end

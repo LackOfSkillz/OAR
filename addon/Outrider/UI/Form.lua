@@ -49,7 +49,10 @@ function UI:Form(parent, rows)
       local src = r[2]
       t:SetText(type(src) == "function" and "" or src)
       if type(src) == "function" then scroll.items[#scroll.items + 1] = { note = t, fn = src } end
-      place(t, r[3] or ROW.note)
+      -- a long note takes the lines it needs instead of running into the next row
+      local h = type(src) == "string" and t.GetStringHeight and t:GetStringHeight() or nil
+      if type(h) ~= "number" then h = nil end
+      place(t, r[3] or math.max(ROW.note, (h or 0) + 6))
     elseif kind == "check" then
       local chk = UI:Check(c, r[2], r[3], r[4])
       if r[5] then chk.note:SetText(r[5]) end

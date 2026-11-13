@@ -26,11 +26,13 @@ function UI:ScrollList(parent, opts)
     row:SetPoint("RIGHT", list, "RIGHT", -2, 0)
     local hl = row:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
-    hl:SetColorTexture(Theme:Color("raised"))
+    local hr, hg, hb = Theme:Color("accent")
+    hl:SetColorTexture(hr, hg, hb, 0.15) -- see-through: the highlight layer draws over the text
     row.text = UI.Text(row, "normal", "text")
     row.text:SetPoint("LEFT", 6, 0)
     row.text:SetPoint("RIGHT", -6, 0)
     row.text:SetJustifyH("LEFT")
+    if row.text.SetWordWrap then row.text:SetWordWrap(false) end -- long lines end in "..." instead of spilling
     if opts.build then opts.build(row) end
     row:SetScript("OnClick", function(self, button)
       if opts.onClick and self.item ~= nil then ns.Safe("list:click", opts.onClick, self.item, self.index, button) end
@@ -219,6 +221,9 @@ function UI:SearchBox(parent, width, placeholder, onChange)
   Theme:ApplyPanel(box, "raised")
   box.hint = UI.Text(box, "normal", "muted")
   box.hint:SetPoint("LEFT", 6, 0)
+  box.hint:SetPoint("RIGHT", -6, 0) -- the hint stays inside the box
+  box.hint:SetJustifyH("LEFT")
+  if box.hint.SetWordWrap then box.hint:SetWordWrap(false) end
   box.hint:SetText(placeholder or "Search")
   local key = "search:" .. tostring(box)
   box:SetScript("OnTextChanged", function(self)
