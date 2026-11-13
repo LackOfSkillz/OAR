@@ -316,6 +316,10 @@ function M:AssistedCombat()
 end
 
 function M:OnEnable()
+  -- One time: Gary asked to turn Wing Clip back on (2026-11-12). After this,
+  -- /ride fight wingclip on|off is his to change again.
+  local s = self:Settings()
+  if not s.wingclipOn20261112 then s.wingclipOn20261112, s.wingclip = true, true end
   local function later(why) ns.Throttle("hunterfight", 2, function() M:Update(why) end) end
   self:On("PLAYER_ENTERING_WORLD", function(mod, _, isLogin)
     if not mod:Settings().auto then return end
