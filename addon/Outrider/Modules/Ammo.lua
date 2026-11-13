@@ -41,7 +41,24 @@ function M:Evaluate(why)
     local link = C.Call("GetInventoryItemLink", "player", self.SLOT)
     self:Info("ammo at login: %s (slot %d item %s)", tostring(n), self.SLOT, tostring(link and link:match("item:(%d+)")))
   end
-  if not n or (n == 0 and not C.Call("GetInventoryItemLink", "player", self.SLOT)) then return end
+  if not n then return end
+  -- Forever reads the count but never a link for the ammo slot ("slot 0 item
+  -- nil" at 38 arrows, 2026-11-13), so 0 means out, not "no quiver": say so
+  -- once and point at the nearest vendor that sells ammo.
+  if n == 0 then
+    if (self.last or 0) > 0 then -- ran out while playing (at login, Home's to-do list says "Buy ammo")
+      if not self.warned.out then
+        self.warned.out = true
+        local ok, msg = ns.Nearest and ns.Nearest:Go("ammo")
+        ns.Toast:Show({ title = "Out of ammo", color = "bad", duration = 12,
+          text = ok and ("Arrow set to " .. tostring(msg)) or "Buy arrows at a vendor that sells ammo." })
+        self:Info("out of ammo (%s)", tostring(msg))
+      end
+    end
+    self.last = 0
+    return
+  end
+  self.warned.out = nil
   local s = self:Settings()
   if n < s.critical and not self.warned.critical then
     self.warned.critical, self.warned.low = true, true

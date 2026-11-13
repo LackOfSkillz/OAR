@@ -52,7 +52,7 @@ function M:List()
   local ammo = ns.Modules:Get("Ammo")
   if ns.PlayerClass() == "HUNTER" and ammo and ammo.enabled then
     local n = ammo:Count()
-    if n and n < ammo:Settings().low then out[#out + 1] = { text = string.format("Buy ammo (%d left)", n), kind = "vendor" } end
+    if n and n < ammo:Settings().low then out[#out + 1] = { text = string.format("Buy ammo (%d left)", n), kind = "ammo" } end
   end
   local level = C.Call("UnitLevel", "player") or 1
   local trainAt = level - level % 2

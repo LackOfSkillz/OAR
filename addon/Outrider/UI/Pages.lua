@@ -19,6 +19,7 @@ local function onoff(v) return v and "on" or "off" end
 local NEAREST = { { "Inn", "inn" }, { "Vendor", "vendor" }, { "Repair", "repair" }, { "Flight", "flight" },
   { "Trainer", "trainer" }, { "Mail", "mail" }, { "Bank", "bank" }, { "Auction", "ah" }, { "Stable", "stable" },
   { "Spirit healer", "spirit" } }
+if ns.PlayerClass and ns.PlayerClass() == "HUNTER" then NEAREST[#NEAREST + 1] = { "Ammo", "ammo" } end
 
 local function card(parent, title, x, y, w, h)
   local f = CreateFrame("Frame", nil, parent, Theme:BackdropTemplate())
@@ -41,7 +42,10 @@ ns.Hub:AddTab("home", "Home", function(p)
   p.near = card(p, "Nearest", 0, 0, W2 * 2 + 10, 68)
   local prev
   for i, n in ipairs(NEAREST) do
-    local b = UI:Button(p.near, n[1], 84, function() ns.Nearest:Go(n[2]) end)
+    local b = UI:Button(p.near, n[1], 84, function()
+      local _, msg = ns.Nearest:Go(ns.Nearest.ALIASES[n[2]] or n[2]) -- "inn" means innkeeper, and so on
+      ns.Print(tostring(msg))
+    end)
     if i == 1 then b:SetPoint("TOPLEFT", 8, -24) elseif i == 7 then b:SetPoint("TOPLEFT", 8, -46)
     else b:SetPoint("LEFT", prev, "RIGHT", 4, 0) end
     b:SetHeight(20)
@@ -119,6 +123,7 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
       { "Flight", Run("near flight") }, { "Trainer", Run("near trainer") } } },
     { "buttons", { { "Mail", Run("near mail") }, { "Bank", Run("near bank") }, { "Auction", Run("near ah") },
       { "Stable", Run("near stable") }, { "Spirit healer", Run("near spirit") } } },
+    { "buttons", { { "Ammo vendor", Run("near ammo") } } },
     { "check", "Arrow to the spirit healer when you die", function() return set("Nearest").spiritOnDeath end,
       function(on) set("Nearest").spiritOnDeath = on end },
     { "header", "Map and minimap pins" },

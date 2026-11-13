@@ -19,6 +19,7 @@ M.ALIASES = {
   vendor = "vendor", repair = "repair", trainer = "trainer", mail = "mailbox", mailbox = "mailbox",
   bank = "bank", ah = "auction", auction = "auction", stable = "stable_master",
   inn = "innkeeper", innkeeper = "innkeeper", guild = "guild_master", tabard = "tabard",
+  ammo = "ammo", arrows = "ammo", bullets = "ammo", -- a vendor whose goods include ammo (POICapture)
 }
 
 function M:OnEnable()
@@ -41,7 +42,12 @@ function M:Find(kind)
       x = p.x, y = p.y, name = p.name, faction = p.faction } end
   end
   for _, p in ipairs(candidates) do
-    if p.kind == kind and (p.faction == nil or p.faction == faction) then
+    local match = p.kind == kind
+    if kind == "ammo" then
+      match = false
+      for _, g in ipairs(p.goods or {}) do if g == "ammo" then match = true end end
+    end
+    if match and (p.faction == nil or p.faction == faction) then
       local cont, wx, wy = W.WorldPos(p.mapID, p.x, p.y)
       if wx and cont == here then
         local d = math.sqrt((wx - px) ^ 2 + (wy - py) ^ 2)
@@ -71,9 +77,9 @@ function M:Activity()
   return "/ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild"
 end
 
-ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild>  waypoint to the nearest one", function(arg)
+ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo>  waypoint to the nearest one", function(arg)
   local kind = M.ALIASES[(arg or ""):lower()]
-  if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild") return end
+  if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo") return end
   local _, msg = M:Go(kind)
   ns.Print(msg)
 end)
