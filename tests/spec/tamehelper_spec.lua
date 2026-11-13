@@ -72,4 +72,18 @@ T.describe("tame macro case repair", function()
     game:slash("tamemacro Mystmane")
     T.eq(game.macros[1].name, "Mystmane")
   end)
+
+  T.it("a misspelled tame macro is fixed at login, and a typo in the command is corrected", function()
+    local game = mock.new({ macros = { { name = "Mystmade", icon = "x", perChar = true,
+      body = "#showtooltip\n/stopmacro [channeling]\n/cleartarget\n/targetexact Mystmade\n/cast Tame Beast" } } })
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.global.discovered = { npcs = { [259388] = { name = "Mystmane", mapID = 2521 } }, recent = {} }
+    ns.Modules:Get("TameHelper"):FixTypos()
+    T.eq(game.macros[1].name, "Mystmane")
+    T.contains(game.macros[1].body, "/targetexact Mystmane")
+    game:slash("tamemacro Mystmnae")
+    T.contains(game:chatText(), "using Mystmane")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
