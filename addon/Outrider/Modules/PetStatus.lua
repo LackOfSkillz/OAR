@@ -249,7 +249,13 @@ function M:PlaceFeed()
   local cx, cy = f:GetCenter()
   if not cx then return end
   local w, h = f:GetWidth() or 220, f:GetHeight() or 120
-  ns.SecureButtons:Place(self.feed, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 8, cy - h / 2 + 8)
+  if self:Settings().collapsed then
+    -- folded: Feed sits in the header, left of the up/down arrow (Gary,
+    -- 2026-11-13: it covered the arrow, so the panel couldn't be opened)
+    ns.SecureButtons:Place(self.feed, "TOPRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 30, cy + h / 2 - 5)
+  else
+    ns.SecureButtons:Place(self.feed, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 8, cy - h / 2 + 8)
+  end
   ns.SecureButtons:Raise(self.feed, "FULLSCREEN") -- above the panel (DIALOG), or the panel eats the click
   ns.SecureButtons:SetShown(self.feed, true)
 end
@@ -269,7 +275,7 @@ function M:SetFood()
 end
 
 -- Show or hide the pet panel (and its Feed button), remembered per character.
-M.OPEN_H, M.HEADER_H = 200, 28
+M.OPEN_H, M.HEADER_H = 200, 34 -- folded height fits Feed and the arrow side by side
 
 -- Fold to the header bar or open again. The header's top-left corner stays
 -- put: the panel is pinned by TOPLEFT before its height changes.
@@ -287,7 +293,7 @@ function M:ApplyCollapsed()
   f.content:SetShown(not s.collapsed)
   f.close.arrow:SetTexture(s.collapsed and "Interface\\Buttons\\Arrow-Down-Up" or "Interface\\Buttons\\Arrow-Up-Up")
   if self.feed then
-    if s.collapsed then ns.SecureButtons:SetShown(self.feed, false) else self:PlaceFeed() end
+    self:PlaceFeed()
   end
 end
 
@@ -364,7 +370,7 @@ function M:Refresh(why)
     .. (#yes > 0 and ("\nEats: " .. table.concat(yes, ", ")) or ""))
   self:CheckUnhappy(d)
   if not f:IsShown() then f:Show() self:ApplyCollapsed() end
-  if not self:Settings().collapsed then self:PlaceFeed() end
+  self:PlaceFeed()
 end
 
 function M:CheckUnhappy(d)
