@@ -111,3 +111,4 @@ Combat timing: `PLAYER_REGEN_DISABLED` fires while `InCombatLockdown()` is still
 
 ## C_TradeSkillUI.GetRecipeInfo fields (measured 2026-11-12, Alchemy/Herbalism window)
 alwaysUsesLowestQuality, canCreateMultiple, canSkillUp, categoryID, craftable, disabled, favorite, firstCraft, hasSingleItemOutput, hyperlink, icon, isDummyRecipe, isEnchantingRecipe, isGatheringRecipe, isRecraft, isSalvageRecipe, itemLevel, learned, maxTrivialLevel, name, numSkillUps, recipeID, relativeDifficulty, skillLineAbilityID, supportsCraftingStats, supportsQualities. **No numAvailable**: Crafter asks GetCraftableCount, else counts reagents in the bags.
+| Player race | UnitRace on Khreos: "High Order Skyborne", file "Skyborne", raceID 95 (Alliance). Questie's faction-wide race masks predate it, so NPCPack.RaceOK treats a mask naming all original races of your faction as faction-wide | 2026-11-13 |
