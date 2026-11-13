@@ -219,6 +219,15 @@ function M:BuildPins(mapID)
     for _, e in ipairs(ns.Data:All("rare")) do
       if e.mapID == mapID and e.spawns and e.spawns[1] then addRare(e.npcID, e.name, e.spawns[1].x, e.spawns[1].y) end
     end
+    -- Every rare and rare elite in the creature pack (Gary, 2026-11-13: "how
+    -- was I supposed to find that rare elite?"), at its first spawn spot.
+    local mobs = ns.Finder and ns.Finder:Mobs()
+    for _, r in ipairs(mobs and mobs[mapID] or {}) do
+      local rank, pts = r[5], r[6]
+      if (rank == 2 or rank == 4) and pts and pts[1] then
+        addRare(r[1], string.format("%s (%s, level %d)", r[2], rank == 2 and "rare elite" or "rare", r[4]), pts[1], pts[2])
+      end
+    end
   end
   table.sort(out, function(a, b) return a.id < b.id end)
   return out
