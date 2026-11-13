@@ -194,6 +194,10 @@ function M:BuildPins(mapID)
       end
     end
   end
+  -- Herb and ore spawns from the node pack, for what this character can gather
+  if ns.NodePack then
+    for _, pin in ipairs(ns.NodePack:Pins(mapID, hidden)) do out[#out + 1] = pin end
+  end
   if not hidden.rare then
     local seen = {}
     local function addRare(npcID, name, x, y)

@@ -76,6 +76,7 @@ Modules\Merchant.lua
 Modules\Fishing.lua
 Modules\LootLog.lua
 Modules\HerbHelper.lua
+Modules\NodePack.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua
 Modules\SkillUp.lua

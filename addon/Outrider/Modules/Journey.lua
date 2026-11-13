@@ -177,7 +177,7 @@ ns.Hub:AddTab("journey", "Journey", function(p)
   p.kindBtns = {}
   local prev
   for _, k in ipairs(F.KINDS) do
-    local b = UI:Button(p, F.KIND_LABEL[k], 68, function() p.kind, p.sort = k, nil p:Refresh() end)
+    local b = UI:Button(p, F.KIND_LABEL[k], 62, function() p.kind, p.sort = k, nil p:Refresh() end)
     if prev then b:SetPoint("LEFT", prev, "RIGHT", 4, 0) else b:SetPoint("TOPLEFT", p.search, "BOTTOMLEFT", 0, -6) end
     p.kindBtns[k], prev = b, b
   end

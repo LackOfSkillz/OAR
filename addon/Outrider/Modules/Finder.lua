@@ -29,13 +29,13 @@ ns.Finder = M
 
 M.MOBS_ADDON = "Outrider_Data_Mobs"
 M.CAP = 300
-M.KINDS = { "all", "zone", "gear", "item", "quest", "rare", "mob", "npc", "place" }
-M.KIND_LABEL = { all = "All", zone = "Zones", gear = "Gear", item = "Items", quest = "Quests", rare = "Rares", mob = "Creatures",
+M.KINDS = { "all", "zone", "gear", "item", "quest", "rare", "mob", "node", "npc", "place" }
+M.KIND_LABEL = { all = "All", zone = "Zones", node = "Herbs, ore", gear = "Gear", item = "Items", quest = "Quests", rare = "Rares", mob = "Creatures",
   npc = "NPCs", place = "Places" }
 M.SORTS = { "nearest", "xpmin", "xp", "gain", "level", "name", "zone" }
 M.SORT_LABEL = { nearest = "nearest", xpmin = "XP per minute", xp = "most XP", gain = "best gear", level = "your level",
   name = "name", zone = "zone" }
-M.DEFAULT_SORT = { zone = "xp", gear = "gain", quest = "xpmin", item = "nearest", rare = "nearest", mob = "level", npc = "nearest",
+M.DEFAULT_SORT = { node = "nearest", zone = "xp", gear = "gain", quest = "xpmin", item = "nearest", rare = "nearest", mob = "level", npc = "nearest",
   place = "nearest", all = "nearest" }
 local RANK = { [1] = "elite", [2] = "rare elite", [3] = "boss", [4] = "rare" }
 
@@ -211,6 +211,23 @@ function P.npc(out, text)
   end
 end
 
+-- Herbs and ore you can gather (node pack): one line per node type per zone,
+-- at its spawn nearest to you when it's your zone.
+function P.node(out)
+  local NP = ns.NodePack
+  if not (NP and NP.enabled and NP:Load()) then return end
+  local here, px, py = C.PlayerPosition("player")
+  for mapID in pairs(NP.maps) do
+    for _, node in ipairs(NP:For(mapID)) do
+      local x, y, n = NP:Nearest(mapID == here and px or nil, mapID == here and py or nil, mapID, node)
+      local g = node.kind == "herb" and ns.Data:Get("herb", node.name)
+      add(out, "node", node.name, mapID, x, y, { level = g and g.skill or nil,
+        sub = string.format("%s, %d spots in this zone%s", node.kind == "herb" and "herb" or "ore", n,
+          g and g.skill and (", skill " .. g.skill) or "") })
+    end
+  end
+end
+
 function P.place(out)
   local mine = myFaction()
   local d = met()
@@ -229,7 +246,7 @@ end
 
 -- ---------------------------------------------------------------- search
 local ALL_BASE = { "zone", "gear", "quest", "rare", "place" }      -- "All" with no search text
-local ALL_TEXT = { "zone", "gear", "item", "quest", "rare", "mob", "npc", "place" }
+local ALL_TEXT = { "zone", "gear", "item", "quest", "rare", "mob", "node", "npc", "place" }
 
 local SORTERS = {
   nearest = function(a, b) return (a.seconds or 1e12) < (b.seconds or 1e12) end,
@@ -288,7 +305,7 @@ function M:Find(opts)
   return out, total, sort
 end
 
-local KIND_TAG = { zone = "zone", gear = "gear", item = "item", quest = "quest", rare = "RARE", mob = "creature", npc = "npc", place = "place" }
+local KIND_TAG = { node = "node", zone = "zone", gear = "gear", item = "item", quest = "quest", rare = "RARE", mob = "creature", npc = "npc", place = "place" }
 
 function M.Line(e)
   local parts = {}
