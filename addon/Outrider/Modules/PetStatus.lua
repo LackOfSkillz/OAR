@@ -5,8 +5,13 @@
 --   * happiness shows only when an API for it exists; meanwhile the module
 --     logs the pet's buffs once per session so Claude can see how Forever
 --     represents happiness (auto-collected, no typing);
---   * Feed is a secure button with "/cast Feed Pet": Gary clicks it, then
---     clicks the food. No diet guessing.
+--   * Feed (Gary, 2026-11-13: "if I click feed it should feed my pet"): a
+--     secure button with "/cast Feed Pet" + "/use <food>", so one click feeds.
+--     Forever has no GetPetFoodTypes, so the diet is learned: a Feed Pet cast
+--     after a click marks that food as eaten by this pet family, a red error
+--     right after marks it refused; the next click picks another food.
+--   * more about the pet: abilities with autocast, attack speed and damage,
+--     armor, XP to the next level, and the learned diet.
 -- The secure Feed button is placed against UIParent at the panel's position,
 -- never anchored to the panel (a frame with a secure frame anchored to it is
 -- protected; moving it got Outrider blocked once).
@@ -21,6 +26,7 @@ local M = ns:NewModule("PetStatus", {
   classes = { HUNTER = true },
   defaults = { pos = {}, warnUnhappy = true },
 })
+ns.PetStatus = M
 
 local HAPPY = { [1] = "Unhappy", [2] = "Content", [3] = "Happy" }
 
@@ -31,6 +37,83 @@ function M:OnEnable()
   self:On("UNIT_POWER_UPDATE", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
   self:On("UNIT_AURA", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Update("login") end)
+  self:On("BAG_UPDATE_DELAYED", function(mod) mod:Update() end)
+  self:On("UNIT_SPELLCAST_SUCCEEDED", self.OnCast)
+  self:On("UI_ERROR_MESSAGE", self.OnError)
+end
+
+-- ------------------------------------------------------------------ diet
+-- ns.db.global.petDiet[family] = { yes = { [food] = true }, no = { [food] = true } }
+function M:Diet(family)
+  local g = ns.db.global
+  g.petDiet = type(g.petDiet) == "table" and g.petDiet or {}
+  local key = tostring(family or "?")
+  g.petDiet[key] = g.petDiet[key] or { yes = {}, no = {} }
+  return g.petDiet[key]
+end
+
+-- Foods in the bags (item spell "Food"; conjured food is skipped: pets don't eat it).
+function M:Foods()
+  local out = {}
+  for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
+    for slot = 1, C.NumSlots(bag) do
+      local count, id = C.ItemCountAt(bag, slot)
+      if id then
+        local spell = C.Call("C_Item.GetItemSpell", id)
+        spell = C.Readable(spell)
+        if spell == "Food" or spell == "Refreshment" then
+          local info = C.ItemInfo(id)
+          local name = info and info.name
+          if name and not name:find("Conjured", 1, true) then
+            out[name] = (out[name] or 0) + (count or 1)
+          end
+        end
+      end
+    end
+  end
+  return out
+end
+
+-- The food to offer: one this family is known to eat (biggest stack), else
+-- one not yet refused (biggest stack). Returns name, count or nil.
+function M:PickFood(family)
+  local diet, foods = self:Diet(family), self:Foods()
+  local best, bestN, known
+  for name, n in pairs(foods) do
+    if not diet.no[name] then
+      local k = diet.yes[name] and 1 or 0
+      if not best or k > known or (k == known and n > bestN) then best, bestN, known = name, n, k end
+    end
+  end
+  return best, bestN
+end
+
+function M:OnCast(_, unit, _, spellID)
+  if unit ~= "player" or not self.offered then return end
+  local name = C.SpellName(spellID)
+  if name == "Feed Pet" and (C.Call("GetTime") or 0) - self.offered.t < 5 then
+    local diet = self:Diet(self.offered.family)
+    if not diet.yes[self.offered.food] then
+      diet.yes[self.offered.food] = true
+      self:Info("pet diet: %s eats %s", tostring(self.offered.family), self.offered.food)
+    end
+    self.offered = nil
+  end
+end
+
+-- A red error right after a Feed click: this food was refused (logged with
+-- the client's own words, so the wording can be checked).
+function M:OnError(_, _, message)
+  local o = self.offered
+  local msg = C.Readable(message)
+  if not o or type(msg) ~= "string" or (C.Call("GetTime") or 0) - o.t > 3 then return end
+  self:Info("pet feed refused (%s): %s", o.food, msg)
+  local low = msg:lower()
+  if low:find("like", 1, true) or low:find("food", 1, true) or low:find("diet", 1, true) or low:find("eat", 1, true) then
+    self:Diet(o.family).no[o.food] = true
+    self:Update()
+  end
+  self.offered = nil
 end
 
 function M:OnDisable()
@@ -60,6 +143,11 @@ function M:Read()
   -- raw (possibly secret) values, only ever passed to SetText
   d.rawHp, d.rawFocus = C.Call("UnitHealth", "pet"), C.Call("UnitPower", "pet")
   d.xp, d.xpMax = C.Call("GetPetExperience")
+  d.speed = C.Readable(C.Call("UnitAttackSpeed", "pet"))
+  local lo, hi = C.Call("UnitDamage", "pet")
+  d.dmgLo, d.dmgHi = C.Readable(lo), C.Readable(hi)
+  local _, armor = C.Call("UnitArmor", "pet")
+  d.armor = C.Readable(armor)
   d.happiness = C.Call("GetPetHappiness")
   d.npcID = C.UnitNpcID("pet")
   return d
@@ -79,6 +167,20 @@ function M:Auras()
   return out
 end
 
+-- The pet's own abilities from its action bar (not Attack/Follow/Stay, which
+-- are "tokens"), with "auto" when autocast is on.
+function M:Abilities()
+  local out = {}
+  for i = 1, (rawget(_G, "NUM_PET_ACTION_SLOTS") or 10) do
+    local name, _, isToken, _, autoAllowed, autoOn = C.Call("GetPetActionInfo", i)
+    name = C.Readable(name)
+    if type(name) == "string" and not isToken then
+      out[#out + 1] = name .. ((autoAllowed and autoOn) and " (auto)" or "")
+    end
+  end
+  return out
+end
+
 -- Put a value on screen whether it is plain or secret.
 function M.ShowRaw(fs, v)
   if v == nil then fs:SetText("?") return end
@@ -89,7 +191,7 @@ end
 function M:Build()
   if self.frame then return self.frame end
   local s = self:Settings()
-  local f = UI:Window("Outrider_PetStatus", "Pet", 220, 120, s.pos)
+  local f = UI:Window("Outrider_PetStatus", "Pet", 260, 186, s.pos)
   f.close:Hide()
   local c = f.content
   f.line1 = UI.Text(c, "normal", "text") f.line1:SetPoint("TOPLEFT", 0, 0)
@@ -104,6 +206,11 @@ function M:Build()
   f.focusLabel = UI.Text(c, "small", "muted") f.focusLabel:SetPoint("LEFT", f.hpMax, "RIGHT", 10, 0) f.focusLabel:SetText("Focus")
   f.focusVal = UI.Text(c, "small", "text") f.focusVal:SetPoint("LEFT", f.focusLabel, "RIGHT", 4, 0)
   f.line4 = UI.Text(c, "small", "text") f.line4:SetPoint("TOPLEFT", 0, -50)
+  f.fight = UI.Text(c, "small", "muted") f.fight:SetPoint("TOPLEFT", 0, -66)
+  f.skills = UI.Text(c, "small", "text") f.skills:SetPoint("TOPLEFT", 0, -82) f.skills:SetWidth(236)
+  f.skills:SetJustifyH("LEFT")
+  f.diet = UI.Text(c, "small", "muted") f.diet:SetPoint("TOPLEFT", 0, -112) f.diet:SetWidth(170)
+  f.diet:SetJustifyH("LEFT")
   f:HookScript("OnDragStart", function() if M.feed and not C.InCombat() then ns.SecureButtons:SetShown(M.feed, false) end end)
   f:HookScript("OnDragStop", function() M:PlaceFeed() end)
   self.frame = f
@@ -117,14 +224,34 @@ function M:PlaceFeed()
   if not self.feed then
     self.feed = ns.SecureButtons:Acquire("PetStatus")
     if not self.feed then return end
-    ns.SecureButtons:SetMacro(self.feed, "/cast Feed Pet")
-    ns.SecureButtons:SetLabel(self.feed, "Feed")
+    -- remember which food this click offered, to learn the diet (a plain hook,
+    -- the secure click itself is untouched)
+    if self.feed.HookScript then
+      self.feed:HookScript("PostClick", function()
+        if M.food then M.offered = { food = M.food, family = M.family, t = C.Call("GetTime") or 0 } end
+      end)
+    end
   end
+  self:SetFood()
   local cx, cy = f:GetCenter()
   if not cx then return end
   local w, h = f:GetWidth() or 220, f:GetHeight() or 120
   ns.SecureButtons:Place(self.feed, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 8, cy - h / 2 + 8)
   ns.SecureButtons:SetShown(self.feed, true)
+end
+
+-- Write the Feed button's macro for the food to offer (out of combat; the
+-- secure button waits for combat to end).
+function M:SetFood()
+  if not self.feed then return end
+  local food, n = self:PickFood(self.family)
+  local text = food and ("/cast Feed Pet\n/use " .. food) or "/cast Feed Pet"
+  if text ~= self.feedText then
+    self.feedText, self.food = text, food
+    ns.SecureButtons:SetMacro(self.feed, text)
+    ns.SecureButtons:SetLabel(self.feed, food and "Feed" or "Feed (pick food)")
+  end
+  self.foodCount = n
 end
 
 function M:Refresh(why)
@@ -147,6 +274,27 @@ function M:Refresh(why)
   f.hpMax:SetText("/ " .. tostring(d.hpMax or "?"))
   M.ShowRaw(f.focusVal, d.rawFocus)
   f.line4:SetText(d.happiness and ("Happiness: " .. (HAPPY[d.happiness] or tostring(d.happiness))) or "")
+  self.family = d.family
+  if d.xp and d.xpMax and d.xpMax > 0 then
+    f.line2:SetText(string.format("XP %d / %d (%.0f%%), %d to level %d", d.xp, d.xpMax, d.xp / d.xpMax * 100,
+      d.xpMax - d.xp, (tonumber(d.level) or 0) + 1))
+  end
+  local fight = {}
+  if type(d.dmgLo) == "number" and type(d.dmgHi) == "number" then
+    fight[#fight + 1] = string.format("Hits %d-%d", math.floor(d.dmgLo), math.floor(d.dmgHi + 0.5))
+  end
+  if type(d.speed) == "number" then fight[#fight + 1] = string.format("every %.1fs", d.speed) end
+  if type(d.armor) == "number" then fight[#fight + 1] = string.format("armor %d", d.armor) end
+  f.fight:SetText(table.concat(fight, ", "))
+  local skills = self:Abilities()
+  f.skills:SetText(#skills > 0 and ("Abilities: " .. table.concat(skills, ", ")) or "")
+  local diet = self:Diet(d.family)
+  local yes = {}
+  for food in pairs(diet.yes) do yes[#yes + 1] = food end
+  table.sort(yes)
+  local food = self:PickFood(d.family)
+  f.diet:SetText((food and ("Feeds: " .. food .. (self.foodCount and (" (" .. self.foodCount .. ")") or "")) or "No food it eats in your bags")
+    .. (#yes > 0 and ("\nEats: " .. table.concat(yes, ", ")) or ""))
   self:CheckUnhappy(d)
   if not f:IsShown() then f:Show() end
   self:PlaceFeed()
@@ -204,5 +352,8 @@ end
 
 function M:Activity()
   local d = self:Read()
-  return d and string.format("%s level %s, panel shown", tostring(d.name), tostring(d.level)) or "no pet out"
+  if not d then return "no pet out" end
+  local food = self:PickFood(d.family)
+  return string.format("%s, level %s %s; feeds %s", tostring(d.name), tostring(d.level), tostring(d.family or ""),
+    food or "nothing in your bags it eats")
 end

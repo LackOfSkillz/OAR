@@ -104,4 +104,28 @@ T.describe("pet log under event storms", function()
     for _, l in ipairs(ns.Log:Tail(15)) do if ns.Log:FormatLine(l):find("pet Rake npcID", 1, true) then found = true end end
     T.ok(found)
   end)
+
+  T.it("Feed uses a food from your bags in one click and learns what the pet eats", function()
+    local game, ns, M = session()
+    game.items = { [117] = { name = "Tough Jerky", spell = "Food" }, [4536] = { name = "Shiny Red Apple", spell = "Food" },
+      [1113] = { name = "Conjured Bread", spell = "Food" } }
+    game.bags = { [0] = { 117, 117, 4536, 1113 } }
+    game.spells = { { name = "Feed Pet", id = 6991 } }
+    game.units.pet = pet()
+    game:fire("UNIT_PET", "player")
+    game:advance(0.5)
+    T.ok(M.feed.macro:find("/cast Feed Pet", 1, true))
+    T.ok(M.feed.macro:find("/use Tough Jerky", 1, true), "biggest stack, conjured food skipped")
+    -- the pet refuses it: next click offers the apple
+    M.offered = { food = "Tough Jerky", family = "Cat", t = game.clock }
+    game:fire("UI_ERROR_MESSAGE", 50, "Your pet doesn't like that food.")
+    game:advance(0.5)
+    T.ok(M.feed.macro:find("/use Shiny Red Apple", 1, true))
+    -- it eats the apple: remembered for cats
+    M.offered = { food = "Shiny Red Apple", family = "Cat", t = game.clock }
+    game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "x", 6991)
+    T.ok(ns.db.global.petDiet.Cat.yes["Shiny Red Apple"])
+    T.ok(ns.db.global.petDiet.Cat.no["Tough Jerky"])
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
