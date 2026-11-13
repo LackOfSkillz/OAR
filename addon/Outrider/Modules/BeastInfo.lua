@@ -43,6 +43,17 @@ function M:Lines(unit, shift)
       end
     end
     lines[#lines + 1] = table.concat(parts, " · ")
+    -- How fast it hits, read live from the game (Gary, 2026-11-13: "which pet
+    -- has the best DPS?"). Lower is faster; remembered for the Finder.
+    if ns.PlayerClass() == "HUNTER" then
+      local speed = C.Readable(C.Call("UnitAttackSpeed", unit))
+      if type(speed) == "number" and speed > 0 then
+        local feel = speed <= 1.3 and "fast" or speed >= 2.2 and "slow" or "average"
+        lines[#lines + 1] = string.format("Attacks every %.1fs (%s)", speed, feel)
+        local d = npcID and ns.db.global.discovered and ns.db.global.discovered.npcs[npcID]
+        if d then d.attackSpeed = speed end
+      end
+    end
   end
   if pack or known then
     lines[#lines + 1] = "Rare: " .. ns.Sightings:Describe(npcID, ns.Layers and ns.Layers.current)

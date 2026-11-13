@@ -160,7 +160,8 @@ local function creatures(out, want, text, level)
     if not seen[npcID] and e.mapID and e.x and ((want == "rare" and isRare) or (want == "mob" and not isRare and e.creatureType and not e.title and not (e.roles and next(e.roles)))) then
       seen[npcID] = true
       add(out, want, e.name, e.mapID, e.x, e.y, { npcID = npcID, level = tonumber(e.level), seenByYou = true,
-        sub = (isRare and (cls == "rareelite" and "rare elite" or "rare") or tostring(e.creatureType or "")) .. ", seen" })
+        sub = (isRare and (cls == "rareelite" and "rare elite" or "rare") or tostring(e.creatureType or "")) .. ", seen"
+          .. (e.attackSpeed and string.format(", attacks every %.1fs", e.attackSpeed) or "") })
     end
   end
   local mobs = M:Mobs()
