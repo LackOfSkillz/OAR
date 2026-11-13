@@ -68,6 +68,11 @@ function M:Note(unit)
     self.byGuid[guid] = e
     self:Debug("spawn log %s: %s first seen%s", tostring(spot), tostring(e.name), dead and " (already dead)" or "")
   end
+  -- a nameplate can show before the name is known ("Unknown"): fill it in later
+  if not e.name or e.name == "Unknown" then
+    local nm = C.Readable(C.Call("UnitName", unit))
+    if type(nm) == "string" and nm ~= "Unknown" then e.name = nm end
+  end
   if dead and not e.died then e.died = time() end
 end
 
@@ -89,7 +94,12 @@ function M:Summary(spot)
       local gap = e.seen - prevDeath
       if gap >= 0 and gap < 7200 then parts[#parts + 1] = string.format("+%dm%02ds", math.floor(gap / 60), gap % 60) end
     end
-    parts[#parts + 1] = string.format("%s %s%s", date("%H:%M:%S", e.seen), tostring(e.name),
+    local name = e.name
+    if not name or name == "Unknown" then
+      local d = ns.db.global.discovered and ns.db.global.discovered.npcs and ns.db.global.discovered.npcs[e.npcID]
+      name = d and d.name or name
+    end
+    parts[#parts + 1] = string.format("%s %s%s", date("%H:%M:%S", e.seen), tostring(name),
       e.died and (" (died " .. date("%H:%M:%S", e.died) .. ")") or "")
     prevDeath = e.died or prevDeath
   end
