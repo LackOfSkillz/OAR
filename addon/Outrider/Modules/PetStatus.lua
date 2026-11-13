@@ -167,6 +167,12 @@ function M:Auras()
   return out
 end
 
+-- Average damage per second of plain attacks: mid hit / attack speed.
+function M.DPS(lo, hi, speed)
+  if type(lo) ~= "number" or type(hi) ~= "number" or type(speed) ~= "number" or speed <= 0 then return nil end
+  return (lo + hi) / 2 / speed
+end
+
 -- The pet's own abilities from its action bar (not Attack/Follow/Stay, which
 -- are "tokens"), with "auto" when autocast is on.
 function M:Abilities()
@@ -191,7 +197,7 @@ end
 function M:Build()
   if self.frame then return self.frame end
   local s = self:Settings()
-  local f = UI:Window("Outrider_PetStatus", "Pet", 260, 186, s.pos)
+  local f = UI:Window("Outrider_PetStatus", "Pet", 280, 200, s.pos)
   f.close:Hide()
   local c = f.content
   f.line1 = UI.Text(c, "normal", "text") f.line1:SetPoint("TOPLEFT", 0, 0)
@@ -206,10 +212,10 @@ function M:Build()
   f.focusLabel = UI.Text(c, "small", "muted") f.focusLabel:SetPoint("LEFT", f.hpMax, "RIGHT", 10, 0) f.focusLabel:SetText("Focus")
   f.focusVal = UI.Text(c, "small", "text") f.focusVal:SetPoint("LEFT", f.focusLabel, "RIGHT", 4, 0)
   f.line4 = UI.Text(c, "small", "text") f.line4:SetPoint("TOPLEFT", 0, -50)
-  f.fight = UI.Text(c, "small", "muted") f.fight:SetPoint("TOPLEFT", 0, -66)
-  f.skills = UI.Text(c, "small", "text") f.skills:SetPoint("TOPLEFT", 0, -82) f.skills:SetWidth(236)
+  f.fight = UI.Text(c, "small", "muted") f.fight:SetPoint("TOPLEFT", 0, -66) f.fight:SetWidth(256) f.fight:SetJustifyH("LEFT")
+  f.skills = UI.Text(c, "small", "text") f.skills:SetPoint("TOPLEFT", 0, -96) f.skills:SetWidth(236)
   f.skills:SetJustifyH("LEFT")
-  f.diet = UI.Text(c, "small", "muted") f.diet:SetPoint("TOPLEFT", 0, -112) f.diet:SetWidth(170)
+  f.diet = UI.Text(c, "small", "muted") f.diet:SetPoint("TOPLEFT", 0, -126) f.diet:SetWidth(170)
   f.diet:SetJustifyH("LEFT")
   f:HookScript("OnDragStart", function() if M.feed and not C.InCombat() then ns.SecureButtons:SetShown(M.feed, false) end end)
   f:HookScript("OnDragStop", function() M:PlaceFeed() end)
@@ -228,6 +234,7 @@ function M:PlaceFeed()
     -- the secure click itself is untouched)
     if self.feed.HookScript then
       self.feed:HookScript("PostClick", function()
+        M:Info("feed clicked: %s (in combat %s)", tostring(M.feedText), tostring(C.InCombat()))
         if M.food then M.offered = { food = M.food, family = M.family, t = C.Call("GetTime") or 0 } end
       end)
     end
@@ -245,10 +252,10 @@ end
 function M:SetFood()
   if not self.feed then return end
   local food, n = self:PickFood(self.family)
-  local text = food and ("/cast Feed Pet\n/use " .. food) or "/cast Feed Pet"
+  local text = food and ("Feed Pet on " .. food) or "Feed Pet"
   if text ~= self.feedText then
     self.feedText, self.food = text, food
-    ns.SecureButtons:SetMacro(self.feed, text)
+    ns.SecureButtons:SetSpellOnItem(self.feed, "Feed Pet", food)
     ns.SecureButtons:SetLabel(self.feed, food and "Feed" or "Feed (pick food)")
   end
   self.foodCount = n
@@ -286,6 +293,18 @@ function M:Refresh(why)
   if type(d.speed) == "number" then fight[#fight + 1] = string.format("every %.1fs", d.speed) end
   if type(d.armor) == "number" then fight[#fight + 1] = string.format("armor %d", d.armor) end
   f.fight:SetText(table.concat(fight, ", "))
+  -- How useful is it (Gary, 2026-11-13): average damage per second from its
+  -- basic attacks, next to your own ranged weapon's. No combat log (hard
+  -- rule 4), so abilities like Bite add on top of this.
+  local dps = M.DPS(d.dmgLo, d.dmgHi, d.speed)
+  if dps then
+    local _, rlo, rhi = C.Call("UnitRangedDamage", "player")
+    local rspeed = C.Call("UnitRangedDamage", "player")
+    local mine = M.DPS(C.Readable(rlo), C.Readable(rhi), C.Readable(rspeed))
+    f.title:SetText(string.format("%s  |cffbbbbbb%.1f DPS|r", d.name or "Pet", dps))
+    f.fight:SetText(string.format("About %.1f damage per second from its attacks%s. %s", dps,
+      mine and string.format(" (your ranged weapon: %.1f)", mine) or "", table.concat(fight, ", ")))
+  end
   local skills = self:Abilities()
   f.skills:SetText(#skills > 0 and ("Abilities: " .. table.concat(skills, ", ")) or "")
   local diet = self:Diet(d.family)

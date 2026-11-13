@@ -81,6 +81,20 @@ function SB:SetMacro(btn, text)
   end, key(btn, "macro"))
 end
 
+-- Spell on an item from the bags, the secure template's own way: type "spell"
+-- with "target-item" casts the spell and puts it on that item (Feed Pet on a
+-- food, Gary 2026-11-13: the macro version did nothing).
+function SB:SetSpellOnItem(btn, spell, item)
+  btn.wantSpell, btn.wantItem = spell, item
+  return ns.Combat:Run("secure:spell", function()
+    btn:SetAttribute("type", "spell")
+    btn:SetAttribute("spell", btn.wantSpell)
+    btn:SetAttribute("target-item", btn.wantItem)
+    btn:SetAttribute("macrotext", nil)
+    btn.macro = "/cast " .. tostring(btn.wantSpell) .. (btn.wantItem and (" on " .. btn.wantItem) or "")
+  end, key(btn, "macro"))
+end
+
 function SB:SetShown(btn, on)
   return ns.Combat:Run("secure:show", function() btn:SetShown(on and true or false) end, key(btn, "show"))
 end
