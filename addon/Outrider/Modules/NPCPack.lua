@@ -192,7 +192,7 @@ end
 -- available now / locked (level or earlier quest), skipping the other
 -- faction's and other classes' quests. Saved in ns.db.char.zoneQuests[mapID]
 -- so Claude can read it, refreshed at login and when a quest is turned in.
-function M:ZoneReport(mapID)
+function M:ZoneReport(mapID, nosave)
   local rows = self.raw and self.raw[mapID]
   if not rows then return nil end
   local level = C.Call("UnitLevel", "player") or 1
@@ -235,9 +235,20 @@ function M:ZoneReport(mapID)
     end
   end
   table.sort(rep.available, function(a, b) return a.level < b.level end)
+  if nosave then return rep end
   ns.db.char.zoneQuests = type(ns.db.char.zoneQuests) == "table" and ns.db.char.zoneQuests or {}
   ns.db.char.zoneQuests[mapID] = rep
   return rep
+end
+
+-- Every quest you could pick up now, anywhere the pack knows: { {id, name, level, giver, mapID, x, y, diff} }
+function M:AvailableEverywhere()
+  local out = {}
+  for mapID in pairs(self.raw or {}) do
+    local rep = self:ZoneReport(mapID, true)
+    for _, q in ipairs(rep and rep.available or {}) do q.mapID = mapID out[#out + 1] = q end
+  end
+  return out
 end
 
 function M:LogZoneReport(why)

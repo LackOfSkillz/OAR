@@ -50,3 +50,10 @@
 - Looked at GatherMate2 (node map + Wowhead data import) and the skill-tooltip addons (Can I Gather It?, GatherSkillTooltip, NodeInfo). Borrowed ideas only: no code (licences not checked) and no imported node data (Classic coordinates are wrong on Forever, hard rule 7).
 - Built: Find Herbs off reminder (once per session), pin a node on mouseover (not only after gathering), object tooltip lines logged to learn Forever's wording.
 - Not yet: required-skill line on herb tooltips. Needs a cited skill table (Icy Veins blocked the fetch) or Forever's own tooltip text; the logged tooltips decide which.
+
+## Journey: best gear and XP quests anywhere, with a route (2026-11-13, Gary)
+- Gary's choices: travel data from guides + learning; XP ranked by XP per minute; a new Journey hub tab.
+- Travel graph: walk on one continent (7 yd/s), fly between flight points this character knows (30 yd/s + 20 s), rides from Data/Transports.lua (guides, zones by name, docks only where cited) plus rides learned from loading screens that were not a flight, teleport, hearthstone or death. All times are estimates for ranking.
+- The guide re-plans from where Gary stands after each leg (arrival, landing, loading screen, new zone), so it never needs a step counter and fixes itself after a detour. Flights and rides are Gary's to take; the guide names them once in chat.
+- Quest XP is not in the pack: estimated from quest level (1.5 q^2 + 55 q + 120), cut for quests 6+ levels below like Classic. Red and grey quests are left out.
+- Zephras Isle (Alliance): the only listed exit is the Valanaar skycutter, first ridden in The Magical City of Dalaran. Until a ride off the isle is known, off-island targets show "no known way yet".

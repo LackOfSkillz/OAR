@@ -42,7 +42,7 @@ Probe.APIS = {
   { "C_SuperTrack.SetSuperTrackedUserWaypoint", "P3" }, { "UiMapPoint.CreateFromCoordinates", "P3" },
   { "GetPlayerFacing", "P3" }, { "WorldMapFrame.AddDataProvider", "P3" }, { "MapCanvasDataProviderMixin", "P3" },
   { "MapCanvasPinMixin", "P3" }, { "C_Minimap.GetViewRadius", "P3" }, { "C_QuestLog.GetInfo", "P3" },
-  { "GetQuestLogTitle", "P3", "Classic quest API" }, { "C_TaxiMap.GetAllTaxiNodes", "P3" },
+  { "GetQuestLogTitle", "P3", "Classic quest API" }, { "C_TaxiMap.GetAllTaxiNodes", "P3" }, { "GetTaxiMapID", "P3" }, { "C_Map.GetMapChildrenInfo", "P3" }, { "UnitOnTaxi", "P3" },
   -- macros
   { "CreateMacro", "P4" }, { "EditMacro", "P4" }, { "GetNumMacros", "P4" }, { "GetMacroIndexByName", "P4" },
   { "PickupSpell", "P4" }, { "PlaceAction", "P4" }, { "GetActionInfo", "P4" },

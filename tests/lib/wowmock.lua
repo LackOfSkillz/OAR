@@ -644,13 +644,27 @@ function M.new(opts)
       local x, y = opts.x or 0.46, opts.y or 0.37
       return { GetXY = function() return x, y end }
     end,
-    GetMapInfo = function(id) return { mapID = id, name = "Mulgore" } end,
+    GetMapInfo = function(id)
+      local m = game.maps and game.maps[id]
+      if m then return { mapID = id, name = m.name, parentMapID = m.parent or 0 } end
+      return { mapID = id, name = "Mulgore" }
+    end,
+    -- game.maps[id] = { name, parent }: every map below id (all descendants)
+    GetMapChildrenInfo = function(id)
+      local out = {}
+      local function under(m, top) for _ = 1, 10 do if not m or not game.maps[m] then return false end
+        if game.maps[m].parent == top then return true end m = game.maps[m].parent end return false end
+      for mid, m in pairs(game.maps or {}) do if under(mid, id) then out[#out + 1] = { mapID = mid, name = m.name } end end
+      return out
+    end,
   }
   base.C_Map.SetUserWaypoint = function(p) game.userWaypoint = p end
   base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end
   -- world yards: 1 map unit = 1000 yards on every test map
+  -- game.mapWorld[mapID] = { continent, offsetX, offsetY } puts maps side by side or on other continents
   base.C_Map.GetWorldPosFromMapPos = function(mapID, v)
-    return 1, { GetXY = function() return v.x * 1000, v.y * 1000 end }
+    local w = game.mapWorld and game.mapWorld[mapID]
+    return w and w[1] or 1, { GetXY = function() return v.x * 1000 + (w and w[2] or 0), v.y * 1000 + (w and w[3] or 0) end }
   end
   base.CreateVector2D = function(x, y) return { x = x, y = y } end
   -- action bars: game.actions[slot] = spellID; spell info from game.spells
@@ -676,7 +690,8 @@ function M.new(opts)
   base.C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) game.superTracked = on end }
   base.UnitPosition = function(unit)
     if unit ~= "player" then return nil end
-    return (opts.y or 0.37) * 1000, (opts.x or 0.46) * 1000, 0, 1
+    local w = game.mapWorld and game.mapWorld[opts.mapID or 1412]
+    return (opts.y or 0.37) * 1000 + (w and w[3] or 0), (opts.x or 0.46) * 1000 + (w and w[2] or 0), 0, w and w[1] or 1
   end
   base.issecretvalue = function(v) return type(v) == "table" and v.__secret == true end
 

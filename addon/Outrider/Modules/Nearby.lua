@@ -83,7 +83,8 @@ end
 
 -- { {itemID, name, pct, kind, where = {mapID, x, y, who, qlevel, note}, reqLevel} } best first;
 -- quests you cannot take yet come after the ones you can
-function M:Candidates()
+function M:Candidates(opts)
+  local world = opts and opts.world
   local out, missing = {}, 0
   if not ns.GearScore then return out end
   local level = C.Call("UnitLevel", "player") or 1
@@ -103,7 +104,23 @@ function M:Candidates()
       out[#out + 1] = { itemID = id, name = name, pct = r.pct, kind = kind, where = where, reqLevel = req }
     end
   end
-  if self:Load() and mapID then
+  if self:Load() and world then
+    -- every map (Journey tab): the first source this character can use
+    for id, it in pairs(self.pack) do
+      local req = it[2] or 0
+      if req <= level + 3 and req >= level - 6 then
+        for _, s in ipairs(it[4]) do
+          if s[7] == nil or s[7] == faction then
+            local ok, note = M.QuestOpen(s, level)
+            if ok then
+              add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note }, req)
+              break
+            end
+          end
+        end
+      end
+    end
+  elseif self:Load() and mapID then
     for _, id in ipairs(self.byMap[mapID] or {}) do
       local it = self.pack[id]
       local req = it[2] or 0
@@ -121,7 +138,7 @@ function M:Candidates()
     end
   end
   -- GearQuest's own best pick per slot (P6-07), scored with Outrider weights
-  if ns.GearQuestBridge and ns.GearQuestBridge.enabled then
+  if ns.GearQuestBridge and ns.GearQuestBridge.enabled and not world then
     for _, g in ipairs(ns.GearQuestBridge:Picks()) do
       if not seen[g.itemID] then
         if not stats(g.itemID) then
@@ -138,7 +155,7 @@ function M:Candidates()
       end
     end
   end
-  if ns.Handoffs then
+  if ns.Handoffs and not world then
     for _, h in ipairs(ns.Handoffs:Find()) do
       out[#out + 1] = { itemID = h.itemID, name = h.name, pct = h.pct, kind = "alt", where = { who = h.holder } }
     end
