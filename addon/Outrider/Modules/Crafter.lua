@@ -218,7 +218,7 @@ function M:Refresh()
       local index = rec and C.Call("GetMacroIndexByName", e.name) or 0
       if rec and index > 0 then
         local _, _, body = C.Call("GetMacroInfo", index)
-        if body == rec.body and rec.body ~= e.body then
+        if ns.MacroEngine.Same(body, rec.body) and not ns.MacroEngine.Same(rec.body, e.body) then
           local ok = lib:Install(e)
           self:Info("%s macro updated to the new text: %s", e.name, tostring(ok))
         end

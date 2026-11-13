@@ -77,7 +77,11 @@ function M:State(entry)
     else
       local _, _, body = C.Call("GetMacroInfo", index)
       local want = E.Fill(entry.body, self:Values())
-      return (body == rec.body and body == want) and "installed" or "changed"
+      if not E.Same(body, rec.body) and not self.mismatchLogged then
+        self.mismatchLogged = true
+        self:Debug("macro %s: game text %d chars, written %d chars", entry.name, type(body) == "string" and #body or -1, #rec.body)
+      end
+      return (E.Same(body, rec.body) and E.Same(body, want)) and "installed" or "changed"
     end
   end
   return self:Missing(entry) or "ready"

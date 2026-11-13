@@ -77,6 +77,15 @@ function E.Validate(body)
   return problems
 end
 
+-- Macro text as the game hands it back can differ from what was written
+-- (line endings, trailing newline), so compare normalized text (2026-11-13:
+-- every reload rewrote Fight, and the Herb refresh never matched).
+function E.Same(a, b)
+  if type(a) ~= "string" or type(b) ~= "string" then return a == b end
+  local function norm(s) return (s:gsub("\r", ""):gsub("%s+$", "")) end
+  return norm(a) == norm(b)
+end
+
 function E.Errors(body)
   local n = 0
   for _, p in ipairs(E.Validate(body)) do if p.level == "error" then n = n + 1 end end
