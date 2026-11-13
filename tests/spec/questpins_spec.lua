@@ -54,4 +54,25 @@ T.describe("quest pins", function()
     T.eq(byName(ns)["On Level"].quests[1].name, "Red Quest", "quest in your log no longer offered")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("zone report: done, in log, available and locked, saved for Claude and logged at login", function()
+    local game, ns = session(12)
+    game.questsActive = { [1] = true }
+    local rep = ns.NPCPack:ZoneReport(1412)
+    T.eq(rep.done, 1, "Finished")
+    T.eq(#rep.active, 1, "Yellow Quest is in the log")
+    local avail, locked = {}, {}
+    for _, q in ipairs(rep.available) do avail[q.name] = q end
+    for _, q in ipairs(rep.locked) do locked[q.name] = q.why end
+    T.ok(avail["Red Quest"] and avail["Part Two"] and avail["Rats"])
+    T.eq(locked["Later"], "level 20")
+    T.eq(locked["Part Three"], "after 99")
+    T.eq(avail["Arcane Stuff"], nil, "mage quest skipped")
+    T.eq(ns.db.char.zoneQuests[1412].done, 1)
+    local logged
+    for _, l in ipairs(ns.Log:Tail(200)) do
+      if ns.Log:FormatLine(l):find("zone 1412 quests (login)", 1, true) then logged = true end
+    end
+    T.ok(logged, "logged at login")
+  end)
 end)

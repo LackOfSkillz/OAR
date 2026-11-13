@@ -31,6 +31,8 @@ function M:OnEnable()
   for _, e in ipairs({ "QUEST_ACCEPTED", "QUEST_TURNED_IN", "QUEST_REMOVED", "PLAYER_LEVEL_UP" }) do
     self:On(e, function() ns.Events:Fire("OTR_DATA_CHANGED", "quests") end)
   end
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:LogZoneReport("login") end)
+  self:On("QUEST_TURNED_IN", function(mod) ns.Throttle("npcpack:zone", 3, function() mod:LogZoneReport("turned in") end) end)
   if not rawget(_G, "Outrider_DataNPC") then C.LoadAddOn(self.ADDON) end
   local data = rawget(_G, "Outrider_DataNPC")
   if type(data) ~= "table" or type(data.maps) ~= "table" then
@@ -182,6 +184,70 @@ function M:OfKind(kind)
     end
   end
   return out
+end
+
+-- ---------------------------------------------------------------- zone report
+-- "Which quests in this zone haven't I done?" (Gary, 2026-11-13). Every quest
+-- the pack's givers on this map start, sorted into done / in your log /
+-- available now / locked (level or earlier quest), skipping the other
+-- faction's and other classes' quests. Saved in ns.db.char.zoneQuests[mapID]
+-- so Claude can read it, refreshed at login and when a quest is turned in.
+function M:ZoneReport(mapID)
+  local rows = self.raw and self.raw[mapID]
+  if not rows then return nil end
+  local level = C.Call("UnitLevel", "player") or 1
+  local faction = C.Call("UnitFactionGroup", "player")
+  local _, _, classID = C.Call("UnitClass", "player")
+  local names, seen = {}, {}
+  for _, r in ipairs(rows) do
+    for _, q in ipairs(type(r[8]) == "table" and r[8] or {}) do names[q[1]] = q[2] end
+  end
+  local rep = { t = time(), level = level, done = 0, active = {}, available = {}, locked = {} }
+  for _, r in ipairs(rows) do
+    for _, q in ipairs(type(r[8]) == "table" and r[8] or {}) do
+      local qid, name, req, qlvl, qfac, cls, preAny, preAll = q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8]
+      local mine = (qfac == nil or qfac == faction) and (not cls or cls == 0 or not classID or hasBit(cls, classID))
+      if mine and not seen[qid] then
+        seen[qid] = true
+        local entry = { id = qid, name = name, level = qlvl, giver = r[5], x = r[3], y = r[4] }
+        if done(qid) then
+          rep.done = rep.done + 1
+        elseif C.Call("C_QuestLog.IsOnQuest", qid) == true then
+          rep.active[#rep.active + 1] = entry
+        else
+          local why
+          if req > level then why = "level " .. req end
+          if not why and preAny and #preAny > 0 then
+            local any = false
+            for _, pq in ipairs(preAny) do if done(pq) then any = true break end end
+            if not any then why = "after " .. tostring(names[preAny[1]] or preAny[1]) end
+          end
+          if not why and preAll then
+            for _, pq in ipairs(preAll) do
+              if not done(pq) then why = "after " .. tostring(names[pq] or pq) break end
+            end
+          end
+          entry.diff = M.Difficulty(qlvl, level)
+          if why then entry.why = why rep.locked[#rep.locked + 1] = entry
+          else rep.available[#rep.available + 1] = entry end
+        end
+      end
+    end
+  end
+  table.sort(rep.available, function(a, b) return a.level < b.level end)
+  ns.db.char.zoneQuests = type(ns.db.char.zoneQuests) == "table" and ns.db.char.zoneQuests or {}
+  ns.db.char.zoneQuests[mapID] = rep
+  return rep
+end
+
+function M:LogZoneReport(why)
+  local mapID = C.PlayerPosition("player")
+  local rep = mapID and self:ZoneReport(mapID)
+  if not rep then return end
+  local avail = {}
+  for _, q in ipairs(rep.available) do avail[#avail + 1] = string.format("%s [%d] (%s)", q.name, q.level, tostring(q.giver)) end
+  self:Info("zone %d quests (%s): %d done, %d in log, %d available: %s; %d locked", mapID, why, rep.done, #rep.active,
+    #rep.available, #avail > 0 and table.concat(avail, ", ") or "none", #rep.locked)
 end
 
 function M:Activity()
