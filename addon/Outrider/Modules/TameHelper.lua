@@ -3,14 +3,18 @@
 -- the in-game macro API (EditMacro/CreateMacro), out of combat, from a typed
 -- command (a key press). We never edit WTF\ files: the client overwrites
 -- them at logout and keeps a server copy of macros.
--- Macro flow (one press = one action, like any normal macro):
---   out of combat  Concussive Shot pulls and slows
---   in combat      Tame Beast, and if it breaks (stun): Wing Clip, then Tame Beast again
---   Shift-click    Concussive Shot (she wandered off) and the sequence resets,
---                  so the next click is Tame Beast
--- A macro can't test "is she targeting me" while casting at her, so the
--- re-pull is Gary's Shift; and Wing Clip + Tame share the global cooldown,
--- so they are always two clicks.
+-- Macro flow (one press = one action, like any normal macro). Gary's plan
+-- for Mystmane (2026-11-13): a throwaway pet takes the knockdown, then he
+-- dismisses it and tames.
+--   pet out            press: target the beast and send the pet in
+--   pet out + Shift    Dismiss Pet (after the pet has taken the knockdown)
+--   no pet, no combat  press: Concussive Shot pulls and slows
+--   no pet, in combat  press: Tame Beast
+--   no pet + Shift     Concussive Shot again (she wandered off)
+-- /stopmacro [channeling] first, so a press never breaks the tame channel.
+-- Whether Forever lets you tame with a dismissed pet is not known yet: a
+-- refusal shows in the fight log's errors; abandoning the pet from its
+-- portrait is then the way.
 
 local _, ns = ...
 local C = ns.Compat
@@ -27,9 +31,11 @@ M.TEMPLATE = table.concat({
   "/stopmacro [channeling]",
   "/cleartarget",
   "/targetexact {NAME}",
-  "/stopmacro [noexists][noharm][dead]",
-  "/cast [nocombat][mod:shift] Concussive Shot",
-  "/castsequence [combat] reset=combat/shift Tame Beast, Wing Clip",
+  "/stopmacro [noharm][dead]",
+  "/cast [mod,pet] Dismiss Pet; [mod][nopet,nocombat] Concussive Shot",
+  "/petattack [pet,nomod]",
+  "/stopmacro [pet]",
+  "/cast [combat] Tame Beast",
 }, "\n")
 
 -- "mystmane" -> "Mystmane", "ghost howl" -> "Ghost Howl" (names are typed by hand).
