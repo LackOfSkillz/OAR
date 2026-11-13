@@ -161,23 +161,36 @@ end
 
 -- -------------------------------------------------------------------- tab
 ns.Hub:AddTab("journey", "Journey", function(p)
-  p.mode = "gear"
-  p.head = UI.Text(p, "small", "muted")
-  p.head:SetPoint("TOPLEFT", 0, 0)
-  p.gear = UI:Button(p, "Gear", 80, function() p.mode = "gear" p:Refresh() end)
-  p.gear:SetPoint("TOPLEFT", 0, -18)
-  p.xp = UI:Button(p, "XP quests", 100, function() p.mode = "xp" p:Refresh() end)
-  p.xp:SetPoint("LEFT", p.gear, "RIGHT", 6, 0)
+  local F = ns.Finder
+  p.kind, p.text = "all", ""
+  p.search = UI:SearchBox(p, 220, "Search: item, quest, rare, NPC, place...", function(t) p.text = t p:Refresh() end)
+  p.search:SetPoint("TOPLEFT", 0, 0)
+  p.sortBtn = UI:Button(p, "Sort: nearest", 150, function()
+    local cur, nxt = p.sort or F.DEFAULT_SORT[p.kind], 1
+    for i, s in ipairs(F.SORTS) do if s == cur then nxt = i % #F.SORTS + 1 end end
+    p.sort = F.SORTS[nxt]
+    p:Refresh()
+  end)
+  p.sortBtn:SetPoint("LEFT", p.search, "RIGHT", 8, 0)
+  p.count = UI.Text(p, "small", "muted")
+  p.count:SetPoint("LEFT", p.sortBtn, "RIGHT", 8, 0)
+  p.kindBtns = {}
+  local prev
+  for _, k in ipairs(F.KINDS) do
+    local b = UI:Button(p, F.KIND_LABEL[k], 68, function() p.kind, p.sort = k, nil p:Refresh() end)
+    if prev then b:SetPoint("LEFT", prev, "RIGHT", 4, 0) else b:SetPoint("TOPLEFT", p.search, "BOTTOMLEFT", 0, -6) end
+    p.kindBtns[k], prev = b, b
+  end
   p.list = UI:ScrollList(p, {
     rows = 9, rowHeight = 22,
-    render = function(row, e) row.text:SetText(M.Line(e)) end,
+    render = function(row, e) row.text:SetText(F.Line(e)) end,
     onClick = function(e) p:ShowRoute(e) end,
   })
-  p.list:SetPoint("TOPLEFT", p.gear, "BOTTOMLEFT", 0, -8)
-  p.list:SetWidth(580)
+  p.list:SetPoint("TOPLEFT", p.kindBtns.all, "BOTTOMLEFT", 0, -6)
+  p.list:SetWidth(600)
   p.route = UI.Text(p, "small", "text")
-  p.route:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -8)
-  p.route:SetWidth(580)
+  p.route:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -6)
+  p.route:SetWidth(600)
   p.route:SetJustifyH("LEFT")
   p.go = UI:Button(p, "Guide me", 100, function() if p.current then M:Go(p.current) end end)
   p.go:SetPoint("BOTTOMLEFT", 0, 0)
@@ -185,34 +198,42 @@ ns.Hub:AddTab("journey", "Journey", function(p)
   p.stop:SetPoint("LEFT", p.go, "RIGHT", 6, 0)
   function p:ShowRoute(e)
     self.current = e
+    if not e.target then self.route:SetText("No position for this one.") return end
     local route, why = ns.Travel:Route(e.target)
     if not route then self.route:SetText(why) return end
     local lines = { string.format("%s: about %s", tostring(e.name), ns.Travel.Minutes(route.seconds)) }
-    for i, s in ipairs(route.steps) do lines[#lines + 1] = string.format("%d. %s", i, s.text) end
+    for i, st in ipairs(route.steps) do lines[#lines + 1] = string.format("%d. %s", i, st.text) end
     self.route:SetText(table.concat(lines, "\n"))
   end
   function p:Refresh()
-    local list = self.mode == "gear" and M:GearList() or M:XPList()
-    self.head:SetText(self.mode == "gear" and "Gear upgrades anywhere, biggest first, then the shortest trip. Click one for its route."
-      or "Quests you can pick up now, most XP per minute first (estimates). Click one for its route.")
+    local list, total, sort = F:Find({ kind = self.kind, text = self.text, sort = self.sort })
+    self.sortBtn.label:SetText("Sort: " .. (F.SORT_LABEL[sort] or sort))
+    self.count:SetText(string.format("%d found%s", total, total > #list and (", first " .. #list .. " shown") or ""))
     self.list:SetItems(list)
-    self.route:SetText(#list == 0 and "Nothing found yet (item data may still be loading: open this tab again in a moment)." or "")
+    self.route:SetText(#list == 0 and "Nothing found (item data may still be loading: try again in a moment)."
+      or "Click a line for its route, then Guide me. Community data is unverified; 'seen' means you met it.")
   end
 end, 45)
 
-ns.AddCommand("journey", "[gear|xp|<number>|stop]  best gear or XP quests anywhere; a number starts the guide", function(arg)
-  arg = (arg or ""):lower()
-  if arg == "stop" then M:Stop("command") ns.Print("Journey stopped") return end
+ns.AddCommand("journey", "[kind] [search] | <number> | stop  find anything (gear item quest rare mob npc place); a number guides you there", function(arg)
+  arg = arg or ""
+  if arg:lower() == "stop" then M:Stop("command") ns.Print("Journey stopped") return end
   local n = tonumber(arg)
   if n then
     local e = M.last and M.last[n]
-    if not e then ns.Print("list first: /ride journey gear or /ride journey xp") return end
+    if not e then ns.Print("search first, e.g. /ride journey quest or /ride journey rare mystmane") return end
+    if not e.target then ns.Print("no position for that one") return end
     M:Go(e)
     return
   end
-  local list = arg == "xp" and M:XPList() or M:GearList()
+  local first, rest = arg:match("^(%S*)%s*(.-)$")
+  local kind, text = "all", arg
+  for _, k in ipairs(ns.Finder.KINDS) do if first:lower() == k then kind, text = k, rest end end
+  if first:lower() == "xp" then kind, text = "quest", rest end
+  local list, total, sort = ns.Finder:Find({ kind = kind, text = text })
   M.last = list
-  if #list == 0 then ns.Print("nothing found yet (item data may still be loading)") return end
-  for i = 1, math.min(8, #list) do ns.Print("%d. %s", i, M.Line(list[i])) end
+  if #list == 0 then ns.Print("nothing found") return end
+  ns.Print("%d found (%s, sorted by %s):", total, ns.Finder.KIND_LABEL[kind], ns.Finder.SORT_LABEL[sort] or sort)
+  for i = 1, math.min(8, #list) do ns.Print("%d. %s", i, ns.Finder.Line(list[i])) end
   ns.Print("/ride journey <number> to be guided there")
 end)

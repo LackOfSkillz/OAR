@@ -123,6 +123,7 @@ Modules\MapTab.lua
 Modules\Coords.lua
 Modules\Travel.lua
 Modules\Journey.lua
+Modules\Finder.lua
 
 Core\Slash.lua
 Core\Boot.lua
