@@ -132,6 +132,8 @@ local function buildMethods(game)
   end
   m.GetAttribute = function(self, k) local a = rawget(self, "__attrs") return a and a[k] end
   m.RegisterForClicks = function(self, ...) self.__clicks = { ... } end
+  m.SetFrameStrata = function(self, s) guard(self, "SetFrameStrata") rawset(self, "__strata", s) end
+  m.GetFrameStrata = function(self) return rawget(self, "__strata") or "MEDIUM" end
   m.SetAllPoints = noop
   m.IsMouseOver = function(self) return rawget(self, "__mouseOver") == true end
   m.SetColorTexture = noop

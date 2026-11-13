@@ -244,6 +244,7 @@ function M:PlaceFeed()
   if not cx then return end
   local w, h = f:GetWidth() or 220, f:GetHeight() or 120
   ns.SecureButtons:Place(self.feed, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 8, cy - h / 2 + 8)
+  ns.SecureButtons:Raise(self.feed, "FULLSCREEN") -- above the panel (DIALOG), or the panel eats the click
   ns.SecureButtons:SetShown(self.feed, true)
 end
 

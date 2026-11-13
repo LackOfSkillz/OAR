@@ -34,6 +34,7 @@ T.describe("pet status", function()
     local _, rel = M.feed:GetPoint(1)
     T.eq(rel, game.env.UIParent, "Feed button never anchored to the panel")
     T.eq(game.secureAnchoredToInsecure, nil)
+    T.eq(M.feed:GetFrameStrata(), "FULLSCREEN", "drawn above the panel so clicks reach it")
   end)
 
   T.it("logs the pet and its buffs once per pet change (auto-collected)", function()

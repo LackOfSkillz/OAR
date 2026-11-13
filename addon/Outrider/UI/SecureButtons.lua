@@ -95,6 +95,12 @@ function SB:SetSpellOnItem(btn, spell, item)
   end, key(btn, "macro"))
 end
 
+-- Draw a secure button above a window it sits on, so the window doesn't catch
+-- its clicks (the pet panel covered Feed: clicks never reached it, 2026-11-13).
+function SB:Raise(btn, strata)
+  return ns.Combat:Run("secure:raise", function() btn:SetFrameStrata(strata or "FULLSCREEN") end, key(btn, "raise"))
+end
+
 function SB:SetShown(btn, on)
   return ns.Combat:Run("secure:show", function() btn:SetShown(on and true or false) end, key(btn, "show"))
 end
