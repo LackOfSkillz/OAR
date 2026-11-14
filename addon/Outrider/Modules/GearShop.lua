@@ -134,17 +134,23 @@ function M:Results()
   for itemID, f in pairs(self.found) do
     local link = "item:" .. itemID
     local r = self:Fits(itemID) and G:Compare(link)
-    if r and not r.why and (r.pct >= 1 or (r.empty and r.new > 0)) then
+    local learn = r and type(r.why) == "string" and r.why:find("^learn ") and r.why or nil
+    if r and (not r.why or learn) and (r.pct >= 1 or (r.empty and r.new > 0)) then
       if f.price > money then skipped = skipped + 1
       else
         local info = C.ItemInfo(link)
         all[#all + 1] = { slot = r.slot, slotName = G.SLOT_NAMES[r.slot] or tostring(r.slot), itemID = itemID,
           itemKey = f.itemKey, price = f.price, pct = r.empty and 999 or r.pct, empty = r.empty, capped = r.capped,
-          name = info and info.name or ("item " .. itemID) }
+          name = info and info.name or ("item " .. itemID), learn = learn }
       end
     end
   end
-  table.sort(all, function(a, b) if a.pct ~= b.pct then return a.pct > b.pct end return a.price < b.price end)
+  -- weapons you can use now first, then ones needing a weapon skill you haven't learned
+  table.sort(all, function(a, b)
+    if (a.learn == nil) ~= (b.learn == nil) then return a.learn == nil end
+    if a.pct ~= b.pct then return a.pct > b.pct end
+    return a.price < b.price
+  end)
   if self.mode == "weapons" then
     local out = {}
     for i = 1, math.min(M.TOP, #all) do out[i] = all[i] end
@@ -157,6 +163,7 @@ function M:Results()
 end
 
 function M.Gain(b)
+  if b.learn then return string.format("|cffffc84d%s first|r", b.learn) end
   if b.empty then return "empty slot" end
   if b.capped then return "big upgrade" end
   return string.format("+%d%%", math.floor(b.pct + 0.5))
@@ -186,12 +193,23 @@ function M:Build()
   end)
   f.title = UI.Text(f, "normal", "accent")
   f.title:SetPoint("TOPLEFT", 8, -8)
-  f.title:SetText("Gear upgrades  |cff888888(drag to move)|r")
-  f.weapons = UI:Button(f, "Search weapons", 130, function()
+  -- one shopping panel (Gary, 2026-11-14: "these should be one panel, not 2"):
+  -- Training (TrainShop's list, drawn inside this panel), Weapons, Armor
+  f.title:SetText("Outrider shopping  |cff888888(drag)|r")
+  f.training = UI:Button(f, "Training", 96, function()
+    M.mode = "training"
+    if ns.TrainShop then
+      local T = ns.TrainShop
+      if T.queue and T.manual then T:Next() else T:Start() end
+    end
+    M:Refresh()
+  end)
+  f.training:SetPoint("TOPRIGHT", -216, -6)
+  f.weapons = UI:Button(f, "Weapons", 96, function()
     if M.queue and M.manual then M:Next() else M:Start("weapons") end
   end)
-  f.weapons:SetPoint("TOPRIGHT", -144, -6)
-  f.armor = UI:Button(f, "Search armor", 130, function()
+  f.weapons:SetPoint("TOPRIGHT", -112, -6)
+  f.armor = UI:Button(f, "Armor", 96, function()
     if M.queue and M.manual then M:Next() else M:Start("armor") end
   end)
   f.armor:SetPoint("TOPRIGHT", -8, -6)
@@ -221,9 +239,29 @@ function M:Build()
   return f
 end
 
+-- Height for the training view (its list lives in TrainShop's frame inside this one).
+function M:Resize()
+  local f = self.frame
+  if not f then return end
+  local t = ns.TrainShop and ns.TrainShop.frame
+  if self.mode == "training" and t then f:SetHeight(40 + (t:GetHeight() or 100)) end
+end
+
 function M:Refresh()
   if not self.open then return end
   local f = self:Build()
+  local training = self.mode == "training" or not self.mode
+  local t = ns.TrainShop and ns.TrainShop.frame
+  if t then t:SetShown(training) end
+  f.status:SetShown(not training)
+  if training then
+    for _, row in ipairs(f.rows) do row:Hide() end
+    f.weapons.label:SetText("Weapons")
+    f.armor.label:SetText("Armor")
+    f:Show()
+    self:Resize()
+    return
+  end
   local list = (self.found and not self.queue) and (self:Results()) or {}
   local _, skipped = self:Results()
   for i = 1, M.ROWS do
@@ -241,12 +279,12 @@ function M:Refresh()
   if self.queue then
     local e = self.queue[self.pos]
     local label = self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching..."
-    f.weapons.label:SetText(self.mode == "weapons" and label or "Search weapons")
-    f.armor.label:SetText(self.mode == "armor" and label or "Search armor")
+    f.weapons.label:SetText(self.mode == "weapons" and label or "Weapons")
+    f.armor.label:SetText(self.mode == "armor" and label or "Armor")
     f.status:SetText(string.format("Searching: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
   else
-    f.weapons.label:SetText("Search weapons")
-    f.armor.label:SetText("Search armor")
+    f.weapons.label:SetText("Weapons")
+    f.armor.label:SetText("Armor")
     if self.found then
       local head = self.mode == "weapons" and "Top weapons you can afford" or "Best armor per slot you can afford"
       f.status:SetText(string.format("%s (you have %s)%s:", head, gold,

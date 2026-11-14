@@ -388,6 +388,8 @@ function M.new(opts)
   end
   base.UnitClassification = function(unit) return game.units and game.units[unit] and game.units[unit].classification or "normal" end
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
+  -- known spells by id (weapon skills): game.knownSpells = { [264] = true }; nil = client can't say
+  base.IsPlayerSpell = function(id) if game.knownSpells then return game.knownSpells[id] == true end end
   base.GetMoney = function() return game.money or player.money end
   base.C_AuctionHouse = {
     GetBrowseResults = function() return game.browse or {} end,

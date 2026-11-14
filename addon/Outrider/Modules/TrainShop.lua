@@ -285,49 +285,34 @@ end
 -- ------------------------------------------------------------ panel
 function M:Build()
   if self.frame then return self.frame end
-  local anchor = rawget(_G, "AuctionHouseFrame") or UIParent
-  local f = CreateFrame("Frame", "Outrider_TrainShop", anchor, ns.Theme:BackdropTemplate())
-  ns.Theme:ApplyPanel(f, "panel")
-  f:SetSize(420, 300)
-  -- above the auction window and draggable by its title (Gary, 2026-11-14: "it
-  -- pops under the auction window"); where he drops it is kept per character
-  f:SetFrameStrata("HIGH")
-  f:SetClampedToScreen(true)
-  local pt = M:Settings().point
-  if type(pt) == "table" then
-    f:SetPoint(pt[1], UIParent, pt[2], pt[3], pt[4])
+  -- drawn inside the shopping panel (GearShop) under its Training button
+  local host = ns.GearShop and ns.GearShop:Build()
+  local f = CreateFrame("Frame", "Outrider_TrainShop", host or UIParent)
+  f:SetSize(460, 100)
+  if host then
+    f:SetPoint("TOPLEFT", host, "TOPLEFT", 0, -30)
   else
-    f:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 6, -180) -- right of the AH, under the auction helper
+    f:SetPoint("CENTER")
   end
-  f:EnableMouse(true)
-  f:SetMovable(true)
-  f:RegisterForDrag("LeftButton")
-  f:SetScript("OnDragStart", function(fr) fr:StartMoving() end)
-  f:SetScript("OnDragStop", function(fr)
-    fr:StopMovingOrSizing()
-    local a, _, b, x, y = fr:GetPoint()
-    M:Settings().point = { a, b, x, y }
-  end)
-  f.title = UI.Text(f, "normal", "accent")
-  f.title:SetPoint("TOPLEFT", 8, -8)
-  f.title:SetText("Training shopping  |cff888888(drag to move)|r")
+  -- the search starts from the panel's Training button; this one stays as a fallback
   f.button = UI:Button(f, "Find training materials", 190, function()
     if M.queue and M.manual then M:Next() else M:Start() end
   end)
-  f.button:SetPoint("TOPRIGHT", -8, -6)
+  f.button:SetPoint("TOPRIGHT", -8, -2)
+  if host then f.button:Hide() end
   f.text = UI.Text(f, "small", "text")
-  f.text:SetPoint("TOPLEFT", 8, -36)
-  f.text:SetWidth(404)
+  f.text:SetPoint("TOPLEFT", 8, -6)
+  f.text:SetWidth(444)
   f.text:SetJustifyH("LEFT")
   f.text:SetJustifyV("TOP")
   -- result lines, each with a Buy button when there is something to buy
   f.rows = {}
   for i = 1, 16 do
     local row = CreateFrame("Frame", nil, f)
-    row:SetSize(404, 30)
+    row:SetSize(444, 30)
     row.text = UI.Text(row, "small", "text")
     row.text:SetPoint("LEFT", 0, 0)
-    row.text:SetWidth(346)
+    row.text:SetWidth(386)
     row.text:SetJustifyH("LEFT")
     row.buy = UI:Button(row, "Buy", 52, function()
       for _, e in ipairs(row.action or {}) do if ns.AHBuy then ns.AHBuy:Add(e) end end
@@ -346,19 +331,24 @@ function M:Refresh()
   local f = self:Build()
   if self.queue then
     for _, row in ipairs(f.rows) do row:Hide() end
-    f:SetHeight(120)
+    f:SetHeight(40)
     local e = self.queue[self.pos]
-    f.button.label:SetText(self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching...")
+    local label = self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching..."
+    f.button.label:SetText(label)
+    local host = ns.GearShop and ns.GearShop.frame
+    if host and host.training then host.training.label:SetText(self.manual and "Next" or "...") end
     f.text:SetText(string.format("Searching the auction house: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
   else
     for _, row in ipairs(f.rows) do row:Hide() end
-    f:SetHeight(120)
+    f:SetHeight(50)
     f.button.label:SetText(self.prices and "Search again" or "Find training materials")
+    local host = ns.GearShop and ns.GearShop.frame
+    if host and host.training then host.training.label:SetText("Training") end
     if self.prices then
       local lines, actions = self:Lines()
       f.text:SetText(#lines > 0 and "Cheapest skill first. Buy queues it; the bar above the auction window confirms each purchase."
         or "Nothing found that trains your professions.")
-      local y = -56
+      local y = -26
       for i, row in ipairs(f.rows) do
         local line = lines[i]
         if line then
@@ -378,11 +368,18 @@ function M:Refresh()
     else
       local n = 0
       for _ in pairs(self:Needs()) do n = n + 1 end
-      f.text:SetText(n > 0 and string.format("Looks up %d ingredients your skill-up recipes need, and recipes you don't know yet. Buying stays your click.", n)
+      f.text:SetText(n > 0 and string.format("Training: looks up %d ingredients your skill-up recipes need, and recipes you don't know yet. Weapons and Armor find gear upgrades your gold covers.", n)
         or "Open each profession window once so Outrider knows which recipes still give skill.")
     end
   end
-  f:Show()
+  -- shown only on the shopping panel's Training view
+  local G = ns.GearShop
+  if G and G.frame then
+    f:SetShown(G.mode == "training" or not G.mode)
+    G:Resize()
+  else
+    f:Show()
+  end
 end
 
 function M:OnEnable()

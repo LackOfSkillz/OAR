@@ -38,21 +38,63 @@ local ARMOR40 = { HUNTER = { 2, 3 }, SHAMAN = { 2, 3 }, WARRIOR = { 3, 4 }, PALA
 M.MIN_BASE, M.MAX_PCT = 5, 300
 local SHIELD_CLASSES = { WARRIOR = true, PALADIN = true, SHAMAN = true }
 -- Weapon types each class can use (learned from weapon masters), Classic rules
--- (wowpedia "Weapon skills"); item weapon subclass ids: 0 axe, 1 2h axe, 2 bow,
--- 3 gun, 4 mace, 5 2h mace, 6 polearm, 7 sword, 8 2h sword, 10 staff, 13 fist,
--- 15 dagger, 16 thrown, 18 crossbow, 19 wand. Unverified on Forever.
+-- (wowpedia "Weapon skills"; hunters per Wowhead's Classic hunter weapons guide:
+-- no fist weapons, wands or shields; druids got polearms only after Classic);
+-- item weapon subclass ids: 0 axe, 1 2h axe, 2 bow, 3 gun, 4 mace, 5 2h mace,
+-- 6 polearm, 7 sword, 8 2h sword, 10 staff, 13 fist, 15 dagger, 16 thrown,
+-- 18 crossbow, 19 wand. Unverified on Forever.
 local function set(...) local t = {} for _, v in ipairs({ ... }) do t[v] = true end return t end
 M.WEAPON_TYPES = {
   WARRIOR = set(0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 18),
   PALADIN = set(0, 1, 4, 5, 6, 7, 8),
-  HUNTER = set(0, 1, 2, 3, 6, 7, 8, 10, 13, 15, 16, 18),
+  HUNTER = set(0, 1, 2, 3, 6, 7, 8, 10, 15, 16, 18),
   ROGUE = set(2, 3, 4, 7, 13, 15, 16, 18),
   PRIEST = set(4, 10, 15, 19),
   SHAMAN = set(0, 1, 4, 5, 10, 13, 15),
   MAGE = set(7, 10, 15, 19),
   WARLOCK = set(7, 10, 15, 19),
-  DRUID = set(4, 5, 6, 10, 13, 15),
+  DRUID = set(4, 5, 10, 13, 15),
 }
+-- The weapon skill each weapon type needs (Classic spell ids) and its name.
+-- Gary, 2026-11-14: offer only weapons the character can use, for every class:
+-- a skill the class can learn but this character hasn't is "learn X first".
+M.WEAPON_SKILL = { [0] = { 196, "Axes" }, [1] = { 197, "Two-Handed Axes" }, [2] = { 264, "Bows" }, [3] = { 266, "Guns" },
+  [4] = { 198, "Maces" }, [5] = { 199, "Two-Handed Maces" }, [6] = { 200, "Polearms" }, [7] = { 201, "Swords" },
+  [8] = { 202, "Two-Handed Swords" }, [10] = { 227, "Staves" }, [13] = { 15590, "Fist Weapons" }, [15] = { 1180, "Daggers" },
+  [16] = { 2567, "Thrown" }, [18] = { 5011, "Crossbows" }, [19] = { 5009, "Wands" } }
+
+local function rawKnows(id)
+  local known = C.Call("IsPlayerSpell", id)
+  if known == nil then known = C.Call("C_SpellBook.IsSpellKnown", id) end
+  if known == nil then return nil end
+  return C.Readable(known) and true or false
+end
+
+-- Can this client tell us? Only if at least one weapon skill reads as known
+-- (if Forever's spell ids differ, everything would read "not learned").
+function M.SkillsReadable()
+  if M.skillsReadable ~= nil then return M.skillsReadable end
+  local any = false
+  for _, sk in pairs(M.WEAPON_SKILL) do if rawKnows(sk[1]) then any = true break end end
+  M.skillsReadable = any
+  return any
+end
+
+-- true / false, or nil when the client can't say
+function M.KnowsWeapon(subclass)
+  local sk = M.WEAPON_SKILL[subclass]
+  if not sk or not M.SkillsReadable() then return nil end
+  return rawKnows(sk[1])
+end
+
+-- "Bows, Daggers, Swords" (logged at login so the ids can be checked in game)
+function M.KnownWeapons()
+  local out = {}
+  for _, sk in pairs(M.WEAPON_SKILL) do if rawKnows(sk[1]) then out[#out + 1] = sk[2] end end
+  table.sort(out)
+  return out
+end
+
 -- The armor type a class should buy (its heaviest; Gary, 2026-11-14: "no mail
 -- for a priest, no cloth for a hunter"): 1 cloth, 2 leather, 3 mail, 4 plate.
 function M.ArmorType(cls, level)
@@ -114,6 +156,10 @@ function M:Usable(link, info)
   if class == 2 and subclass then
     local ok = M.WEAPON_TYPES[ns.PlayerClass()]
     if subclass ~= 20 and ok and not ok[subclass] then return "can't wear" end
+    -- the class can use it, but has this character learned the skill yet?
+    if subclass ~= 20 and M.KnowsWeapon(subclass) == false then
+      return "learn " .. M.WEAPON_SKILL[subclass][2]
+    end
   end
   -- Hunter shots and Auto Shot need a bow, gun or crossbow: a thrown weapon in the ranged
   -- slot turns them off (Gary's Khreos was offered throwing daggers at +86%, 2026-11-12)
@@ -175,6 +221,10 @@ function M:Verdict(link)
   if r.why == "can't wear" then return "can't wear this armor type", "muted" end
   if r.why == "two-hander" then return "not with your two-hander", "muted" end
   if r.why == "hunter thrown" then return "no Auto Shot with a thrown weapon", "muted" end
+  if type(r.why) == "string" and r.why:find("^learn ") then
+    local pct = math.floor(r.pct + 0.5)
+    return string.format("%s at a weapon master first%s", r.why, pct > 0 and string.format(" (+%d%%)", pct) or ""), "warn"
+  end
   local pct = math.floor(r.pct + 0.5)
   -- "fills an empty slot (Ranged (levelling))" on a belt read like the slot was Ranged (Gary's log, 2026-11-11)
   if not r.why and r.empty and r.new > 0 then
@@ -204,6 +254,17 @@ function M:Snapshot()
   local w, out = self:Weights(), {}
   for k, v in pairs(w) do if type(v) == "number" then out[k] = v end end
   return { role = w.role, weights = out }
+end
+
+-- At login: which weapon skills the client says this character knows.
+function M:OnEnable()
+  self:On("PLAYER_ENTERING_WORLD", function(mod)
+    if mod.loggedSkills then return end
+    mod.loggedSkills = true
+    M.skillsReadable = nil
+    local known = M.KnownWeapons()
+    mod:Info("weapon skills known: %s", #known > 0 and table.concat(known, ", ") or "none readable (weapon type check off)")
+  end)
 end
 
 function M:Activity()

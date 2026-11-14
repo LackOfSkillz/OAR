@@ -110,3 +110,33 @@ T.describe("gear shop", function()
     T.eq(game.bought[1].qty, 20)
   end)
 end)
+
+T.describe("gear shop weapon skills", function()
+  T.it("a weapon type the class can use but this character hasn't learned is marked, after usable ones", function()
+    local game = mock.new({ level = 15 })
+    game.money = 100000
+    game.knownSpells = { [264] = true } -- Bows only
+    game.items = {
+      [101] = { name = "Old Bow", equipLoc = "INVTYPE_RANGED", class = 2, subclass = 2 },
+      [601] = { name = "Great Bow", equipLoc = "INVTYPE_RANGED", class = 2, subclass = 2 },
+      [701] = { name = "Prospector Axe", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 0 },
+      [702] = { name = "Iron Knuckles", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 13 },
+    }
+    game.itemStats = { [101] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 5 }, [601] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 9 },
+      [701] = { ITEM_MOD_AGILITY_SHORT = 20 }, [702] = { ITEM_MOD_AGILITY_SHORT = 20 } }
+    game.worn = { [18] = 101 }
+    game.ahListings = { [601] = { name = "Great Bow", minPrice = 3000, class = 2 },
+      [701] = { name = "Prospector Axe", minPrice = 5000, class = 2 }, [702] = { name = "Iron Knuckles", minPrice = 100, class = 2 } }
+    local ns = game:loadAddon()
+    game:login()
+    game:fire("AUCTION_HOUSE_SHOW")
+    ns.GearShop:Start("weapons")
+    game:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+    local list = ns.GearShop:Results()
+    T.eq(list[1].itemID, 601, "the bow you can use comes first")
+    T.eq(list[2].itemID, 701)
+    T.eq(list[2].learn, "learn Axes")
+    for _, b in ipairs(list) do T.ok(b.itemID ~= 702, "hunters can't use fist weapons") end
+    T.contains(ns.GearShop.Gain(list[2]), "learn Axes first")
+  end)
+end)
