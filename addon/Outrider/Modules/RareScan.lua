@@ -31,6 +31,71 @@ function M:OnEnable()
   self:On("UPDATE_MOUSEOVER_UNIT", function(mod) mod:Check("mouseover", "mouseover") end)
   self:On("NAME_PLATE_UNIT_ADDED", self.OnPlate)
   self:On("PLAYER_ENTERING_WORLD", self.CheckNameplateSetting)
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod.vigSeen = {} mod:ScanVignettes() end)
+  self:On("VIGNETTE_MINIMAP_UPDATED", self.ScanVignettes)
+end
+
+-- Minimap vignettes (the skull/star a rare can get): seen from much farther
+-- than a nameplate (Gary, 2026-11-14: "sound an alarm when she spawns while I
+-- camp"). C9 says rares may have none on Forever, so the first vignettes of a
+-- session are logged to settle it. A vignette on a rare creature alerts like a
+-- nameplate, with its exact position. Read-only.
+function M:IsRareCreature(npcID, mapID, atlas)
+  if ns.Data:Get("rare", npcID) or self:IsWatched(npcID) then return true end
+  if type(atlas) == "string" and atlas:lower():find("kill") then return true end
+  local mobs = ns.Finder and ns.Finder:Mobs()
+  for _, r in ipairs(mobs and mapID and mobs[mapID] or {}) do
+    if r[1] == npcID then return r[5] == 2 or r[5] == 4 end
+  end
+  return false
+end
+
+function M:ScanVignettes()
+  local list = C.Call("C_VignetteInfo.GetVignettes")
+  if type(list) ~= "table" then return end
+  self.vigSeen = self.vigSeen or {}
+  local mapID = C.PlayerPosition("player")
+  for _, vg in ipairs(list) do
+    if not self.vigSeen[vg] then
+      local v = C.Call("C_VignetteInfo.GetVignetteInfo", vg)
+      if type(v) == "table" then
+        self.vigSeen[vg] = true
+        local g = C.ParseGUID(C.Readable(v.objectGUID))
+        self.vigLogged = (self.vigLogged or 0) + 1
+        if self.vigLogged <= 20 then
+          self:Info("vignette %s atlas=%s object=%s:%s", tostring(C.Readable(v.name)), tostring(v.atlasName),
+            tostring(g and g.kind), tostring(g and g.id))
+        end
+        if g and g.kind == "Creature" and g.id and self:IsRareCreature(g.id, mapID, v.atlasName) then
+          self:FromVignette(vg, v, g, mapID)
+        end
+      end
+    end
+  end
+end
+
+function M:FromVignette(vg, v, g, mapID)
+  local now = GetTime and GetTime() or time()
+  local inside = C.Call("IsInInstance")
+  local layer = (not inside) and g.zoneUID or nil
+  local prev = self.last[g.id]
+  if prev and (now - prev.t) < (self:Settings().dedupe or 60) and not prev.dead and prev.layer == layer then return end
+  self.last[g.id] = { t = now, dead = false, layer = layer }
+  local x, y
+  local pos = mapID and C.Call("C_VignetteInfo.GetVignettePosition", vg, mapID)
+  if type(pos) == "table" and pos.GetXY then x, y = pos:GetXY() end
+  local pack = ns.Data:Get("rare", g.id)
+  local name = C.Readable(v.name)
+  local info = {
+    npcID = g.id, name = type(name) == "string" and name or (pack and pack.name), how = "vignette",
+    mapID = mapID, x = x, y = y, exact = x ~= nil, layer = layer, dead = false,
+    tameable = pack and pack.beast and pack.beast.tameable or nil, pack = pack and true or false,
+    watched = self:IsWatched(g.id, name), t = time(),
+  }
+  self:Info("rare seen npcID=%d %s how=vignette layer=%s map=%s %s", g.id, tostring(info.name), tostring(layer),
+    tostring(mapID), x and string.format("%.3f,%.3f", x, y) or "nopos")
+  ns.Events:Fire("OTR_RARE_SEEN", info)
+  return info
 end
 
 function M:OnDisable()

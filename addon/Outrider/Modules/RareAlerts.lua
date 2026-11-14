@@ -13,13 +13,13 @@ local M = ns:NewModule("RareAlerts", {
   phase = "P2",
   order = 30,
   yieldsTo = { "RareScanner" },
-  defaults = { mode = "all", sound = true, soundName = "RAID_WARNING", toast = true, cooldown = 300 },
+  defaults = { mode = "all", sound = true, soundName = "RAID_WARNING", toast = true, cooldown = 300, flash = true, arrow = true },
 })
 
 local L = {
   nearby = "nearby", targeted = "targeted", hovered = "under your mouse",
 }
-local HOW = { nameplate = L.nearby, target = L.targeted, mouseover = L.hovered }
+local HOW = { nameplate = L.nearby, target = L.targeted, mouseover = L.hovered, vignette = "on the minimap" }
 
 function M:OnInitialize()
   self.lastAlert = {}
@@ -84,7 +84,49 @@ function M:OnRareSeen(_, info)
   elseif s.sound then
     ns.Compat.Call("PlaySound", ns.Toast:SoundID(s.soundName), "Master")
   end
+  -- Hard to miss while camping (Gary, 2026-11-14): a red pulse round the screen
+  -- edge, and the arrow to her when her exact spot is known (minimap marker).
+  if s.flash then self:Flash() end
+  if s.arrow and info.exact and info.mapID and ns.Waypoints then
+    ns.Waypoints:Set(info.mapID, info.x, info.y, "Rare: " .. info.name)
+  end
   self:Info("alert npcID=%d %s how=%s layer=%s", info.npcID, tostring(info.name), info.how, tostring(info.layer))
+end
+
+-- A red border round the whole screen that pulses 4 times (plain frame, not
+-- secure; nothing clickable, so it never gets in the way).
+function M:Flash()
+  local f = self.flash
+  if not f then
+    f = CreateFrame("Frame", "Outrider_RareFlash", UIParent)
+    f:SetAllPoints(UIParent)
+    f:SetFrameStrata("FULLSCREEN_DIALOG")
+    f:EnableMouse(false)
+    local function edge(a1, a2, w, h)
+      local t = f:CreateTexture(nil, "OVERLAY")
+      t:SetColorTexture(1, 0.15, 0.1, 0.55)
+      t:SetPoint(a1) t:SetPoint(a2)
+      if w then t:SetWidth(w) end
+      if h then t:SetHeight(h) end
+    end
+    edge("TOPLEFT", "TOPRIGHT", nil, 28) edge("BOTTOMLEFT", "BOTTOMRIGHT", nil, 28)
+    edge("TOPLEFT", "BOTTOMLEFT", 28, nil) edge("TOPRIGHT", "BOTTOMRIGHT", 28, nil)
+    local ag = f.CreateAnimationGroup and f:CreateAnimationGroup()
+    if ag then
+      local a = ag:CreateAnimation("Alpha")
+      if a then
+        a:SetFromAlpha(1) a:SetToAlpha(0) a:SetDuration(0.6)
+        ag:SetLooping("REPEAT")
+        local n = 0
+        ag:SetScript("OnLoop", function() n = n + 1 if n >= 4 then ag:Stop() f:Hide() n = 0 end end)
+      end
+      f.ag = ag
+    end
+    f:Hide()
+    self.flash = f
+  end
+  f:Show()
+  if f.ag then f.ag:Stop() f.ag:Play() end
 end
 
 function M:Snapshot()
