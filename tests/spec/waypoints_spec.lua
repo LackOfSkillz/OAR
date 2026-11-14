@@ -80,7 +80,7 @@ T.describe("requested pins", function()
     local ns = game:loadAddon()
     game:login()
     local w = ns.Waypoints.current
-    T.ok(w and w.title:find("Vulgara", 1, true), "Vulgara pin set on Khreos")
+    T.ok(w and w.title:find("Slydris", 1, true), "Slydris pin set on Khreos")
     T.eq(w.mapID, 2521)
     ns.Waypoints:Clear("test", true)
     ns.Waypoints:Requests()

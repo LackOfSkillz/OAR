@@ -88,8 +88,9 @@ end
 -- login (never replacing a waypoint he set himself). Coordinates from the
 -- Questie Forever DB and Outrider's own sightings.
 M.REQUESTS = {
-  { id = "vulgara-20261114", char = "Khreos", mapID = 2521, x = 0.429, y = 0.521,
-    title = "Vulgara the Insatiable (elite fox, 1.5s pet)" },
+  -- (Vulgara's pin, 2026-11-14 08:08, retired: Gary reached her at 08:12)
+  { id = "slydris-20261114", char = "Khreos", mapID = 2521, x = 0.501, y = 0.487,
+    title = "Slydris (rare elite fox, 1.5s pet; 4 spawn spots, see map)" },
 }
 
 function M:Requests()
