@@ -26,7 +26,9 @@ local LOUD = { Sound_SFXVolume = "1.0", Sound_MusicVolume = "0.0", Sound_Ambienc
 -- the mouse on it (Gary, 2026-11-14: "it casts but won't catch"). 3 = on for
 -- mouse and keyboard; arc 2 = wide; range in yards (the bobber lands about
 -- 20 away). Only while the pole is on; the old values come back after.
-local SOFT = { SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "30" }
+-- autoLootDefault: Blizzard's own Auto Loot option, so the press that hooks
+-- the fish also takes it (Gary, 2026-11-14); restored with the rest.
+local SOFT = { SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "30", autoLootDefault = "1" }
 
 function M:PoleEquipped()
   local link = C.Call("GetInventoryItemLink", "player", 16)
