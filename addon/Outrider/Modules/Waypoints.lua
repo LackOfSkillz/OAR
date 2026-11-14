@@ -84,8 +84,30 @@ function M:Calibrate()
   return M.swap
 end
 
+-- Pins Gary asked Claude for in chat, set once on the named character's next
+-- login (never replacing a waypoint he set himself). Coordinates from the
+-- Questie Forever DB and Outrider's own sightings.
+M.REQUESTS = {
+  { id = "vulgara-20261114", char = "Khreos", mapID = 2521, x = 0.429, y = 0.521,
+    title = "Vulgara the Insatiable (elite fox, 1.5s pet)" },
+}
+
+function M:Requests()
+  local done = ns.db.global.pinRequestsDone or {}
+  ns.db.global.pinRequestsDone = done
+  local me = C.Readable(C.Call("UnitName", "player"))
+  for _, r in ipairs(M.REQUESTS) do
+    if not done[r.id] and (not r.char or r.char == me) and not self.current then
+      done[r.id] = time()
+      self:Set(r.mapID, r.x, r.y, r.title)
+      ns.Print("map pin set: %s", r.title)
+    end
+  end
+end
+
 function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod)
+    mod:Requests()
     if mod.calibrated then return end
     if mod:Calibrate() ~= nil then mod.calibrated = true end
   end)
