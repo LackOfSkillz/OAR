@@ -27,6 +27,7 @@ end
 function M:Store()
   local c = ns.db.char
   c.professions = type(c.professions) == "table" and c.professions or {}
+  c.professions[""] = nil
   return c.professions
 end
 
@@ -113,6 +114,8 @@ function M:Scan(why)
     ok, name, recipes, skill, max = pcall(self.ScanClassic, self)
     how = "classic"
   end
+  -- a window read with no profession name once stored Alchemy under "" (2026-11-14)
+  if name == "" then name = nil end
   if not ok or not name or not recipes then
     if why == "show" then self:Warn("profession window opened but no recipes could be read") end
     return

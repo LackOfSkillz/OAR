@@ -87,3 +87,16 @@ T.describe("profession trainer", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("profession trainer blank names", function()
+  T.it("a blank-named profession record is dropped and never offered", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions = { [""] = { skill = 0, max = 0, recipes = {
+      [1] = { name = "Elixir of Minor Defense", learned = true, diff = 0, reagents = { [765] = 1 } } } } }
+    T.eq(#ns.ProfTrainer:Professions(), 0, "never offered")
+    ns.Modules:Get("Professions"):Store()
+    T.eq(ns.db.char.professions[""], nil, "dropped on the next scan")
+  end)
+end)

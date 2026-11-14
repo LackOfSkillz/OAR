@@ -46,7 +46,7 @@ function M:Professions()
   local owned = ns.Crafter and ns.Crafter:Owned() or {}
   local out = {}
   for name in pairs(owned) do
-    if not M.GATHER_ONLY[name] and self:Record(name) then out[#out + 1] = name end
+    if type(name) == "string" and name ~= "" and not M.GATHER_ONLY[name] and self:Record(name) then out[#out + 1] = name end
   end
   table.sort(out)
   return out
@@ -232,6 +232,8 @@ end
 function M:OnEnable()
   -- cheap (a few recipes), and BAG_UPDATE_DELAYED is already batched by the game
   local function later(mod) mod:Evaluate() end
+  -- drop the blank-named copy an old scan stored (2026-11-14)
+  if type(ns.db.char.professions) == "table" then ns.db.char.professions[""] = nil end
   self:On("BAG_UPDATE_DELAYED", later)
   self:On("PLAYER_REGEN_ENABLED", later)
   self:On("PLAYER_REGEN_DISABLED", function(mod) mod:Hide() end)
