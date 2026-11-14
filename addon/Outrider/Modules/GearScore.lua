@@ -112,11 +112,13 @@ function M.ArmorType(cls, level)
 end
 local OFFHAND = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true, INVTYPE_HOLDABLE = true }
 
-function M:Weights()
-  local base = ns.StatWeights[ns.PlayerClass()] or ns.StatWeights.WARRIOR
+-- Stat weights for this character, or for another class (KitShare scores
+-- items for other Outrider users with their class's weights).
+function M:Weights(cls)
+  local base = ns.StatWeights[cls or ns.PlayerClass()] or ns.StatWeights.WARRIOR
   local out = {}
   for k, v in pairs(base) do out[k] = v end
-  for k, v in pairs(self:Settings().weights) do out[k] = v end
+  if not cls then for k, v in pairs(self:Settings().weights) do out[k] = v end end
   return out
 end
 
@@ -127,8 +129,8 @@ function M.Stats(link)
   return ok and type(stats) == "table" and stats or {}
 end
 
-function M:Score(link, equipLoc)
-  local w = self:Weights()
+function M:Score(link, equipLoc, cls)
+  local w = self:Weights(cls)
   local total = 0
   for stat, value in pairs(M.Stats(link)) do
     local v = C.Readable(value)
