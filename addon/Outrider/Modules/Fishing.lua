@@ -33,8 +33,68 @@ function M:PoleEquipped()
   return ok and class == POLE_CLASS and subclass == POLE_SUBCLASS
 end
 
+-- Lures by name, best first (Classic bonuses: Attractor +100, Flesh Eating Worm
+-- and Bright Baubles +75, Fish Lens and Nightcrawlers +50, Shiny Bauble +25;
+-- wowhead classic item pages, unverified on Forever). Gary, 2026-11-14: the
+-- fish key puts a lure on when none is active, then casts on the next press.
+M.LURES = { "Aquadynamic Fish Attractor", "Flesh Eating Worm", "Bright Baubles", "Aquadynamic Fish Lens",
+  "Nightcrawlers", "Shiny Bauble" }
+
+function M:LureActive()
+  return C.Readable((C.Call("GetWeaponEnchantInfo"))) and true or false
+end
+
+-- The best lure in the bags that hasn't failed this session, or nil.
+function M:LureInBags()
+  self.badLure = self.badLure or {}
+  local have = {}
+  for bag = 0, 4 do
+    for slot = 1, (C.Call("C_Container.GetContainerNumSlots", bag) or 0) do
+      local info = C.Call("C_Container.GetContainerItemInfo", bag, slot)
+      local it = type(info) == "table" and info.itemID and C.ItemInfo(info.itemID)
+      if it and it.name then have[it.name] = true end
+    end
+  end
+  for _, name in ipairs(M.LURES) do
+    if have[name] and not self.badLure[name] then return name end
+  end
+  return nil
+end
+
+function M:Body()
+  if not self:LureActive() then
+    local lure = self:LureInBags()
+    if lure then return "/use " .. lure .. "\n/use 16", lure end
+  end
+  return "/cast Fishing"
+end
+
+-- Rewrite the cast button when the lure state changes (combat-deferred).
+function M:RefreshMacro()
+  if not (self.on and self.button) then return end
+  local body, lure = self:Body()
+  self.lureNow = lure
+  if body ~= self.body then
+    self.body = body
+    ns.SecureButtons:SetMacro(self.button, body)
+  end
+end
+
+-- After a press that used a lure: if no lure took (skill too low, say), stop
+-- offering that lure so the key goes back to casting.
+function M:CheckLure(name)
+  if not name or self:LureActive() then return end
+  self.badLure = self.badLure or {}
+  self.badLure[name] = true
+  ns.Print("fishing: %s didn't go on (fishing skill too low?); the key casts without it", name)
+  self:Info("lure %s failed, skipped this session", name)
+  self:RefreshMacro()
+end
+
 function M:OnEnable()
   self.owner = self.owner or CreateFrame("Frame", "Outrider_FishingBindings")
+  self:On("UNIT_INVENTORY_CHANGED", function(mod, _, unit) if unit == "player" then mod:RefreshMacro() end end)
+  self:On("BAG_UPDATE_DELAYED", self.RefreshMacro)
   self:On("PLAYER_ENTERING_WORLD", self.Update)
   self:On("PLAYER_EQUIPMENT_CHANGED", self.Update)
   self:On("UNIT_SPELLCAST_CHANNEL_START", function(mod, _, unit, _, spellID) mod:OnChannel(unit, spellID, true) end)
@@ -56,6 +116,7 @@ end
 function M:OnChannel(unit, spellID, started)
   if unit ~= "player" or not self.on or not isFishing(spellID) then return end
   self.bobber = started
+  self:RefreshMacro()
   self:Bind()
 end
 
@@ -81,7 +142,17 @@ function M:SetMode(on)
   if on then
     if not self.button then
       self.button = ns.SecureButtons:Acquire("Fishing")
-      if self.button then ns.SecureButtons:SetMacro(self.button, "/cast Fishing") end
+      self.body = nil
+      if self.button then
+        self:RefreshMacro()
+        if not self.button.outriderLureHook then
+          self.button.outriderLureHook = true
+          self.button:HookScript("PostClick", function()
+            local lure = M.lureNow
+            if lure then ns.Timer.After(3, function() M:CheckLure(lure) end, "fishing:lure") end
+          end)
+        end
+      end
     end
     self:Loud(true)
     self:Info("fishing mode on (key %s)", tostring(self:Settings().key or "not set"))

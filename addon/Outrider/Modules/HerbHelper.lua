@@ -93,6 +93,7 @@ function M:OnObjectTooltip(tip, data)
     self.logged[text[1]] = true
     self:Info("object tooltip: %s", table.concat(text, " | "))
   end
+  if ns.FishingHUD and ns.FishingHUD.enabled then ns.FishingHUD:OnPoolTooltip(text[1]) end
   if not self:Settings().pinOnSight or not ns.LootLog or not ns.LootLog.enabled then return end
   local kind
   for i = 2, #text do

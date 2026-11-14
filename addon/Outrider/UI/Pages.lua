@@ -278,7 +278,11 @@ local function profRows()
   if owned.Fishing then
     r({ "header", "Fishing" })
     r({ "input", "Fishing key", "F, or off", "Set key", function(t) ns.Slash:Run("fishkey " .. t) end })
-    r({ "note", function() return "Current key: " .. tostring(set("Fishing").key or "none") end })
+    r({ "note", function() return "Current key: " .. tostring(set("Fishing").key or "none") .. ". It puts a lure on first when yours has run out." end })
+    r({ "check", "Fishing HUD while a pole is equipped", function() return set("FishingHUD").show end,
+      function(on) set("FishingHUD").show = on if ns.FishingHUD then ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" })
+    r({ "check", "Sound for rare catches", function() return set("FishingHUD").rareSound end,
+      function(on) set("FishingHUD").rareSound = on end })
   end
   if not next(owned) then
     r({ "header", "Professions" })

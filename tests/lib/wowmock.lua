@@ -362,11 +362,15 @@ function M.new(opts)
     -- quest log: game.questLog = { {title, questID, level, isHeader, complete} }
     GetNumQuestLogEntries = function() return #(game.questLog or {}) end,
     GetInfo = function(i) return game.questLog and game.questLog[i] end,
+    -- objectives: game.questObjectives[questID] = { {text, type, numFulfilled, numRequired, finished} }
+    GetQuestObjectives = function(id) return game.questObjectives and game.questObjectives[id] or {} end,
     IsComplete = function(id)
       for _, q in ipairs(game.questLog or {}) do if q.questID == id then return q.complete or false end end
       return false
     end,
   }
+  -- temporary weapon enchant (a fishing lure): game.lureMs = milliseconds left, nil = none
+  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return false end
   base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
   base.UnitLevel = function(unit)
     if unit == "player" then return player.level end

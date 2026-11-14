@@ -75,6 +75,7 @@ Modules\AuctionHelper.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
+Modules\FishingHUD.lua
 Modules\LootLog.lua
 Modules\HerbHelper.lua
 Modules\NodePack.lua
