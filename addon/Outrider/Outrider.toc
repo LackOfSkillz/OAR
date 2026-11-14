@@ -73,6 +73,7 @@ Modules\Crafter.lua
 Modules\CookTrainer.lua
 Modules\Prices.lua
 Modules\AuctionHelper.lua
+Modules\TrainShop.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua

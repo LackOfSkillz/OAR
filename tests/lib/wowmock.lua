@@ -391,6 +391,19 @@ function M.new(opts)
   base.GetMoney = function() return game.money or player.money end
   base.C_AuctionHouse = {
     GetBrowseResults = function() return game.browse or {} end,
+    -- game.ahListings = { [itemID] = { name, minPrice, qty, recipe = subclass } }; a query fills game.browse
+    SendBrowseQuery = function(q)
+      game.queries = game.queries or {}
+      game.queries[#game.queries + 1] = q
+      local out = {}
+      for id, l in pairs(game.ahListings or {}) do
+        local hit = (q.searchString ~= "" and l.name == q.searchString)
+          or (q.itemClassFilters and l.recipe and q.itemClassFilters[1].subClassID == l.recipe)
+        if hit then out[#out + 1] = { itemKey = { itemID = id }, minPrice = l.minPrice, totalQuantity = l.qty or 1 } end
+      end
+      game.browse = out
+    end,
+    IsThrottledMessageSystemReady = function() return true end,
     GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
     GetOwnedAuctions = function() return game.owned or {} end,
     CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
@@ -503,6 +516,14 @@ function M.new(opts)
     if not d then return nil end
     local lines = { { leftText = d.name } }
     if d.title then lines[2] = { leftText = d.title } else lines[2] = { leftText = "Level 20" } end
+    return { lines = lines }
+  end,
+  -- item tooltips: game.itemTips[itemID] = { "line", ... }
+  GetItemByID = function(id)
+    local t = game.itemTips and game.itemTips[id]
+    if not t then return nil end
+    local lines = {}
+    for i, l in ipairs(t) do lines[i] = { leftText = l } end
     return { lines = lines }
   end }
   -- merchant: game.merchant = { itemID, ... }; game.itemClass[itemID] = classID
