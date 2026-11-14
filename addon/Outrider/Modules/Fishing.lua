@@ -22,6 +22,11 @@ ns.Fishing = M
 
 local POLE_CLASS, POLE_SUBCLASS = 2, 20
 local LOUD = { Sound_SFXVolume = "1.0", Sound_MusicVolume = "0.0", Sound_AmbienceVolume = "0.1" }
+-- Soft targeting for objects, so the Interact key reaches the bobber without
+-- the mouse on it (Gary, 2026-11-14: "it casts but won't catch"). 3 = on for
+-- mouse and keyboard; arc 2 = wide; range in yards (the bobber lands about
+-- 20 away). Only while the pole is on; the old values come back after.
+local SOFT = { SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "30" }
 
 function M:PoleEquipped()
   local link = C.Call("GetInventoryItemLink", "player", 16)
@@ -155,15 +160,39 @@ function M:SetMode(on)
       end
     end
     self:Loud(true)
+    self:SoftInteract(true)
     self:Info("fishing mode on (key %s)", tostring(self:Settings().key or "not set"))
   else
     self.bobber = false
     ns.Combat:Run("fishing:bind", function() ClearOverrideBindings(M.owner) end, "fishing:bind")
     self:Loud(false)
+    self:SoftInteract(false)
     if self.button then ns.SecureButtons:Release(self.button) self.button = nil end
     self:Info("fishing mode off")
   end
   self:Bind()
+end
+
+function M:SoftInteract(on)
+  if self:Settings().softInteract == false then return end
+  local get, set = C.Resolve("C_CVar.GetCVar") or rawget(_G, "GetCVar"), C.Resolve("C_CVar.SetCVar") or rawget(_G, "SetCVar")
+  if type(get) ~= "function" or type(set) ~= "function" then return end
+  ns.Combat:Run("fishing:soft", function()
+    if on then
+      M.softSaved = M.softSaved or {}
+      local now = {}
+      for cvar, value in pairs(SOFT) do
+        if M.softSaved[cvar] == nil then M.softSaved[cvar] = get(cvar) end
+        pcall(set, cvar, value)
+        now[#now + 1] = cvar .. "=" .. tostring(get(cvar))
+      end
+      table.sort(now)
+      M:Info("bobber soft target on: %s", table.concat(now, " "))
+    elseif M.softSaved then
+      for cvar, value in pairs(M.softSaved) do if value ~= nil then pcall(set, cvar, value) end end
+      M.softSaved = nil
+    end
+  end, "fishing:soft")
 end
 
 function M:Loud(on)
