@@ -105,10 +105,80 @@ function M:OnCommodity(_, itemID)
   if type(info) == "table" then self:Record(itemID, C.Readable(info.unitPrice)) end
 end
 
+-- Full auction house scan (Gary, 2026-11-14: "no loss of functionality
+-- without the other addons"): Auctionator and TSM keep whole-market prices;
+-- this does the same from one click. C_AuctionHouse.ReplicateItems returns
+-- every listing; the cheapest buyout per unit of each item is recorded.
+-- Blizzard allows it once every 15 minutes. Reading only.
+M.SCAN_GAP, M.SCAN_CHUNK, M.SCAN_WAIT = 15 * 60, 1000, 60
+
+-- seconds until the next full scan is allowed (0 = now)
+function M:ScanWait()
+  local last = ns.db.global.lastFullScan
+  if not last then return 0 end
+  return math.max(0, M.SCAN_GAP - (time() - last))
+end
+
+function M:FullScan()
+  if not self.open then ns.Print("open the auction house first") return false end
+  if self.scanning then return false end
+  local wait = self:ScanWait()
+  if wait > 0 then
+    ns.Print("full price scan: Blizzard allows one every 15 minutes (%d min left)", math.ceil(wait / 60))
+    return false
+  end
+  local ok = pcall(C_AuctionHouse.ReplicateItems)
+  if not ok then ns.Print("full price scan isn't available on this client") return false end
+  self.scanning = time()
+  ns.db.global.lastFullScan = time()
+  self:Info("full price scan started")
+  ns.Events:Fire("OTR_PRICES_SCAN", "started")
+  ns.Timer.After(M.SCAN_WAIT, function()
+    if M.scanning then M.scanning = nil M:Info("full price scan: no answer") ns.Events:Fire("OTR_PRICES_SCAN", "failed") end
+  end, "prices:scanwait")
+  return true
+end
+
+-- The whole list arrived: read it in chunks so the game doesn't stutter.
+function M:OnReplicate()
+  if not self.scanning or self.reading then return end
+  local n = C.Call("C_AuctionHouse.GetNumReplicateItems") or 0
+  -- C.Call keeps five return values; the item id is the 17th, so call it directly
+  local info = C.Resolve("C_AuctionHouse.GetReplicateItemInfo")
+  if type(info) ~= "function" then self.scanning = nil return end
+  self.reading = true
+  local mins, i, listings = {}, 0, 0
+  local function step()
+    local last = math.min(n - 1, i + M.SCAN_CHUNK - 1)
+    for k = i, last do
+      local ok, _, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = pcall(info, k)
+      if not ok then count = nil end
+      count, buyout, itemID = C.Readable(count), C.Readable(buyout), C.Readable(itemID)
+      if type(itemID) == "number" and type(buyout) == "number" and buyout > 0 and type(count) == "number" and count > 0 then
+        local per = math.floor(buyout / count)
+        if not mins[itemID] or per < mins[itemID] then mins[itemID] = per end
+        listings = listings + 1
+      end
+    end
+    i = last + 1
+    if i < n then ns.Timer.After(0, step, "prices:scanstep") return end
+    local items = 0
+    for id, p in pairs(mins) do M:Record(id, p) items = items + 1 end
+    M.scanning, M.reading = nil, nil
+    M:Info("full price scan: %d listings, %d items priced", listings, items)
+    ns.Print("price scan done: %d items priced", items)
+    ns.Events:Fire("OTR_PRICES_SCAN", "done", items)
+  end
+  step()
+end
+
 function M:OnEnable()
+  self:On("AUCTION_HOUSE_SHOW", function(mod) mod.open = true end)
+  self:On("REPLICATE_ITEM_LIST_UPDATE", self.OnReplicate)
   self:On("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED", self.OnBrowse)
   self:On("COMMODITY_SEARCH_RESULTS_UPDATED", self.OnCommodity)
   self:On("AUCTION_HOUSE_CLOSED", function(mod)
+    mod.open = false
     if (mod.seen or 0) > 0 then mod:Info("auction house: recorded %d prices this visit", mod.seen) mod.seen = 0 end
   end)
 end
