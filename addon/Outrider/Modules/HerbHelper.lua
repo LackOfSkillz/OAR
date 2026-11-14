@@ -104,6 +104,7 @@ function M:OnObjectTooltip(tip, data)
   if kind == "herb" then self:AddSkillLine(tip, text[1]) end
   local mapID, x, y = C.PlayerPosition("player")
   if not (mapID and x) then return end
+  ns.LootLog:MarkNode(kind, mapID, x, y, "up")
   local key = string.format("%s:%d:%.0f:%.0f", text[1], mapID, x * 200, y * 200)
   self.seen = self.seen or {}
   if self.seen[key] then return end

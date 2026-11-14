@@ -83,8 +83,38 @@ function M.IconFor(pin)
   return ICON[kind] or (TRACK .. "None")
 end
 
--- Fill a marker: frame has .ring and .icon textures.
+-- Gathering nodes are a thin hollow square (Gary, 2026-11-14): Blizzard's
+-- Find Herbs / Find Minerals dot shows inside it when the node is really up,
+-- an empty square means it's gone. Green = Gary saw it up lately, grey = he
+-- picked it lately (LootLog:NodeState).
+M.GATHER = { herb = true, ore = true, fish = true }
+M.STATE_COLOR = { up = { 0.35, 1.00, 0.35, 1 }, picked = { 0.55, 0.55, 0.55, 0.6 } }
+
+local function outline(frame)
+  if frame.edges then return frame.edges end
+  local e = {}
+  local sides = { { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" }, { "TOPLEFT", "BOTTOMLEFT" }, { "TOPRIGHT", "BOTTOMRIGHT" } }
+  for i, pts in ipairs(sides) do
+    local t = frame:CreateTexture(nil, "OVERLAY")
+    t:SetPoint(pts[1]) t:SetPoint(pts[2])
+    if i <= 2 then t:SetHeight(1.5) else t:SetWidth(1.5) end
+    e[i] = t
+  end
+  frame.edges = e
+  return e
+end
+
 function M.Paint(frame, pin)
+  local hollow = M.GATHER[pin.kind]
+  if hollow then
+    local st = ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
+    local c = M.STATE_COLOR[st or ""] or M.GROUP_COLOR.gather or { 0.4, 0.9, 0.4 }
+    frame.ring:Hide() frame.icon:Hide()
+    for _, t in ipairs(outline(frame)) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 0.9) t:Show() end
+    return
+  end
+  frame.ring:Show() frame.icon:Show()
+  if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
   local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
   frame.ring:SetColorTexture(c[1], c[2], c[3], (pin.questColor or pin.ringColor) and 0.95 or 0.55)
   local ok = frame.icon:SetTexture(M.IconFor(pin))
@@ -317,6 +347,10 @@ function M:AcquirePin(canvas)
       GameTooltip:AddLine(first, ns.Theme:Color("muted"))
       if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
       for _, l in ipairs(M.QuestLines(self.data)) do GameTooltip:AddLine(l) end
+      if M.GATHER[self.data.kind] and ns.LootLog then
+        local line, color = ns.LootLog:StateLine(self.data)
+        if line then GameTooltip:AddLine(line, ns.Theme:Color(color)) end
+      end
       local more = self.data.more
       if more and #more > 0 then
         GameTooltip:AddLine(string.format("and %d more here:", #more), ns.Theme:Color("muted"))

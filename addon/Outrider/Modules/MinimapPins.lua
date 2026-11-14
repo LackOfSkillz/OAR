@@ -79,6 +79,10 @@ function M:Dot(i)
       GameTooltip:AddLine(string.format("%s, %d yards", first, math.floor((self.dist or 0) + 0.5)), ns.Theme:Color("muted"))
       if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
       for _, l in ipairs(ns.MapPins.QuestLines(p)) do GameTooltip:AddLine(l) end
+      if ns.MapPins.GATHER[p.kind] and ns.LootLog then
+        local line, color = ns.LootLog:StateLine(p)
+        if line then GameTooltip:AddLine(line, ns.Theme:Color(color)) end
+      end
       GameTooltip:Show()
     end)
     d:SetScript("OnLeave", function() GameTooltip:Hide() end)

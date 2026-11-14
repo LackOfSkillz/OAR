@@ -25,6 +25,7 @@ function M:OnInitialize()
   local g = ns.db.global
   g.fishing = type(g.fishing) == "table" and g.fishing or {}
   g.nodes = type(g.nodes) == "table" and g.nodes or {}
+  g.nodeState = type(g.nodeState) == "table" and g.nodeState or {}
   self.session = {}
 end
 
@@ -85,7 +86,59 @@ end
 function M:Node(kind, items)
   local mapID, x, y = C.PlayerPosition("player")
   if not (mapID and x) then return end
+  self:MarkNode(kind, mapID, x, y, "picked")
   return self:AddNode(kind, mapID, x, y, items[1] and items[1].name)
+end
+
+-- What Outrider last knew about a node spot (Gary, 2026-11-14: "I keep going to
+-- nodes and someone else has snatched them"). An addon can't see live nodes
+-- from a distance (Find Herbs' yellow dots can't be read), so this remembers
+-- only what Gary saw himself: "up" when its tooltip showed under his mouse,
+-- "picked" when he gathered it. Picked spots stay dimmed PICKED_FOR seconds;
+-- "up" is trusted for UP_FOR. Positions are where Gary stood, so a match is
+-- anything within NEAR of the spot.
+M.PICKED_FOR, M.UP_FOR, M.NEAR, M.STATE_MAX = 15 * 60, 5 * 60, 0.008, 200
+
+function M:MarkNode(kind, mapID, x, y, state)
+  local list = ns.db.global.nodeState
+  local now = time()
+  for _, e in ipairs(list) do
+    if e.mapID == mapID and e.kind == kind and math.abs(e.x - x) < M.NEAR and math.abs(e.y - y) < M.NEAR then
+      local quiet = e.state == state and now - e.t < 30 -- tooltips repeat while hovering
+      e.state, e.t = state, now
+      if not quiet then ns.Events:Fire("OTR_POI_ADDED", nil) end
+      return e
+    end
+  end
+  local e = { kind = kind, mapID = mapID, x = x, y = y, state = state, t = now }
+  list[#list + 1] = e
+  while #list > M.STATE_MAX do table.remove(list, 1) end
+  ns.Events:Fire("OTR_POI_ADDED", nil)
+  return e
+end
+
+-- "picked" / "up" / nil, and seconds since, for a node pin.
+function M:NodeState(mapID, x, y, now)
+  if not (mapID and x and y) then return nil end
+  now = now or time()
+  local best
+  for _, e in ipairs(ns.db.global.nodeState) do
+    if e.mapID == mapID and math.abs(e.x - x) < M.NEAR and math.abs(e.y - y) < M.NEAR and (not best or e.t > best.t) then best = e end
+  end
+  if not best then return nil end
+  local age = now - best.t
+  if best.state == "picked" and age < M.PICKED_FOR then return "picked", age end
+  if best.state == "up" and age < M.UP_FOR then return "up", age end
+  return nil
+end
+
+-- Tooltip line for a node pin, or nil.
+function M:StateLine(pin, now)
+  local st, age = self:NodeState(pin.mapID, pin.x, pin.y, now)
+  if not st then return nil end
+  local mins = math.floor(age / 60)
+  if st == "picked" then return string.format("You picked this %s (about %d min ago): probably empty", date("%H:%M", (now or time()) - age), mins), "muted" end
+  return string.format("Seen here %s: probably still up", mins < 1 and "just now" or (mins .. " min ago")), "good"
 end
 
 -- Adds or merges a node. `by` = guildmate who shared it (nil = Gary).
