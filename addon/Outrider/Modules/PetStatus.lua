@@ -393,9 +393,12 @@ end
 -- One log line per login / pet change: Claude's view of what Forever exposes.
 function M:LogPet(d)
   if not d then self:Info("no pet") return end
-  self:Info("pet %s npcID=%s family=%s level=%s xp=%s/%s focus=%s happinessAPI=%s buffs=[%s]", tostring(d.name),
+  -- attack speed and damage too (Gary, 2026-11-14: "Mystmane is supposed to
+  -- be one of the fastest bears"; wild readings all say 2.0)
+  self:Info("pet %s npcID=%s family=%s level=%s xp=%s/%s focus=%s happinessAPI=%s speed=%s damage=%s-%s buffs=[%s]", tostring(d.name),
     tostring(d.npcID), tostring(d.family), tostring(d.level), tostring(d.xp), tostring(d.xpMax), tostring(d.focus),
-    tostring(d.happiness), table.concat(self:Auras(), ", "))
+    tostring(d.happiness), type(d.speed) == "number" and string.format("%.2f", d.speed) or "?",
+    tostring(d.dmgLo), tostring(d.dmgHi), table.concat(self:Auras(), ", "))
   self:LogStable()
 end
 
