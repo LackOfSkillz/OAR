@@ -63,7 +63,7 @@ end
 
 -- Is the profession window open and loaded for this profession?
 function M:OpenFor(prof)
-  if not C.Call("C_TradeSkillUI.IsTradeSkillReady") then return false end
+  if not (C.Call("C_TradeSkillUI.IsTradeSkillReady") or self.windowOpen) then return false end
   local name = ns.Professions and ns.Professions.OpenName and ns.Professions.OpenName()
   if name then return name == prof end
   -- no name at all: trust the window if one of its recipes is one we stored for prof
@@ -235,6 +235,11 @@ function M:Refresh()
 end
 
 function M:OnEnable()
+  -- Forever's IsTradeSkillReady kept saying no with the window open (the
+  -- training button reopened Alchemy on every press, 2026-11-14), so the
+  -- window's own open/close events are tracked too.
+  self:On("TRADE_SKILL_SHOW", function(mod) mod.windowOpen = true end)
+  self:On("TRADE_SKILL_CLOSE", function(mod) mod.windowOpen = false end)
   self:On("UI_ERROR_MESSAGE", self.OnUIError)
   self:On("PLAYER_ENTERING_WORLD", self.Refresh)
 end

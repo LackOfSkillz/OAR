@@ -177,3 +177,19 @@ T.describe("crafter blank profession name", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("crafter window events", function()
+  T.it("the window counts as open after TRADE_SKILL_SHOW even when IsTradeSkillReady says no", function()
+    local game = mock.new()
+    game.prof = { name = "Alchemy", skill = 20, max = 75, line = 171, recipes = {
+      [3170] = { name = "Minor Troll's Blood Elixir", diff = 0, reagents = { [765] = 1 }, have = 10 } } }
+    local ns = game:loadAddon()
+    game:login()
+    game.tradeOpen = false
+    game:fire("TRADE_SKILL_SHOW")
+    T.ok(ns.Crafter:OpenFor("Alchemy"))
+    T.eq(ns.Crafter:Make("Alchemy"), "made")
+    game:fire("TRADE_SKILL_CLOSE")
+    T.ok(not ns.Crafter:OpenFor("Alchemy"))
+  end)
+end)
