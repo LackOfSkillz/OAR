@@ -102,7 +102,7 @@ end
 -- rest wait for a click each.
 function M:Start()
   if not self.open then ns.Print("open the auction house first") return end
-  self.queue, self.pos, self.prices, self.recipesForSale = self:Queue(), 0, {}, {}
+  self.queue, self.pos, self.prices, self.recipesForSale, self.seenRecipes = self:Queue(), 0, {}, {}, 0
   self.manual = false
   self:Info("training shopping: %d searches", #self.queue)
   self:Next()
@@ -163,9 +163,39 @@ function M:NoteRecipe(prof, itemID, price)
       if t:find("Already known", 1, true) then known = true end
     end
   end
+  -- known by name too: "Recipe: Elixir of Minor Defense" vs the recipes we stored
+  local name = itemName(itemID)
+  local taught = name and name:match("^%a+: (.+)$")
+  local rec = ns.db.char.professions[prof]
+  if taught and rec and type(rec.recipes) == "table" then
+    for _, r in pairs(rec.recipes) do if type(r) == "table" and r.name == taught then known = true end end
+  end
+  self.seenRecipes = (self.seenRecipes or 0) + 1
   if known then return end
-  self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = itemName(itemID) or ("item " .. itemID),
+  self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = name or ("item " .. itemID),
     price = price, need = need }
+end
+
+-- Recipes worth showing: skill known, usable now or within 25 points; usable
+-- now first, then cheapest (Gary's first search found 119, 2026-11-14).
+M.SOON = 25
+function M:UsefulRecipes()
+  local out, unknown = {}, 0
+  for _, r in ipairs(self.recipesForSale or {}) do
+    local rec = ns.db.char.professions[r.prof]
+    local skill = rec and tonumber(rec.skill)
+    if not r.need or not skill then unknown = unknown + 1
+    elseif r.need <= skill + M.SOON then
+      r.now = r.need <= skill
+      out[#out + 1] = r
+    end
+  end
+  table.sort(out, function(a, b)
+    if a.now ~= b.now then return a.now end
+    if a.price ~= b.price then return a.price < b.price end
+    return a.name < b.name
+  end)
+  return out, unknown
 end
 
 -- ------------------------------------------------------------ ranking
@@ -222,15 +252,14 @@ function M:Lines()
       lines[#lines + 1] = string.format("%s: %s per point, buy %s (%s)", head, money(x.perPoint), table.concat(parts, ", "), money(x.cost))
     end
   end
-  local forSale = self.recipesForSale or {}
-  table.sort(forSale, function(a, b) return a.price < b.price end)
+  local forSale = self:UsefulRecipes()
   if #forSale > 0 then
-    lines[#lines + 1] = "|cffffd100Recipes for sale you don't know|r"
+    lines[#lines + 1] = "|cffffd100Recipes for sale you don't know (usable now or soon)|r"
     for i = 1, math.min(6, #forSale) do
       local r = forSale[i]
-      local skill = ns.db.char.professions[r.prof] and tonumber(ns.db.char.professions[r.prof].skill)
-      lines[#lines + 1] = string.format("%s: %s%s", money(r.price), r.name,
-        r.need and string.format(" (needs %s %d%s)", r.prof, r.need, skill and (", you " .. skill) or "") or "")
+      local skill = tonumber(ns.db.char.professions[r.prof].skill)
+      lines[#lines + 1] = string.format("%s: %s (needs %s %d, you %d)%s", money(r.price), r.name, r.prof, r.need, skill,
+        r.now and "" or " |cff888888later|r")
     end
   end
   return lines
@@ -240,7 +269,9 @@ function M:Done()
   self.queue = nil
   local n = 0
   for _ in pairs(self.prices or {}) do n = n + 1 end
-  self:Info("training shopping done: %d ingredients priced, %d recipes for sale", n, #(self.recipesForSale or {}))
+  local useful, unknown = self:UsefulRecipes()
+  self:Info("training shopping done: %d ingredients priced; recipes: %d seen, %d not known, %d usable now or soon, %d without skill info",
+    n, self.seenRecipes or 0, #(self.recipesForSale or {}), #useful, unknown)
   self:Refresh()
 end
 

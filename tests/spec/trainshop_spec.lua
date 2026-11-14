@@ -53,7 +53,7 @@ T.describe("training shopping", function()
     -- Healing: 8 crafts x (10 + 15)c = 200c for 6 points = 33c/point
     T.ok(text:find("Elixir of Minor Defense", 1, true) < text:find("Minor Healing Potion", 1, true), "cheaper per point first")
     T.contains(text, "20c per point")
-    T.contains(text, "Recipe: Swiftness Potion (needs Alchemy 60, you 30)")
+    T.ok(not text:find("Swiftness", 1, true), "needs 60, you 30: more than 25 above, left out")
     T.ok(not text:find("Old Grey Potion", 1, true), "grey recipes never")
     T.eq(#ns.Errors.list, 0)
   end)
