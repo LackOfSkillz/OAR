@@ -39,6 +39,7 @@ Hub.PLACE = {
   waypoints   = { "Explore", 12, "Ability_Tracking" },
   rares       = { "Explore", 13, "Ability_Hunter_SniperShot" },
   rarealerts  = { "Explore", 14, "INV_Misc_Spyglass_02" },
+  dungeons    = { "Explore", 15, "INV_Misc_Key_14" },
   class       = { "Character", 20 }, -- icon and title follow the character's class
   gear        = { "Character", 21, "INV_Chest_Chain" },
   gearsets    = { "Character", 22, "INV_Shoulder_02" },

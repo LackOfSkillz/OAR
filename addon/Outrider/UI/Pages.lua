@@ -366,6 +366,74 @@ ns.Hub:AddTab("money", "Money", function(p)
   UI:FormPage(p, moneyRows())
 end)
 
+-- ------------------------------------------------------------- Dungeons
+-- Ready now, best upgrades per dungeon, and the next tier (DungeonGuide).
+local function dungeonRows()
+  local D = ns.DungeonGuide
+  local rows = {}
+  local function r(t) rows[#rows + 1] = t end
+  if not (D and D.enabled) then
+    r({ "header", "Dungeons" })
+    r({ "note", "The dungeon guide module is off (Modules page)." })
+    return rows
+  end
+  if not D:Pack() then
+    r({ "header", "Dungeons" })
+    r({ "note", "The dungeon data pack (Outrider_Data_Dungeons) isn't installed." })
+    return rows
+  end
+  D:Warm()
+  local level = ns.Compat.Call("UnitLevel", "player") or 1
+  local rank = D:Rank()
+  local function find(name) for _, x in ipairs(D:Rank()) do if x.name == name then return x end end end
+  local nxt = D:NextTier(rank)
+  r({ "header", "Next tier" })
+  r({ "note", function()
+    local n = D:NextTier()
+    if not n then return "No upcoming dungeon with gear for you in the next few levels." end
+    return string.format("|cffffd100%s|r (levels %d-%d): %d upgrades waiting once you're a little higher.\n%s",
+      n.name, n.info.min, n.info.max, n.laterCount, D.UpgradeLine(n.ups, 4, true))
+  end, 44 })
+  if nxt then r({ "buttons", { { "Go to " .. nxt.name, function() D:Go(nxt) end, 260 } } }) end
+  r({ "header", "Ready now (level " .. level .. ")" })
+  local ready = 0
+  for _, x in ipairs(rank) do
+    if x.status == "ready" then
+      ready = ready + 1
+      local name = x.name
+      r({ "note", function()
+        local y = find(name) or x
+        local kind = y.info.raid and (y.info.size .. "-player raid") or "5-player"
+        local head = string.format("|cffffd100%s|r  levels %d-%d, %s%s", y.name, y.info.min, y.info.max, kind, y.info.new and ", new on Forever" or "")
+        if y.count == 0 then return head .. "\nNothing here beats what you wear." end
+        return string.format("%s\n%d upgrades: %s", head, y.count, D.UpgradeLine(y.ups, 3, false))
+      end, 44 })
+      r({ "buttons", { { "Go to the entrance", function() D:Go(x) end, 160 } } })
+    end
+  end
+  if ready == 0 then r({ "note", "No dungeon in your level range yet." }) end
+  local soon = {}
+  for _, x in ipairs(rank) do if x.status == "soon" then soon[#soon + 1] = x end end
+  if #soon > 0 then
+    r({ "header", "Coming up" })
+    r({ "note", function()
+      local lines = {}
+      for _, x in ipairs(D:Rank()) do
+        if x.status == "soon" then
+          lines[#lines + 1] = string.format("%s (%d-%d): %d upgrades later", x.name, x.info.min, x.info.max, x.laterCount)
+        end
+      end
+      return table.concat(lines, "\n")
+    end, 18 * #soon + 4 })
+  end
+  r({ "note", "Upgrades are scored for your class against what you wear; level ranges from foreverdb.net, loot from QuestieDB (both unverified)." })
+  return rows
+end
+
+ns.Hub:AddTab("dungeons", "Dungeons", function(p)
+  UI:FormPage(p, dungeonRows())
+end)
+
 -- ----------------------------------------------------------------- Chat
 ns.Hub:AddTab("chat", "Chat", function(p)
   local function words()

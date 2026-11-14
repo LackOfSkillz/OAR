@@ -58,6 +58,7 @@ Data\StatWeights.lua
 Data\Herbs.lua
 Data\Transports.lua
 Data\Money.lua
+Data\Dungeons.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\SharedData.lua
@@ -89,6 +90,7 @@ Modules\Mailbox.lua
 Modules\CraftQueue.lua
 Modules\SkillUp.lua
 Modules\GearScore.lua
+Modules\DungeonGuide.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua
 Modules\Handoffs.lua

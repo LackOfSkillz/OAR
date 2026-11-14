@@ -1,0 +1,163 @@
+-- Modules/DungeonGuide.lua  (dungeon and raid module, phase 1)
+-- Which dungeons this character is ready for, what each one holds for it,
+-- and where to go next for the next step up in gear (Gary, 2026-11-14: "gear
+-- awareness that comes from dungeons ... what dungeons you're ready for and
+-- what dungeons you need for the gear to get to your next tier").
+-- Data: Outrider_Data_Dungeons (tools/import_dungeons.py from QuestieDB:
+-- bosses, their gear drops, entrances) and Data/Dungeons.lua (level ranges,
+-- foreverdb.net). Gear is scored with the gear advisor (class weights, armor
+-- type, weapon skills) against what is worn now.
+--   ready: your level is inside the range (or up to 2 below its start)
+--   soon:  starts within 8 levels: its gear is your next tier
+-- A dungeon's value is the best upgrade per slot it offers, added up.
+
+local _, ns = ...
+local C = ns.Compat
+local M = ns:NewModule("DungeonGuide", {
+  title = "Dungeons and raids: where your gear is",
+  phase = "P6",
+  order = 84,
+  defaults = {},
+})
+ns.DungeonGuide = M
+
+M.ADDON = "Outrider_Data_Dungeons"
+M.EARLY, M.SOON = 2, 8
+
+function M:Pack()
+  if self.pack ~= nil then return self.pack end
+  if not rawget(_G, "Outrider_DataDungeons") then C.LoadAddOn(self.ADDON) end
+  local data = rawget(_G, "Outrider_DataDungeons")
+  self.pack = type(data) == "table" and type(data.dungeons) == "table" and data.dungeons or false
+  self:Info(self.pack and "dungeon pack loaded (%s)" or "no dungeon pack (%s)", self.pack and tostring(data.source) or self.ADDON)
+  return self.pack
+end
+
+-- Dungeons with one name (Dire Maul has several wings) merged: { name = {ids, entrance, bosses, items} }
+function M:ByName()
+  if self.byName then return self.byName end
+  local out = {}
+  for id, d in pairs(self:Pack() or {}) do
+    local e = out[d.name]
+    if not e then
+      e = { name = d.name, ids = {}, map = d.map, x = d.x, y = d.y, bosses = {}, items = {} }
+      out[d.name] = e
+    end
+    e.ids[#e.ids + 1] = id
+    for _, b in ipairs(d.bosses or {}) do e.bosses[#e.bosses + 1] = b end
+    for iid, it in pairs(d.items or {}) do e.items[iid] = it end
+  end
+  self.byName = out
+  return out
+end
+
+-- Upgrades for this character from one dungeon: now = usable today, later = needs a few more levels.
+-- { {itemID, name, boss, pct, slot, reqLevel, later} } best first
+function M:Upgrades(d)
+  local G, S = ns.GearScore, ns.GearShop
+  if not G then return {} end
+  local level = C.Call("UnitLevel", "player") or 1
+  local bossOf = {}
+  for _, b in ipairs(d.bosses) do for _, iid in ipairs(b[5] or {}) do bossOf[iid] = bossOf[iid] or b[2] end end
+  local out = {}
+  for iid, it in pairs(d.items) do
+    local fits = not S or S:Fits(iid)
+    local r = fits and G:Compare("item:" .. iid)
+    if r then
+      local req = it[2] or 0
+      local later = type(r.why) == "string" and r.why:find("^level ") and req > level
+      if (not r.why or later) and (r.pct >= 1 or (r.empty and r.new > 0)) then
+        out[#out + 1] = { itemID = iid, name = it[1], boss = bossOf[iid], pct = r.empty and 100 or math.min(r.pct, 100),
+          slot = r.slot, reqLevel = req, later = later }
+      end
+    end
+  end
+  table.sort(out, function(a, b) if a.pct ~= b.pct then return a.pct > b.pct end return a.itemID < b.itemID end)
+  return out
+end
+
+-- Value: best upgrade per slot, added up (now-usable or later, as asked).
+function M.Value(ups, later)
+  local per, total, n = {}, 0, 0
+  for _, u in ipairs(ups) do
+    if (u.later and true or false) == (later and true or false) and not per[u.slot] then
+      per[u.slot] = u
+      total, n = total + u.pct, n + 1
+    end
+  end
+  return total, n
+end
+
+-- { {name, info, status, value, count, laterValue, laterCount, ups, entrance} } for this character
+function M:Rank()
+  local level = C.Call("UnitLevel", "player") or 1
+  local out = {}
+  for name, d in pairs(self:ByName()) do
+    local info = ns.Data:Get("dungeon", name)
+    if info then
+      local status
+      if level >= info.min - M.EARLY and level <= info.max then status = "ready"
+      elseif level < info.min - M.EARLY and info.min - level <= M.SOON then status = "soon"
+      elseif level > info.max then status = "past" end
+      if status and status ~= "past" then
+        local ups = self:Upgrades(d)
+        local v, n = M.Value(ups, false)
+        local lv, ln = M.Value(ups, true)
+        out[#out + 1] = { name = name, info = info, status = status, value = v, count = n, laterValue = lv, laterCount = ln,
+          ups = ups, map = d.map, x = d.x, y = d.y }
+      end
+    end
+  end
+  table.sort(out, function(a, b)
+    if a.status ~= b.status then return a.status == "ready" end
+    if a.status == "ready" and a.value ~= b.value then return a.value > b.value end
+    if a.status == "soon" and a.info.min ~= b.info.min then return a.info.min < b.info.min end
+    return a.name < b.name
+  end)
+  return out
+end
+
+-- The next tier: among dungeons you're not quite ready for, the one with the most gear for you.
+function M:NextTier(rank)
+  local best
+  for _, r in ipairs(rank or self:Rank()) do
+    if r.status == "soon" and (not best or r.laterValue > best.laterValue) then best = r end
+  end
+  return best
+end
+
+-- "Edwin VanCleef: Cruel Barb +45%, ..." (top n, with the boss)
+function M.UpgradeLine(ups, n, later)
+  local parts = {}
+  for _, u in ipairs(ups) do
+    if (u.later and true or false) == (later and true or false) then
+      parts[#parts + 1] = string.format("%s |cff7fff7f+%d%%|r%s (%s)", tostring(u.name), math.floor(u.pct + 0.5),
+        u.later and (" at " .. u.reqLevel) or "", tostring(u.boss or "?"))
+      if #parts >= (n or 3) then break end
+    end
+  end
+  return table.concat(parts, ", ")
+end
+
+function M:Go(r)
+  if not (r.map and r.x and ns.Waypoints) then ns.Print("no entrance location for %s yet", r.name) return end
+  ns.Waypoints:Set(r.map, r.x, r.y, "Entrance: " .. r.name)
+end
+
+-- warm the item cache for the dungeons that matter now (stats need it)
+function M:Warm()
+  for _, r in ipairs(self:Rank()) do
+    local d = self:ByName()[r.name]
+    for iid in pairs(d and d.items or {}) do
+      if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, iid) end
+    end
+  end
+end
+
+function M:Activity()
+  if not self:Pack() then return "dungeon pack not installed" end
+  local rank = self:Rank()
+  local top = rank[1]
+  if not top then return "no dungeon in your level range" end
+  return string.format("best now: %s (%d upgrades)", top.name, top.count)
+end
