@@ -5,8 +5,12 @@
 -- Internal messages (ns:Fire) use the same table with names starting "OTR_".
 
 local _, ns = ...
-local Events = { handlers = {}, unitFrames = {} }
+local Events = { handlers = {}, unitFrames = {}, stats = {}, slow = {} }
 ns.Events = Events
+
+-- Events addons may not even try to register on Forever: the attempt makes
+-- Blizzard block Outrider ("disable this addon?"). Refused before RegisterEvent.
+Events.FORBIDDEN = { COMBAT_LOG_EVENT_UNFILTERED = true, COMBAT_LOG_EVENT = true }
 
 local frame = CreateFrame("Frame")
 Events.frame = frame
@@ -19,10 +23,20 @@ local function dispatch(event, ...)
   -- copy so handlers can unregister themselves while we iterate
   local snapshot = {}
   for i = 1, #list do snapshot[i] = list[i] end
+  Events.stats[event] = (Events.stats[event] or 0) + 1
+  -- Per-handler timing only in debug mode (debugprofilestop has a cost).
+  local timed = ns.db and ns.db.global.debug and debugprofilestop
   for i = 1, #snapshot do
     local h = snapshot[i]
     if not h.removed then
-      ns.Safe((h.ownerName or "?") .. ":" .. event, h.fn, event, ...)
+      local where = (h.ownerName or "?") .. ":" .. event
+      if timed then
+        local t0 = debugprofilestop()
+        ns.Safe(where, h.fn, event, ...)
+        Events:NoteTiming(where, debugprofilestop() - t0)
+      else
+        ns.Safe(where, h.fn, event, ...)
+      end
     end
   end
 end
@@ -32,13 +46,17 @@ frame:SetScript("OnEvent", function(_, event, ...) dispatch(event, ...) end)
 -- Register fn(event, ...) for event. owner is any table (usually a module).
 function Events:On(event, owner, fn)
   assert(type(event) == "string" and type(fn) == "function", "Events:On(event, owner, fn)")
+  if self.FORBIDDEN[event] then
+    if ns.Log then ns.Log:Warn("events", "refused %s: forbidden for addons on Forever", event) end
+    return nil
+  end
   local list = self.handlers[event]
   if not list then
     list = {}
     self.handlers[event] = list
     if not isInternal(event) then
       local ok = pcall(frame.RegisterEvent, frame, event)
-      if not ok and ns.Log then ns.Log:Warn("events", "cannot register %s on this client", event) end
+      if not ok and ns.Log then ns.Log:Info("events", "cannot register %s on this client (feature off)", event) end
     end
   end
   local h = { owner = owner, ownerName = type(owner) == "table" and owner.name or tostring(owner), fn = fn }
@@ -68,6 +86,22 @@ end
 function Events:Fire(message, ...)
   assert(isInternal(message), "internal messages must start with OTR_")
   dispatch(message, ...)
+end
+
+-- Keep the slowest 10 handlers seen (max ms per handler).
+function Events:NoteTiming(where, ms)
+  local slow = self.slow
+  for _, s in ipairs(slow) do
+    if s.where == where then
+      s.calls = s.calls + 1
+      if ms > s.ms then s.ms = ms end
+      table.sort(slow, function(a, b) return a.ms > b.ms end)
+      return
+    end
+  end
+  slow[#slow + 1] = { where = where, ms = ms, calls = 1 }
+  table.sort(slow, function(a, b) return a.ms > b.ms end)
+  while #slow > 10 do table.remove(slow) end
 end
 
 function Events:Count(event)

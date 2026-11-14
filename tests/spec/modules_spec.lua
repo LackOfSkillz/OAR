@@ -6,6 +6,7 @@ local function session(opts, define)
   local ns = game:loadAddon()
   if define then define(ns) end
   game:login()
+  ns.Modules:SetEnabled("AutoCheck", false) -- its timers/combat hooks would skew these counts
   return game, ns
 end
 
@@ -21,13 +22,13 @@ T.describe("modules", function()
 
   T.it("steps aside for overlapping addons unless the player chooses", function()
     local _, ns = session({ addons = { "RareScanner" } }, function(ns)
-      ns:NewModule("RareAlerts", { yieldsTo = { "RareScanner" } })
+      ns:NewModule("SpecRareAlerts", { yieldsTo = { "RareScanner" } })
     end)
-    local mod = ns.Modules:Get("RareAlerts")
+    local mod = ns.Modules:Get("SpecRareAlerts")
     T.no(mod.enabled)
     local _, reason = ns.Modules:ShouldEnable(mod)
     T.contains(reason, "RareScanner")
-    T.ok(ns.Modules:SetEnabled("RareAlerts", true))
+    T.ok(ns.Modules:SetEnabled("SpecRareAlerts", true))
     T.ok(mod.enabled, "player choice wins")
   end)
 

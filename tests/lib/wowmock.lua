@@ -88,7 +88,13 @@ local function newRegion(game, kind, name, parent)
     __scripts = {}, __events = {}, __points = {}, __w = 0, __h = 0, __text = nil,
   }
   local methods = game.methods
-  setmetatable(r, { __index = function(_, k) return methods[k] or noop end })
+  -- Unknown Methods (Capitalized, like the real API) are no-ops; unknown
+  -- lowercase fields are nil, as on a real frame table.
+  setmetatable(r, { __index = function(_, k)
+    local m = methods[k]
+    if m then return m end
+    if type(k) == "string" and k:match("^%u") then return noop end
+  end })
   game.frames[#game.frames + 1] = r
   if name then rawset(game.env, name, r) end
   return r
@@ -98,7 +104,10 @@ M.newRegion = newRegion
 local function buildMethods(game)
   local m = {}
   m.RegisterEvent = function(self, event)
-    if game.blockedEvents[event] then error("Frame:RegisterEvent(): " .. event .. " is not allowed", 2) end
+    if game.blockedEvents[event] then
+      game.forbiddenAttempts = (game.forbiddenAttempts or 0) + 1
+      error("Frame:RegisterEvent(): " .. event .. " is not allowed", 2)
+    end
     self.__events[event] = true
   end
   m.UnregisterEvent = function(self, event) self.__events[event] = nil end
@@ -111,12 +120,38 @@ local function buildMethods(game)
     local old = self.__scripts[what]
     self.__scripts[what] = function(...) if old then old(...) end fn(...) end
   end
+  local function guard(self, what)
+    if self.__protected and game.combat then
+      game.blocked[#game.blocked + 1] = what .. "(" .. tostring(self.__name) .. ")"
+    end
+  end
+  m.SetAttribute = function(self, k, v)
+    guard(self, "SetAttribute")
+    if not rawget(self, "__attrs") then rawset(self, "__attrs", {}) end
+    self.__attrs[k] = v
+  end
+  m.GetAttribute = function(self, k) local a = rawget(self, "__attrs") return a and a[k] end
+  m.RegisterForClicks = function(self, ...) self.__clicks = { ... } end
+  m.SetFrameStrata = function(self, s) guard(self, "SetFrameStrata") rawset(self, "__strata", s) end
+  m.GetFrameStrata = function(self) return rawget(self, "__strata") or "MEDIUM" end
+  m.SetAllPoints = noop
+  m.IsMouseOver = function(self) return rawget(self, "__mouseOver") == true end
+  m.SetColorTexture = noop
+  m.Click = function(self, button)
+    if self.__scripts.OnClick then self.__scripts.OnClick(self, button or "LeftButton", false) end
+    local a = rawget(self, "__attrs")
+    if self.__protected and a and a.type == "macro" then
+      game.macrosRun[#game.macrosRun + 1] = a.macrotext
+    end
+  end
   m.Show = function(self)
+    guard(self, "Show")
     local was = self.__shown
     self.__shown = true
     if not was and self.__scripts.OnShow then self.__scripts.OnShow(self) end
   end
   m.Hide = function(self)
+    guard(self, "Hide")
     local was = self.__shown
     self.__shown = false
     if was and self.__scripts.OnHide then self.__scripts.OnHide(self) end
@@ -132,6 +167,8 @@ local function buildMethods(game)
   m.GetWidth = function(self) return self.__w > 0 and self.__w or 140 end
   m.GetHeight = function(self) return self.__h > 0 and self.__h or 140 end
   m.GetCenter = function() return 0, 0 end
+  m.GetLeft = function() return 100 end
+  m.GetTop = function() return 700 end
   m.GetEffectiveScale = function() return 1 end
   m.GetScale = function() return 1 end
   m.SetPoint = function(self, point, a, b, c, d)
@@ -140,20 +177,39 @@ local function buildMethods(game)
     elseif type(a) == "table" then rel, relPoint, x, y = a, b, c, d end
     if type(relPoint) == "number" then x, y, relPoint = relPoint, x, nil end
     self.__points[#self.__points + 1] = { point, rel, relPoint or point, x or 0, y or 0 }
+    -- A secure frame anchored to one of our insecure frames makes that frame
+    -- protected in game (moving it gets the addon blocked). Record it.
+    if self.__protected and type(rel) == "table" and not rel.__protected and rel ~= game.env.UIParent then
+      game.secureAnchoredToInsecure = (game.secureAnchoredToInsecure or 0) + 1
+    end
   end
-  m.ClearAllPoints = function(self) self.__points = {} end
+  m.ClearAllPoints = function(self) guard(self, "ClearAllPoints") self.__points = {} end
   m.GetPoint = function(self, i)
     local p = self.__points[i or 1]
     if p then return p[1], p[2], p[3], p[4], p[5] end
   end
   m.GetNumPoints = function(self) return #self.__points end
-  m.SetText = function(self, t) self.__text = t end
+  m.SetText = function(self, t)
+    self.__text = t
+    if self.__kind == "EditBox" and self.__scripts.OnTextChanged then self.__scripts.OnTextChanged(self, false) end
+  end
+  m.SetMinMaxValues = function(self, a, b) self.__min, self.__max = a, b end
+  m.GetMinMaxValues = function(self) return self.__min, self.__max end
+  m.SetValue = function(self, v)
+    if self.__min then v = math.max(self.__min, math.min(self.__max, v)) end
+    local changed = self.__value ~= v
+    self.__value = v
+    if changed and self.__scripts.OnValueChanged then self.__scripts.OnValueChanged(self, v, false) end
+  end
+  m.GetValue = function(self) return self.__value end
   m.GetText = function(self) return self.__text end
   m.SetFormattedText = function(self, fmt, ...) self.__text = string.format(fmt, ...) end
   m.CreateFontString = function(self, name) return newRegion(game, "FontString", name, self) end
   m.CreateTexture = function(self, name) return newRegion(game, "Texture", name, self) end
   m.GetObjectType = function(self) return self.__kind end
   m.IsForbidden = function() return false end
+  m.SetAlpha = function(self, a) self.__alpha = a end
+  m.GetAlpha = function(self) return self.__alpha or 1 end
   m.GetFrameLevel = function() return 1 end
   m.GetChildren = function() return end
   m.EnableMouse = noop
@@ -179,6 +235,9 @@ function M.new(opts)
     combat = false,
     reloads = 0,
     blockedEvents = {},
+    blocked = {},
+    macrosRun = {},
+    sounds = {},      -- macrotext of secure buttons Gary "clicked"        -- protected calls an addon made in combat (taint in game)
     globalsWritten = {},
     loadedAddons = {},
   }, Game)
@@ -243,14 +302,30 @@ function M.new(opts)
     else
       local old = env[a]
       env[a] = function(...) local r = { old(...) } b(...) return unpack(r) end
+      game.secureHooked = game.secureHooked or {}
+      game.secureHooked[a] = env[a] -- hooksecurefunc is the sanctioned way; not an overwrite
     end
   end
   base.issecurevariable = function() return true end
 
   -- frames and UI globals
-  base.CreateFrame = function(kind, name, parent) return newRegion(game, kind or "Frame", name, parent) end
+  base.CreateFrame = function(kind, name, parent, template)
+    local r = newRegion(game, kind or "Frame", name, parent)
+    r.__template = template
+    r.__protected = type(template) == "string" and template:find("Secure") ~= nil
+    if r.__protected and game.combat then game.blocked[#game.blocked + 1] = "CreateFrame(" .. tostring(name) .. ")" end
+    return r
+  end
   base.UIParent = newRegion(game, "Frame", nil, nil)
   base.Minimap = newRegion(game, "Frame", nil, nil)
+  -- world map: a frame with a canvas; game.mapShownID is the map on screen
+  base.WorldMapFrame = newRegion(game, "Frame", "WorldMapFrame", nil)
+  base.WorldMapFrame.__shown = false
+  local canvas = newRegion(game, "Frame", nil, nil)
+  canvas.__w, canvas.__h = 1000, 700
+  base.WorldMapFrame.GetCanvas = function() return canvas end
+  base.WorldMapFrame.GetMapID = function() return game.mapShownID end
+  base.WorldMapFrame.OnMapChanged = function() end
   base.GameTooltip = newRegion(game, "GameTooltip", nil, nil)
   base.DEFAULT_CHAT_FRAME = newRegion(game, "ScrollingMessageFrame", nil, nil)
   base.UISpecialFrames = {}
@@ -258,7 +333,7 @@ function M.new(opts)
   base.BackdropTemplateMixin = {}
   base.GetCursorPosition = function() return 100, 100 end
   base.HideUIPanel = noop
-  base.PlaySound = noop
+  base.PlaySound = function(id, channel) game.sounds[#game.sounds + 1] = id end
   base.RAID_CLASS_COLORS = { HUNTER = { r = 0.67, g = 0.83, b = 0.45 }, PRIEST = { r = 1, g = 1, b = 1 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
   base.Settings = {
     RegisterCanvasLayoutCategory = function(frame, name)
@@ -274,9 +349,37 @@ function M.new(opts)
   base.UnitName = function(unit) if unit == "player" then return player.name end return game.units and game.units[unit] and game.units[unit].name end
   base.UnitFullName = function(unit) if unit == "player" then return player.name, player.realm end end
   base.GetRealmName = function() return player.realm end
-  base.UnitClass = function(unit) if unit == "player" then return player.class:sub(1, 1) .. player.class:sub(2):lower(), player.class end end
-  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race end end
-  base.UnitLevel = function(unit) if unit == "player" then return player.level end end
+  local CLASS_ID = { WARRIOR = 1, PALADIN = 2, HUNTER = 3, ROGUE = 4, PRIEST = 5, SHAMAN = 7, MAGE = 8, WARLOCK = 9, DRUID = 11 }
+  base.UnitClass = function(unit)
+    if unit == "player" then return player.class:sub(1, 1) .. player.class:sub(2):lower(), player.class, CLASS_ID[player.class] end
+    local u = game.units and game.units[unit]
+    if u and u.class then return u.class:sub(1, 1) .. u.class:sub(2):lower(), u.class, CLASS_ID[u.class] end
+  end
+  -- quests: game.questsDone[id] = true, game.questsActive[id] = true
+  base.C_QuestLog = {
+    IsQuestFlaggedCompleted = function(id) return game.questsDone and game.questsDone[id] or false end,
+    IsOnQuest = function(id) return game.questsActive and game.questsActive[id] or false end,
+    -- quest log: game.questLog = { {title, questID, level, isHeader, complete} }
+    GetNumQuestLogEntries = function() return #(game.questLog or {}) end,
+    GetInfo = function(i) return game.questLog and game.questLog[i] end,
+    -- objectives: game.questObjectives[questID] = { {text, type, numFulfilled, numRequired, finished} }
+    GetQuestObjectives = function(id) return game.questObjectives and game.questObjectives[id] or {} end,
+    IsComplete = function(id)
+      for _, q in ipairs(game.questLog or {}) do if q.questID == id then return q.complete or false end end
+      return false
+    end,
+  }
+  -- temporary weapon enchant (a fishing lure): game.lureMs = milliseconds left, nil = none
+  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return false end
+  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
+  base.UnitLevel = function(unit)
+    if unit == "player" then return player.level end
+    return game.units and game.units[unit] and game.units[unit].level
+  end
+  base.UnitIsPlayer = function(unit) return unit == "player" or (game.units and game.units[unit] and game.units[unit].player) or false end
+  base.UnitCreatureType = function(unit) return game.units and game.units[unit] and game.units[unit].creatureType end
+  base.UnitIsDead = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
+  base.IsInInstance = function() return opts.inInstance and true or false, opts.inInstance and "party" or "none" end
   base.UnitFactionGroup = function(unit) if unit == "player" then return player.faction end end
   base.UnitExists = function(unit) return unit == "player" or (game.units and game.units[unit] ~= nil) end
   base.UnitGUID = function(unit)
@@ -285,11 +388,241 @@ function M.new(opts)
   end
   base.UnitClassification = function(unit) return game.units and game.units[unit] and game.units[unit].classification or "normal" end
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
-  base.GetMoney = function() return player.money end
-  base.GetInventoryItemLink = function(_, slot) if slot == 18 then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end end
+  base.GetMoney = function() return game.money or player.money end
+  base.C_AuctionHouse = {
+    GetBrowseResults = function() return game.browse or {} end,
+    GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
+    GetOwnedAuctions = function() return game.owned or {} end,
+    CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
+  }
+  base.GetInventoryItemLink = function(_, slot)
+    if game.worn and game.worn[slot] then return "|cffffffff|Hitem:" .. game.worn[slot] .. "::::::::24:::::|h[w]|h|r" end
+    if slot == 18 and not game.noRanged then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
+    if slot == 16 and game.pole then return "|cffffffff|Hitem:6256::::::::24:::::|h[Fishing Pole]|h|r" end
+    if slot == 0 and (game.ammo or opts.ammo) then return "|cffffffff|Hitem:2512::::::::24:::::|h[Rough Arrow]|h|r" end
+  end
+  base.GetInventoryItemCount = function(_, slot) if slot == 0 then return game.ammo or opts.ammo or 0 end return 1 end
   base.InCombatLockdown = function() return game.combat end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
+  -- professions: game.prof = { name, skill, max, recipes = { [id] = { name, reagents = {[itemID]=n} } } }
+  base.GetProfessions = function() if game.prof then return 1 end end
+  base.GetProfessionInfo = function() local p = game.prof if p then return p.name, nil, p.skill, p.max, 0, 0, p.line end end
+  base.UnitCastingInfo = function(unit) if unit == "player" then return game.casting end end
+  base.C_TradeSkillUI = {
+    GetAllRecipeIDs = function()
+      local ids = {}
+      for id in pairs(game.prof and game.prof.recipes or {}) do ids[#ids + 1] = id end
+      table.sort(ids)
+      return ids
+    end,
+    GetBaseProfessionInfo = function()
+      local p = game.prof
+      return p and { professionName = p.name, skillLevel = p.skill, maxSkillLevel = p.max }
+    end,
+    GetRecipeInfo = function(id) local r = game.prof.recipes[id] return r and { name = r.name, learned = true, relativeDifficulty = r.diff, craftable = not r.gather, isGatheringRecipe = r.gather or false } end,
+    GetCraftableCount = function(id) local r = game.prof.recipes[id] return r and r.have or 0 end,
+    IsTradeSkillReady = function() return game.tradeOpen == true end,
+    OpenTradeSkill = function(line) if game.prof and game.prof.line == line and not game.noAutoOpen then game.tradeOpen = true end end,
+    CraftRecipe = function(id, n) game.crafted = game.crafted or {} game.crafted[#game.crafted + 1] = { id = id, n = n } end,
+    GetRecipeSchematic = function(id)
+      local r = game.prof.recipes[id]
+      local slots = {}
+      for item, n in pairs(r.reagents) do slots[#slots + 1] = { reagents = { { itemID = item } }, quantityRequired = n } end
+      return { reagentSlotSchematics = slots }
+    end,
+  }
+  base.GetRepairAllCost = function() return game.repairCost or 0, (game.repairCost or 0) > 0 end
+  base.RepairAllItems = function(guild) game.repaired = { guild = guild } game.repairCost = 0 end
+  base.CanGuildBankRepair = function() return false end
+  -- override bindings: game.overrides[key] = action or "CLICK name"
+  base.SetOverrideBinding = function(owner, prio, key, action)
+    if game.combat then game.blocked[#game.blocked + 1] = "SetOverrideBinding" end
+    game.overrides = game.overrides or {}
+    game.overrides[key] = action
+  end
+  base.SetOverrideBindingClick = function(owner, prio, key, name)
+    if game.combat then game.blocked[#game.blocked + 1] = "SetOverrideBindingClick" end
+    game.overrides = game.overrides or {}
+    game.overrides[key] = "CLICK " .. name
+  end
+  base.ClearOverrideBindings = function() game.overrides = {} end
+  base.SetCVar = function(k, v) opts.cvars = opts.cvars or {} opts.cvars[k] = v end
+  -- loot window: game.loot = { {id, name, count} }, game.fishingLoot = bool
+  base.GetNumLootItems = function() return game.loot and #game.loot or 0 end
+  base.GetLootSlotLink = function(i) local l = game.loot[i] return l and ("|Hitem:" .. l.id .. "::|h[" .. l.name .. "]|h") end
+  base.GetLootSlotInfo = function(i) local l = game.loot[i] return nil, l.name, l.count or 1 end
+  base.IsFishingLoot = function() return game.fishingLoot or false end
+  -- inbox: game.inbox = { {money, cod, items = {itemID,...}} }
+  base.GetInboxNumItems = function() return game.inbox and #game.inbox or 0 end
+  base.GetInboxHeaderInfo = function(i)
+    local m = game.inbox[i]
+    local n = 0 for _ in pairs(m.items or {}) do n = n + 1 end
+    return nil, nil, "Sender", "Subject", m.money or 0, m.cod or 0, 30, n
+  end
+  base.GetInboxItemLink = function(i, a) local id = game.inbox[i].items and game.inbox[i].items[a] return id and ("|Hitem:" .. id .. "::|h[x]|h") end
+  base.TakeInboxMoney = function(i) game.money = (game.money or player.money) + game.inbox[i].money game.inbox[i].money = 0 end
+  base.TakeInboxItem = function(i, a) game.inbox[i].items[a] = nil end
+  -- quest rewards: game.choices = { itemID, ... }
+  base.GetNumQuestChoices = function() return game.choices and #game.choices or 0 end
+  base.GetQuestItemLink = function(kind, i) local id = game.choices and game.choices[i] return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r") end
+  base.C_ChatInfo = {
+    RegisterAddonMessagePrefix = function(p) game.prefixes = game.prefixes or {} game.prefixes[p] = true return true end,
+    SendAddonMessage = function(prefix, msg, channel, target)
+      game.sent = game.sent or {}
+      game.sent[#game.sent + 1] = { prefix = prefix, msg = msg, channel = channel, target = target }
+    end,
+  }
+  base.IsInGuild = function() return opts.inGuild or false end
+  game.chatFilters = {}
+  base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
+  base.SetItemRef = function() end
+  -- chat windows: game.chatWindows[i] = name; FCF_OpenNewWindow adds one
+  game.chatWindows = { "General", "Combat Log" }
+  base.GetChatWindowInfo = function(i) return game.chatWindows[i] end
+  base.FCF_OpenNewWindow = function(name)
+    if game.combat then error("FCF_OpenNewWindow in combat") end
+    game.chatWindows[#game.chatWindows + 1] = name
+    return base.CreateFrame("ScrollingMessageFrame", "ChatFrame" .. #game.chatWindows, base.UIParent)
+  end
+  base.ChatFrame_AddChannel = function(frame, name) game.addedChannels = game.addedChannels or {} game.addedChannels[name] = frame end
+  -- nameplates: one fake plate frame per nameplate unit
+  base.C_NamePlate = { GetNamePlateForUnit = function(unit)
+    if type(unit) ~= "string" or not unit:match("^nameplate") then return nil end
+    game.plates = game.plates or {}
+    game.plates[unit] = game.plates[unit] or base.CreateFrame("Frame", nil, base.UIParent)
+    return game.plates[unit]
+  end }
+  base.IsResting = function() return game.resting or false end
+  base.GetInventoryItemDurability = function(slot) local d = game.durability and game.durability[slot] if d then return d[1], d[2] end end
+  base.IsInGroup = function() return opts.inGroup or false end
+  base.IsInRaid = function() return opts.inRaid or false end
+  base.CanMerchantRepair = function() return game.canRepair or false end
+  base.C_TooltipInfo = { GetUnit = function(unit)
+    local d = game.units and game.units[unit]
+    if not d then return nil end
+    local lines = { { leftText = d.name } }
+    if d.title then lines[2] = { leftText = d.title } else lines[2] = { leftText = "Level 20" } end
+    return { lines = lines }
+  end }
+  -- merchant: game.merchant = { itemID, ... }; game.itemClass[itemID] = classID
+  base.GetMerchantNumItems = function() return game.merchant and #game.merchant or 0 end
+  base.GetMerchantItemID = function(i) return game.merchant and game.merchant[i] end
+  base.C_Item = base.C_Item or {}
+  -- bags: game.bags[bag][slot] = itemID; game.items[itemID] = { name, reqLevel, spell }
+  base.C_Container = {
+    GetContainerItemLink = function(bag, slot)
+      local id = game.bags and game.bags[bag] and game.bags[bag][slot]
+      return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r")
+    end,
+    GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
+    -- game.counts[bag][slot] overrides the default stack of 5
+    UseContainerItem = function(bag, slot)
+      if game.combat then error("UseContainerItem in combat") end
+      local id = game.bags[bag][slot]
+      game.sold = game.sold or {}
+      game.sold[#game.sold + 1] = id
+      game.bags[bag][slot] = nil
+    end,
+    GetContainerItemInfo = function(bag, slot)
+      local id = game.bags and game.bags[bag] and game.bags[bag][slot]
+      if id then return { itemID = id, stackCount = (game.counts and game.counts[bag] and game.counts[bag][slot]) or 5 } end
+    end,
+  }
+  -- gear: game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 5, ... }; items[id].equipLoc / class / subclass
+  base.C_Item.EquipItemByName = function(link, slot)
+    if game.combat then error("EquipItemByName in combat") end
+    game.worn = game.worn or {}
+    game.worn[slot] = tonumber(tostring(link):match("item:(%d+)"))
+  end
+  base.C_Item.GetItemStats = function(link)
+    local id = tonumber(tostring(link):match("item:(%d+)"))
+    return game.itemStats and game.itemStats[id] or {}
+  end
+  base.C_Item.GetItemCount = function(id) return game.counts and game.counts[id] or 0 end
+  base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
+  local function idOf(v) return tonumber(tostring(v):match("item:(%d+)")) or v end
+  base.C_Item.GetItemInfo = function(id)
+    id = idOf(id)
+    local it = game.items and game.items[id]
+    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, nil, nil, 20, it.equipLoc, nil, it.sell or 0, nil, nil, it.bind end
+  end
+  base.C_Item.GetItemInfoInstant = function(id)
+    id = idOf(id)
+    if id == 6256 then return id, nil, nil, nil, nil, 2, 20 end
+    local it = game.items and game.items[id]
+    if it and it.class then return id, nil, nil, it.equipLoc, nil, it.class, it.subclass end
+    return id, nil, nil, nil, nil, game.itemClass and game.itemClass[id]
+  end
+  base.Enum = { TooltipDataType = { Unit = 2, Item = 0, Object = 33 }, SpellBookSpellBank = { Player = 0 } }
+  -- spellbook: game.spells = { { name, id, rank, passive } } in one skill line
+  game.spells = opts.spells or {
+    { name = "Auto Shot", id = 75 }, { name = "Arcane Shot", id = 14282, rank = 3 },
+    { name = "Arcane Shot", id = 14281, rank = 2 }, { name = "Tame Beast", id = 1515 },
+    { name = "Hunter's Mark", id = 1130, rank = 1 }, { name = "Wing Clip", id = 2974, rank = 1 },
+  }
+  base.C_SpellBook = {
+    GetNumSpellBookSkillLines = function() return 1 end,
+    GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = #game.spells } end,
+    GetSpellBookItemInfo = function(i)
+      local s = game.spells[i]
+      if s then return { name = s.name, spellID = s.id, subName = s.rank and ("Rank " .. s.rank) or "", isPassive = s.passive } end
+    end,
+  }
+  base.TooltipDataProcessor = { AddTooltipPostCall = function(kind, fn)
+    game.tooltipHooks = game.tooltipHooks or {}
+    game.tooltipHooks[#game.tooltipHooks + 1] = { kind = kind, fn = fn }
+  end }
+  base.IsShiftKeyDown = function() return game.shift or false end
+  -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
+  local function u(unit) return game.units and game.units[unit] end
+  base.UnitHealth = function(unit) return u(unit) and u(unit).hp end
+  base.UnitHealthMax = function(unit) return u(unit) and u(unit).hpMax end
+  base.UnitAttackSpeed = function(unit) return u(unit) and u(unit).attackSpeed end
+  base.UnitPower = function(unit) return u(unit) and u(unit).focus end
+  base.UnitPowerMax = function(unit) return u(unit) and u(unit).focusMax end
+  base.GetPetExperience = function() local p = u("pet") if p then return p.xp or 0, p.xpMax or 0 end return 0, 0 end
+  base.HasPetUI = function() return u("pet") ~= nil end
+  base.C_UnitAuras = { GetAuraDataByIndex = function(unit, i)
+    local a = u(unit) and u(unit).auras and u(unit).auras[i]
+    if a then return { name = a.name, spellId = a.spellId } end
+  end }
+  if opts.petHappiness then base.GetPetHappiness = function() return game.petHappiness or opts.petHappiness end end
+  -- macros: game.macros = { { name, icon, body, perChar } }, index = position
+  game.macros = opts.macros or {}
+  base.MAX_CHARACTER_MACROS = 18
+  base.GetMacroIndexByName = function(name)
+    for i, m in ipairs(game.macros) do if m.name == name then return i end end
+    return 0
+  end
+  -- like the client: name lookup ignores case
+  base.GetMacroIndexByName = function(name)
+    for i, m in ipairs(game.macros) do if m.name:lower() == tostring(name):lower() then return i end end
+    return 0
+  end
+  base.GetMacroInfo = function(i) local m = game.macros[i] if m then return m.name, m.icon, m.body end end
+  base.GetNumMacros = function()
+    local acct, char = 0, 0
+    for _, m in ipairs(game.macros) do if m.perChar then char = char + 1 else acct = acct + 1 end end
+    return acct, char
+  end
+  base.EditMacro = function(i, name, icon, body)
+    if game.combat then error("EditMacro in combat") end
+    local m = game.macros[i]
+    if name then m.name = name end
+    if icon then m.icon = icon end
+    if body then m.body = body end
+    return i
+  end
+  base.DeleteMacro = function(i) if game.combat then error("DeleteMacro in combat") end table.remove(game.macros, i) end
+  base.PickupMacro = function(i) game.cursorMacro = i end
+  base.CreateMacro = function(name, icon, body, perChar)
+    if game.combat then error("CreateMacro in combat") end
+    game.macros[#game.macros + 1] = { name = name, icon = icon, body = body, perChar = perChar }
+    return #game.macros
+  end
+  base.C_CVar = { GetCVar = function(name) return (opts.cvars or {})[name] end,
+    SetCVar = function(k, v) opts.cvars = opts.cvars or {} opts.cvars[k] = v end }
 
   -- C_ namespaces
   local files, meta = M.tocFiles()
@@ -298,18 +631,77 @@ function M.new(opts)
     GetAddOnMetadata = function(addon, field) if addon == M.ADDON then return meta[field] end end,
     IsAddOnLoaded = function(addon) return game.loadedAddons[addon] == true end,
     LoadAddOn = function(addon) return game.loadedAddons[addon] == true end,
+    UpdateAddOnMemoryUsage = function() game.memoryUpdated = true end,
+    GetAddOnMemoryUsage = function(addon) if addon == M.ADDON then return opts.memoryKB or 420 end return 0 end,
   }
-  base.C_Timer = {
-    After = function(delay, fn) game.timers[#game.timers + 1] = { at = game.clock + delay, fn = fn } end,
-  }
+  if not opts.noCTimer then
+    base.C_Timer = {
+      After = function(delay, fn) game.timers[#game.timers + 1] = { at = game.clock + delay, fn = fn } end,
+      NewTicker = function(delay, fn, iterations)
+        local h = { cancelled = false }
+        function h:Cancel() self.cancelled = true end
+        function h:IsCancelled() return self.cancelled end
+        game.timers[#game.timers + 1] = { at = game.clock + delay, fn = function() fn(h) end, every = delay,
+          handle = h, left = iterations }
+        return h
+      end,
+    }
+  end
   base.C_Map = {
     GetBestMapForUnit = function() return opts.mapID or 1412 end,
     GetPlayerMapPosition = function()
       local x, y = opts.x or 0.46, opts.y or 0.37
       return { GetXY = function() return x, y end }
     end,
-    GetMapInfo = function(id) return { mapID = id, name = "Mulgore" } end,
+    GetMapInfo = function(id)
+      local m = game.maps and game.maps[id]
+      if m then return { mapID = id, name = m.name, parentMapID = m.parent or 0 } end
+      return { mapID = id, name = "Mulgore" }
+    end,
+    -- game.maps[id] = { name, parent }: every map below id (all descendants)
+    GetMapChildrenInfo = function(id)
+      local out = {}
+      local function under(m, top) for _ = 1, 10 do if not m or not game.maps[m] then return false end
+        if game.maps[m].parent == top then return true end m = game.maps[m].parent end return false end
+      for mid, m in pairs(game.maps or {}) do if under(mid, id) then out[#out + 1] = { mapID = mid, name = m.name } end end
+      return out
+    end,
   }
+  base.C_Map.SetUserWaypoint = function(p) game.userWaypoint = p end
+  base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end
+  -- world yards: 1 map unit = 1000 yards on every test map
+  -- game.mapWorld[mapID] = { continent, offsetX, offsetY } puts maps side by side or on other continents
+  base.C_Map.GetWorldPosFromMapPos = function(mapID, v)
+    local w = game.mapWorld and game.mapWorld[mapID]
+    return w and w[1] or 1, { GetXY = function() return v.x * 1000 + (w and w[2] or 0), v.y * 1000 + (w and w[3] or 0) end }
+  end
+  base.CreateVector2D = function(x, y) return { x = x, y = y } end
+  -- action bars: game.actions[slot] = spellID; spell info from game.spells
+  local function spellByID(id) for _, s in ipairs(game.spells) do if s.id == id then return s end end end
+  base.GetActionInfo = function(slot) local id = game.actions and game.actions[slot] if id then return "spell", id end end
+  base.C_Spell = { GetSpellInfo = function(id) local s = spellByID(id) return s and { name = s.name } end,
+    GetSpellSubtext = function(id) local s = spellByID(id) return s and s.rank and ("Rank " .. s.rank) or "" end,
+    PickupSpell = function(id) game.cursorSpell = id end }
+  base.PlaceAction = function(slot)
+    if game.combat then error("PlaceAction in combat") end
+    game.actions = game.actions or {}
+    game.actions[slot] = game.cursorSpell
+  end
+  base.ClearCursor = function() game.cursorSpell = nil end
+  base.C_TaxiMap = { GetTaxiNodesForMap = function(mapID)
+    return game.taxi and game.taxi[mapID] or {}
+  end }
+  base.C_Minimap = { GetViewRadius = function() return opts.minimapRadius or 200 end,
+    GetNumTrackingTypes = function() return game.tracking and #game.tracking or 0 end,
+    GetTrackingInfo = function(i) return game.tracking and game.tracking[i] end }
+  base.GetPlayerFacing = function() return game.facing or 0 end
+  base.UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, x = x, y = y } end }
+  base.C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) game.superTracked = on end }
+  base.UnitPosition = function(unit)
+    if unit ~= "player" then return nil end
+    local w = game.mapWorld and game.mapWorld[opts.mapID or 1412]
+    return (opts.y or 0.37) * 1000 + (w and w[3] or 0), (opts.x or 0.46) * 1000 + (w and w[2] or 0), 0, w and w[1] or 1
+  end
   base.issecretvalue = function(v) return type(v) == "table" and v.__secret == true end
 
   base._G = env
@@ -358,20 +750,47 @@ function Game:login()
   return self.ns
 end
 
+-- Like the real client: PLAYER_REGEN_DISABLED fires while InCombatLockdown()
+-- is still false; lockdown starts right after the handlers run.
 function Game:setCombat(on)
-  self.combat = on
-  self:fire(on and "PLAYER_REGEN_DISABLED" or "PLAYER_REGEN_ENABLED")
+  if on then
+    self:fire("PLAYER_REGEN_DISABLED")
+    self.combat = true
+  else
+    self.combat = false
+    self:fire("PLAYER_REGEN_ENABLED")
+  end
 end
 
+-- Runs due timers in time order (a timer scheduled by a callback runs in the
+-- same advance if it falls inside the window), then one OnUpdate per shown
+-- frame. Use small steps to exercise OnUpdate-driven code.
 function Game:advance(seconds)
-  self.clock = self.clock + seconds
+  local target = self.clock + seconds
   self.now = self.now + math.floor(seconds)
-  local due, keep = {}, {}
-  for _, t in ipairs(self.timers) do
-    if t.at <= self.clock then due[#due + 1] = t else keep[#keep + 1] = t end
+  while true do
+    local best, bi
+    for i, t in ipairs(self.timers) do
+      if t.at <= target and (not best or t.at < best.at) then best, bi = t, i end
+    end
+    if not best then break end
+    table.remove(self.timers, bi)
+    if best.at > self.clock then self.clock = best.at end
+    if not (best.handle and best.handle.cancelled) then
+      best.fn()
+      if best.every and not best.handle.cancelled then
+        if best.left then best.left = best.left - 1 end
+        if not best.left or best.left > 0 then
+          best.at = best.at + best.every
+          self.timers[#self.timers + 1] = best
+        end
+      end
+    end
   end
-  self.timers = keep
-  for _, t in ipairs(due) do t.fn() end
+  self.clock = target
+  for _, f in ipairs(self.frames) do
+    if f.__shown and f.__scripts.OnUpdate then f.__scripts.OnUpdate(f, seconds) end
+  end
 end
 
 function Game:slash(line)
@@ -395,7 +814,8 @@ end
 function Game:overwrittenGlobals()
   local out = {}
   for k, v in pairs(self.base) do
-    if rawget(self.env, k) ~= v then out[#out + 1] = k end
+    local now = rawget(self.env, k)
+    if now ~= v and not (self.secureHooked and self.secureHooked[k] == now) then out[#out + 1] = k end
   end
   table.sort(out)
   return out
@@ -406,4 +826,17 @@ function Game:chatText()
 end
 
 M.Game = Game
+
+-- Run a chat line through the registered message filters, like ChatFrame does.
+-- Returns hidden, text.
+function Game:chatLine(event, msg, author, frame, base, lineID)
+  local text = msg
+  for _, fn in ipairs(self.chatFilters[event] or {}) do
+    local r = { fn(frame, event, text, author, nil, nil, nil, nil, nil, nil, base, nil, lineID) }
+    if r[1] then return true end
+    if r[2] then text = r[2] end
+  end
+  return false, text
+end
+
 return M

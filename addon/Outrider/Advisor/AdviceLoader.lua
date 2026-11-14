@@ -10,7 +10,7 @@
 -- Outrider_Advice = {
 --   schema = 1,
 --   forCharacter = "Torrant-Realm",
---   answersSnapshot = 1731300000,      -- must equal Outrider_Snapshots[char].takenAt
+--   answersSnapshot = 1731300000,      -- must equal Outrider_Snapshots[char].askedAt (or takenAt)
 --   items = {
 --     { title = "Tame The Rake", why = "...", action = "waypoint", confidence = "verified",
 --       args = { mapID = 1412, x = 0.46, y = 0.37 } },
@@ -71,15 +71,22 @@ local function clean(item)
   return { title = title, why = plain(item.why, 400) or "", action = item.action, args = args, confidence = confidence }
 end
 
--- Returns list of clean items (possibly empty) and a reason string.
-function Advice:Load()
-  local a = rawget(_G, "Outrider_Advice")
+-- Clean items and "ok", or {} and the reason, for one advice table.
+function Advice:Check(a)
   if type(a) ~= "table" then return {}, "no advice file" end
   if a.schema ~= self.SCHEMA then return {}, "wrong schema" end
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
   local snaps = rawget(_G, "Outrider_Snapshots")
   local snap = type(snaps) == "table" and snaps[ns.db.key]
-  if not snap or a.answersSnapshot ~= snap.takenAt then return {}, "advice is stale" end
+  if not snap then return {}, "advice is stale" end
+  if snap.askedAt then
+    if a.answersSnapshot ~= snap.askedAt then return {}, "advice is stale" end
+  else
+    -- snapshots from before askedAt existed: accept advice for this one or a
+    -- logout refresh of it from the last 6 hours
+    local age = (snap.takenAt or 0) - (tonumber(a.answersSnapshot) or 0)
+    if age < 0 or age > 6 * 3600 then return {}, "advice is stale" end
+  end
   local out = {}
   if type(a.items) == "table" then
     for _, item in ipairs(a.items) do
@@ -89,6 +96,29 @@ function Advice:Load()
     end
   end
   return out, "ok"
+end
+
+-- Pasted advice (no reload, ns.db.char.pastedAdvice) wins over Advice.lua
+-- when it is valid and answers the current snapshot.
+function Advice:Load()
+  local pasted = ns.db and ns.db.char and ns.db.char.pastedAdvice
+  if type(pasted) == "table" then
+    local items, why = self:Check(pasted)
+    if why == "ok" then return items, why end
+  end
+  return self:Check(rawget(_G, "Outrider_Advice"))
+end
+
+-- Accept an advice code pasted from the companion; returns count, reason.
+function Advice:Paste(text)
+  local data, err = ns.Serialize.Import(text)
+  if type(data) ~= "table" then return 0, err or "not an Outrider code" end
+  if data.kind ~= "advice" then return 0, "that code is not advice" end
+  local items, why = self:Check(data)
+  if why ~= "ok" then return 0, why end
+  if #items == 0 then return 0, "no usable suggestions in that code" end
+  ns.db.char.pastedAdvice = data
+  return #items, "ok"
 end
 
 Advice._clean = clean

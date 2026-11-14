@@ -92,13 +92,13 @@ end
 function C.ItemInfo(item)
   local get = (C_Item and C_Item.GetItemInfo) or _G.GetItemInfo
   if not get then return nil end
-  local ok, name, link, quality, ilvl, reqLevel, class, subclass, maxStack, equipLoc, icon, sellPrice =
-    pcall(get, item)
+  local ok, name, link, quality, ilvl, reqLevel, class, subclass, maxStack, equipLoc, icon, sellPrice,
+    _, _, bindType = pcall(get, item)
   if not ok or not name then return nil end
   return {
     name = name, link = link, quality = quality, ilvl = ilvl, reqLevel = reqLevel,
     class = class, subclass = subclass, maxStack = maxStack, equipLoc = equipLoc,
-    icon = icon, sellPrice = sellPrice,
+    icon = icon, sellPrice = sellPrice, bindType = bindType, -- 1 BoP, 2 BoE, 3 on use
   }
 end
 
@@ -129,6 +129,18 @@ function C.UnitNpcID(unit)
   local guid = C.Call("UnitGUID", unit)
   local g = C.ParseGUID(guid)
   return g and g.id, g
+end
+
+-- An NPC's title ("Bowyer", "Hunter Trainer") is the tooltip line under its
+-- name. Read through C_TooltipInfo (no tooltip shown); nil when there is none.
+function C.UnitTitle(unit)
+  local data = C.Call("C_TooltipInfo.GetUnit", unit)
+  if type(data) ~= "table" or type(data.lines) ~= "table" then return nil end
+  local line = data.lines[2]
+  local text = line and C.Readable(line.leftText)
+  if type(text) ~= "string" or text == "" then return nil end
+  if text:find("^Level ") or text:find("^%?%?") then return nil end
+  return text
 end
 
 function C.ServerTime()

@@ -20,6 +20,7 @@ UI.Text = text
 function UI:Window(globalName, title, width, height, pos)
   local f = CreateFrame("Frame", globalName, UIParent, Theme:BackdropTemplate())
   f:SetSize(width, height)
+  if Theme.uiScale and Theme.uiScale ~= 1 then f:SetScale(Theme.uiScale) end
   f:SetFrameStrata("DIALOG")
   f:SetClampedToScreen(true)
   f:SetMovable(true)
@@ -91,6 +92,7 @@ function UI:Check(parent, label, get, set)
   local row = CreateFrame("Button", nil, parent)
   row:SetSize(300, 22)
   local box = CreateFrame("Frame", nil, row, Theme:BackdropTemplate())
+  row.box = box
   box:SetSize(14, 14)
   box:SetPoint("LEFT", 2, 0)
   Theme:ApplyPanel(box, "raised")

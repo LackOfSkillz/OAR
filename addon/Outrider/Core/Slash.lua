@@ -64,6 +64,8 @@ add("probe", "record which game APIs exist (then /reload)", function()
   ns.Print("probe done: %d present, %d missing. Type /reload so the results are saved.", p.summary.present, p.summary.missing)
 end)
 
+add("perf", "memory, events, timers and modules (then /reload)", function() ns.Perf:Report() end)
+
 add("modules", "list modules and why each is on or off", function()
   for _, s in ipairs(ns.Modules:Status()) do
     ns.Print("%s %s  %s", s.enabled and "|cff66dd77on |r" or "|cff999999off|r", s.name, s.enabled and "" or tostring(s.reason))
@@ -108,7 +110,7 @@ add("minimap", "on|off  show or hide the minimap button", function(arg)
 end)
 
 add("snap", "save a snapshot of this character (for the future advisor)", function()
-  ns.Snapshot:Collect()
+  ns.Snapshot:Collect(true)
   ns.Print("snapshot taken. It is written to disk on /reload or logout.")
 end)
 
@@ -122,17 +124,28 @@ add("reset", "char|all confirm  wipe settings (needs the word confirm)", functio
   ReloadUI()
 end)
 
-add("selftest", "error|combat  checks for the test pipeline", function(arg)
+add("selftest", "error|combat|button|toast|widgets  checks for the test pipeline", function(arg)
   if arg == "error" then
     ns.Safe("selftest", function() error("Outrider selftest: deliberate error (this is expected)") end)
     ns.Print("deliberate error recorded. Type /reload so Claude can read it.")
   elseif arg == "combat" then
     ns.Combat:Run("selftest", function() ns.Log:Info("selftest", "combat queue ran") ns.Print("combat queue ran") end, "selftest")
     ns.Print(ns.Combat:Pending() > 0 and "queued until combat ends" or "ran immediately (not in combat)")
+  elseif arg == "button" then
+    ns.SecureButtons:SelfTest()
+  elseif arg == "toast" then
+    ns.Toast:SelfTest()
+  elseif arg == "widgets" then
+    ns.UI:WidgetTest()
   else
-    ns.Print("usage: /ride selftest error|combat")
+    ns.Print("usage: /ride selftest error|combat|button|toast|widgets")
   end
 end)
+
+-- Commands queued by modules (ns.AddCommand), after the built-ins.
+for _, c in ipairs(ns.moduleCommands) do
+  if not Slash.commands[c.name] then add(c.name, c.usage, c.fn) end
+end
 
 function Slash:Run(line)
   line = (line or ""):gsub("^%s+", ""):gsub("%s+$", "")

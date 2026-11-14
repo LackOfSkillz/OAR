@@ -4,6 +4,7 @@ local T, mock = ...
 local ALLOWED_GLOBALS = {
   Outrider = true, Outrider_DB = true, Outrider_Log = true, Outrider_Snapshots = true, Outrider_Advice = true,
   SLASH_OUTRIDER1 = true, SLASH_OUTRIDER2 = true,
+  BINDING_HEADER_OUTRIDER = true, BINDING_NAME_OUTRIDER_FIND = true, -- key binding labels (Bindings.xml)
 }
 
 T.describe("boot", function()
@@ -51,11 +52,12 @@ T.describe("boot", function()
     local samples = {
       help = "", hub = "", version = "", status = "", debug = "on", log = "5", mark = "P0 test",
       errors = "", probe = "", modules = "", module = "Welcome off", export = "", import = "",
-      copy = "Nobody-Forever", chars = "", minimap = "off", snap = "", reset = "", selftest = "combat",
+      copy = "Nobody-Forever", chars = "", minimap = "off", snap = "", reset = "", selftest = "combat", perf = "", discovered = "5", watch = "The Rake", unwatch = "The Rake", tamemacro = "Test Beast", fight = "concussive off", make = "Cooking", herbs = "", journey = "xp", way = "50 50 test", coords = "", near = "spirit", spells = "", fishkey = "F", weights = "", score = "", gear = "list", share = "", errands = "", feed = "", undercut = "", copychat = "", spell = "", forecast = "", skillup = "", nearby = "", minipins = "", questpins = "", find = "", ask = "SKIP", layout = "", setup = "", access = "font 1.2", chat = "",
     }
     for _, name in ipairs(ns.Slash.order) do
       T.ok(samples[name] ~= nil, "add a sample for new command /ride " .. name)
-      game:slash(name .. " " .. samples[name])
+      -- /ride ask reloads on purpose (P9-02: the typed command is the key press); advisor_spec covers it
+      if samples[name] ~= "SKIP" then game:slash(name .. " " .. samples[name]) end
     end
     T.eq(#ns.Errors.list, 0, "errors after running every command")
     T.eq(game.reloads, 0, "no command should reload without confirmation")

@@ -49,6 +49,15 @@ $buildLua = "-- Core/Build.lua (stamped by tools/deploy.ps1)`nlocal _, ns = ...`
 Write-Utf8NoBom (Join-Path (Join-Path $target 'Core') 'Build.lua') $buildLua
 if ($null -ne $savedAdvice) { Write-Utf8NoBom $advicePath $savedAdvice }
 
+# Our own data addons kept in the repo (addon/Outrider_Data_*), decision D11/D12.
+$addonsDir = Split-Path -Parent $target
+Get-ChildItem -Path (Split-Path -Parent $source) -Directory -Filter 'Outrider_Data_*' | ForEach-Object {
+  $dest = Join-Path $addonsDir $_.Name
+  if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+  Copy-Item -Recurse -Path $_.FullName -Destination $dest
+  Write-Host "Deployed data addon $($_.Name)" -ForegroundColor Green
+}
+
 $state = [pscustomobject]@{ tocHash = $tocHash; fileList = $fileList; build = $stamp; at = (Get-Date).ToString('o') }
 Write-Utf8NoBom $stateFile ($state | ConvertTo-Json)
 

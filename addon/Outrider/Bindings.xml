@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="OUTRIDER_FIND" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.Find then Outrider.Find:Toggle() end
+  </Binding>
+</Bindings>

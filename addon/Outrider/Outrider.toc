@@ -2,7 +2,7 @@
 ## Title: Outrider
 ## Notes: One addon for WoW Forever: rares, hunter pets, maps, macros, crafting, auctions, fishing, gear and a cleaner UI.
 ## Author: Gary & Claude
-## Version: 0.2.0
+## Version: 0.3.0
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
 ## SavedVariables: Outrider_DB, Outrider_Log, Outrider_Snapshots
 ## OptionalDeps: !BugGrabber, BugSack, LibStub, LibDataBroker-1.1, LibDBIcon-1.0, Questie, TomTom, Auctionator
@@ -17,6 +17,8 @@ Core\Log.lua
 Core\Errors.lua
 Core\Events.lua
 Core\Combat.lua
+Core\Timer.lua
+Core\Perf.lua
 Core\Serialize.lua
 Core\DB.lua
 Core\Profiles.lua
@@ -27,6 +29,11 @@ Core\Probe.lua
 # UI kit
 UI\Theme.lua
 UI\Widgets.lua
+UI\WidgetsExtra.lua
+UI\SecureButtons.lua
+UI\Toast.lua
+UI\TooltipLines.lua
+UI\Form.lua
 UI\Hub.lua
 UI\MinimapButton.lua
 UI\Settings.lua
@@ -39,9 +46,93 @@ Advisor\AdviceLoader.lua
 # Data packs
 Data\Registry.lua
 Data\Macros_Hunter.lua
+Data\Macros_Priest.lua
+Data\Macros_Mage.lua
+Data\Macros_Warrior.lua
+Data\Macros_Rogue.lua
+Data\Macros_Warlock.lua
+Data\Macros_Druid.lua
+Data\Macros_Shaman.lua
+Data\Macros_Paladin.lua
+Data\StatWeights.lua
+Data\Herbs.lua
+Data\Transports.lua
+Data\Money.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
+Modules\MacroEngine.lua
+Modules\Spellbook.lua
+Modules\MacroLibrary.lua
+Modules\RankCheck.lua
+Modules\HunterFight.lua
+Modules\BagFood.lua
+Modules\RareMacros.lua
+Modules\Inventory.lua
+Modules\Professions.lua
+Modules\Crafter.lua
+Modules\Prices.lua
+Modules\AuctionHelper.lua
+Modules\Ledger.lua
+Modules\Merchant.lua
+Modules\Fishing.lua
+Modules\FishingHUD.lua
+Modules\LootLog.lua
+Modules\HerbHelper.lua
+Modules\NodePack.lua
+Modules\MoneyGuide.lua
+Modules\Mailbox.lua
+Modules\CraftQueue.lua
+Modules\SkillUp.lua
+Modules\GearScore.lua
+Modules\QuestRewards.lua
+Modules\GearSets.lua
+Modules\Handoffs.lua
+Modules\Nearby.lua
+Modules\GearQuestBridge.lua
+Modules\Comm.lua
+Modules\RareShare.lua
+Modules\GatherShare.lua
+Modules\LocationShare.lua
+Modules\Forecasts.lua
+Modules\Errands.lua
+Modules\Feed.lua
+Modules\Chat.lua
+Modules\Find.lua
+Modules\RarePlates.lua
+Modules\Advisor.lua
+Modules\Skin.lua
+Modules\Tooltips.lua
+Modules\UnitLook.lua
+Modules\ContextLayouts.lua
+Modules\Setup.lua
+Modules\SpellCheck.lua
 Modules\Welcome.lua
+Modules\AutoCheck.lua
+Modules\Discovery.lua
+Modules\Layers.lua
+Modules\RareScan.lua
+Modules\RareAlerts.lua
+Modules\Sightings.lua
+Modules\RareProfile.lua
+Modules\SpawnLog.lua
+Modules\RareTimer.lua
+Modules\RaresTab.lua
+Modules\TameHelper.lua
+Modules\PetStatus.lua
+Modules\Ammo.lua
+Modules\BeastInfo.lua
+Modules\NPCPack.lua
+Modules\Waypoints.lua
+Modules\POICapture.lua
+Modules\Nearest.lua
+Modules\MapPins.lua
+Modules\MinimapPins.lua
+Modules\MapTab.lua
+Modules\Coords.lua
+Modules\Travel.lua
+Modules\Journey.lua
+Modules\Finder.lua
+UI\Pages.lua
 
 Core\Slash.lua
 Core\Boot.lua

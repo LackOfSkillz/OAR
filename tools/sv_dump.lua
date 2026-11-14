@@ -151,6 +151,14 @@ local function printProbe()
     local v = p.events[k]
     out(string.format("  %s %s%s\n", v == true and "+" or "-", k, v == true and "" or ("  (" .. tostring(v) .. ")")))
   end
+  local em = p.editMode
+  if type(em) == "table" then
+    out(string.format("edit mode: manager %s, active layout %s\n", tostring(em.manager), tostring(em.activeLayout)))
+    for _, k in ipairs(sortedKeys(em.api or {})) do out(string.format("  api %s %s\n", em.api[k] and "+" or "-", k)) end
+    for i, l in ipairs(em.layouts or {}) do out(string.format("  layout %d: %s (type %s)\n", i, tostring(l.name), tostring(l.type))) end
+    out("  system frames: ", table.concat(em.systems or {}, ", "), "\n")
+    for _, k in ipairs(sortedKeys(em.frames or {})) do out(string.format("  frame %s: %s\n", k, tostring(em.frames[k]))) end
+  end
   local runs = global.probeUnits or { p.units }
   for i, units in ipairs(runs) do
     out(string.format("units, run %d of %d (%s, in combat: %s):\n", i, #runs, stamp(units.at), tostring(units.inCombat)))

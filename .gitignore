@@ -10,3 +10,11 @@ tests/.tmp*
 *.swp
 Thumbs.db
 .DS_Store
+
+# private data copies (D10): never commit or release
+private/
+tools/__pycache__/
+
+# companion app config (machine-specific)
+companion/config.json
+companion/**/__pycache__/
