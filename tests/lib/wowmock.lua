@@ -414,6 +414,9 @@ function M.new(opts)
       local a = ((game.ahAuctions or {})[key.itemID] or {})[i]
       return a and { auctionID = a[1], buyoutAmount = a[2], containsOwnerItem = false }
     end,
+    StartCommoditiesPurchase = function(id, qty) game.commodityStart = { id = id, qty = qty } end,
+    ConfirmCommoditiesPurchase = function(id, qty) game.bought = game.bought or {} game.bought[#game.bought + 1] = { commodity = id, qty = qty } end,
+    CancelCommoditiesPurchase = function() game.commodityStart = nil end,
     PlaceBid = function(id, price) game.bought = game.bought or {} game.bought[#game.bought + 1] = { id = id, price = price } end,
     GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
     GetOwnedAuctions = function() return game.owned or {} end,

@@ -107,7 +107,7 @@ T.describe("gear advisor percentages", function()
   T.it("a near-zero worn item does not produce absurd percentages", function()
     local game = mock.new()
     game.items = { [801] = { name = "Rusty Club", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 4 },
-      [802] = { name = "Fine Club", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 4 } }
+      [802] = { name = "Fine Sword", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 7 } }
     game.itemStats = { [801] = { ITEM_MOD_SPIRIT_SHORT = 1 }, [802] = { ITEM_MOD_AGILITY_SHORT = 30 } }
     game.worn = { [16] = 801 }
     local ns = game:loadAddon()

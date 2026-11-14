@@ -37,6 +37,32 @@ local ARMOR = { PRIEST = 1, MAGE = 1, WARLOCK = 1, ROGUE = 2, DRUID = 2 }
 local ARMOR40 = { HUNTER = { 2, 3 }, SHAMAN = { 2, 3 }, WARRIOR = { 3, 4 }, PALADIN = { 3, 4 } }
 M.MIN_BASE, M.MAX_PCT = 5, 300
 local SHIELD_CLASSES = { WARRIOR = true, PALADIN = true, SHAMAN = true }
+-- Weapon types each class can use (learned from weapon masters), Classic rules
+-- (wowpedia "Weapon skills"); item weapon subclass ids: 0 axe, 1 2h axe, 2 bow,
+-- 3 gun, 4 mace, 5 2h mace, 6 polearm, 7 sword, 8 2h sword, 10 staff, 13 fist,
+-- 15 dagger, 16 thrown, 18 crossbow, 19 wand. Unverified on Forever.
+local function set(...) local t = {} for _, v in ipairs({ ... }) do t[v] = true end return t end
+M.WEAPON_TYPES = {
+  WARRIOR = set(0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 18),
+  PALADIN = set(0, 1, 4, 5, 6, 7, 8),
+  HUNTER = set(0, 1, 2, 3, 6, 7, 8, 10, 13, 15, 16, 18),
+  ROGUE = set(2, 3, 4, 7, 13, 15, 16, 18),
+  PRIEST = set(4, 10, 15, 19),
+  SHAMAN = set(0, 1, 4, 5, 10, 13, 15),
+  MAGE = set(7, 10, 15, 19),
+  WARLOCK = set(7, 10, 15, 19),
+  DRUID = set(4, 5, 6, 10, 13, 15),
+}
+-- The armor type a class should buy (its heaviest; Gary, 2026-11-14: "no mail
+-- for a priest, no cloth for a hunter"): 1 cloth, 2 leather, 3 mail, 4 plate.
+function M.ArmorType(cls, level)
+  cls = cls or ns.PlayerClass()
+  level = level or C.Call("UnitLevel", "player") or 1
+  if ARMOR[cls] then return ARMOR[cls] end
+  local a = ARMOR40[cls]
+  if a then return level >= 40 and a[2] or a[1] end
+  return nil
+end
 local OFFHAND = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true, INVTYPE_HOLDABLE = true }
 
 function M:Weights()
@@ -85,6 +111,10 @@ function M:Usable(link, info)
   if info and info.reqLevel and info.reqLevel > level then return "level " .. info.reqLevel, info.reqLevel end
   local equipLoc, class, subclass = itemClass(link)
   if class == 4 and subclass == 6 and not SHIELD_CLASSES[ns.PlayerClass()] then return "can't wear" end
+  if class == 2 and subclass then
+    local ok = M.WEAPON_TYPES[ns.PlayerClass()]
+    if subclass ~= 20 and ok and not ok[subclass] then return "can't wear" end
+  end
   -- Hunter shots and Auto Shot need a bow, gun or crossbow: a thrown weapon in the ranged
   -- slot turns them off (Gary's Khreos was offered throwing daggers at +86%, 2026-11-12)
   if ns.PlayerClass() == "HUNTER" and (equipLoc or (info and info.equipLoc)) == "INVTYPE_THROWN" then return "hunter thrown" end

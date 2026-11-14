@@ -144,7 +144,7 @@ function M:OnResults()
       if w.entry.kind == "item" then
         if id == w.entry.itemID then self.prices[id] = { price = price, qty = C.Readable(r.totalQuantity) } end
       else
-        self:NoteRecipe(w.entry.prof, id, price)
+        self:NoteRecipe(w.entry.prof, id, price, r.itemKey)
       end
     end
   end
@@ -152,7 +152,7 @@ function M:OnResults()
 end
 
 -- A recipe for sale: keep it when the tooltip says it's not known yet, with the skill it needs.
-function M:NoteRecipe(prof, itemID, price)
+function M:NoteRecipe(prof, itemID, price, itemKey)
   local tip = C.Call("C_TooltipInfo.GetItemByID", itemID)
   local need, known
   for _, line in ipairs(type(tip) == "table" and tip.lines or {}) do
@@ -173,7 +173,7 @@ function M:NoteRecipe(prof, itemID, price)
   self.seenRecipes = (self.seenRecipes or 0) + 1
   if known then return end
   self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = name or ("item " .. itemID),
-    price = price, need = need }
+    price = price, need = need, itemKey = itemKey or { itemID = itemID } }
 end
 
 -- Recipes worth showing: skill known, usable now or within 25 points; usable
@@ -234,8 +234,9 @@ function M:Rank()
   return out
 end
 
+-- lines, actions: actions[i] is what that line's Buy button queues (or nil)
 function M:Lines()
-  local lines = {}
+  local lines, actions = {}, {}
   local money = ns.Prices.Money
   for i, x in ipairs(self:Rank()) do
     if i > 8 then break end
@@ -251,6 +252,11 @@ function M:Lines()
     else
       lines[#lines + 1] = string.format("%s: %s per point, buy %s (%s)", head, money(x.perPoint), table.concat(parts, ", "), money(x.cost))
     end
+    local buys = {}
+    for _, b in ipairs(x.buy) do
+      if b.cost then buys[#buys + 1] = { name = itemName(b.itemID) or ("item " .. b.itemID), itemID = b.itemID, qty = b.n, commodity = true } end
+    end
+    if #buys > 0 then actions[#lines] = buys end
   end
   local forSale = self:UsefulRecipes()
   if #forSale > 0 then
@@ -260,9 +266,10 @@ function M:Lines()
       local skill = tonumber(ns.db.char.professions[r.prof].skill)
       lines[#lines + 1] = string.format("%s: %s (needs %s %d, you %d)%s", money(r.price), r.name, r.prof, r.need, skill,
         r.now and "" or " |cff888888later|r")
+      actions[#lines] = { { name = r.name, itemKey = r.itemKey } }
     end
   end
-  return lines
+  return lines, actions
 end
 
 function M:Done()
@@ -313,6 +320,22 @@ function M:Build()
   f.text:SetWidth(404)
   f.text:SetJustifyH("LEFT")
   f.text:SetJustifyV("TOP")
+  -- result lines, each with a Buy button when there is something to buy
+  f.rows = {}
+  for i = 1, 16 do
+    local row = CreateFrame("Frame", nil, f)
+    row:SetSize(404, 30)
+    row.text = UI.Text(row, "small", "text")
+    row.text:SetPoint("LEFT", 0, 0)
+    row.text:SetWidth(346)
+    row.text:SetJustifyH("LEFT")
+    row.buy = UI:Button(row, "Buy", 52, function()
+      for _, e in ipairs(row.action or {}) do if ns.AHBuy then ns.AHBuy:Add(e) end end
+    end)
+    row.buy:SetPoint("RIGHT", 0, 0)
+    row:Hide()
+    f.rows[i] = row
+  end
   f:Hide()
   self.frame = f
   return f
@@ -322,14 +345,36 @@ function M:Refresh()
   if not self.open then return end
   local f = self:Build()
   if self.queue then
+    for _, row in ipairs(f.rows) do row:Hide() end
+    f:SetHeight(120)
     local e = self.queue[self.pos]
     f.button.label:SetText(self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching...")
     f.text:SetText(string.format("Searching the auction house: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
   else
+    for _, row in ipairs(f.rows) do row:Hide() end
+    f:SetHeight(120)
     f.button.label:SetText(self.prices and "Search again" or "Find training materials")
     if self.prices then
-      local lines = self:Lines()
-      f.text:SetText(#lines > 0 and table.concat(lines, "\n") or "Nothing found that trains your professions.")
+      local lines, actions = self:Lines()
+      f.text:SetText(#lines > 0 and "Cheapest skill first. Buy queues it; the bar above the auction window confirms each purchase."
+        or "Nothing found that trains your professions.")
+      local y = -56
+      for i, row in ipairs(f.rows) do
+        local line = lines[i]
+        if line then
+          row.text:SetText(line)
+          row.action = actions[i]
+          row.buy:SetShown(actions[i] ~= nil)
+          local sh = row.text.GetStringHeight and row.text:GetStringHeight()
+          local h = math.max(18, (type(sh) == "number" and sh or 14) + 6)
+          row:SetHeight(h)
+          row:ClearAllPoints()
+          row:SetPoint("TOPLEFT", 8, y)
+          y = y - h - 2
+          row:Show()
+        end
+      end
+      f:SetHeight(-y + 10)
     else
       local n = 0
       for _ in pairs(self:Needs()) do n = n + 1 end
