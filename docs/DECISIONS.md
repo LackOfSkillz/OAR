@@ -95,3 +95,14 @@ conquestcapped.com and leprestore.com, all unverified) by level, professions and
 gold per hour per kind of earning (skin, herb, ore, fish, cloth, mob loot), valued at auction price less 5% or
 vendor price. Time is the gaps between loots, at most 5 minutes each; after 15 minutes his number replaces the
 guide's. Read only: it never sells or buys.
+
+## Family install (2026-11-14)
+
+Gary's daughters want Outrider. `tools/family.ps1` builds `dist/family/Install-Outrider.cmd`: one file that
+finds WoW Forever (registry, then common folders on every drive, then a folder picker) and copies Outrider plus
+its data addons into `_forever_/Interface/AddOns` on that PC. It carries the private QuestieDB packs (GPLv3,
+LICENSE-DATA.txt added; family use only, not for posting) and `Outrider_Data_Shared`: Gary's world knowledge
+exported by `tools/export_shared.lua` from a copy of his SavedVariables (NPCs met, places, nodes, rare sightings,
+spawn logs, rare profiles, prices, pet diets, travel links, catches; never characters, bags, gold, sessions or
+logs). Modules/SharedData merges it once per export into the new account, never overwriting, lists only into
+empty ones. The installer never runs on Gary's PC (WoW folder is written only by deploy.ps1).

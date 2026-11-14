@@ -60,6 +60,7 @@ Data\Transports.lua
 Data\Money.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
+Modules\SharedData.lua
 Modules\MacroEngine.lua
 Modules\Spellbook.lua
 Modules\MacroLibrary.lua
