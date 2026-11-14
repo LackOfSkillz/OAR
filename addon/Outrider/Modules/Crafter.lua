@@ -64,9 +64,15 @@ end
 -- Is the profession window open and loaded for this profession?
 function M:OpenFor(prof)
   if not C.Call("C_TradeSkillUI.IsTradeSkillReady") then return false end
-  local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
-  local name = type(base) == "table" and (base.professionName or base.parentProfessionName)
-  return name == prof
+  local name = ns.Professions and ns.Professions.OpenName and ns.Professions.OpenName()
+  if name then return name == prof end
+  -- no name at all: trust the window if one of its recipes is one we stored for prof
+  local p = ns.db.char.professions and ns.db.char.professions[prof]
+  local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
+  if type(p) == "table" and type(p.recipes) == "table" and type(ids) == "table" then
+    for _, id in ipairs(ids) do if p.recipes[id] then return true end end
+  end
+  return false
 end
 
 local SKIP = { isRecraft = true, isSalvageRecipe = true, isGatheringRecipe = true, isDummyRecipe = true }

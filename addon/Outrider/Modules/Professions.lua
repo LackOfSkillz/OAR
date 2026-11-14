@@ -62,13 +62,30 @@ local function reagentsModern(recipeID)
   return out
 end
 
+-- The open profession window's name. Forever sometimes gives an empty
+-- professionName on one of the two infos (Alchemy was once stored under "",
+-- and the training button kept reopening the window, 2026-11-14), so take
+-- the first non-empty name from either.
+function M.OpenName()
+  local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
+  local line = C.Call("C_TradeSkillUI.GetProfessionInfo")
+  for _, info in ipairs({ base, line }) do
+    if type(info) == "table" then
+      for _, k in ipairs({ "professionName", "parentProfessionName" }) do
+        local v = C.Readable(info[k])
+        if type(v) == "string" and v ~= "" then return v end
+      end
+    end
+  end
+  return nil
+end
+
 function M:ScanModern()
   local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
   if type(ids) ~= "table" or #ids == 0 then return nil end
   local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
   local line = C.Call("C_TradeSkillUI.GetProfessionInfo") or base
-  local name = type(base) == "table" and (base.professionName or base.parentProfessionName)
-    or type(line) == "table" and line.professionName
+  local name = M.OpenName()
   local recipes = {}
   for _, id in ipairs(ids) do
     local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)

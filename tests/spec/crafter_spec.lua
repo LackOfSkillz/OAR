@@ -161,3 +161,19 @@ T.describe("macro text compare", function()
     T.ok(not ns.MacroEngine.Same("a\nb", "a\nc"))
   end)
 end)
+
+T.describe("crafter blank profession name", function()
+  T.it("an open window whose name reads empty still counts, so the second press crafts", function()
+    local game = mock.new()
+    game.prof = { name = "", skill = 20, max = 75, line = 171, recipes = {
+      [3170] = { name = "Minor Troll's Blood Elixir", diff = 0, reagents = { [765] = 1 }, have = 10 } } }
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions = { Alchemy = { skill = 20, max = 75, line = 171, recipes = { [3170] = { name = "Minor Troll's Blood Elixir" } } } }
+    game.tradeOpen = true
+    T.ok(ns.Crafter:OpenFor("Alchemy"), "window recognised by its recipes")
+    T.eq(ns.Crafter:Make("Alchemy"), "made")
+    T.eq(game.crafted[1].id, 3170)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

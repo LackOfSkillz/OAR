@@ -121,6 +121,10 @@ end
 local VERB = { Cooking = "cook", Alchemy = "brew", Enchanting = "enchant", Mining = "smelt", ["First Aid"] = "make" }
 function M:Label(total)
   if self.state == "fire" then return string.format("Cooking +%d: build a campfire first", total) end
+  -- crafting needs the profession window open: the first press opens it
+  if not (ns.Crafter and ns.Crafter:OpenFor(self.prof)) then
+    return string.format("%s +%d: open %s (then press again)", tostring(self.prof), total, tostring(self.prof))
+  end
   local nxt = self.list and self.list[1]
   return string.format("%s +%d: %s %s", tostring(self.prof), total, VERB[self.prof] or "make",
     nxt and string.format("%s x%d", tostring(nxt.name), nxt.n) or "next recipe")
@@ -257,6 +261,8 @@ function M:OnEnable()
   self:On("PLAYER_REGEN_ENABLED", later)
   self:On("PLAYER_REGEN_DISABLED", function(mod) mod:Hide() end)
   self:On("TRADE_SKILL_LIST_UPDATE", later)
+  self:On("TRADE_SKILL_SHOW", later)
+  self:On("TRADE_SKILL_CLOSE", later)
   self:On("PLAYER_ENTERING_WORLD", later)
   self:On("UNIT_SPELLCAST_SUCCEEDED", self.OnCast)
   self:On("UI_ERROR_MESSAGE", self.OnError)
