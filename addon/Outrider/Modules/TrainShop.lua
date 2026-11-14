@@ -251,10 +251,28 @@ function M:Build()
   local f = CreateFrame("Frame", "Outrider_TrainShop", anchor, ns.Theme:BackdropTemplate())
   ns.Theme:ApplyPanel(f, "panel")
   f:SetSize(420, 300)
-  f:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -6)
+  -- above the auction window and draggable by its title (Gary, 2026-11-14: "it
+  -- pops under the auction window"); where he drops it is kept per character
+  f:SetFrameStrata("HIGH")
+  f:SetClampedToScreen(true)
+  local pt = M:Settings().point
+  if type(pt) == "table" then
+    f:SetPoint(pt[1], UIParent, pt[2], pt[3], pt[4])
+  else
+    f:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 6, -180) -- right of the AH, under the auction helper
+  end
+  f:EnableMouse(true)
+  f:SetMovable(true)
+  f:RegisterForDrag("LeftButton")
+  f:SetScript("OnDragStart", function(fr) fr:StartMoving() end)
+  f:SetScript("OnDragStop", function(fr)
+    fr:StopMovingOrSizing()
+    local a, _, b, x, y = fr:GetPoint()
+    M:Settings().point = { a, b, x, y }
+  end)
   f.title = UI.Text(f, "normal", "accent")
   f.title:SetPoint("TOPLEFT", 8, -8)
-  f.title:SetText("Training shopping")
+  f.title:SetText("Training shopping  |cff888888(drag to move)|r")
   f.button = UI:Button(f, "Find training materials", 190, function()
     if M.queue and M.manual then M:Next() else M:Start() end
   end)
