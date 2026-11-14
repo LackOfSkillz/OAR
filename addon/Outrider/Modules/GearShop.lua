@@ -176,7 +176,7 @@ function M:Build()
   local anchor = rawget(_G, "AuctionHouseFrame") or UIParent
   local f = CreateFrame("Frame", "Outrider_GearShop", anchor, ns.Theme:BackdropTemplate())
   ns.Theme:ApplyPanel(f, "panel")
-  f:SetSize(460, 120)
+  f:SetSize(480, 120)
   f:SetFrameStrata("HIGH")
   f:SetClampedToScreen(true)
   local pt = self:Settings().point
@@ -191,12 +191,29 @@ function M:Build()
     local a, _, b, x, y = fr:GetPoint()
     M:Settings().point = { a, b, x, y }
   end)
-  f.title = UI.Text(f, "normal", "accent")
-  f.title:SetPoint("TOPLEFT", 8, -8)
-  -- one shopping panel (Gary, 2026-11-14: "these should be one panel, not 2"):
-  -- Training (TrainShop's list, drawn inside this panel), Weapons, Armor
-  f.title:SetText("Outrider shopping  |cff888888(drag)|r")
-  f.training = UI:Button(f, "Training", 96, function()
+  -- header: title and gold, then three equal tabs, then a divider
+  -- (Gary, 2026-11-14: "a little jammed up ... more modern and slick")
+  local Theme = ns.Theme
+  f.band = f:CreateTexture(nil, "BORDER")
+  f.band:SetPoint("TOPLEFT", 1, -1)
+  f.band:SetPoint("TOPRIGHT", -1, -1)
+  f.band:SetHeight(84)
+  f.band:SetColorTexture(Theme:Color("raised"))
+  f.title = UI.Text(f, "title", "text")
+  f.title:SetPoint("TOPLEFT", 14, -12)
+  f.title:SetText("Shopping")
+  f.sub = UI.Text(f, "small", "muted")
+  f.sub:SetPoint("LEFT", f.title, "RIGHT", 8, -1)
+  f.sub:SetText("Outrider")
+  f.gold = UI.Text(f, "normal", "warn")
+  f.gold:SetPoint("TOPRIGHT", -14, -14)
+  local function tab(label, x, onClick)
+    local b = UI:Button(f, label, 146, onClick)
+    b:SetHeight(26)
+    b:SetPoint("TOPLEFT", x, -44)
+    return b
+  end
+  f.training = tab("Training", 14, function()
     M.mode = "training"
     if ns.TrainShop then
       local T = ns.TrainShop
@@ -204,24 +221,26 @@ function M:Build()
     end
     M:Refresh()
   end)
-  f.training:SetPoint("TOPRIGHT", -216, -6)
-  f.weapons = UI:Button(f, "Weapons", 96, function()
+  f.weapons = tab("Weapons", 167, function()
     if M.queue and M.manual then M:Next() else M:Start("weapons") end
   end)
-  f.weapons:SetPoint("TOPRIGHT", -112, -6)
-  f.armor = UI:Button(f, "Armor", 96, function()
+  f.armor = tab("Armor", 320, function()
     if M.queue and M.manual then M:Next() else M:Start("armor") end
   end)
-  f.armor:SetPoint("TOPRIGHT", -8, -6)
+  f.divider = f:CreateTexture(nil, "ARTWORK")
+  f.divider:SetPoint("TOPLEFT", 1, -85)
+  f.divider:SetPoint("TOPRIGHT", -1, -85)
+  f.divider:SetHeight(1)
+  f.divider:SetColorTexture(Theme:Color("border"))
   f.status = UI.Text(f, "small", "muted")
-  f.status:SetPoint("TOPLEFT", 8, -36)
-  f.status:SetWidth(444)
+  f.status:SetPoint("TOPLEFT", 14, -96)
+  f.status:SetWidth(452)
   f.status:SetJustifyH("LEFT")
   f.rows = {}
   for i = 1, M.ROWS do
     local row = CreateFrame("Frame", nil, f)
-    row:SetSize(444, 22)
-    row:SetPoint("TOPLEFT", 8, -54 - (i - 1) * 24)
+    row:SetSize(452, 24)
+    row:SetPoint("TOPLEFT", 14, -118 - (i - 1) * 26)
     row.text = UI.Text(row, "normal", "text")
     row.text:SetPoint("LEFT", 0, 0)
     row.text:SetWidth(380)
@@ -244,12 +263,30 @@ function M:Resize()
   local f = self.frame
   if not f then return end
   local t = ns.TrainShop and ns.TrainShop.frame
-  if self.mode == "training" and t then f:SetHeight(40 + (t:GetHeight() or 100)) end
+  if self.mode == "training" and t then f:SetHeight(96 + (t:GetHeight() or 100)) end
+end
+
+-- Active tab: accent border, tinted fill and accent label; others plain.
+function M:StyleTabs()
+  local f, Theme = self.frame, ns.Theme
+  if not f then return end
+  local active = self.mode or "training"
+  for mode, b in pairs({ training = f.training, weapons = f.weapons, armor = f.armor }) do
+    local on = mode == active
+    if b.SetBackdropBorderColor then b:SetBackdropBorderColor(Theme:Color(on and "accent" or "border")) end
+    if b.SetBackdropColor then
+      local r, g, bl = Theme:Color(on and "accent" or "raised")
+      b:SetBackdropColor(r, g, bl, on and 0.22 or 1)
+    end
+    b.label:SetTextColor(Theme:Color(on and "accent" or "text"))
+  end
+  f.gold:SetText(ns.Prices.Money(ns.AHBuy and ns.AHBuy.Money() or 0))
 end
 
 function M:Refresh()
   if not self.open then return end
   local f = self:Build()
+  self:StyleTabs()
   local training = self.mode == "training" or not self.mode
   local t = ns.TrainShop and ns.TrainShop.frame
   if t then t:SetShown(training) end
@@ -294,7 +331,7 @@ function M:Refresh()
       f.status:SetText("Finds upgrades your class can use, in your level range, that your gold covers (" .. gold .. "). Buy is your click.")
     end
   end
-  f:SetHeight(62 + #list * 24 + (#list == 0 and 14 or 0))
+  f:SetHeight(126 + #list * 26 + (#list == 0 and 14 or 0))
   f:Show()
 end
 

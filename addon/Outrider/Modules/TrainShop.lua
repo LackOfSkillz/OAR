@@ -288,9 +288,9 @@ function M:Build()
   -- drawn inside the shopping panel (GearShop) under its Training button
   local host = ns.GearShop and ns.GearShop:Build()
   local f = CreateFrame("Frame", "Outrider_TrainShop", host or UIParent)
-  f:SetSize(460, 100)
+  f:SetSize(480, 100)
   if host then
-    f:SetPoint("TOPLEFT", host, "TOPLEFT", 0, -30)
+    f:SetPoint("TOPLEFT", host, "TOPLEFT", 6, -88)
   else
     f:SetPoint("CENTER")
   end
@@ -302,17 +302,17 @@ function M:Build()
   if host then f.button:Hide() end
   f.text = UI.Text(f, "small", "text")
   f.text:SetPoint("TOPLEFT", 8, -6)
-  f.text:SetWidth(444)
+  f.text:SetWidth(452)
   f.text:SetJustifyH("LEFT")
   f.text:SetJustifyV("TOP")
   -- result lines, each with a Buy button when there is something to buy
   f.rows = {}
   for i = 1, 16 do
     local row = CreateFrame("Frame", nil, f)
-    row:SetSize(444, 30)
+    row:SetSize(452, 30)
     row.text = UI.Text(row, "small", "text")
     row.text:SetPoint("LEFT", 0, 0)
-    row.text:SetWidth(386)
+    row.text:SetWidth(390)
     row.text:SetJustifyH("LEFT")
     row.buy = UI:Button(row, "Buy", 52, function()
       for _, e in ipairs(row.action or {}) do if ns.AHBuy then ns.AHBuy:Add(e) end end
@@ -336,7 +336,7 @@ function M:Refresh()
     local label = self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching..."
     f.button.label:SetText(label)
     local host = ns.GearShop and ns.GearShop.frame
-    if host and host.training then host.training.label:SetText(self.manual and "Next" or "...") end
+    if host and host.training then host.training.label:SetText(self.manual and "Search next" or "Searching...") end
     f.text:SetText(string.format("Searching the auction house: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
   else
     for _, row in ipairs(f.rows) do row:Hide() end
