@@ -261,6 +261,11 @@ local function profRows()
     crafts[#crafts + 1] = { "Make bar macros", Run("make") }
     r({ "buttons", crafts })
   end
+  if owned.Cooking then
+    r({ "check", "Cooking training button (pops up at +10)", function() return set("CookTrainer").show end,
+      function(on) set("CookTrainer").show = on if ns.CookTrainer then ns.CookTrainer:Evaluate() end end, "fire, then cook what still trains" })
+    r({ "note", function() local m = mod("CookTrainer") return m and m.enabled and m:Activity() or "" end })
+  end
   if next(owned) then
     r({ "header", "Skill-up planner" })
     r({ "input", "Profession and target", "Alchemy 75", "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })

@@ -70,6 +70,7 @@ Modules\RareMacros.lua
 Modules\Inventory.lua
 Modules\Professions.lua
 Modules\Crafter.lua
+Modules\CookTrainer.lua
 Modules\Prices.lua
 Modules\AuctionHelper.lua
 Modules\Ledger.lua

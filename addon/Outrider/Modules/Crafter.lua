@@ -96,6 +96,7 @@ function M:Pick()
         closest = { id = id, name = C.Readable(info.name) or tostring(id), diff = diff }
       end
     end
+    if n > 0 and self.trainOnly and (tonumber(C.Readable(info.relativeDifficulty)) or 2) >= 3 then n = 0 end
     if n > 0 then
       local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
       if not best or diff < best.diff or (diff == best.diff and n > best.n) then
@@ -242,7 +243,11 @@ ns.AddCommand("make", "[Profession]  make what you have ingredients for (no name
   if not M.enabled then ns.Print("the Crafter module is off") return end
   arg = (arg or ""):gsub("^%s+", ""):gsub("%s+$", "")
   if arg ~= "" then
-    M:Make(ns.TitleCase(arg:lower()))
+    -- "Cooking train": only recipes that still give skill (CookTrainer's button)
+    local prof, train = arg:match("^(.-)%s+train$")
+    M.trainOnly = prof ~= nil
+    M:Make(ns.TitleCase((prof or arg):lower()))
+    M.trainOnly = false
     return
   end
   local made, lib = {}, ns.MacroLibrary
