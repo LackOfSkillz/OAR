@@ -89,8 +89,10 @@ end
 -- Questie Forever DB and Outrider's own sightings.
 M.REQUESTS = {
   -- (Vulgara's pin, 2026-11-14 08:08, retired: Gary reached her at 08:12)
-  { id = "slydris-20261114", char = "Khreos", mapID = 2521, x = 0.501, y = 0.487,
-    title = "Slydris (rare elite fox, 1.5s pet; 4 spawn spots, see map)" },
+  -- moved from 50.1, 48.7 (Questie point in the lake, Gary's screenshot) to the
+  -- Warcraft Wiki spot "immediately north of Falaath Village"; guides say 50.2, 51.0
+  { id = "slydris-20261114b", char = "Khreos", mapID = 2521, x = 0.506, y = 0.512,
+    title = "Slydris (rare elite fox, 1.5s pet), north edge of Falaath Village" },
 }
 
 function M:Requests()
