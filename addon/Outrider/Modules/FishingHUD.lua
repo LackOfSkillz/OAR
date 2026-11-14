@@ -213,7 +213,10 @@ function M:Lines()
   local mapID = C.PlayerPosition("player")
   local here = self:Here(mapID)
   local parts = {}
-  for i = 1, math.min(3, #here) do parts[#parts + 1] = string.format("%s %d%%", here[i].name, math.floor(here[i].share * 100 + 0.5)) end
+  -- short names on the box ("Raw " dropped); the hover tooltip has the full ones
+  for i = 1, math.min(3, #here) do
+    parts[#parts + 1] = string.format("%s %d%%", (here[i].name:gsub("^Raw ", "")), math.floor(here[i].share * 100 + 0.5))
+  end
   local hard = mapID and self:TooHard(mapID)
   local l2 = hard and ("|cffff8040" .. hard .. "|r") or (#parts > 0 and ("Here: " .. table.concat(parts, " · ")) or "Here: nothing caught yet")
   local l3
@@ -250,9 +253,12 @@ function M:Build()
   f.lines = {}
   for i = 1, 4 do
     local t = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    -- one line each, never wrapped (Gary's screenshot, 2026-11-14: a long
+    -- "Here" line wrapped onto the next); the box grows to fit instead
     t:SetPoint("TOPLEFT", 8, -6 - (i - 1) * 15)
-    t:SetPoint("RIGHT", f, "RIGHT", -8, 0)
     t:SetJustifyH("LEFT")
+    if t.SetWordWrap then t:SetWordWrap(false) end
+    if t.SetMaxLines then t:SetMaxLines(1) end
     f.lines[i] = t
   end
   f:SetScript("OnEnter", function(fr)
@@ -276,7 +282,14 @@ end
 function M:Refresh()
   if not (self.frame and self.shown) then return end
   local lines = self:Lines()
-  for i = 1, 4 do self.frame.lines[i]:SetText(lines[i] or "") end
+  local w = 220
+  for i = 1, 4 do
+    local t = self.frame.lines[i]
+    t:SetText(lines[i] or "")
+    local sw = t.GetStringWidth and t:GetStringWidth()
+    if type(sw) == "number" and sw + 16 > w then w = sw + 16 end
+  end
+  self.frame:SetWidth(math.min(w, 460))
   self.frame:SetHeight(lines[4] and 70 or 55)
 end
 

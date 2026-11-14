@@ -32,7 +32,7 @@ T.describe("fishing hud", function()
     H:Update()
     T.ok(H.shown, "pole on, HUD on")
     T.contains(lines(ns), "No lure")
-    T.contains(lines(ns), "Raw Slitherskin Mackerel 70%")
+    T.contains(lines(ns), "Here: Slitherskin Mackerel 70%")
     game.lureMs = 372000
     T.contains(lines(ns), "Lure 6:12")
     ns.Events:Fire("OTR_LOOT", "fish", { { id = 6303, count = 1, name = "Raw Slitherskin Mackerel" } })
