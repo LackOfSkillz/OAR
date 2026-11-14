@@ -116,9 +116,14 @@ function M:FireReady()
   return false
 end
 
+-- "Alchemy +10: make Elixir of Minor Defense x5" (Gary, 2026-11-14: "+10: Make"
+-- told him nothing). The next recipe is the best colour the bags can make.
+local VERB = { Cooking = "cook", Alchemy = "brew", Enchanting = "enchant", Mining = "smelt", ["First Aid"] = "make" }
 function M:Label(total)
-  if self.state == "fire" then return string.format("Cooking +%d: Build fire", total) end
-  return string.format("%s +%d: Make", tostring(self.prof), total)
+  if self.state == "fire" then return string.format("Cooking +%d: build a campfire first", total) end
+  local nxt = self.list and self.list[1]
+  return string.format("%s +%d: %s %s", tostring(self.prof), total, VERB[self.prof] or "make",
+    nxt and string.format("%s x%d", tostring(nxt.name), nxt.n) or "next recipe")
 end
 
 function M:Body()
@@ -154,6 +159,19 @@ function M:Show(total)
     self.btn = ns.SecureButtons:Acquire("ProfTrainer")
     if not self.btn then return end
     self.btn:HookScript("PostClick", function() M.training = true end)
+    -- hover: everything still to make, with its colour
+    self.btn:HookScript("OnEnter", function(b)
+      GameTooltip:SetOwner(b, "ANCHOR_BOTTOM")
+      GameTooltip:AddLine(string.format("%s training, about +%d", tostring(M.prof), M.total or 0))
+      local COLOR = { [0] = { 1, 0.5, 0.25 }, [1] = { 1, 1, 0 }, [2] = { 0.25, 0.75, 0.25 } }
+      for _, r in ipairs(M.list or {}) do
+        local c = COLOR[r.diff] or { 0.6, 0.6, 0.6 }
+        GameTooltip:AddLine(string.format("%s x%d", tostring(r.name), r.n), c[1], c[2], c[3])
+      end
+      GameTooltip:AddLine("Each press makes one stack. The x hides this for 30 minutes.", 0.6, 0.6, 0.6)
+      GameTooltip:Show()
+    end)
+    self.btn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     ns.SecureButtons:Place(self.btn, "TOP", UIParent, "TOP", 0, -150)
     ns.SecureButtons:Raise(self.btn, "HIGH")
     local x = CreateFrame("Button", nil, UIParent, "UIPanelCloseButton")
@@ -166,6 +184,7 @@ function M:Show(total)
   local body = self:Body()
   if body ~= self.body then self.body = body ns.SecureButtons:SetMacro(self.btn, body) end
   ns.SecureButtons:SetLabel(self.btn, self:Label(total))
+  ns.SecureButtons:FitWidth(self.btn, 120, 420)
   ns.SecureButtons:SetShown(self.btn, true)
   if self.close then self.close:Show() end
   self:Bind(true)
