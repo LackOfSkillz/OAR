@@ -19,6 +19,15 @@ local g = assert(env.Outrider_DB and env.Outrider_DB.global, "no Outrider_DB.glo
 local KEYS = { "discovered", "pois", "nodes", "sightings", "rareProfiles", "spawnLogs", "prices", "petDiet",
   "travelLinks", "taxiNodes", "fishing" }
 
+-- Published publicly (Gary chose a public release repo, 2026-11-14): no
+-- player names. Fields that name who saw something are dropped, and NPCs that
+-- are someone's pet or minion ("Khreos Airwolf's Pet") are left out.
+local DROP_FIELDS = { by = true, sender = true, owner = true, sharedBy = true, player = true }
+local function personal(t)
+  local title = type(t) == "table" and t.title
+  return type(title) == "string" and (title:find("'s Pet$") or title:find("'s Minion$") or title:find("'s Guardian$")) and true or false
+end
+
 local function isIdent(k) return type(k) == "string" and k:match("^[%a_][%w_]*$") end
 
 local out = {}
@@ -41,6 +50,7 @@ local function ser(v, ind)
     for _, k in ipairs(keys) do
       local val = v[k]
       local vt = type(val)
+      if DROP_FIELDS[k] or personal(val) then vt = "skip" end
       if vt == "number" or vt == "string" or vt == "boolean" or vt == "table" then
         w(ind .. "  ")
         if isIdent(k) then w(k) elseif type(k) == "number" then w("[" .. string.format("%.14g", k) .. "]") else w("[" .. string.format("%q", k) .. "]") end
@@ -55,7 +65,7 @@ local function ser(v, ind)
   end
 end
 
-w("-- Outrider_Data_Shared: world knowledge exported from Gary's account (tools/export_shared.lua).\n")
+w("-- Outrider_Data_Shared: world knowledge collected by Outrider (tools/export_shared.lua). No player names.\n")
 w("-- Merged into each new account's Outrider data at first login; never overwrites what it already has.\n")
 w("Outrider_DataShared = {\n  version = " .. string.format("%q", stamp) .. ",\n  data = {\n")
 local counts = {}

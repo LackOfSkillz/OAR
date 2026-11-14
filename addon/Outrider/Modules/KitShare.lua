@@ -65,7 +65,7 @@ function M:Card()
     if known then weapons[sub] = true end
   end
   return { name = ns.db.key, class = cls, level = level, faction = C.Readable(C.Call("UnitFactionGroup", "player")),
-    armor = G.ArmorType(cls, level), weapons = weapons, slots = slots, t = time() }
+    armor = G.ArmorType(cls, level), weapons = weapons, slots = slots, t = time(), build = ns.build }
 end
 
 function M:SaveOwn()

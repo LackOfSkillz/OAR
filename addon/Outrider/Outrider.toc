@@ -98,6 +98,7 @@ Modules\Nearby.lua
 Modules\GearQuestBridge.lua
 Modules\Comm.lua
 Modules\KitShare.lua
+Modules\Updates.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua
 Modules\LocationShare.lua

@@ -66,6 +66,13 @@ foreach ($f in $folders) {
   if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes)$') { Write-Utf8NoBom (Join-Path $staging "$f\LICENSE-DATA.txt") $note }
 }
 
+# the updater (installed to %LOCALAPPDATA%\Outrider by the installer, never into AddOns)
+$upd = Join-Path $staging '_updater'
+New-Item -ItemType Directory -Force -Path $upd | Out-Null
+Copy-Item -Path (Join-Path $PSScriptRoot 'family\updater.ps1') -Destination (Join-Path $upd 'Update-Outrider.ps1')
+Write-Utf8NoBom (Join-Path $upd 'version.txt') $stamp
+Write-Utf8NoBom (Join-Path $dist 'version.txt') $stamp
+
 # zip (forward slashes)
 $zip = Join-Path $dist 'Outrider-family.zip'
 if (Test-Path $zip) { Remove-Item -Force $zip }

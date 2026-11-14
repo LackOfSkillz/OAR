@@ -64,7 +64,7 @@ $out = Join-Path $tmp 'files'
 try {
   New-Item -ItemType Directory -Force -Path $addons | Out-Null
   $names = @()
-  foreach ($dir in (Get-ChildItem -Path $out -Directory)) {
+  foreach ($dir in (Get-ChildItem -Path $out -Directory | Where-Object { $_.Name -notlike '_*' })) {
     $dest = Join-Path $addons $dir.Name
     if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
     Copy-Item -Recurse -Path $dir.FullName -Destination $dest
@@ -73,8 +73,28 @@ try {
 } catch [System.UnauthorizedAccessException] {
   Say "Windows wouldn't let the installer write to the WoW folder. Right-click Install-Outrider and choose 'Run as administrator'." 'Error'
   exit 1
-} finally {
-  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 }
 
-Say ("Outrider is installed in:`n$addons`n`nStart World of Warcraft Forever, log in, and type /ride to open it.`n`nInstalled: " + ($names -join ', '))
+# 4. The updater: a copy in %LOCALAPPDATA%\Outrider and an "Update Outrider"
+#    shortcut on the desktop. It asks GitHub for a newer build when double-clicked.
+$updaterNote = ''
+try {
+  $src = Join-Path $out '_updater'
+  if (Test-Path $src) {
+    $home2 = Join-Path $env:LOCALAPPDATA 'Outrider'
+    New-Item -ItemType Directory -Force -Path $home2 | Out-Null
+    Copy-Item -Force -Path (Join-Path $src '*') -Destination $home2
+    $lnk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Update Outrider.lnk'
+    $sh = New-Object -ComObject WScript.Shell
+    $sc = $sh.CreateShortcut($lnk)
+    $sc.TargetPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    $sc.Arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + (Join-Path $home2 'Update-Outrider.ps1') + '"'
+    $sc.WorkingDirectory = $home2
+    $sc.Description = 'Check for a newer Outrider and install it'
+    $sc.Save()
+    $updaterNote = "`n`nFor updates: double-click 'Update Outrider' on your desktop (WoW closed)."
+  }
+} catch { $updaterNote = '' }
+Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+
+Say ("Outrider is installed in:`n$addons`n`nStart World of Warcraft Forever, log in, and type /ride to open it.`n`nInstalled: " + ($names -join ', ') + $updaterNote)

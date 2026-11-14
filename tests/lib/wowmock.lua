@@ -289,7 +289,7 @@ function M.new(opts)
   base.strjoin = function(sep, ...) return table.concat({ ... }, sep) end
   base.wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
   base.date = function(fmt, t) return os.date(fmt, t or game.now) end
-  base.time = function() return game.now end
+  base.time = function(t) if type(t) == "table" then return os.time(t) end return game.now end
   base.GetTime = function() return game.clock end
   base.GetServerTime = function() return game.now end
   base.debugstack = function() return "[mock stack]" end
