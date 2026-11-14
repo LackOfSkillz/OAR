@@ -128,10 +128,22 @@ function M:Advice(id)
 end
 
 -- ------------------------------------------------------------ session
+-- A session survives a /reload or taking the pole off for a moment (Gary,
+-- 2026-11-14: the 12 Pound Mud Snapper dropped out of the HUD after a reload).
+-- It's kept per character and picked up again if the last catch or cast was
+-- less than RESUME seconds ago.
+M.RESUME = 15 * 60
 function M:Start()
+  local saved = ns.db.char.fishSession
+  if type(saved) == "table" and saved.last and time() - saved.last < M.RESUME then
+    saved.casts, saved.escapes, saved.warned = saved.casts or {}, saved.escapes or {}, saved.warned or {}
+    self.session = saved
+    return
+  end
   local skill = self:Skill()
   self.session = { start = time(), last = time(), secs = 0, catches = 0, value = 0, skill0 = skill, lures = 0,
     casts = {}, escapes = {}, warned = {} }
+  ns.db.char.fishSession = self.session
 end
 
 function M:Touch(s)

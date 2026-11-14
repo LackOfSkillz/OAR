@@ -98,3 +98,21 @@ T.describe("fish key lure", function()
     T.contains(game:chatText(), "didn't go on")
   end)
 end)
+
+T.describe("fishing session", function()
+  T.it("carries on after a reload within 15 minutes, starts fresh after", function()
+    local game, ns = session()
+    game.pole = true
+    ns.FishingHUD:Update()
+    ns.Events:Fire("OTR_LOOT", "fish", { { id = 6303, count = 1, name = "Raw Slitherskin Mackerel" } })
+    local saved = ns.db.char.fishSession
+    T.eq(saved.catches, 1)
+    ns.FishingHUD.session = nil
+    ns.FishingHUD:Start()
+    T.eq(ns.FishingHUD.session.catches, 1, "resumed")
+    game.now = game.now + 16 * 60
+    ns.FishingHUD.session = nil
+    ns.FishingHUD:Start()
+    T.eq(ns.FishingHUD.session.catches, 0, "new session")
+  end)
+end)
