@@ -37,9 +37,14 @@ local ARMOR = { PRIEST = 1, MAGE = 1, WARLOCK = 1, ROGUE = 2, DRUID = 2 }
 local ARMOR40 = { HUNTER = { 2, 3 }, SHAMAN = { 2, 3 }, WARRIOR = { 3, 4 }, PALADIN = { 3, 4 } }
 M.MIN_BASE, M.MAX_PCT = 5, 300
 local SHIELD_CLASSES = { WARRIOR = true, PALADIN = true, SHAMAN = true }
--- Weapon types each class can use (learned from weapon masters), Classic rules
--- (wowpedia "Weapon skills"; hunters per Wowhead's Classic hunter weapons guide:
--- no fist weapons, wands or shields; druids got polearms only after Classic);
+-- Weapon types each class can learn from weapon masters on WoW Forever:
+-- Classic rules (wowpedia "Weapon skills"; hunters per Wowhead's Classic hunter
+-- weapons guide: no fist weapons, wands or shields) plus Forever's changes
+-- (warcrafttavern.com/forever/guides/weapon-trainers, read 2026-11-14: rogues
+-- learn one-handed axes, druids learn polearms). Race never restricts a type;
+-- it only changes the starting skills, which are read from the client
+-- (KnowsWeapon), so a race's head start is covered without a table.
+-- Shields: warriors, paladins, shamans. Unverified in game on Forever.
 -- item weapon subclass ids: 0 axe, 1 2h axe, 2 bow, 3 gun, 4 mace, 5 2h mace,
 -- 6 polearm, 7 sword, 8 2h sword, 10 staff, 13 fist, 15 dagger, 16 thrown,
 -- 18 crossbow, 19 wand. Unverified on Forever.
@@ -48,12 +53,12 @@ M.WEAPON_TYPES = {
   WARRIOR = set(0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 18),
   PALADIN = set(0, 1, 4, 5, 6, 7, 8),
   HUNTER = set(0, 1, 2, 3, 6, 7, 8, 10, 15, 16, 18),
-  ROGUE = set(2, 3, 4, 7, 13, 15, 16, 18),
+  ROGUE = set(0, 2, 3, 4, 7, 13, 15, 16, 18),
   PRIEST = set(4, 10, 15, 19),
   SHAMAN = set(0, 1, 4, 5, 10, 13, 15),
   MAGE = set(7, 10, 15, 19),
   WARLOCK = set(7, 10, 15, 19),
-  DRUID = set(4, 5, 10, 13, 15),
+  DRUID = set(4, 5, 6, 10, 13, 15),
 }
 -- The weapon skill each weapon type needs (Classic spell ids) and its name.
 -- Gary, 2026-11-14: offer only weapons the character can use, for every class:

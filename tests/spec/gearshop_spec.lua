@@ -140,3 +140,28 @@ T.describe("gear shop weapon skills", function()
     T.contains(ns.GearShop.Gain(list[2]), "learn Axes first")
   end)
 end)
+
+T.describe("class weapon rules", function()
+  T.it("each class's usable weapon types match Classic plus Forever's changes", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local W = ns.GearScore.WEAPON_TYPES
+    -- Forever: rogues learn one-handed axes, druids polearms
+    T.ok(W.ROGUE[0] and W.DRUID[6])
+    -- hunters: no fist weapons or wands; bows, guns, crossbows, thrown, axes yes
+    T.ok(not W.HUNTER[13] and not W.HUNTER[19])
+    T.ok(W.HUNTER[0] and W.HUNTER[2] and W.HUNTER[3] and W.HUNTER[16] and W.HUNTER[18])
+    -- casters
+    for _, cls in ipairs({ "PRIEST", "MAGE", "WARLOCK" }) do T.ok(W[cls][19] and W[cls][15] and W[cls][10], cls .. " wand, dagger, staff") end
+    T.ok(not W.PRIEST[7] and W.MAGE[7] and W.WARLOCK[7], "priests no swords; mages and warlocks one-handed swords")
+    T.ok(not W.PALADIN[15] and not W.PALADIN[2], "paladins no daggers or bows")
+    T.ok(not W.SHAMAN[7] and W.SHAMAN[0] and W.SHAMAN[13], "shamans axes and fists, no swords")
+    T.ok(not W.WARRIOR[19], "warriors no wands")
+    -- armor types: heaviest each class wears, mail/plate from 40
+    local A = ns.GearScore.ArmorType
+    T.eq(A("PRIEST", 60), 1) T.eq(A("ROGUE", 60), 2) T.eq(A("DRUID", 60), 2)
+    T.eq(A("HUNTER", 39), 2) T.eq(A("HUNTER", 40), 3) T.eq(A("SHAMAN", 40), 3)
+    T.eq(A("WARRIOR", 39), 3) T.eq(A("PALADIN", 40), 4)
+  end)
+end)
