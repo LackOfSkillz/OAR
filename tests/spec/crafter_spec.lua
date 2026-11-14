@@ -161,3 +161,69 @@ T.describe("macro text compare", function()
     T.ok(not ns.MacroEngine.Same("a\nb", "a\nc"))
   end)
 end)
+
+T.describe("crafter blank profession name", function()
+  T.it("an open window whose name reads empty still counts, so the second press crafts", function()
+    local game = mock.new()
+    game.prof = { name = "", skill = 20, max = 75, line = 171, recipes = {
+      [3170] = { name = "Minor Troll's Blood Elixir", diff = 0, reagents = { [765] = 1 }, have = 10 } } }
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions = { Alchemy = { skill = 20, max = 75, line = 171, recipes = { [3170] = { name = "Minor Troll's Blood Elixir" } } } }
+    game.tradeOpen = true
+    T.ok(ns.Crafter:OpenFor("Alchemy"), "window recognised by its recipes")
+    T.eq(ns.Crafter:Make("Alchemy"), "made")
+    T.eq(game.crafted[1].id, 3170)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
+T.describe("crafter window events", function()
+  T.it("the window counts as open after TRADE_SKILL_SHOW even when IsTradeSkillReady says no", function()
+    local game = mock.new()
+    game.prof = { name = "Alchemy", skill = 20, max = 75, line = 171, recipes = {
+      [3170] = { name = "Minor Troll's Blood Elixir", diff = 0, reagents = { [765] = 1 }, have = 10 } } }
+    local ns = game:loadAddon()
+    game:login()
+    game.tradeOpen = false
+    game:fire("TRADE_SKILL_SHOW")
+    T.ok(ns.Crafter:OpenFor("Alchemy"))
+    T.eq(ns.Crafter:Make("Alchemy"), "made")
+    game:fire("TRADE_SKILL_CLOSE")
+    T.ok(not ns.Crafter:OpenFor("Alchemy"))
+  end)
+end)
+
+T.describe("crafter campfire", function()
+  T.it("'make Cooking fire' crafts one Basic Campfire; normal cooking never burns the wood", function()
+    local game = mock.new()
+    game.prof = { name = "Cooking", skill = 40, max = 75, line = 185, recipes = {
+      [1229737] = { name = "Basic Campfire", diff = 0, reagents = { [4470] = 1 }, have = 3 },
+      [2538] = { name = "Charred Wolf Meat", diff = 1, reagents = { [2672] = 1 }, have = 5 } } }
+    local ns = game:loadAddon()
+    game:login()
+    game.tradeOpen = true
+    game:slash("make Cooking fire")
+    T.eq(game.crafted[1].id, 1229737)
+    T.eq(game.crafted[1].n, 1)
+    game:slash("make Cooking train")
+    T.eq(game.crafted[2].id, 2538, "cooks the meat, not another fire")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
+T.describe("crafter campfire guard", function()
+  T.it("doesn't make a campfire while one is in the bags", function()
+    local game = mock.new()
+    game.prof = { name = "Cooking", skill = 40, max = 75, line = 185, recipes = {
+      [1229737] = { name = "Basic Campfire", diff = 0, reagents = { [4470] = 1 }, have = 3 } } }
+    game.items = { [99001] = { name = "Basic Campfire" } }
+    game.bags = { [0] = { [1] = 99001 } }
+    local ns = game:loadAddon()
+    game:login()
+    game.tradeOpen = true
+    game:slash("make Cooking fire")
+    T.eq(game.crafted, nil, "nothing crafted")
+    T.contains(game:chatText(), "already have a campfire")
+  end)
+end)

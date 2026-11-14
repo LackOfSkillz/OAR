@@ -27,6 +27,7 @@ end
 function M:Store()
   local c = ns.db.char
   c.professions = type(c.professions) == "table" and c.professions or {}
+  c.professions[""] = nil
   return c.professions
 end
 
@@ -61,13 +62,30 @@ local function reagentsModern(recipeID)
   return out
 end
 
+-- The open profession window's name. Forever sometimes gives an empty
+-- professionName on one of the two infos (Alchemy was once stored under "",
+-- and the training button kept reopening the window, 2026-11-14), so take
+-- the first non-empty name from either.
+function M.OpenName()
+  local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
+  local line = C.Call("C_TradeSkillUI.GetProfessionInfo")
+  for _, info in ipairs({ base, line }) do
+    if type(info) == "table" then
+      for _, k in ipairs({ "professionName", "parentProfessionName" }) do
+        local v = C.Readable(info[k])
+        if type(v) == "string" and v ~= "" then return v end
+      end
+    end
+  end
+  return nil
+end
+
 function M:ScanModern()
   local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
   if type(ids) ~= "table" or #ids == 0 then return nil end
   local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
   local line = C.Call("C_TradeSkillUI.GetProfessionInfo") or base
-  local name = type(base) == "table" and (base.professionName or base.parentProfessionName)
-    or type(line) == "table" and line.professionName
+  local name = M.OpenName()
   local recipes = {}
   for _, id in ipairs(ids) do
     local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)
@@ -113,6 +131,8 @@ function M:Scan(why)
     ok, name, recipes, skill, max = pcall(self.ScanClassic, self)
     how = "classic"
   end
+  -- a window read with no profession name once stored Alchemy under "" (2026-11-14)
+  if name == "" then name = nil end
   if not ok or not name or not recipes then
     if why == "show" then self:Warn("profession window opened but no recipes could be read") end
     return

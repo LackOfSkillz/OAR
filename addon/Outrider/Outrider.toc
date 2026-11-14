@@ -60,6 +60,7 @@ Data\Transports.lua
 Data\Money.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
+Modules\SharedData.lua
 Modules\MacroEngine.lua
 Modules\Spellbook.lua
 Modules\MacroLibrary.lua
@@ -70,8 +71,12 @@ Modules\RareMacros.lua
 Modules\Inventory.lua
 Modules\Professions.lua
 Modules\Crafter.lua
+Modules\CookTrainer.lua
 Modules\Prices.lua
 Modules\AuctionHelper.lua
+Modules\AHBuy.lua
+Modules\TrainShop.lua
+Modules\GearShop.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
@@ -90,6 +95,7 @@ Modules\Handoffs.lua
 Modules\Nearby.lua
 Modules\GearQuestBridge.lua
 Modules\Comm.lua
+Modules\KitShare.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua
 Modules\LocationShare.lua

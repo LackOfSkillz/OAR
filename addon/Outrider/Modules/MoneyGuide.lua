@@ -32,6 +32,7 @@ end
 
 function M:OnEnable()
   self:On("OTR_LOOT", self.OnLoot)
+  self:On("GET_ITEM_INFO_RECEIVED", self.OnItemInfo)
 end
 
 -- What one item is worth to Gary: auction price less a 5% cut when known, else vendor.
@@ -40,6 +41,26 @@ function M.Worth(itemID)
   local ah, _, vendor = ns.Prices:Get(itemID)
   if ah then return math.floor(ah * 0.95) end
   return vendor or 0
+end
+
+-- Worth now, or once the game has loaded the item (Gary, 2026-11-14: a 12
+-- Pound Mud Snapper worth 12 silver counted as nothing; a first-time item's
+-- details, price included, aren't loaded yet when it lands in the bags).
+-- fn(copperEach) is called once, now or on GET_ITEM_INFO_RECEIVED.
+M.pending = {}
+function M.WhenWorth(itemID, fn)
+  if C.ItemInfo(itemID) or not itemID then return fn(M.Worth(itemID)) end
+  local list = M.pending[itemID] or {}
+  M.pending[itemID] = list
+  list[#list + 1] = fn
+end
+
+function M:OnItemInfo(_, itemID)
+  local list = M.pending[itemID]
+  if not list then return end
+  M.pending[itemID] = nil
+  local each = M.Worth(itemID)
+  for _, fn in ipairs(list) do ns.Safe("MoneyGuide:worth", fn, each) end
 end
 
 local function isCloth(itemID)
@@ -55,12 +76,14 @@ function M:Book(kind, item, now)
     k.secs = k.secs + (k.last and math.min(now - k.last, M.GAP) or 60)
     k.last = now
   end
-  local each = M.Worth(item.id)
-  local v = each * (item.count or 1)
-  k.value = k.value + v
   local it = k.items[item.id] or { n = 0, value = 0 }
-  it.n, it.value, it.name = it.n + (item.count or 1), it.value + v, item.name or it.name
+  it.n, it.name = it.n + (item.count or 1), item.name or it.name
   k.items[item.id] = it
+  M.WhenWorth(item.id, function(each)
+    local v = each * (item.count or 1)
+    k.value = k.value + v
+    it.value = it.value + v
+  end)
 end
 
 function M:OnLoot(_, kind, items)

@@ -63,10 +63,16 @@ end
 
 -- Is the profession window open and loaded for this profession?
 function M:OpenFor(prof)
-  if not C.Call("C_TradeSkillUI.IsTradeSkillReady") then return false end
-  local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
-  local name = type(base) == "table" and (base.professionName or base.parentProfessionName)
-  return name == prof
+  if not (C.Call("C_TradeSkillUI.IsTradeSkillReady") or self.windowOpen) then return false end
+  local name = ns.Professions and ns.Professions.OpenName and ns.Professions.OpenName()
+  if name then return name == prof end
+  -- no name at all: trust the window if one of its recipes is one we stored for prof
+  local p = ns.db.char.professions and ns.db.char.professions[prof]
+  local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
+  if type(p) == "table" and type(p.recipes) == "table" and type(ids) == "table" then
+    for _, id in ipairs(ids) do if p.recipes[id] then return true end end
+  end
+  return false
 end
 
 local SKIP = { isRecraft = true, isSalvageRecipe = true, isGatheringRecipe = true, isDummyRecipe = true }
@@ -95,6 +101,12 @@ function M:Pick()
       if n == 0 and (not closest or diff < closest.diff) then
         closest = { id = id, name = C.Readable(info.name) or tostring(id), diff = diff }
       end
+    end
+    if n > 0 and self.trainOnly and (tonumber(C.Readable(info.relativeDifficulty)) or 2) >= 3 then n = 0 end
+    if self.onlyRecipe then
+      if C.Readable(info and info.name) ~= self.onlyRecipe then n = 0 else n = math.min(n, 1) end
+    elseif n > 0 and C.Readable(info and info.name) == "Basic Campfire" then
+      n = 0 -- never burn wood while cooking; the fire has its own step
     end
     if n > 0 then
       local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
@@ -168,6 +180,13 @@ function M:Make(prof)
       return "opened"
     end
   end
+  -- never stack up campfires (Gary, 2026-11-14): one already in the bags is placed instead
+  if self.onlyRecipe == "Basic Campfire" and ns.ProfTrainer and ns.ProfTrainer:FireItem() then
+    ns.Print("you already have a campfire in your bags: the next click places it")
+    self:Info("make %s: campfire already in the bags, not making another", prof)
+    if ns.ProfTrainer.Evaluate then ns.ProfTrainer.body = nil ns.ProfTrainer:Evaluate() end
+    return "have"
+  end
   local id, name, n, diff = self:Pick()
   if not id then
     local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
@@ -228,6 +247,11 @@ function M:Refresh()
 end
 
 function M:OnEnable()
+  -- Forever's IsTradeSkillReady kept saying no with the window open (the
+  -- training button reopened Alchemy on every press, 2026-11-14), so the
+  -- window's own open/close events are tracked too.
+  self:On("TRADE_SKILL_SHOW", function(mod) mod.windowOpen = true end)
+  self:On("TRADE_SKILL_CLOSE", function(mod) mod.windowOpen = false end)
   self:On("UI_ERROR_MESSAGE", self.OnUIError)
   self:On("PLAYER_ENTERING_WORLD", self.Refresh)
 end
@@ -242,7 +266,15 @@ ns.AddCommand("make", "[Profession]  make what you have ingredients for (no name
   if not M.enabled then ns.Print("the Crafter module is off") return end
   arg = (arg or ""):gsub("^%s+", ""):gsub("%s+$", "")
   if arg ~= "" then
-    M:Make(ns.TitleCase(arg:lower()))
+    -- "Cooking train": only recipes that still give skill (CookTrainer's button)
+    local prof, train = arg:match("^(.-)%s+train$")
+    -- "Cooking fire": craft one Basic Campfire, a Cooking recipe on Forever
+    -- (not a spell, so /cast can't build it; Gary, 2026-11-14)
+    local fireProf = arg:match("^(.-)%s+fire$")
+    M.trainOnly = prof ~= nil
+    M.onlyRecipe = fireProf and "Basic Campfire" or nil
+    M:Make(ns.TitleCase((fireProf or prof or arg):lower()))
+    M.trainOnly, M.onlyRecipe = false, nil
     return
   end
   local made, lib = {}, ns.MacroLibrary

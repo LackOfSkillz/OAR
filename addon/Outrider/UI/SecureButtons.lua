@@ -48,6 +48,14 @@ end
 
 local function key(btn, what) return "secbtn:" .. btn.outriderID .. ":" .. what end
 
+-- Width to fit its label (resizing is protected in combat, so deferred).
+function SB:FitWidth(btn, min, max)
+  local w = btn.text.GetStringWidth and btn.text:GetStringWidth()
+  if type(w) ~= "number" then return end
+  w = math.max(min or 64, math.min(max or 400, w + 20))
+  return ns.Combat:Run("secure:width", function() btn:SetWidth(w) end, key(btn, "width"))
+end
+
 function SB:Prewarm(n)
   ns.Combat:Run("secure:prewarm", function()
     for _ = #self.all + 1, n or self.PREWARM do

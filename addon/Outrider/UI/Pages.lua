@@ -261,6 +261,27 @@ local function profRows()
     crafts[#crafts + 1] = { "Make bar macros", Run("make") }
     r({ "buttons", crafts })
   end
+  -- One-button training for every crafting profession this character has.
+  local T = ns.ProfTrainer
+  local crafting = T and T.Professions and T:Professions() or {}
+  if #crafting > 0 then
+    r({ "header", "Training button" })
+    r({ "note", "When your bags hold enough to gain +10 in a profession, a button pops up: each press makes the next recipe that still gives skill (cooking builds a fire first)." })
+    r({ "check", "Show the training button", function() return set("ProfTrainer").show end,
+      function(on) set("ProfTrainer").show = on if T then T:Evaluate() end end })
+    r({ "key", "Training key", function() return set("ProfTrainer").key end,
+      function(k) if T then T:SetKey(k) end end, "presses the button while it shows" })
+    for _, prof in ipairs(crafting) do
+      r({ "check", "Offer " .. prof, function() return not (set("ProfTrainer").off or {})[prof] end,
+        function(on)
+          local s = set("ProfTrainer")
+          s.off = s.off or {}
+          s.off[prof] = (not on) or nil
+          if T then T:Evaluate() end
+        end })
+    end
+    r({ "note", function() local m = mod("ProfTrainer") return m and m.enabled and m:Activity() or "" end, 36 })
+  end
   if next(owned) then
     r({ "header", "Skill-up planner" })
     r({ "input", "Profession and target", "Alchemy 75", "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
@@ -277,8 +298,9 @@ local function profRows()
   end
   if owned.Fishing then
     r({ "header", "Fishing" })
-    r({ "input", "Fishing key", "F, or off", "Set key", function(t) ns.Slash:Run("fishkey " .. t) end })
-    r({ "note", function() return "Current key: " .. tostring(set("Fishing").key or "none") .. ". It puts a lure on first when yours has run out." end })
+    r({ "key", "Fishing key", function() return set("Fishing").key end,
+      function(k) ns.Slash:Run("fishkey " .. (k or "off")) end, "only while a pole is equipped" })
+    r({ "note", "Press 1 casts (or puts a lure on when yours has run out), press 2 hooks and loots. Click the box, then press the key you want; right-click clears it." })
     r({ "check", "Fishing HUD while a pole is equipped", function() return set("FishingHUD").show end,
       function(on) set("FishingHUD").show = on if ns.FishingHUD then ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" })
     r({ "check", "Sound for rare catches", function() return set("FishingHUD").rareSound end,
@@ -380,6 +402,17 @@ ns.Hub:AddTab("sharing", "Sharing", function(p)
     { "check", "Rares: party", function() return set("RareShare").party end, function(on) ns.Slash:Run("share rares party " .. onoff(on)) end },
     { "check", "Herb and ore spots: guild", function() return set("GatherShare").guild end, function(on) ns.Slash:Run("share nodes " .. onoff(on)) end },
     { "check", "My location: party", function() return set("LocationShare").on end, function(on) ns.Slash:Run("share location " .. onoff(on)) end },
+    { "header", "Gear for alts, family and other Outrider users" },
+    { "note", "When something in your bags is an upgrade for someone, Outrider says so: your alts first, then family and friends, then other Outrider users in your guild or party. At a mailbox it fills in their name." },
+    { "check", "Share my gear card and see others' (guild and party)", function() return set("KitShare").share end,
+      function(on) set("KitShare").share = on if on and ns.KitShare then ns.KitShare:Broadcast() end end, "off: your alts only" },
+    { "input", "Add family or friend", "character name", "Add", function(t) if ns.KitShare then ns.KitShare:SetFamily(t, true) end end },
+    { "input", "Remove family or friend", "character name", "Remove", function(t) if ns.KitShare then ns.KitShare:SetFamily(t, false) end end },
+    { "note", function()
+      local fam = set("KitShare").family or {}
+      local m = mod("KitShare")
+      return "Family and friends: " .. (#fam > 0 and table.concat(fam, ", ") or "none yet") .. "\n" .. (m and m.enabled and m:Activity() or "")
+    end, 36 },
   })
 end)
 

@@ -388,9 +388,38 @@ function M.new(opts)
   end
   base.UnitClassification = function(unit) return game.units and game.units[unit] and game.units[unit].classification or "normal" end
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
+  -- known spells by id (weapon skills): game.knownSpells = { [264] = true }; nil = client can't say
+  base.IsPlayerSpell = function(id) if game.knownSpells then return game.knownSpells[id] == true end end
   base.GetMoney = function() return game.money or player.money end
   base.C_AuctionHouse = {
     GetBrowseResults = function() return game.browse or {} end,
+    -- game.ahListings = { [itemID] = { name, minPrice, qty, recipe = subclass } }; a query fills game.browse
+    SendBrowseQuery = function(q)
+      game.queries = game.queries or {}
+      game.queries[#game.queries + 1] = q
+      local out = {}
+      for id, l in pairs(game.ahListings or {}) do
+        local hit = (q.searchString ~= "" and l.name == q.searchString)
+          or (q.itemClassFilters and l.recipe and q.itemClassFilters[1].subClassID == l.recipe)
+          or (q.itemClassFilters and l.class and q.itemClassFilters[1].classID == l.class
+            and (not q.itemClassFilters[1].inventoryType or q.itemClassFilters[1].inventoryType == l.invType))
+        if hit then out[#out + 1] = { itemKey = { itemID = id }, minPrice = l.minPrice, totalQuantity = l.qty or 1 } end
+      end
+      game.browse = out
+    end,
+    IsThrottledMessageSystemReady = function() return true end,
+    -- gear: a browse with itemClassFilters returns game.ahGear rows whose class (and inventoryType, if given) match
+    -- item listings: game.ahAuctions[itemID] = { {auctionID, buyout}, ... }; PlaceBid records game.bought
+    SendSearchQuery = function(key) game.itemSearch = key and key.itemID end,
+    GetNumItemSearchResults = function(key) return #((game.ahAuctions or {})[key.itemID] or {}) end,
+    GetItemSearchResultInfo = function(key, i)
+      local a = ((game.ahAuctions or {})[key.itemID] or {})[i]
+      return a and { auctionID = a[1], buyoutAmount = a[2], containsOwnerItem = false }
+    end,
+    StartCommoditiesPurchase = function(id, qty) game.commodityStart = { id = id, qty = qty } end,
+    ConfirmCommoditiesPurchase = function(id, qty) game.bought = game.bought or {} game.bought[#game.bought + 1] = { commodity = id, qty = qty } end,
+    CancelCommoditiesPurchase = function() game.commodityStart = nil end,
+    PlaceBid = function(id, price) game.bought = game.bought or {} game.bought[#game.bought + 1] = { id = id, price = price } end,
     GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
     GetOwnedAuctions = function() return game.owned or {} end,
     CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
@@ -503,6 +532,14 @@ function M.new(opts)
     if not d then return nil end
     local lines = { { leftText = d.name } }
     if d.title then lines[2] = { leftText = d.title } else lines[2] = { leftText = "Level 20" } end
+    return { lines = lines }
+  end,
+  -- item tooltips: game.itemTips[itemID] = { "line", ... }
+  GetItemByID = function(id)
+    local t = game.itemTips and game.itemTips[id]
+    if not t then return nil end
+    local lines = {}
+    for i, l in ipairs(t) do lines[i] = { leftText = l } end
     return { lines = lines }
   end }
   -- merchant: game.merchant = { itemID, ... }; game.itemClass[itemID] = classID

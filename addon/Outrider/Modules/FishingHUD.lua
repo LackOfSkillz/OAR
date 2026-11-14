@@ -128,10 +128,22 @@ function M:Advice(id)
 end
 
 -- ------------------------------------------------------------ session
+-- A session survives a /reload or taking the pole off for a moment (Gary,
+-- 2026-11-14: the 12 Pound Mud Snapper dropped out of the HUD after a reload).
+-- It's kept per character and picked up again if the last catch or cast was
+-- less than RESUME seconds ago.
+M.RESUME = 15 * 60
 function M:Start()
+  local saved = ns.db.char.fishSession
+  if type(saved) == "table" and saved.last and time() - saved.last < M.RESUME then
+    saved.casts, saved.escapes, saved.warned = saved.casts or {}, saved.escapes or {}, saved.warned or {}
+    self.session = saved
+    return
+  end
   local skill = self:Skill()
   self.session = { start = time(), last = time(), secs = 0, catches = 0, value = 0, skill0 = skill, lures = 0,
     casts = {}, escapes = {}, warned = {} }
+  ns.db.char.fishSession = self.session
 end
 
 function M:Touch(s)
@@ -147,7 +159,9 @@ function M:OnLoot(_, kind, items)
   self:Touch(s)
   for _, it in ipairs(items) do
     s.catches = s.catches + (it.count or 1)
-    s.value = s.value + (ns.MoneyGuide and ns.MoneyGuide.Worth(it.id) or 0) * (it.count or 1)
+    if ns.MoneyGuide then
+      ns.MoneyGuide.WhenWorth(it.id, function(each) s.value = s.value + each * (it.count or 1) M:Refresh() end)
+    end
     local info = C.ItemInfo(it.id)
     if self:Settings().rareSound and info and type(info.quality) == "number" and info.quality >= 2 then
       ns.Toast:Show({ title = "Rare catch!", text = tostring(info.name or it.name), color = "good", duration = 8,
