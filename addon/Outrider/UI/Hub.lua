@@ -45,6 +45,7 @@ Hub.PLACE = {
   professions = { "Character", 23, "Trade_Alchemy" },
   crafting    = { "Character", 24, "Trade_BlackSmithing" },
   macros      = { "Character", 25, "INV_Misc_Note_01" },
+  money       = { "Town", 29, "INV_Misc_Coin_02" },
   errands     = { "Town", 30, "INV_Misc_Bag_08" },
   forecasts   = { "Town", 31, "INV_Misc_Coin_01" },
   feed        = { "Town", 32, "INV_Letter_15" },

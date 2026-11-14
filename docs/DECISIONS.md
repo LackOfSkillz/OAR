@@ -86,3 +86,12 @@
 ## Hunter Fight order follows the guides (2026-11-13, Gary chose "guide order")
 - Researched: warcrafttavern.com Forever hunter guide (BM: Aspect of the Hawk, Auto Shot with the pet sent in, Serpent Sting, Arcane Shot on cooldown; Wing Clip/Concussive when the pet loses threat), Classic/Forever leveling guides (Mark first; Serpent only when the mob lives long enough).
 - Fight is now: pet in every press, Aspect of the Hawk before the pull, Hunter's Mark, Auto Shot, Serpent Sting, then Arcane Shot on cooldown. Concussive left the spam key (off by default; the Class page toggle puts it back after Mark). Distracting Shot stays out (pulls the mob off the pet).
+
+## Money guide (2026-11-14)
+
+Gary asked for a guide to the best way to make money at his level and for his professions, and chose the full
+version ("Yes build it"): a Money hub page (Town group) ranking cited Forever gold guides (Data/Money.lua,
+conquestcapped.com and leprestore.com, all unverified) by level, professions and faction, plus his own measured
+gold per hour per kind of earning (skin, herb, ore, fish, cloth, mob loot), valued at auction price less 5% or
+vendor price. Time is the gaps between loots, at most 5 minutes each; after 15 minutes his number replaces the
+guide's. Read only: it never sells or buys.

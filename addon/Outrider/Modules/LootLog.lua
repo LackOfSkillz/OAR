@@ -18,7 +18,7 @@ local M = ns:NewModule("LootLog", {
 })
 ns.LootLog = M
 
-local GATHER = { ["Herb Gathering"] = "herb", ["Mining"] = "ore", ["Herbalism"] = "herb" }
+local GATHER = { ["Herb Gathering"] = "herb", ["Mining"] = "ore", ["Herbalism"] = "herb", ["Skinning"] = "skin" }
 M.MERGE = 0.006
 
 function M:OnInitialize()
@@ -56,13 +56,20 @@ end
 function M:OnLoot()
   local items = self:Items()
   if #items == 0 then return end
-  if C.Call("IsFishingLoot") then return self:Catch(items) end
+  -- OTR_LOOT(category, items): what kind of earning this loot was (MoneyGuide)
+  if C.Call("IsFishingLoot") then
+    ns.Events:Fire("OTR_LOOT", "fish", items)
+    return self:Catch(items)
+  end
   local now = GetTime and GetTime() or 0
   if self.lastGather and now - self.lastGather.t < 10 then
     local kind = self.lastGather.kind
     self.lastGather = nil
+    ns.Events:Fire("OTR_LOOT", kind, items)
+    if kind == "skin" then return end -- skinning has no node
     return self:Node(kind, items)
   end
+  ns.Events:Fire("OTR_LOOT", "mob", items)
 end
 
 function M:Catch(items)

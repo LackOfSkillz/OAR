@@ -294,6 +294,52 @@ ns.Hub:AddTab("professions", "Professions", function(p)
   UI:FormPage(p, profRows())
 end)
 
+-- ----------------------------------------------------------------- Money
+-- Best ways to earn at this level and with these professions (MoneyGuide).
+local function moneyRows()
+  local G = ns.MoneyGuide
+  local rows = {}
+  local function r(t) rows[#rows + 1] = t end
+  if not (G and G.enabled) then
+    r({ "header", "Money" })
+    r({ "note", "The Money guide module is off (Modules page)." })
+    return rows
+  end
+  local level = ns.Compat.Call("UnitLevel", "player") or 1
+  r({ "header", "Best ways to earn at level " .. level })
+  r({ "note", "Ranked for your level and professions. Guide numbers are early Forever reports (unverified); after 15 minutes of a kind of earning your own gold per hour replaces them." })
+  local ranked = G:Rank(level)
+  for i = 1, math.min(#ranked, 8) do
+    local x = ranked[i]
+    local e = x.entry
+    r({ "note", function()
+      local now = G:Rank(level)
+      for _, y in ipairs(now) do if y.entry.id == e.id then x = y end end
+      return string.format("|cffffd100%d. %s|r  %s\n%s  (%s)", i, e.title, G.RateText(x), e.how or "", e.source)
+    end, 46 })
+    local zones = e.zones or {}
+    if #zones > 0 then
+      local btns = {}
+      for z = 1, math.min(#zones, 3) do
+        btns[#btns + 1] = { "Find " .. zones[z], function() ns.Hub:Search(zones[z]) end }
+      end
+      r({ "buttons", btns })
+    end
+  end
+  if #ranked == 0 then r({ "note", "No tips for this level yet." }) end
+  r({ "header", "Your own earnings" })
+  r({ "note", function()
+    local lines = G:YourLines()
+    return #lines > 0 and table.concat(lines, "\n") or "Nothing yet: loot, gather, skin or fish and Outrider adds up what it's worth."
+  end, 80 })
+  r({ "note", "Prices: auction price less 5% when Outrider has seen one (open the auction house now and then), else the vendor price." })
+  return rows
+end
+
+ns.Hub:AddTab("money", "Money", function(p)
+  UI:FormPage(p, moneyRows())
+end)
+
 -- ----------------------------------------------------------------- Chat
 ns.Hub:AddTab("chat", "Chat", function(p)
   local function words()

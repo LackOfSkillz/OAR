@@ -24,11 +24,12 @@ Data.SCHEMAS = {
   fish   = { itemID = "number", mapID = "number" },
   herb   = { name = "string", source = "string", verified = "boolean" },
   link   = { id = "string", kind = "string", source = "string", verified = "boolean", from = "table", to = "table" },
+  money  = { id = "string", title = "string", minLevel = "number", maxLevel = "number", source = "string", verified = "boolean" },
 }
 
 Data.CONFIDENCE = { verified = true, community = true, inferred = true, unknown = true }
 
-Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id" }
+Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id" }
 
 function Data:Validate(kind, entry)
   local schema = self.SCHEMAS[kind]
