@@ -27,6 +27,15 @@ function M:OnInitialize()
     g.rareTimers[259388] = { name = "Mystmane", every = 3 * 3600, from = 1794600000,
       source = "Gary: server restart 3pm EST, every 3 h (unverified)" }
   end
+  -- Tested 2026-11-13: no Mystmane in the 18:00 or 21:00 windows (bears and
+  -- Shrieklings only at her spot), so the claim is not supported: the timer
+  -- is switched off but kept, with the result, in case it is ever retried.
+  local myst = g.rareTimers[259388]
+  if myst and not g.mystmaneTimerOff20261113 then
+    g.mystmaneTimerOff20261113 = true
+    myst.off = true
+    myst.result = "not supported: missed the 18:00 and 21:00 windows on 2026-11-13"
+  end
   self.warned = {}
 end
 
@@ -42,7 +51,7 @@ end
 function M:Line(npcID, now)
   now = now or time()
   local t = ns.db.global.rareTimers[npcID]
-  local nxt = t and M.Next(t, now)
+  local nxt = t and not t.off and M.Next(t, now)
   if not nxt then return nil end
   local left = nxt - now
   return string.format("%s: next window %s (in %dh %02dm), every %d h%s", tostring(t.name), date("%H:%M", nxt),
@@ -53,7 +62,7 @@ end
 -- Seen dead: the next windows count from this death.
 function M:OnRareSeen(_, info)
   local t = type(info) == "table" and ns.db.global.rareTimers[info.npcID]
-  if not t or not info.dead then return end
+  if not t or t.off or not info.dead then return end
   local now = time()
   if t.restartedAt and now - t.restartedAt < 600 then return end
   t.from, t.restartedAt = now + t.every, now
@@ -65,7 +74,7 @@ function M:Tick()
   local now = time()
   local before = self:Settings().warnBefore or 300
   for npcID, t in pairs(ns.db.global.rareTimers) do
-    local nxt = M.Next(t, now)
+    local nxt = not t.off and M.Next(t, now)
     if nxt and nxt - now <= before and not self.warned[npcID .. ":" .. nxt] then
       self.warned[npcID .. ":" .. nxt] = true
       ns.Toast:Show({ title = tostring(t.name) .. " soon", color = "warn", duration = 15,
@@ -88,6 +97,8 @@ end
 
 function M:Activity()
   local lines = {}
-  for npcID in pairs(ns.db.global.rareTimers) do lines[#lines + 1] = self:Line(npcID) end
+  for npcID, t in pairs(ns.db.global.rareTimers) do
+    lines[#lines + 1] = self:Line(npcID) or (t.result and (tostring(t.name) .. " timer off: " .. t.result)) or nil
+  end
   return #lines > 0 and table.concat(lines, "; ") or "no rare timers"
 end
