@@ -102,8 +102,23 @@ function M:Best()
 end
 
 -- ------------------------------------------------------------ the button
--- Cooking: can we build a fire (recipe known and its wood in the bags)?
+-- A crafted campfire waiting in the bags (Forever: crafting Basic Campfire
+-- makes an item that is then used to place the fire; Gary, 2026-11-14).
+function M:FireItem()
+  for bag = 0, 4 do
+    for slot = 1, (C.Call("C_Container.GetContainerNumSlots", bag) or 0) do
+      local info = C.Call("C_Container.GetContainerItemInfo", bag, slot)
+      local it = type(info) == "table" and info.itemID and C.ItemInfo(info.itemID)
+      local name = it and it.name
+      if type(name) == "string" and name:lower():find("campfire", 1, true) then return name end
+    end
+  end
+  return nil
+end
+
+-- Cooking: can we build a fire (a campfire in the bags, or its recipe and wood)?
 function M:FireReady()
+  if self:FireItem() then return true end
   local p = self:Record("Cooking")
   for _, r in pairs(p and p.recipes or {}) do
     if type(r) == "table" and r.name == M.FIRE and type(r.reagents) == "table" then
@@ -121,6 +136,7 @@ end
 local VERB = { Cooking = "cook", Alchemy = "brew", Enchanting = "enchant", Mining = "smelt", ["First Aid"] = "make" }
 function M:Label(total)
   if self.state == "fire" then
+    if self:FireItem() then return string.format("Cooking +%d: click to place the campfire", total) end
     if not (ns.Crafter and ns.Crafter:OpenFor("Cooking")) then
       return string.format("Cooking +%d: click to open Cooking, then again for a campfire", total)
     end
@@ -137,7 +153,12 @@ end
 
 function M:Body()
   -- the campfire is a Cooking recipe on Forever, crafted like the food
-  if self.state == "fire" then return "/ride make Cooking fire" end
+  -- three steps: make the campfire (a Cooking recipe), place it (use the item), cook
+  if self.state == "fire" then
+    local item = self:FireItem()
+    if item then return "/use " .. item end
+    return "/ride make Cooking fire"
+  end
   return "/ride make " .. tostring(self.prof) .. " train"
 end
 
@@ -237,7 +258,16 @@ end
 -- The fire went up: make next.
 function M:OnCast(_, unit, _, spellID)
   if unit ~= "player" then return end
-  if C.SpellName(spellID) == M.FIRE then self.state = "make" self.body = nil self:Evaluate() end
+  -- crafting the campfire and placing it can both cast "Basic Campfire": only
+  -- move on to cooking once no campfire item is left in the bags
+  local name = C.SpellName(spellID)
+  if type(name) == "string" and name:lower():find("campfire", 1, true) then
+    ns.Timer.After(0.5, function()
+      M.state = M:FireItem() and "fire" or "make"
+      M.body = nil
+      M:Evaluate()
+    end, "trainer:fire")
+  end
 end
 
 -- A refusal while training: say what's needed, once per kind.

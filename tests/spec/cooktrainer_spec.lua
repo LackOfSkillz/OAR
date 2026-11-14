@@ -100,3 +100,21 @@ T.describe("profession trainer blank names", function()
     T.eq(ns.db.char.professions[""], nil, "dropped on the next scan")
   end)
 end)
+
+T.describe("cooking trainer campfire item", function()
+  T.it("a crafted campfire in the bags is placed next, then cooking starts", function()
+    local game, ns = session({ [2672] = 12, [4470] = 1 })
+    game.items = game.items or {}
+    game.items[99001] = { name = "Basic Campfire" }
+    local CT = ns.CookTrainer
+    CT:Evaluate()
+    T.eq(CT:Body(), "/ride make Cooking fire", "no campfire yet: make one")
+    game.bags = { [0] = { [1] = 99001 } }
+    CT:Evaluate()
+    T.eq(CT:Body(), "/use Basic Campfire")
+    T.contains(CT:Label(12), "place the campfire")
+    game.bags = { [0] = {} }
+    CT.state = CT:FireItem() and "fire" or "make"
+    T.eq(CT:Body(), "/ride make Cooking train", "placed: cook")
+  end)
+end)
