@@ -211,3 +211,19 @@ T.describe("crafter campfire", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("crafter campfire guard", function()
+  T.it("doesn't make a campfire while one is in the bags", function()
+    local game = mock.new()
+    game.prof = { name = "Cooking", skill = 40, max = 75, line = 185, recipes = {
+      [1229737] = { name = "Basic Campfire", diff = 0, reagents = { [4470] = 1 }, have = 3 } } }
+    game.items = { [99001] = { name = "Basic Campfire" } }
+    game.bags = { [0] = { [1] = 99001 } }
+    local ns = game:loadAddon()
+    game:login()
+    game.tradeOpen = true
+    game:slash("make Cooking fire")
+    T.eq(game.crafted, nil, "nothing crafted")
+    T.contains(game:chatText(), "already have a campfire")
+  end)
+end)

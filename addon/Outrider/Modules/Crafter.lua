@@ -180,6 +180,13 @@ function M:Make(prof)
       return "opened"
     end
   end
+  -- never stack up campfires (Gary, 2026-11-14): one already in the bags is placed instead
+  if self.onlyRecipe == "Basic Campfire" and ns.ProfTrainer and ns.ProfTrainer:FireItem() then
+    ns.Print("you already have a campfire in your bags: the next click places it")
+    self:Info("make %s: campfire already in the bags, not making another", prof)
+    if ns.ProfTrainer.Evaluate then ns.ProfTrainer.body = nil ns.ProfTrainer:Evaluate() end
+    return "have"
+  end
   local id, name, n, diff = self:Pick()
   if not id then
     local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
