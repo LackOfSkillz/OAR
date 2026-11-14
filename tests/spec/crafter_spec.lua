@@ -193,3 +193,21 @@ T.describe("crafter window events", function()
     T.ok(not ns.Crafter:OpenFor("Alchemy"))
   end)
 end)
+
+T.describe("crafter campfire", function()
+  T.it("'make Cooking fire' crafts one Basic Campfire; normal cooking never burns the wood", function()
+    local game = mock.new()
+    game.prof = { name = "Cooking", skill = 40, max = 75, line = 185, recipes = {
+      [1229737] = { name = "Basic Campfire", diff = 0, reagents = { [4470] = 1 }, have = 3 },
+      [2538] = { name = "Charred Wolf Meat", diff = 1, reagents = { [2672] = 1 }, have = 5 } } }
+    local ns = game:loadAddon()
+    game:login()
+    game.tradeOpen = true
+    game:slash("make Cooking fire")
+    T.eq(game.crafted[1].id, 1229737)
+    T.eq(game.crafted[1].n, 1)
+    game:slash("make Cooking train")
+    T.eq(game.crafted[2].id, 2538, "cooks the meat, not another fire")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

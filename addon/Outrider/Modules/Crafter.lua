@@ -103,6 +103,11 @@ function M:Pick()
       end
     end
     if n > 0 and self.trainOnly and (tonumber(C.Readable(info.relativeDifficulty)) or 2) >= 3 then n = 0 end
+    if self.onlyRecipe then
+      if C.Readable(info and info.name) ~= self.onlyRecipe then n = 0 else n = math.min(n, 1) end
+    elseif n > 0 and C.Readable(info and info.name) == "Basic Campfire" then
+      n = 0 -- never burn wood while cooking; the fire has its own step
+    end
     if n > 0 then
       local diff = tonumber(C.Readable(info.relativeDifficulty)) or 2
       if not best or diff < best.diff or (diff == best.diff and n > best.n) then
@@ -256,9 +261,13 @@ ns.AddCommand("make", "[Profession]  make what you have ingredients for (no name
   if arg ~= "" then
     -- "Cooking train": only recipes that still give skill (CookTrainer's button)
     local prof, train = arg:match("^(.-)%s+train$")
+    -- "Cooking fire": craft one Basic Campfire, a Cooking recipe on Forever
+    -- (not a spell, so /cast can't build it; Gary, 2026-11-14)
+    local fireProf = arg:match("^(.-)%s+fire$")
     M.trainOnly = prof ~= nil
-    M:Make(ns.TitleCase((prof or arg):lower()))
-    M.trainOnly = false
+    M.onlyRecipe = fireProf and "Basic Campfire" or nil
+    M:Make(ns.TitleCase((fireProf or prof or arg):lower()))
+    M.trainOnly, M.onlyRecipe = false, nil
     return
   end
   local made, lib = {}, ns.MacroLibrary

@@ -120,7 +120,12 @@ end
 -- told him nothing). The next recipe is the best colour the bags can make.
 local VERB = { Cooking = "cook", Alchemy = "brew", Enchanting = "enchant", Mining = "smelt", ["First Aid"] = "make" }
 function M:Label(total)
-  if self.state == "fire" then return string.format("Cooking +%d: build a campfire first", total) end
+  if self.state == "fire" then
+    if not (ns.Crafter and ns.Crafter:OpenFor("Cooking")) then
+      return string.format("Cooking +%d: click to open Cooking, then again for a campfire", total)
+    end
+    return string.format("Cooking +%d: click to build a campfire", total)
+  end
   -- crafting needs the profession window open: the first press opens it
   if not (ns.Crafter and ns.Crafter:OpenFor(self.prof)) then
     return string.format("%s +%d: open %s (then press again)", tostring(self.prof), total, tostring(self.prof))
@@ -131,7 +136,8 @@ function M:Label(total)
 end
 
 function M:Body()
-  if self.state == "fire" then return "/cast " .. M.FIRE end
+  -- the campfire is a Cooking recipe on Forever, crafted like the food
+  if self.state == "fire" then return "/ride make Cooking fire" end
   return "/ride make " .. tostring(self.prof) .. " train"
 end
 
@@ -177,7 +183,8 @@ function M:Show(total)
     end)
     self.btn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     ns.SecureButtons:Place(self.btn, "TOP", UIParent, "TOP", 0, -150)
-    ns.SecureButtons:Raise(self.btn, "HIGH")
+    -- on top of other frames, so the click lands (the Feed button needed the same)
+    ns.SecureButtons:Raise(self.btn, "FULLSCREEN")
     local x = CreateFrame("Button", nil, UIParent, "UIPanelCloseButton")
     x:SetSize(22, 22)
     x:SetPoint("LEFT", self.btn, "RIGHT", 2, 0)

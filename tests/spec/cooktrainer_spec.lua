@@ -30,7 +30,7 @@ T.describe("cooking trainer", function()
     local CT = ns.CookTrainer
     CT:Evaluate()
     T.ok(CT.btn, "button made at +12")
-    T.eq(CT:Body(), "/cast Basic Campfire")
+    T.eq(CT:Body(), "/ride make Cooking fire")
     CT.state = "make"
     T.eq(CT:Body(), "/ride make Cooking train")
     local _, ns2 = session({ [2672] = 4 })
