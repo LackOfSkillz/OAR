@@ -147,7 +147,9 @@ function M:OnLoot(_, kind, items)
   self:Touch(s)
   for _, it in ipairs(items) do
     s.catches = s.catches + (it.count or 1)
-    s.value = s.value + (ns.MoneyGuide and ns.MoneyGuide.Worth(it.id) or 0) * (it.count or 1)
+    if ns.MoneyGuide then
+      ns.MoneyGuide.WhenWorth(it.id, function(each) s.value = s.value + each * (it.count or 1) M:Refresh() end)
+    end
     local info = C.ItemInfo(it.id)
     if self:Settings().rareSound and info and type(info.quality) == "number" and info.quality >= 2 then
       ns.Toast:Show({ title = "Rare catch!", text = tostring(info.name or it.name), color = "good", duration = 8,

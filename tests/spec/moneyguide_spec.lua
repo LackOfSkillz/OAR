@@ -31,6 +31,8 @@ T.describe("money guide", function()
   T.it("loot builds a measured gold per hour that replaces the guide figure", function()
     local game, ns = session({ now = 1794700000 })
     local G = ns.MoneyGuide
+    game.items = game.items or {}
+    game.items[2318] = { name = "Light Leather" }
     ns.Prices.Get = function(_, id) if id == 2318 then return 1000, "seen at AH", 50 end return nil, nil, 20 end
     for i = 0, 16 do
       game.now = 1794700000 + i * 60
@@ -53,6 +55,8 @@ T.describe("money guide", function()
   T.it("a break longer than 5 minutes doesn't count as farming time", function()
     local game, ns = session({ now = 1794700000 })
     local G = ns.MoneyGuide
+    game.items = game.items or {}
+    game.items[765] = { name = "Silverleaf" }
     ns.Prices.Get = function() return nil, nil, 100 end
     ns.Events:Fire("OTR_LOOT", "herb", { { id = 765, count = 1, name = "Silverleaf" } })
     game.now = game.now + 3600
@@ -66,6 +70,22 @@ T.describe("money guide", function()
     game:slash("")
     ns.Hub.frame.tabBar:Select("money")
     T.ok(ns.Hub.byId.money and ns.Hub.byId.money.panel, "Money page built")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
+T.describe("money guide late prices", function()
+  T.it("a first-time item is valued once the game loads its details", function()
+    local game = mock.new({ now = 1794700000 })
+    local ns = game:loadAddon()
+    game:login()
+    game.items = game.items or {}
+    ns.Events:Fire("OTR_LOOT", "fish", { { id = 13876, count = 1, name = "12 Pound Mud Snapper" } })
+    T.eq(ns.db.global.moneyLog.fish.value, 0, "not loaded yet")
+    game.items[13876] = { name = "12 Pound Mud Snapper", quality = 1, sell = 1200 }
+    game:fire("GET_ITEM_INFO_RECEIVED", 13876, true)
+    T.eq(ns.db.global.moneyLog.fish.value, 1200)
+    T.eq(ns.db.global.moneyLog.fish.items[13876].value, 1200)
     T.eq(#ns.Errors.list, 0)
   end)
 end)
