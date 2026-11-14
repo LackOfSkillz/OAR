@@ -216,8 +216,15 @@ function M:Build()
   f.sub = UI.Text(f, "small", "muted")
   f.sub:SetPoint("LEFT", f.title, "RIGHT", 8, -1)
   f.sub:SetText("Outrider")
+  -- whole-market prices without Auctionator or TSM (Prices:FullScan)
+  f.scan = UI:Button(f, "Scan all prices", 118, function()
+    if ns.Prices then ns.Prices:FullScan() end
+    M:Refresh()
+  end)
+  f.scan:SetHeight(22)
+  f.scan:SetPoint("TOPRIGHT", -14, -10)
   f.gold = UI.Text(f, "normal", "warn")
-  f.gold:SetPoint("TOPRIGHT", -14, -14)
+  f.gold:SetPoint("RIGHT", f.scan, "LEFT", -10, 0)
   local function tab(label, x, onClick)
     local b = UI:Button(f, label, 146, onClick)
     b:SetHeight(26)
@@ -306,6 +313,10 @@ function M:StyleTabs()
     b.label:SetTextColor(Theme:Color(on and "accent" or "text"))
   end
   f.gold:SetText(ns.Prices.Money(ns.AHBuy and ns.AHBuy.Money() or 0))
+  local P = ns.Prices
+  if P and P.scanning then f.scan.label:SetText("Scanning...")
+  elseif P and P:ScanWait() > 0 then f.scan.label:SetText(string.format("Scan in %dm", math.ceil(P:ScanWait() / 60)))
+  else f.scan.label:SetText("Scan all prices") end
 end
 
 function M:Refresh()
@@ -370,6 +381,7 @@ function M:OnEnable()
   end)
   self:On("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED", self.OnResults)
   self:On("PLAYER_MONEY", function(mod) if mod.open then mod:Refresh() end end)
+  self:On("OTR_PRICES_SCAN", function(mod) if mod.open then mod:Refresh() end end)
   self:On("GET_ITEM_INFO_RECEIVED", function(mod)
     if mod.open and mod.found and not mod.queue then ns.Throttle("gearshop:refresh", 1, function() M:Refresh() end) end
   end)

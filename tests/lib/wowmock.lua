@@ -408,6 +408,14 @@ function M.new(opts)
       game.browse = out
     end,
     IsThrottledMessageSystemReady = function() return true end,
+    -- full scan: game.replicate = { {itemID, count, buyout}, ... } (0-based reads)
+    ReplicateItems = function() game.replicated = (game.replicated or 0) + 1 end,
+    GetNumReplicateItems = function() return #(game.replicate or {}) end,
+    GetReplicateItemInfo = function(i)
+      local r = (game.replicate or {})[i + 1]
+      if not r then return nil end
+      return "x", nil, r[2], 1, true, 1, 0, 0, 0, r[3], 0, false, nil, "seller", nil, 0, r[1], true
+    end,
     -- gear: a browse with itemClassFilters returns game.ahGear rows whose class (and inventoryType, if given) match
     -- item listings: game.ahAuctions[itemID] = { {auctionID, buyout}, ... }; PlaceBid records game.bought
     SendSearchQuery = function(key) game.itemSearch = key and key.itemID end,
