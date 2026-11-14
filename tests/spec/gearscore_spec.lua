@@ -119,3 +119,24 @@ T.describe("gear advisor percentages", function()
     T.contains((ns.GearScore:Verdict(link)), "big upgrade")
   end)
 end)
+
+T.describe("gear stat difference", function()
+  T.it("lists every stat that changes, damage first, gains and losses", function()
+    local game = mock.new()
+    game.items = { [901] = { name = "Old Axe", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 0 },
+      [902] = { name = "New Axe", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 0 } }
+    game.itemStats = { [901] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 5, ITEM_MOD_AGILITY_SHORT = 20 },
+      [902] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 9.1, ITEM_MOD_STRENGTH_SHORT = 5 } }
+    game.worn = { [16] = 901 }
+    local ns = game:loadAddon()
+    game:login()
+    local link = "item:902"
+    local r = ns.GearScore:Compare(link)
+    local diff = ns.GearScore:Diff(link, r.against)
+    T.eq(diff[1].label, "DPS")
+    local text = ns.GearScore.DiffText(diff)
+    T.contains(text, "+4.1 DPS")
+    T.contains(text, "-20 Agi")
+    T.contains(text, "+5 Str")
+  end)
+end)

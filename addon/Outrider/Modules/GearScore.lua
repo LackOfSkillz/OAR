@@ -195,17 +195,19 @@ function M:Compare(link)
   if not slots then return nil end
   local new = self:Score(link, equipLoc)
   local old, empty = nil, true
+  local against = {} -- the worn item(s) this replaces, for the stat-by-stat difference
   if equipLoc == "INVTYPE_2HWEAPON" then
     local mh, oh = C.Call("GetInventoryItemLink", "player", 16), C.Call("GetInventoryItemLink", "player", 17)
     old = (mh and self:Score(mh, "INVTYPE_WEAPON") or 0) + (oh and self:Score(oh, "INVTYPE_WEAPONOFFHAND") or 0)
     empty = not mh and not oh
+    against = { mh, oh }
   else
     for _, slot in ipairs(slots) do
       local worn = C.Call("GetInventoryItemLink", "player", slot)
       local s = worn and self:Score(worn, equipLoc) or 0
       if worn then empty = false end
       if worn and linkID(worn) == linkID(link) then s = new end
-      if not old or s < old then old = s end -- compare with the weaker ring/trinket
+      if not old or s < old then old = s against = { worn } end -- compare with the weaker ring/trinket
     end
   end
   old = old or 0
@@ -216,7 +218,55 @@ function M:Compare(link)
   if new ~= old then pct = (new - old) / math.max(old, M.MIN_BASE) * 100 end
   if pct > M.MAX_PCT then pct, capped = M.MAX_PCT, true end
   local why, futureLevel = self:Usable(link, info)
-  return { pct = pct, new = new, old = old, slot = slots[1], why = why, future = futureLevel, empty = empty, capped = capped }
+  return { pct = pct, new = new, old = old, slot = slots[1], why = why, future = futureLevel, empty = empty, capped = capped,
+    against = against }
+end
+
+-- Stat by stat, new item minus what it replaces (Gary, 2026-11-14: "tell how
+-- much it improves each stat ... am I trading raw damage for -20 agility"):
+-- { {label, delta} }, damage per second first, then the stats this class
+-- weighs most. Armor and DPS keep one decimal.
+M.STAT_LABEL = {
+  ITEM_MOD_DAMAGE_PER_SECOND_SHORT = "DPS", ITEM_MOD_AGILITY_SHORT = "Agi", ITEM_MOD_STRENGTH_SHORT = "Str",
+  ITEM_MOD_STAMINA_SHORT = "Sta", ITEM_MOD_INTELLECT_SHORT = "Int", ITEM_MOD_SPIRIT_SHORT = "Spi",
+  RESISTANCE0_NAME = "Armor", ITEM_MOD_ATTACK_POWER_SHORT = "AP", ITEM_MOD_RANGED_ATTACK_POWER_SHORT = "RAP",
+  ITEM_MOD_CRIT_RATING_SHORT = "Crit", ITEM_MOD_HIT_RATING_SHORT = "Hit", ITEM_MOD_SPELL_POWER_SHORT = "SP",
+  ITEM_MOD_MANA_REGENERATION_SHORT = "MP5", ITEM_MOD_DEFENSE_SKILL_RATING_SHORT = "Def",
+}
+function M:Diff(link, against)
+  local sum = {}
+  local function add(l, sign)
+    if not l then return end
+    for stat, v in pairs(M.Stats(l)) do
+      v = C.Readable(v)
+      if type(v) == "number" then sum[stat] = (sum[stat] or 0) + sign * v end
+    end
+  end
+  add(link, 1)
+  for _, l in pairs(against or {}) do add(l, -1) end
+  local w = self:Weights()
+  local out = {}
+  for stat, d in pairs(sum) do
+    if math.abs(d) >= 0.05 then
+      local label = M.STAT_LABEL[stat] or (stat:gsub("^ITEM_MOD_", ""):gsub("_SHORT$", ""):gsub("_", " "):lower())
+      local weight = stat == "ITEM_MOD_DAMAGE_PER_SECOND_SHORT" and 1000 or math.abs(w[stat] or 0)
+      out[#out + 1] = { label = label, delta = d, weight = weight, stat = stat }
+    end
+  end
+  table.sort(out, function(a, b) if a.weight ~= b.weight then return a.weight > b.weight end return a.label < b.label end)
+  return out
+end
+
+-- "+4.1 DPS  -20 Agi  +5 Str" with gains green and losses red
+function M.DiffText(diff, max)
+  local parts = {}
+  for i, d in ipairs(diff) do
+    if max and i > max then break end
+    local fmt = (d.stat == "ITEM_MOD_DAMAGE_PER_SECOND_SHORT" or math.floor(d.delta) ~= d.delta) and "%+.1f %s" or "%+d %s"
+    local txt = string.format(fmt, d.delta, d.label)
+    parts[#parts + 1] = (d.delta > 0 and "|cff7fff7f" or "|cffff6060") .. txt .. "|r"
+  end
+  return table.concat(parts, "  ")
 end
 
 function M:Verdict(link)

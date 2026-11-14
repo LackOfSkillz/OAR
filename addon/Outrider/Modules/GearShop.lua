@@ -141,7 +141,7 @@ function M:Results()
         local info = C.ItemInfo(link)
         all[#all + 1] = { slot = r.slot, slotName = G.SLOT_NAMES[r.slot] or tostring(r.slot), itemID = itemID,
           itemKey = f.itemKey, price = f.price, pct = r.empty and 999 or r.pct, empty = r.empty, capped = r.capped,
-          name = info and info.name or ("item " .. itemID), learn = learn }
+          name = info and info.name or ("item " .. itemID), learn = learn, against = r.against }
       end
     end
   end
@@ -239,12 +239,26 @@ function M:Build()
   f.rows = {}
   for i = 1, M.ROWS do
     local row = CreateFrame("Frame", nil, f)
-    row:SetSize(452, 24)
-    row:SetPoint("TOPLEFT", 14, -118 - (i - 1) * 26)
+    row:SetSize(452, 36)
+    row:SetPoint("TOPLEFT", 14, -118 - (i - 1) * 38)
     row.text = UI.Text(row, "normal", "text")
-    row.text:SetPoint("LEFT", 0, 0)
+    row.text:SetPoint("TOPLEFT", 0, -2)
     row.text:SetWidth(380)
     row.text:SetJustifyH("LEFT")
+    -- second line: what changes, stat by stat
+    row.stats = UI.Text(row, "small", "muted")
+    row.stats:SetPoint("TOPLEFT", 10, -19)
+    row.stats:SetWidth(370)
+    row.stats:SetJustifyH("LEFT")
+    -- hover: the game's own item tooltip (with its comparison to what you wear)
+    row:EnableMouse(true)
+    row:SetScript("OnEnter", function(r)
+      if not r.item then return end
+      GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
+      GameTooltip:SetItemByID(r.item.itemID)
+      GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row.buy = UI:Button(row, "Buy", 56, function()
       local b = row.item
       if b and ns.AHBuy then ns.AHBuy:Add({ name = b.name, itemKey = b.itemKey }) end
@@ -307,6 +321,8 @@ function M:Refresh()
     if b then
       local label = self.mode == "weapons" and (i .. ". ") or (ns.TitleCase(b.slotName) .. ": ")
       row.text:SetText(string.format("%s%s  |cff7fff7f%s|r  |cffffd100%s|r", label, b.name, M.Gain(b), ns.Prices.Money(b.price)))
+      local diff = ns.GearScore:Diff("item:" .. b.itemID, b.against)
+      row.stats:SetText(#diff > 0 and ns.GearScore.DiffText(diff, 6) or "no stat changes listed")
       row:Show()
     else
       row:Hide()
@@ -331,7 +347,7 @@ function M:Refresh()
       f.status:SetText("Finds upgrades your class can use, in your level range, that your gold covers (" .. gold .. "). Buy is your click.")
     end
   end
-  f:SetHeight(126 + #list * 26 + (#list == 0 and 14 or 0))
+  f:SetHeight(126 + #list * 38 + (#list == 0 and 14 or 0))
   f:Show()
 end
 
