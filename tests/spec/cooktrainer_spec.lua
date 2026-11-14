@@ -31,7 +31,7 @@ T.describe("cooking trainer", function()
     CT:Evaluate()
     T.ok(CT.btn, "button made at +12")
     T.eq(CT:Body(), "/cast Basic Campfire")
-    CT.state = "cook"
+    CT.state = "make"
     T.eq(CT:Body(), "/ride make Cooking train")
     local _, ns2 = session({ [2672] = 4 })
     ns2.CookTrainer:Evaluate()
@@ -42,7 +42,7 @@ T.describe("cooking trainer", function()
   T.it("without wood it goes straight to Cook", function()
     local _, ns = session({ [2672] = 12 })
     ns.CookTrainer:Evaluate()
-    T.eq(ns.CookTrainer.state, "cook")
+    T.eq(ns.CookTrainer.state, "make")
   end)
 
   T.it("a snooze hides it for 30 minutes", function()
@@ -54,5 +54,36 @@ T.describe("cooking trainer", function()
     CT:Evaluate()
     T.eq(CT.btn, nil)
     game.now = (game.now or time()) + 31 * 60
+  end)
+end)
+
+T.describe("profession trainer", function()
+  T.it("offers the crafting profession with most to gain, never a gathering one, and respects per-profession off", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions = {
+      Leatherworking = { skill = 20, max = 75, recipes = {
+        [10] = { name = "Light Armor Kit", learned = true, diff = 0, reagents = { [2318] = 1 } } } },
+      Alchemy = { skill = 20, max = 75, recipes = {
+        [11] = { name = "Minor Healing Potion", learned = true, diff = 1, reagents = { [2447] = 1, [765] = 1 } } } },
+      Skinning = { skill = 40, max = 75, recipes = {} },
+    }
+    ns.Crafter.Have = function(id) return ({ [2318] = 15, [2447] = 20, [765] = 20 })[id] or 0 end
+    local T2 = ns.ProfTrainer
+    local profs = T2:Professions()
+    T.eq(#profs, 2, "Skinning gathers only")
+    local prof, total = T2:Best()
+    T.eq(prof, "Alchemy") -- 20 x 0.75 = 15 ties 15 x 1; ties keep the first in name order
+    T.eq(total, 15)
+    ns.ProfTrainer:Settings().off = { Alchemy = true }
+    prof = T2:Best()
+    T.eq(prof, "Leatherworking")
+    T2:Evaluate()
+    T.eq(T2:Body(), "/ride make Leatherworking train")
+    T2:SetKey("BUTTON4")
+    T.eq(T2:Settings().key, "BUTTON4")
+    T.contains(T2:Activity(), "Leatherworking about +15")
+    T.eq(#ns.Errors.list, 0)
   end)
 end)

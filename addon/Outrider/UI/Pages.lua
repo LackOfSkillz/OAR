@@ -261,10 +261,26 @@ local function profRows()
     crafts[#crafts + 1] = { "Make bar macros", Run("make") }
     r({ "buttons", crafts })
   end
-  if owned.Cooking then
-    r({ "check", "Cooking training button (pops up at +10)", function() return set("CookTrainer").show end,
-      function(on) set("CookTrainer").show = on if ns.CookTrainer then ns.CookTrainer:Evaluate() end end, "fire, then cook what still trains" })
-    r({ "note", function() local m = mod("CookTrainer") return m and m.enabled and m:Activity() or "" end })
+  -- One-button training for every crafting profession this character has.
+  local T = ns.ProfTrainer
+  local crafting = T and T.Professions and T:Professions() or {}
+  if #crafting > 0 then
+    r({ "header", "Training button" })
+    r({ "note", "When your bags hold enough to gain +10 in a profession, a button pops up: each press makes the next recipe that still gives skill (cooking builds a fire first)." })
+    r({ "check", "Show the training button", function() return set("ProfTrainer").show end,
+      function(on) set("ProfTrainer").show = on if T then T:Evaluate() end end })
+    r({ "key", "Training key", function() return set("ProfTrainer").key end,
+      function(k) if T then T:SetKey(k) end end, "presses the button while it shows" })
+    for _, prof in ipairs(crafting) do
+      r({ "check", "Offer " .. prof, function() return not (set("ProfTrainer").off or {})[prof] end,
+        function(on)
+          local s = set("ProfTrainer")
+          s.off = s.off or {}
+          s.off[prof] = (not on) or nil
+          if T then T:Evaluate() end
+        end })
+    end
+    r({ "note", function() local m = mod("ProfTrainer") return m and m.enabled and m:Activity() or "" end, 36 })
   end
   if next(owned) then
     r({ "header", "Skill-up planner" })
@@ -282,8 +298,9 @@ local function profRows()
   end
   if owned.Fishing then
     r({ "header", "Fishing" })
-    r({ "input", "Fishing key", "F, or off", "Set key", function(t) ns.Slash:Run("fishkey " .. t) end })
-    r({ "note", function() return "Current key: " .. tostring(set("Fishing").key or "none") .. ". It puts a lure on first when yours has run out." end })
+    r({ "key", "Fishing key", function() return set("Fishing").key end,
+      function(k) ns.Slash:Run("fishkey " .. (k or "off")) end, "only while a pole is equipped" })
+    r({ "note", "Press 1 casts (or puts a lure on when yours has run out), press 2 hooks and loots. Click the box, then press the key you want; right-click clears it." })
     r({ "check", "Fishing HUD while a pole is equipped", function() return set("FishingHUD").show end,
       function(on) set("FishingHUD").show = on if ns.FishingHUD then ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" })
     r({ "check", "Sound for rare catches", function() return set("FishingHUD").rareSound end,

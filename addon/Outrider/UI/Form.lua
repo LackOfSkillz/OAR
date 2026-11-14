@@ -7,6 +7,7 @@
 --   { "check", "Label", get, set, note }         toggle
 --   { "buttons", { {"Label", fn}, ... } }         a row of buttons
 --   { "input", "Label", "placeholder", "Button", fn(text), keep } text box + button
+--   { "key", "Label", get, set(key or nil), note } press-a-key setter (right-click clears)
 --   { "slider", "Label", min, max, step, get, set, fmt }
 --   { "list", rows, render, onClick, getItems }   embedded scroll list
 -- form:Refresh() re-reads every check, slider, live note and list.
@@ -90,6 +91,54 @@ function UI:Form(parent, rows)
       box:SetScript("OnEnterPressed", run)
       row.box, row.button = box, btn
       place(row, ROW.input)
+    elseif kind == "key" then
+      -- { "key", "Label", get, set(key or nil), note }: click, then press a key
+      -- (or a mouse side/middle button); right-click clears; Escape cancels.
+      local row = CreateFrame("Frame", nil, c)
+      row:SetSize(600, 26)
+      local label = UI.Text(row, "normal", "text")
+      label:SetPoint("LEFT", 0, 0)
+      label:SetWidth(170)
+      label:SetJustifyH("LEFT")
+      label:SetText(r[2])
+      local get, set = r[3], r[4]
+      local btn
+      local function show() btn.label:SetText(btn.capturing and "Press a key..." or (get() or "Not set")) end
+      local function stop() btn.capturing = false if btn.EnableKeyboard then btn:EnableKeyboard(false) end show() end
+      local MODS = { LSHIFT = 1, RSHIFT = 1, LCTRL = 1, RCTRL = 1, LALT = 1, RALT = 1, LMETA = 1, RMETA = 1 }
+      local MOUSE = { MiddleButton = "BUTTON3", Button4 = "BUTTON4", Button5 = "BUTTON5" }
+      local function take(key)
+        local mods = (IsAltKeyDown and IsAltKeyDown() and "ALT-" or "") .. (IsControlKeyDown and IsControlKeyDown() and "CTRL-" or "")
+          .. (IsShiftKeyDown and IsShiftKeyDown() and "SHIFT-" or "")
+        ns.Safe("form:key:" .. r[2], set, mods .. key)
+        stop()
+      end
+      btn = UI:Button(row, "Not set", 160, function(self, button)
+        if button == "RightButton" then ns.Safe("form:key:" .. r[2], set, nil) stop() return end
+        self.capturing = true
+        if self.EnableKeyboard then self:EnableKeyboard(true) end
+        show()
+      end)
+      if btn.RegisterForClicks then btn:RegisterForClicks("LeftButtonUp", "RightButtonUp") end
+      btn:SetScript("OnKeyDown", function(self, key)
+        if not self.capturing or MODS[key] then return end
+        if key == "ESCAPE" then stop() return end
+        take(key)
+      end)
+      btn:SetScript("OnMouseDown", function(self, button)
+        if self.capturing and MOUSE[button] then take(MOUSE[button]) end
+      end)
+      btn:SetPoint("LEFT", label, "RIGHT", 6, 0)
+      if r[5] then
+        local note = UI.Text(row, "small", "muted")
+        note:SetPoint("LEFT", btn, "RIGHT", 8, 0)
+        note:SetText(r[5])
+      end
+      row.button = btn
+      row.Refresh = show
+      show()
+      place(row, ROW.input)
+      scroll.items[#scroll.items + 1] = row
     elseif kind == "slider" then
       local s = UI:Slider(c, r[2], r[3], r[4], r[5], r[6], r[7], r[8])
       s:SetWidth(320)
