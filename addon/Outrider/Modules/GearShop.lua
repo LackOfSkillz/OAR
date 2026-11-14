@@ -141,7 +141,7 @@ function M:Results()
         local info = C.ItemInfo(link)
         all[#all + 1] = { slot = r.slot, slotName = G.SLOT_NAMES[r.slot] or tostring(r.slot), itemID = itemID,
           itemKey = f.itemKey, price = f.price, pct = r.empty and 999 or r.pct, empty = r.empty, capped = r.capped,
-          name = info and info.name or ("item " .. itemID), learn = learn, against = r.against }
+          name = info and info.name or ("item " .. itemID), learn = learn, against = r.against, new = r.new, old = r.old }
       end
     end
   end
@@ -160,6 +160,17 @@ function M:Results()
   for _, b in ipairs(all) do if not per[b.slot] then per[b.slot] = b out[#out + 1] = b end end
   table.sort(out, function(a, b) return a.slot < b.slot end)
   return out, skipped
+end
+
+-- The net of every gain and loss, each stat weighed by what this class needs
+-- (GearScore's score): "= overall +12% (score 24.0 -> 27.0)" (Gary, 2026-11-14:
+-- "lose a little spirit but gain agility: the overall improvement?").
+function M.Overall(b)
+  if b.empty then return "|cff7fff7f= fills an empty slot|r" end
+  local pct = math.floor(b.pct + 0.5)
+  local color = pct > 0 and "|cff7fff7f" or (pct < 0 and "|cffff6060" or "|cffcccccc")
+  local score = (b.new and b.old) and string.format(" (score %.1f -> %.1f)", b.old, b.new) or ""
+  return string.format("%s= overall %s%d%%%s|r", color, pct > 0 and "+" or "", pct, score)
 end
 
 function M.Gain(b)
@@ -322,7 +333,7 @@ function M:Refresh()
       local label = self.mode == "weapons" and (i .. ". ") or (ns.TitleCase(b.slotName) .. ": ")
       row.text:SetText(string.format("%s%s  |cff7fff7f%s|r  |cffffd100%s|r", label, b.name, M.Gain(b), ns.Prices.Money(b.price)))
       local diff = ns.GearScore:Diff("item:" .. b.itemID, b.against)
-      row.stats:SetText(#diff > 0 and ns.GearScore.DiffText(diff, 6) or "no stat changes listed")
+      row.stats:SetText((#diff > 0 and ns.GearScore.DiffText(diff, 6) or "no stat changes listed") .. "   " .. M.Overall(b))
       row:Show()
     else
       row:Hide()
