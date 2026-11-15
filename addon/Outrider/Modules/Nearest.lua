@@ -37,12 +37,18 @@ function M:Find(kind)
   local best, bestD
   local candidates = {}
   for _, p in pairs(ns.db.global.pois or {}) do candidates[#candidates + 1] = p end
+  -- "class_trainer": a trainer whose title names this character's class
+  local want = kind == "class_trainer" and "trainer" or kind
+  local cls = kind == "class_trainer" and tostring(C.Call("UnitClass", "player") or ""):lower() or nil
   if ns.NPCPack then
-    for _, p in ipairs(ns.NPCPack:OfKind(kind)) do candidates[#candidates + 1] = { kind = kind, mapID = p.mapID,
-      x = p.x, y = p.y, name = p.name, faction = p.faction } end
+    for _, p in ipairs(ns.NPCPack:OfKind(want)) do candidates[#candidates + 1] = { kind = want, mapID = p.mapID,
+      x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction } end
   end
   for _, p in ipairs(candidates) do
-    local match = p.kind == kind
+    local match = p.kind == want
+    if match and cls then
+      match = cls ~= "" and tostring(p.title or ""):lower():find(cls .. " trainer", 1, true) ~= nil
+    end
     if kind == "ammo" then
       match = false
       for _, g in ipairs(p.goods or {}) do if g == "ammo" then match = true end end
@@ -55,7 +61,7 @@ function M:Find(kind)
       end
     end
   end
-  if not best then return nil, "no " .. kind:gsub("_", " ") .. " known on this continent yet" end
+  if not best then return nil, "no " .. (cls and (cls .. " trainer") or kind:gsub("_", " ")) .. " known on this continent yet" end
   return best, bestD
 end
 

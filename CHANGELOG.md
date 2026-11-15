@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- **Sharing hardened:** long messages between Outrider users carry a message id, so two from one sender never mix; limits on pieces, size and half-received messages, 30-second expiry, duplicate and malformed pieces ignored, sending paced. Older builds' messages are still read.
+- **What now? (Pathfinder Lite):** a new page right under Home (`/ride now`) with the 3 to 5 steps worth doing next, each with what, why, where, a Go button and an alternative. Pick a goal (level up, make gold, better gear, professions, explore, a bit of everything) and the same candidates are weighed differently. Draws on errands, quests, gear, dungeons, profession training, watched rares, gold methods and gathering spots; scores by benefit, goal, distance and how sure the data is, and says so when a step rests on unchecked data. Quests several levels up count for less; battleground quests are left out. Not useful hides a step for a day. The suggestions for every goal are logged at logout. `tools/whatnow_check.lua` runs it against a copy of the saved data.
+- **Safer installs and updates:** the installer waits until WoW is fully closed (Retry or Cancel; nothing changes before that), backs up the old Outrider folders to `%LOCALAPPDATA%\Outrider\backup` (last 3 kept) and puts them all back if anything fails. Releases carry a SHA-256 checksum; the updater refuses an installer that doesn't match it. `tools/test-installer.ps1` checks install and rollback in a scratch folder.
+- **Sharing outbox capped** at 96 pieces (a message that won't fit is refused), emptied when sharing is switched off; a failed send doesn't stop the rest.
+- **Licence files:** every data folder built from QuestieDB carries the full GPLv3 text and an attribution note.
+
+## Family builds (2026-11-14, release build-20261114-1625)
+
+- **Install and update:** one-file installer (`Install-Outrider.cmd`) that finds WoW Forever and installs Outrider with every data pack and Gary's shared world knowledge (merged once, never overwriting; no player names). Releases on LackOfSkillz/outrider-releases; an **Update Outrider** desktop shortcut; in-game notice when a build is 14 days old or another user has a newer one.
+- **Dungeon guide:** Dungeons page with the dungeons that fit your level now, your upgrades in each, the next tier and an arrow to the entrance (34 dungeons, Forever level ranges).
+- **Auction house:** one Shopping panel with Training (ingredients and recipes ranked by cost per skill point), Weapons (top 10) and Armor (best per slot). Class armor type and weapon skills follow Forever's rules for every class and race; never above the gold you carry; stat-by-stat change in green and red with an overall percentage; buying through a confirm bar; one-click full price scan so prices don't need Auctionator or TSM.
+- **Gear for alts and family:** gear cards (alts saved at login, others over guild or party when sharing is on); upgrades you loot go to alts first, then family and friends, then other Outrider users, with mailbox addressing.
+- **Profession training:** a training button and key for every crafting profession (best gain first). Cooking makes a campfire, places it, then cooks, and never crafts a second campfire. Press-a-key setters in the hub.
+- **Fishing:** HUD (skill, lure timer, what bites here, silver per hour, goal, advice), lure on the fish key, soft targeting so the same key hooks the bobber, auto loot while fishing, too-hard warning, session summary, rare catch sound, Weapons button, pool pins. The session survives a reload.
+- **Money guide:** gold methods ranked by level, professions and faction, learning your own gold per hour.
+- **Rares:** screen-edge flash and an arrow to the exact spot, minimap-marker detection, spawn log at a watched rare's spot, rare profiles, map pins at every spawn spot. The Mystmane 3-hour timer was tested and switched off (she missed both windows).
+- **Herbs and ore:** hollow node pins; nodes you picked dim for 15 minutes, nodes you saw up show green.
+
+## Earlier unreleased work (2026-11-12 to 13)
+
 - **New Outrider window:** grouped sidebar with icons, your class color, resizable, a search box at the top, and a Home page (nearest places, where you are headed, best quests, upgrades, rare watch, errands, pet). Every /ride command now has a button, toggle or field (new pages: Waypoints, Rare alerts, Hunter, Gear sets, Professions, Chat, Sharing, Settings, All commands).
 - **Cook / Brew / Herb** macros (`/ride make` creates them): one press makes everything you have ingredients for, best skill-up recipe first. The first press opens the profession window if it is closed.
 - Hunter **Fight** macro: one key to spam. Outrider writes it from your spellbook and ranged weapon and rewrites it out of combat when you learn a spell, level up or swap the ranged weapon. Install it once from the Macros tab or `/ride fight`; `/ride fight concussive|wingclip|pet off` trims it. Each fight's casts are logged so the order can be checked.

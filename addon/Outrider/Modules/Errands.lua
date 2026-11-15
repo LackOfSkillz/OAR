@@ -80,7 +80,8 @@ end
 
 function M:Go(e)
   if not ns.Nearest then return end
-  local ok, msg = ns.Nearest:Go(e.kind)
+  local kind = e.kind == "trainer" and "class_trainer" or e.kind
+  local ok, msg = ns.Nearest:Go(kind)
   ns.Print(tostring(msg))
   return ok
 end
