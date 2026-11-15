@@ -194,7 +194,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.answer.limits:SetJustifyH("LEFT")
   p.head = UI.Text(p, "small", "muted")
   p.head:SetPoint("TOPLEFT", p.answer, "BOTTOMLEFT", 0, -8)
-  p.head:SetWidth(560) p.head:SetJustifyH("LEFT")
+  p.head:SetPoint("RIGHT", p, "RIGHT", -4, 0) p.head:SetJustifyH("LEFT")
   p.list = UI:ScrollList(p, {
     rows = 8, rowHeight = 40,
     render = function(row, item)
@@ -225,7 +225,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
     end,
   })
   p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
-  p.list:SetWidth(560)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   M.page = p
   p.paste = UI:Button(p, "Paste advice", 120, function() M:OpenPaste() end)
   p.paste:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -8)

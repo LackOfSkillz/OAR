@@ -305,13 +305,42 @@ function Hub:Build()
   return f
 end
 
+-- Pages that draw their own heading (Expedition layouts) skip the title strip.
+Hub.OWN_HEADING = { home = true, whatnow = true }
+Hub.TITLE_H = 52
+
 function Hub:Panel(t)
   if t.panel then return t.panel end
   local p = CreateFrame("Frame", nil, self.frame.content)
-  p:SetPoint("TOPLEFT", SIDE + 14, -2)
   p:SetPoint("BOTTOMRIGHT", -6, 14)
   p:Hide()
   t.panel = p
+  if self.OWN_HEADING[t.id] then
+    p:SetPoint("TOPLEFT", SIDE + 14, -2)
+  else
+    -- Expedition look on every page (2026-11-15): the page title in the
+    -- display font over the header scene, a gold rule, then the page. The
+    -- strip belongs to the panel (drawn above its top edge) so it shows and
+    -- hides with it. A form page's first heading replaces the title text.
+    p:SetPoint("TOPLEFT", SIDE + 14, -(self.TITLE_H + 2))
+    if ns.Art and ns.Art:Has("header") then
+      p.scene = p:CreateTexture(nil, "BACKGROUND")
+      p.scene:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 6)
+      p.scene:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+      p.scene:SetHeight(self.TITLE_H - 6)
+      ns.Art:Set(p.scene, "header")
+      if p.scene.SetAlpha then p.scene:SetAlpha(0.45) end
+    end
+    p.hubTitle = UI.Display(p, "page", "text")
+    p.hubTitle:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 14)
+    p.hubTitle:SetText(t.title or "")
+    p.hubRule = p:CreateTexture(nil, "ARTWORK")
+    p.hubRule:SetHeight(1)
+    p.hubRule:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 6)
+    p.hubRule:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+    local r, g, b = Theme:Color("gold")
+    p.hubRule:SetColorTexture(r, g, b, 0.5)
+  end
   if t.build then ns.Safe("hub:build:" .. t.id, t.build, p) end
   return p
 end

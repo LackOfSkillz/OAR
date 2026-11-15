@@ -66,7 +66,7 @@ ns.Hub:AddTab("feed", "Feed", function(p)
     end,
   })
   p.list:SetPoint("TOPLEFT", 0, 0)
-  p.list:SetWidth(560)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   function p:Refresh()
     self.list:SetItems(M.list)
     M:MarkRead()

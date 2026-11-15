@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Expedition look on every page:** every hub page now opens with its title in the display font over the header scene and a gold rule; settings-style pages put each section in a card that stretches with the window; lists stretch to the window; the Macros and Crafting side panels are cards.
 - **Merchant's Favor:** Outrider reads your Favor balance, depot standing, any Waylaid Crate's contents and the quartermaster's Favor prices from the game, then shows per crate which bundle you can fill from bags, bank and alts or what the shortfall costs (Money page, `/ride favor`). It never fills, buys or turns in anything.
 - **Rare pack:** Mystmane, Den'dralass, Snapbeak the Quick (from your own captures), The Rake and Ghost Howl (ids only until seen).
 - **Faster advice:** two new keys (Key Bindings > AddOns > Outrider): **Ask** shows the snapshot code ready to copy, **Paste advice** opens the paste box, where Ctrl+V applies the answer at once and opens the Advisor tab (`/ride paste` too). The Ask Outrider window can answer by itself when you copy a code in game and puts the answer on the clipboard. Every step is still a key you press.

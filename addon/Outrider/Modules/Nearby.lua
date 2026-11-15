@@ -265,7 +265,7 @@ ns.Hub:AddTab("gear", "Gear", function(p)
     end,
   })
   p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
-  p.list:SetWidth(560)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   function p:Refresh()
     local list, f = M:Candidates(), M.filter
     if f and f ~= "" then

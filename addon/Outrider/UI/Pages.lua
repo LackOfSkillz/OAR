@@ -955,7 +955,7 @@ ns.Hub:AddTab("commands", "All commands", function(p)
     onClick = function(c) p.current = c p.label:SetText(c.name) p.box:SetText("") p.box:SetFocus() end,
   })
   p.list:SetPoint("TOPLEFT", 0, -18)
-  p.list:SetWidth(620)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   p.label = UI.Text(p, "large", "accent")
   p.label:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -10)
   p.label:SetText("pick a command")
