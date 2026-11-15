@@ -39,10 +39,23 @@ function UI:Form(parent, rows)
   for _, r in ipairs(rows) do
     local kind = r[1]
     if kind == "header" then
-      if y > 0 then y = y + 6 end
-      local t = UI.Text(c, "large", "accent")
-      t:SetText(r[2])
-      place(t, ROW.header)
+      -- Expedition look: the page's first heading is its title (display font,
+      -- large); later ones are section headings with a hairline under them
+      if y == 0 then
+        local t = UI.Display(c, "page", "text")
+        t:SetText(r[2])
+        place(t, 42)
+      else
+        y = y + 8
+        local t = UI.Display(c, "side", "goldText")
+        t:SetText(r[2])
+        local rule = c:CreateTexture(nil, "ARTWORK")
+        rule:SetHeight(1)
+        rule:SetWidth(600)
+        rule:SetPoint("TOPLEFT", 0, -(y + 22))
+        rule:SetColorTexture(Theme:Color("border"))
+        place(t, ROW.header + 2)
+      end
     elseif kind == "note" then
       local t = UI.Text(c, "small", "muted")
       t:SetWidth(600)
