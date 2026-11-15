@@ -231,7 +231,13 @@ end
 
 -- Dialog with a multi-line edit box. mode "copy" selects the text for Ctrl+C,
 -- mode "paste" shows an Accept button that calls onAccept(text).
-function UI:TextDialog(title, body, mode, onAccept)
+function UI.LooksLikeCode(text)
+  return type(text) == "string" and text:match("^%s*OTR1:%x%x%x%x%x%x%x%x:.") ~= nil
+end
+
+-- auto (paste mode): accept as soon as Gary pastes something shaped like an
+-- Outrider code (his Ctrl+V is the action; no Accept click needed).
+function UI:TextDialog(title, body, mode, onAccept, auto)
   local d = self.dialog
   if not d then
     d = self:Window("Outrider_TextDialog", title, 520, 300)
@@ -253,19 +259,27 @@ function UI:TextDialog(title, body, mode, onAccept)
     self.dialog = d
   end
   d.title:SetText(title)
+  d.edit:SetScript("OnTextChanged", nil)
   d.edit:SetText(body or "")
   if mode == "copy" then
     d.hint:SetText("Press Ctrl+C to copy, Esc to close.")
     d.accept:Hide()
     d.edit:HighlightText()
   else
-    d.hint:SetText("Paste with Ctrl+V, then Accept.")
+    d.hint:SetText(auto and "Press Ctrl+V. It applies by itself." or "Paste with Ctrl+V, then Accept.")
     d.accept:Show()
-    d.accept:SetScript("OnClick", function()
+    local function accept()
       local ran, ok, err = ns.Safe("dialog:" .. title, onAccept, d.edit:GetText())
       if ran and ok then d:Hide() else d.hint:SetText("|cffff6060" .. tostring(err or "failed") .. "|r") end
-    end)
+    end
+    d.accept:SetScript("OnClick", accept)
+    if auto then
+      d.edit:SetScript("OnTextChanged", function(self, userInput)
+        if userInput and UI.LooksLikeCode(self:GetText()) then accept() end
+      end)
+    end
   end
+  if d.edit.SetFocus then d.edit:SetFocus() end
   d:Show()
   return d
 end

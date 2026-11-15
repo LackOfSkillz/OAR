@@ -156,7 +156,7 @@ function Snap:AskAdvisor(mode)
   local code = self:Code()
   ns.UI:TextDialog("Copy for your advisor", code, "copy")
   local d = ns.UI.dialog
-  if d and d.hint then d.hint:SetText("Ctrl+C, then tell Claude 'advise'. Paste the answer in the Advisor tab.") end
+  if d and d.hint then d.hint:SetText("Ctrl+C. Ask Outrider answers by itself; then your Paste key and Ctrl+V.") end
   ns.Log:Info("snapshot", "ask: snapshot code shown (%d characters)", #code)
 end
 

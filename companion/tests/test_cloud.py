@@ -259,6 +259,20 @@ class Window(unittest.TestCase):
         self.assertIsNone(ctl.ask("x", t))
         self.assertEqual(out, [])
 
+    def test_watch_mode_fires_once_per_new_snapshot_code(self):
+        code = snapshot_code()
+        ctl, out = self.make(code, [reply()])
+        self.assertFalse(ctl.new_snapshot("hello"))
+        self.assertFalse(ctl.new_snapshot(""))
+        self.assertFalse(ctl.new_snapshot("OTR1:00000000:garbage"))
+        self.assertTrue(ctl.new_snapshot(code))
+        self.assertFalse(ctl.new_snapshot(code))          # same code again: already handled
+        ctl.read_snapshot(code)
+        ctl.ask("x", ctl.start())
+        self.assertFalse(ctl.new_snapshot(out[0]))       # our own answer on the clipboard
+        self.assertFalse(ctl.new_snapshot(codes.export({"kind": "advice", "items": []})))   # advice, not a snapshot
+        self.assertTrue(ctl.new_snapshot(snapshot_code(question="again?")))   # next Ctrl+C in game
+
     def test_needs_a_snapshot(self):
         ctl, _ = self.make("garbage")
         with self.assertRaises(Exception):

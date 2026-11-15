@@ -20,12 +20,21 @@ that fits your time. It never plays for you: every card is a click.
 3. **A cloud model (costs per answer):** store a key with the keys command,
    preview the payload, set `cloudConsent`. A daily token cap protects you.
 
-## Every time
-1. In game: Advisor tab, type your question and minutes, click **Ask**, press Ctrl+C.
-2. On the PC: the Ask Outrider window (Read snapshot, Ask), the ask command,
-   or Claude.
-3. In game: **Paste advice**, Ctrl+V. Click a card to set a waypoint or open a
-   page. Mark cards Useful, Wrong data or Done.
+## Once: two keys
+Esc > Options > Key Bindings > AddOns > Outrider: bind **Ask** and **Paste
+advice** (for example Ctrl+F1 and Ctrl+F2).
+
+## Every time (the fast way)
+1. In game: press your **Ask** key, then Ctrl+C. (Or the Advisor tab's Ask,
+   with a question and minutes typed first.)
+2. The Ask Outrider window, left open with "Answer by itself" on, sees the
+   new code, asks and copies the answer (its title says "answer ready").
+3. In game: press your **Paste** key, then Ctrl+V. It applies at once and opens
+   the Advisor tab. Click a card to set a waypoint or open a page. Mark cards
+   Useful, Wrong data or Done.
+
+Every step is a key you press; nothing in the game happens on its own (D18).
+Without the window: the ask command or Claude, then step 3.
 
 ## Supported models
 Any server that speaks the OpenAI chat API (Ollama, LM Studio, vLLM,

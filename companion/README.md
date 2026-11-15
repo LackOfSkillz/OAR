@@ -46,7 +46,7 @@ nothing to install, no network.
 2. Tell Claude "advise" (or `/advise`). It reads the code from the clipboard
    (`read_clipboard_snapshot`) and puts an advice code on the clipboard
    (`advice_to_clipboard`).
-3. In the Advisor tab: **Paste advice**, Ctrl+V, Accept. The suggestions show
+3. In the Advisor tab: **Paste advice** (or your Paste key), Ctrl+V. The suggestions show
    at once. Click one to do it. Nothing happens on its own.
 
 Older route (needs a reload): `/ride ask reload`, then `write_advice`, then
@@ -99,8 +99,11 @@ the cap stops calls for the day once reached.
 ## The Ask Outrider window (no command line)
 
 `pythonw -m outrider_companion.intelligence.window` (run in `companion/`).
-In game: Advisor > Ask, Ctrl+C. In the window: Read snapshot, Ask (Enter).
-The answer is copied; in game: Paste advice, Ctrl+V. Preview shows exactly
+In game: your Ask key (or Advisor > Ask), Ctrl+C. With "Answer by itself"
+on (the default) the window notices the new snapshot code on its clipboard and
+asks; otherwise Read snapshot, Ask (Enter). The answer is copied; in game:
+your Paste key (or Paste advice), Ctrl+V; it applies without an Accept click.
+Each code you copy is one model call (the daily cap still applies). Preview shows exactly
 what a model would receive; Status shows the setup; Stop waiting lets go of
 a slow model. It never touches the game.
 

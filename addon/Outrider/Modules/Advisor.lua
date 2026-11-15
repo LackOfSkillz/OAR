@@ -226,15 +226,8 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   })
   p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
   p.list:SetWidth(560)
-  p.paste = UI:Button(p, "Paste advice", 120, function()
-    UI:TextDialog("Paste advice", "", "paste", function(text)
-      local n, why = ns.Advice:Paste(text)
-      if n == 0 then return false, M.REASON_TEXT[why] or why end
-      M:Info("pasted advice: %d suggestions", n)
-      p:Refresh()
-      return true
-    end)
-  end)
+  M.page = p
+  p.paste = UI:Button(p, "Paste advice", 120, function() M:OpenPaste() end)
   p.paste:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -8)
   p.ask = UI:Button(p, "Ask (copy snapshot)", 150, function() ns.Snapshot:AskAdvisor() end)
   p.ask:SetPoint("LEFT", p.paste, "RIGHT", 8, 0)
@@ -274,6 +267,32 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
       or (M.REASON_TEXT[why] or tostring(why)))
   end
 end, 50)
+
+-- Paste box (button or the Paste key): Ctrl+V applies it at once, no Accept
+-- click. Then the Advisor tab opens so the answer is in front of Gary.
+function M:Paste(text)
+  local n, why = ns.Advice:Paste(text)
+  if n == 0 then return false, M.REASON_TEXT[why] or why end
+  self:Info("pasted advice: %d suggestions", n)
+  if ns.Hub and ns.Hub.ShowTab then pcall(ns.Hub.ShowTab, ns.Hub, "advisor") end
+  if self.page and self.page.Refresh then self.page:Refresh() end
+  return true
+end
+
+function M:OpenPaste()
+  return UI:TextDialog("Paste advice", "", "paste", function(text) return M:Paste(text) end, true)
+end
+
+-- Key bindings (Bindings.xml, Key Bindings > AddOns > Outrider). A key press
+-- by Gary opens a box; nothing else happens until he copies or pastes.
+_G.BINDING_NAME_OUTRIDER_ASK = "Ask: copy a snapshot for your advisor"
+_G.BINDING_NAME_OUTRIDER_PASTE = "Paste advice"
+function M:AskKey()
+  if C.InCombat() then ns.Print("not in combat") return end
+  ns.Snapshot:AskAdvisor()
+end
+
+ns.AddCommand("paste", "open the Paste advice box (Ctrl+V applies it)", function() M:OpenPaste() end)
 
 ns.AddCommand("ask", "[reload]  snapshot for your advisor: shows a code to copy (or 'reload' to save it to disk)", function(arg)
   if C.InCombat() then ns.Print("not in combat") return end
