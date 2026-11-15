@@ -370,23 +370,35 @@ function Hub:Toggle()
 end
 
 -- ------------------------------------------------------------- Overview
+-- Expedition look: a card filling a hand-built page, kept at the page's own
+-- frame level so the page's checks and buttons draw above it.
+local function pageCard(p, height)
+  local card = UI:Card(p)
+  card:SetPoint("TOPLEFT", 0, 0)
+  if height then card:SetPoint("RIGHT", p, "RIGHT", -4, 0) card:SetHeight(height)
+  else card:SetPoint("BOTTOMRIGHT", -4, 0) end
+  if card.SetFrameLevel and p.GetFrameLevel then card:SetFrameLevel(p:GetFrameLevel() or 1) end
+  return card
+end
+
 local function textLine(p, size, color, y)
   local fs = UI.Text(p, size, color)
-  fs:SetPoint("TOPLEFT", 0, y)
-  fs:SetWidth(W - SIDE - 40)
+  fs:SetPoint("TOPLEFT", 14, y - 12)
+  fs:SetWidth(W - SIDE - 68)
   fs:SetJustifyH("LEFT")
   return fs
 end
 
 Hub:AddTab("overview", L.overview, function(p)
-  p.who = textLine(p, "large", "text", 0)
-  p.build = textLine(p, "small", "muted", -22)
-  p.sv = textLine(p, "normal", "text", -50)
-  p.errors = textLine(p, "normal", "text", -72)
-  p.probe = textLine(p, "normal", "text", -94)
-  p.mods = textLine(p, "normal", "text", -116)
-  p.layer = textLine(p, "normal", "text", -138)
-  p.addons = textLine(p, "small", "muted", -164)
+  local box = pageCard(p, 196)
+  p.who = textLine(box, "large", "text", 0)
+  p.build = textLine(box, "small", "muted", -22)
+  p.sv = textLine(box, "normal", "text", -50)
+  p.errors = textLine(box, "normal", "text", -72)
+  p.probe = textLine(box, "normal", "text", -94)
+  p.mods = textLine(box, "normal", "text", -116)
+  p.layer = textLine(box, "normal", "text", -138)
+  p.addons = textLine(box, "small", "muted", -164)
   function p:Refresh()
     local meta = ns.db.char.meta
     self.who:SetText(string.format("%s  |  %s %s %s", ns.db.key, tostring(meta.race or ""), tostring(meta.class),
@@ -416,8 +428,9 @@ local GROUPS = { P0 = "Core", P1 = "Core", P2 = "Rares and class tools", P3 = "M
 local PANEL_W = W - SIDE - 40
 
 Hub:AddTab("modules", L.modules, function(p)
-  local heading = UI.Display(p, "side", "goldText")
-  heading:SetPoint("TOPLEFT", 0, 0)
+  local box = pageCard(p)
+  local heading = UI.Display(box, "side", "goldText")
+  heading:SetPoint("TOPLEFT", 14, -10)
   heading:SetText(L.modulesHeading)
   p.rows = {}
   for i = 1, MAX_ROWS do
@@ -429,8 +442,8 @@ Hub:AddTab("modules", L.modules, function(p)
         if not ok then ns.Print("%s: %s", mod.name, err) end
         p:Refresh()
       end)
-    row:SetPoint("TOPLEFT", 0, -24 - (i - 1) * 21)
-    row:SetWidth(PANEL_W)
+    row:SetPoint("TOPLEFT", 14, -36 - (i - 1) * 21)
+    row:SetWidth(PANEL_W - 28)
     row.label:SetWidth(210) row.label:SetJustifyH("LEFT") row.label:SetWordWrap(false)
     row.note:SetWidth(PANEL_W - 240) row.note:SetJustifyH("LEFT") row.note:SetWordWrap(false)
     row.head = UI.Text(row, "normal", "accent")
@@ -527,9 +540,10 @@ end
 
 -- ------------------------------------------------------------- Tools
 Hub:AddTab("tools", L.tools, function(p)
+  local box = pageCard(p, 260)
   local function btn(label, x, y, fn)
     local b = UI:Button(p, label, 130, fn)
-    b:SetPoint("TOPLEFT", x, y)
+    b:SetPoint("TOPLEFT", x + 14, y - 12)
     return b
   end
   btn("Export", 0, 0, function()
@@ -550,17 +564,17 @@ Hub:AddTab("tools", L.tools, function(p)
   btn("Reload UI", 140, -30, function() ReloadUI() end)
   p.debug = UI:Check(p, "Debug logging", function() return ns.db.global.debug end,
     function(on) ns.db.global.debug = on and true or false end)
-  p.debug:SetPoint("TOPLEFT", 0, -66)
+  p.debug:SetPoint("TOPLEFT", 14, -78)
   p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent ~= false end,
     function(on) ns.db.char.classAccent = on and true or false end)
-  p.accent:SetPoint("TOPLEFT", 0, -90)
-  p.probe = UI.Text(p, "small", "muted")
-  p.probe:SetPoint("TOPLEFT", 0, -122)
-  p.probe:SetWidth(W - SIDE - 40)
+  p.accent:SetPoint("TOPLEFT", 14, -102)
+  p.probe = UI.Text(box, "small", "muted")
+  p.probe:SetPoint("TOPLEFT", 14, -134)
+  p.probe:SetWidth(W - SIDE - 68)
   p.probe:SetJustifyH("LEFT")
-  p.recent = UI.Text(p, "small", "muted")
-  p.recent:SetPoint("TOPLEFT", 0, -144)
-  p.recent:SetWidth(W - SIDE - 40)
+  p.recent = UI.Text(box, "small", "muted")
+  p.recent:SetPoint("TOPLEFT", 14, -156)
+  p.recent:SetWidth(W - SIDE - 68)
   p.recent:SetJustifyH("LEFT")
   function p:Refresh()
     self.errorsBtn.label:SetText("Errors (" .. #ns.Errors.list .. ")")

@@ -46,6 +46,13 @@ def _target(t):
     return None
 
 
+def _seen_at(snapshot):
+    mods = snapshot.get("modules") if isinstance(snapshot.get("modules"), dict) else {}
+    w = mods.get("WhatNow") if isinstance(mods.get("WhatNow"), dict) else {}
+    v = w.get("seenAt")
+    return v if isinstance(v, int) and not isinstance(v, bool) else None
+
+
 def candidates_of(snapshot):
     mods = snapshot.get("modules") if isinstance(snapshot.get("modules"), dict) else {}
     w = mods.get("WhatNow") if isinstance(mods.get("WhatNow"), dict) else {}
@@ -127,6 +134,8 @@ def build(code_data):
         "currentZone": {"mapID": where.get("mapID") if _id(where.get("mapID")) else None,
                         "name": clean_text(where.get("zone"), 60)},
         "candidates": cands,
+        # steps saved at logout without an Ask carry when they were seen in game
+        "candidatesSeenAt": _seen_at(snap),
         "sources": [{"evidenceId": "local:" + c["candidateId"], "origin": "outrider", "label": c["label"]} for c in cands],
         "privacy": {"shareCharacterName": False, "shareGuild": False, "shareOtherPlayers": False},
     }

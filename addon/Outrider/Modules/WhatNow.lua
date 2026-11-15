@@ -426,6 +426,10 @@ function M:List(force)
     for _, k in ipairs(keys) do st.shown[k] = (st.shown[k] or 0) + 1 end
     self:Info("what now (%s): %d candidates -> %s%s", self:Goal(), #cands, table.concat(keys, ", "),
       #failed > 0 and (" (failed: " .. table.concat(failed, ",") .. ")") or "")
+    -- keep the steps as of now (position known) for the logout snapshot, so
+    -- an advisor reading the saved file has candidates without an Ask
+    local ok, snap = pcall(self.BuildSnapshot, self)
+    if ok and snap then snap.seenAt = now self.lastSnap = snap end
   end
   return list
 end
@@ -537,8 +541,13 @@ function M:Ranked(n)
 end
 
 function M:Snapshot()
-  -- only for /ride ask: at logout the position is gone and the work is wasted
-  if not (ns.Snapshot and ns.Snapshot.asking) then return nil end
+  -- /ride ask: fresh. At logout the position is gone, so the steps last seen
+  -- while playing (seenAt) are saved instead; nil if What now? never ran.
+  if not (ns.Snapshot and ns.Snapshot.asking) then return self.lastSnap end
+  return self:BuildSnapshot()
+end
+
+function M:BuildSnapshot()
   local out = { goal = self:Goal(), candidates = {}, feedback = {} }
   local fb = type(ns.db.char.adviceFeedback) == "table" and ns.db.char.adviceFeedback or {}
   for i = #fb, math.max(1, #fb - 19), -1 do   -- the 20 newest

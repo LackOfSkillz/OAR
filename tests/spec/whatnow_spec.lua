@@ -246,4 +246,21 @@ T.describe("what now", function()
     table.remove(W.ORDER)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("without an Ask, logout saves the steps last seen while playing", function()
+    local game, ns = session({ level = 24, ammo = 1000 })
+    local W = ns.WhatNow
+    W.SOURCES.spec = function() return { cand("gather", "Peacebloom", 0.9, { target = { mapID = 1412, x = 0.4, y = 0.5 }, label = "observed" }) } end
+    table.insert(W.ORDER, "spec")
+    T.eq(ns.Snapshot:Collect(false).modules.WhatNow, nil)   -- never looked: nothing to save
+    W:List(true)                                            -- the page or Home showed the steps
+    table.remove(W.ORDER)
+    local s = ns.Snapshot:Collect(false)
+    local snap = s.modules.WhatNow
+    T.ok(snap and snap.seenAt, "steps with the time they were seen")
+    local found
+    for _, c in ipairs(snap.candidates) do if c.candidateId == "gather:Peacebloom" then found = c end end
+    T.ok(found and found.target.x == 0.4)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

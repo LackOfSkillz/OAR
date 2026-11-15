@@ -126,6 +126,8 @@ class Server:
             if name == "get_pathfinder_candidates":
                 view = ictx.model_view(env)
                 view["question"], view["snapshotId"] = env.get("question"), env.get("snapshotId")
+                if env.get("candidatesSeenAt"):
+                    view["candidatesSeenAt"] = env["candidatesSeenAt"]   # saved at logout, not from an Ask
                 return view
             cid = args.get("candidateId")
             for c in env["candidates"]:
