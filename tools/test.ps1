@@ -2,7 +2,8 @@
 # Runs the headless test suite (syntax check + specs) with whatever Lua 5.1 is available.
 #   powershell -ExecutionPolicy Bypass -File tools/test.ps1            all specs
 #   powershell -ExecutionPolicy Bypass -File tools/test.ps1 profiles   specs whose name contains "profiles"
-param([string]$Filter)
+#   -RequirePython: fail (not skip) when Python is missing; release builds use it (AI spec 12.4)
+param([string]$Filter, [switch]$RequirePython)
 . "$PSScriptRoot\common.ps1"
 $luaArgs = @('tests/run_tests.lua')
 if ($Filter) { $luaArgs += $Filter }
@@ -24,6 +25,7 @@ if ($code -eq 0 -and -not $Filter) {
     }
     if ($pyFailed) { Write-Host "Companion tests failed." -ForegroundColor Red; $code = 1 }
     else { Write-Host "companion tests passed" }
+  } elseif ($RequirePython) { Write-Host "No Python found: companion tests are required here." -ForegroundColor Red; $code = 1
   } else { Write-Host "No Python found: companion tests skipped." -ForegroundColor Yellow }
 }
 exit $code
