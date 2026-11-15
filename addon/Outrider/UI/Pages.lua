@@ -37,33 +37,116 @@ local function card(parent, title, x, y, w, h)
   return f
 end
 
+-- Home in the Expedition look (2026-11-15): a welcome heading, the next step
+-- from What now?, the Nearest buttons, and six cards in two columns that
+-- stretch with the window.
+local function homeCard(parent, title, height)
+  local c = UI:Card(parent)
+  c:SetHeight(height)
+  c.title = UI.Display(c, "side", "text")
+  c.title:SetPoint("TOPLEFT", 12, -9)
+  c.title:SetText(title)
+  c.rule = c:CreateTexture(nil, "ARTWORK")
+  c.rule:SetHeight(1)
+  c.rule:SetPoint("TOPLEFT", 12, -31)
+  c.rule:SetPoint("TOPRIGHT", -12, -31)
+  c.rule:SetColorTexture(Theme:Color("border"))
+  c.body = UI.Text(c, "normal", "body")
+  c.body:SetPoint("TOPLEFT", 12, -38)
+  c.body:SetPoint("BOTTOMRIGHT", -12, 8)
+  c.body:SetJustifyH("LEFT")
+  c.body:SetJustifyV("TOP")
+  return c
+end
+
 ns.Hub:AddTab("home", "Home", function(p)
-  local W2 = 300
-  p.near = card(p, "Nearest", 0, 0, W2 * 2 + 10, 68)
+  p.heading = UI.Display(p, "page", "text")
+  p.heading:SetPoint("TOPLEFT", 0, 0)
+  p.sub = UI.Text(p, "normal", "muted")
+  p.sub:SetPoint("TOPLEFT", p.heading, "BOTTOMLEFT", 0, -4)
+  -- the next step, straight from What now?
+  p.next = UI:Card(p, true)
+  if p.next.SetBackdropBorderColor then p.next:SetBackdropBorderColor(Theme:Color("gold")) end
+  p.next:SetHeight(76)
+  p.next:SetPoint("TOPLEFT", 0, -54)
+  p.next:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+  p.next.pic = p.next:CreateTexture(nil, "ARTWORK")
+  p.next.pic:SetSize(52, 52)
+  p.next.pic:SetPoint("LEFT", 12, 0)
+  p.next.label = UI.Text(p.next, "small", "goldText")
+  p.next.label:SetPoint("TOPLEFT", 76, -10)
+  p.next.label:SetText("NEXT STEP")
+  p.next.title = UI.Display(p.next, "card", "text")
+  p.next.title:SetPoint("TOPLEFT", 76, -24)
+  p.next.why = UI.Text(p.next, "normal", "body")
+  p.next.why:SetPoint("TOPLEFT", 76, -48)
+  p.next.why:SetPoint("RIGHT", p.next, "RIGHT", -150, 0)
+  if p.next.why.SetWordWrap then p.next.why:SetWordWrap(false) end
+  p.next.go = UI:PrimaryButton(p.next, "Go  >", 120, function() if p.step and ns.WhatNow then ns.WhatNow:Go(p.step) end end)
+  p.next.go:SetHeight(26)
+  p.next.go:SetPoint("TOPRIGHT", -12, -12)
+  p.next.all = UI:Button(p.next, "All steps", 120, function() ns.Hub:ShowTab("whatnow") end)
+  p.next.all:SetHeight(20)
+  p.next.all:SetPoint("TOP", p.next.go, "BOTTOM", 0, -6)
+  -- nearest
+  p.near = homeCard(p, "Nearest", 92)
+  p.near:SetPoint("TOPLEFT", p.next, "BOTTOMLEFT", 0, -8)
+  p.near:SetPoint("RIGHT", p, "RIGHT", 0, 0)
   local prev
+  local perRow = 7
   for i, n in ipairs(NEAREST) do
-    local b = UI:Button(p.near, n[1], 84, function()
+    local b = UI:Button(p.near, n[1], 92, function()
       local _, msg = ns.Nearest:Go(ns.Nearest.ALIASES[n[2]] or n[2]) -- "inn" means innkeeper, and so on
       ns.Print(tostring(msg))
     end)
-    if i == 1 then b:SetPoint("TOPLEFT", 8, -24) elseif i == 7 then b:SetPoint("TOPLEFT", 8, -46)
-    else b:SetPoint("LEFT", prev, "RIGHT", 4, 0) end
     b:SetHeight(20)
+    if i == 1 then b:SetPoint("TOPLEFT", 12, -40)
+    elseif (i - 1) % perRow == 0 then b:SetPoint("TOPLEFT", 12, -64)
+    else b:SetPoint("LEFT", prev, "RIGHT", 6, 0) end
     prev = b
   end
   p.near.body:Hide()
-  p.journey = card(p, "Where you're headed", 0, -76, W2, 74)
+  -- two columns
+  local function pair(leftCard, rightCard, above)
+    leftCard:SetPoint("TOPLEFT", above, "BOTTOMLEFT", 0, -8)
+    leftCard:SetPoint("RIGHT", p, "TOP", -4, 0)
+    rightCard:SetPoint("TOPLEFT", leftCard, "TOPRIGHT", 8, 0)
+    rightCard:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+  end
+  p.journey = homeCard(p, "Where you're headed", 92)
+  p.quests = homeCard(p, "Best quests for you", 92)
+  pair(p.journey, p.quests, p.near)
   p.stop = UI:Button(p.journey, "Stop", 60, function() ns.Journey:Stop("home") p:Refresh() end)
-  p.stop:SetPoint("BOTTOMRIGHT", -6, 6)
-  p.quests = card(p, "Best quests for you (XP per minute)", W2 + 10, -76, W2, 74)
-  p.gear = card(p, "Upgrades in this zone", 0, -158, W2, 90)
-  p.rares = card(p, "Rare watch", W2 + 10, -158, W2, 90)
-  p.errands = card(p, "To do in town", 0, -256, W2, 90)
-  p.pet = card(p, "Pet", W2 + 10, -256, W2, 90)
+  p.stop:SetPoint("TOPRIGHT", -10, -8)
+  p.stop:SetHeight(20)
+  p.gear = homeCard(p, "Upgrades in this zone", 112)
+  p.rares = homeCard(p, "Rare watch", 112)
+  pair(p.gear, p.rares, p.journey)
+  p.errands = homeCard(p, "To do in town", 104)
+  p.pet = homeCard(p, "Pet", 104)
+  pair(p.errands, p.pet, p.gear)
   p.more = UI.Text(p, "small", "muted")
-  p.more:SetPoint("TOPLEFT", 0, -354)
+  p.more:SetPoint("TOPLEFT", p.errands, "BOTTOMLEFT", 0, -8)
   p.more:SetText("Search anything with the box at the top. Every page is in the sidebar; Outrider > All commands lists the rest.")
   function p:Refresh()
+    local name = tostring(ns.db.key):match("^[^-]+") or "?"
+    self.heading:SetText("Welcome back, " .. name)
+    local mapID = C.PlayerPosition("player")
+    self.sub:SetText(string.format("Level %s %s%s", tostring(C.Call("UnitLevel", "player") or "?"),
+      tostring(C.Call("UnitClass", "player") or ""), mapID and ns.Travel and ("   " .. ns.Travel.ZoneName(mapID)) or ""))
+    local step = ns.WhatNow and ns.WhatNow.enabled and ns.WhatNow:List()[1]
+    self.step = step
+    if step then
+      ns.Art:SetKind(self.next.pic, step.kind)
+      self.next.title:SetText(step.title or "")
+      self.next.why:SetText(step.why or "")
+      self.next.go:Show()
+    else
+      ns.Art:SetKind(self.next.pic, "quest")
+      self.next.title:SetText("Nothing stands out right now")
+      self.next.why:SetText("Open What now? to pick a goal.")
+      self.next.go:Hide()
+    end
     local J = ns.Journey
     if J and J.goal then
       self.journey.body:SetText(string.format("%s\n%s", tostring(J.goal.name),
