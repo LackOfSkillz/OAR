@@ -17,7 +17,7 @@ ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 19 -- visible module rows; the list scrolls with the mouse wheel
-local W, H = 900, 640        -- starting size; the window is resizable (Gary, 2026-11-13)
+local W, H = 1080, 720        -- starting size; the window is resizable (Gary, 2026-11-13)
 local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1400, 1000
 local SIDE = 160             -- grouped sidebar on the left; pages to its right
 
@@ -140,9 +140,23 @@ local function Sidebar(parent, onSelect)
   end
   local function head(self, i, text)
     local h = self.heads[i]
-    if not h then h = UI.Text(self, "small", "muted") self.heads[i] = h end
-    h:SetText(text)
+    if not h then
+      h = UI.Text(self, "small", "muted")
+      -- group heading: small capitals in muted gold, a hairline to the right
+      local r, g, b = Theme:Color("gold")
+      h:SetTextColor(r * 0.8, g * 0.8, b * 0.8)
+      h.line = self:CreateTexture(nil, "ARTWORK")
+      h.line:SetHeight(1)
+      h.line:SetPoint("LEFT", h, "RIGHT", 6, 0)
+      h.line:SetPoint("RIGHT", self, "RIGHT", -10, 0)
+      h.line:SetColorTexture(Theme:Color("border"))
+      local hs = h.Hide
+      h.Hide = function(s) hs(s) s.line:Hide() end
+      self.heads[i] = h
+    end
+    h:SetText(tostring(text):upper())
     h:Show()
+    h.line:Show()
     return h
   end
   function bar:SetOrder(ids, groups)
@@ -200,13 +214,29 @@ end
 -- Top bar: who you are, and one search box for everything (Enter opens the
 -- Journey page with that search).
 function Hub:TopBar(f)
+  -- Expedition look: gold window edge, emblem, the name in the display font
+  if f.SetBackdropBorderColor then f:SetBackdropBorderColor(Theme:Color("gold")) end
+  f.emblem = f.bar:CreateTexture(nil, "ARTWORK")
+  f.emblem:SetSize(20, 20)
+  f.emblem:SetPoint("LEFT", 8, 0)
+  ns.Art:Set(f.emblem, "emblem")
+  f.title:ClearAllPoints()
+  f.title:SetPoint("LEFT", f.emblem, "RIGHT", 6, 0)
+  Theme:StyleDisplay(f.title, "brand", "gold")
   f.title:SetText("Outrider")
-  f.title:SetTextColor(Theme:Color("accent"))
   f.who = UI.Text(f.bar, "small", "muted")
   f.who:SetPoint("LEFT", f.title, "RIGHT", 12, 0)
-  f.search = UI:SearchBox(f.bar, 240, "Search anything (Enter)")
+  f.gear = CreateFrame("Button", nil, f.bar)
+  f.gear:SetSize(18, 18)
+  f.gear:SetPoint("RIGHT", f.close, "LEFT", -6, 0)
+  f.gear.tex = f.gear:CreateTexture(nil, "ARTWORK")
+  f.gear.tex:SetAllPoints()
+  f.gear.tex:SetTexture("Interface\\Icons\\Trade_Engineering")
+  f.gear.tex:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  f.gear:SetScript("OnClick", function() f.tabBar:Select("settings") end)
+  f.search = UI:SearchBox(f.bar, 240, "Search Outrider (Enter)")
   f.search:SetHeight(20)
-  f.search:SetPoint("RIGHT", f.close, "LEFT", -8, 0)
+  f.search:SetPoint("RIGHT", f.gear, "LEFT", -8, 0)
   f.search:SetScript("OnEnterPressed", function(box)
     local text = box:GetText() or ""
     box:ClearFocus()

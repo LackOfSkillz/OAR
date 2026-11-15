@@ -74,6 +74,19 @@ function Theme:ApplyPanel(frame, colorName, borderName)
   frame:SetBackdropBorderColor(self:Color(borderName or "border"))
 end
 
+-- Display type for page and card titles: the game's own fantasy serif
+-- (Morpheus). If the client lacks it, SetFont fails and the normal font stays.
+Theme.display = { path = "Fonts\\MORPHEUS.TTF", page = 26, card = 17, brand = 20, side = 15 }
+function Theme:StyleDisplay(fs, size, colorName)
+  if not fs then return end
+  local px = self.display[size or "card"] or size or self.display.card
+  local ok = fs:SetFont(self.display.path, px, "")
+  if ok == false then
+    fs:SetFont(self.font.path, math.max(self.font.large, px - 4), "")
+  end
+  fs:SetTextColor(self:Color(colorName or "text"))
+end
+
 function Theme:StyleText(fs, size, colorName)
   if not fs then return end
   fs:SetFont(self.font.path, self.font[size or "normal"] or self.font.normal, "")

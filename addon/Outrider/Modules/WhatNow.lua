@@ -439,8 +439,43 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod)
     local st, now = mod:Store(), time()
     for k, t in pairs(st.skip) do if now - t > M.SKIP_FOR then st.skip[k] = nil end end
+    -- where this session started (XP, level, gold), for the "This session" card
+    if not mod.session then
+      mod.session = { t = now, level = C.Call("UnitLevel", "player") or 1, xp = C.Call("UnitXP", "player") or 0,
+        money = C.Call("GetMoney") or 0 }
+    end
   end)
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) if mod.loggedAt then mod:LogAll("new zone") end end)
+end
+
+-- This session so far: xpGained (counts whole levels in between using the XP
+-- needed at the current level, close enough), gold, seconds played.
+function M:SessionStats()
+  local s = self.session
+  if not s then return nil end
+  local level = C.Call("UnitLevel", "player") or s.level
+  local xp, max = C.Call("UnitXP", "player") or 0, C.Call("UnitXPMax", "player") or 0
+  local gained = level == s.level and (xp - s.xp) or ((max - s.xp) + xp + (level - s.level - 1) * max)
+  return { xp = math.max(0, gained), levels = level - s.level, money = (C.Call("GetMoney") or 0) - s.money,
+    seconds = time() - s.t }
+end
+
+-- Average level of the gear worn, or nil.
+function M.ItemLevel()
+  local avg = C.Call("GetAverageItemLevel")
+  if type(avg) == "number" and avg > 0 then return math.floor(avg + 0.5) end
+  local sum, n = 0, 0
+  for slot = 1, 18 do
+    if slot ~= 4 then
+      local link = C.Call("GetInventoryItemLink", "player", slot)
+      if link then
+        local _, _, _, ilvl = C.Call("C_Item.GetItemInfo", link)
+        if type(ilvl) ~= "number" then _, _, _, ilvl = C.Call("GetItemInfo", link) end
+        if type(ilvl) == "number" then sum, n = sum + ilvl, n + 1 end
+      end
+    end
+  end
+  return n > 0 and math.floor(sum / n + 0.5) or nil
 end
 
 function M:Activity()

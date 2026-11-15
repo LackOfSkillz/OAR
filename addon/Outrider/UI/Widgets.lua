@@ -15,6 +15,36 @@ local function text(parent, size, colorName, layer)
 end
 UI.Text = text
 
+-- Title type (fantasy serif): size "page", "card", "brand" or "side".
+function UI.Display(parent, size, colorName)
+  local fs = parent:CreateFontString(nil, "OVERLAY")
+  Theme:StyleDisplay(fs, size, colorName)
+  return fs
+end
+
+-- Round portrait of a unit ("player"), gold ring. Falls back to the class
+-- icon when portraits can't be drawn.
+function UI:Portrait(parent, size)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetSize(size, size)
+  f.ring = f:CreateTexture(nil, "BACKGROUND")
+  f.ring:SetPoint("TOPLEFT", -2, 2)
+  f.ring:SetPoint("BOTTOMRIGHT", 2, -2)
+  f.ring:SetColorTexture(Theme:Color("gold"))
+  f.tex = f:CreateTexture(nil, "ARTWORK")
+  f.tex:SetAllPoints()
+  local mask = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+  if f.tex.SetMask then
+    pcall(f.tex.SetMask, f.tex, mask)
+    if f.ring.SetMask then pcall(f.ring.SetMask, f.ring, mask) end
+  end
+  function f:SetUnit(unit)
+    local ok = type(rawget(_G, "SetPortraitTexture")) == "function" and pcall(SetPortraitTexture, self.tex, unit)
+    if not ok then self.tex:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark") end
+  end
+  return f
+end
+
 -- Movable window with title bar and close button. pos = table to persist
 -- { point, x, y } (usually a per-character settings table).
 function UI:Window(globalName, title, width, height, pos)
@@ -118,12 +148,23 @@ end
 
 -- A chip: small rounded-looking toggle (goal pickers, filters). SetOn(bool)
 -- shows it selected (gold border, soft gold fill).
-function UI:Chip(parent, label, onClick)
+function UI:Chip(parent, label, onClick, icon)
   local b = CreateFrame("Button", nil, parent, Theme:BackdropTemplate())
-  b.label = text(b, "small", "body")
-  b.label:SetPoint("CENTER")
+  b.label = text(b, icon and "normal" or "small", "body")
   b.label:SetText(label)
-  b:SetSize(math.max(54, (b.label:GetStringWidth() or (#label * 6)) + 22), 22)
+  local tw = b.label:GetStringWidth() or (#label * 6)
+  if icon then
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetSize(16, 16)
+    b.icon:SetPoint("LEFT", 8, 0)
+    b.icon:SetTexture(icon)
+    b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    b.label:SetPoint("LEFT", b.icon, "RIGHT", 6, 0)
+    b:SetSize(math.max(60, tw + 44), 28)
+  else
+    b.label:SetPoint("CENTER")
+    b:SetSize(math.max(54, tw + 22), 22)
+  end
   function b:SetOn(on)
     self.on = on and true or false
     Theme:ApplyPanel(self, self.on and "goldSoft" or "bg", self.on and "gold" or "strong")
@@ -136,16 +177,27 @@ function UI:Chip(parent, label, onClick)
   return b
 end
 
--- A small tag ("unchecked", "guess"): amber text in an amber hairline box.
-function UI:Tag(parent, label)
+-- A small tag. style "warn" (default: amber, for guesses), "gold" (gold fill,
+-- "Recommended") or "plain" (grey outline, "Unchecked").
+local TAG = {
+  warn = { "goldSoft", "warn", "warn" },
+  gold = { "goldSoft", "gold", "goldText" },
+  plain = { "bg", "strong", "muted" },
+}
+function UI:Tag(parent, label, style)
   local t = CreateFrame("Frame", nil, parent, Theme:BackdropTemplate())
-  Theme:ApplyPanel(t, "goldSoft", "warn")
   t.label = text(t, "small", "warn")
   t.label:SetPoint("CENTER")
+  function t:SetStyle(st)
+    local s = TAG[st or "warn"] or TAG.warn
+    Theme:ApplyPanel(self, s[1], s[2])
+    self.label:SetTextColor(Theme:Color(s[3]))
+  end
   function t:SetLabel(s)
     self.label:SetText(s)
-    self:SetSize(math.max(30, (self.label:GetStringWidth() or (#s * 6)) + 10), 16)
+    self:SetSize(math.max(30, (self.label:GetStringWidth() or (#s * 6)) + 12), 16)
   end
+  t:SetStyle(style)
   t:SetLabel(label or "")
   return t
 end

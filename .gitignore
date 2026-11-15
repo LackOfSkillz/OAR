@@ -18,3 +18,6 @@ tools/__pycache__/
 # companion app config (machine-specific)
 companion/config.json
 companion/**/__pycache__/
+
+# Gary's GPT art originals (the converted TGAs in addon/Outrider/Art are committed)
+art/incoming/
