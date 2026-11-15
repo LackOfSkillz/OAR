@@ -49,13 +49,19 @@ local function build(self)
   local f = CreateFrame("Button", nil, UIParent, Theme:BackdropTemplate())
   f:SetSize(self.W, self.H)
   f:SetFrameStrata("HIGH")
-  Theme:ApplyPanel(f, "panel")
+  Theme:ApplyPanel(f, "raised")
+  -- Expedition look: a 3px edge in the toast's colour on the left
+  f.edge = f:CreateTexture(nil, "ARTWORK")
+  f.edge:SetPoint("TOPLEFT", 0, 0)
+  f.edge:SetPoint("BOTTOMLEFT", 0, 0)
+  f.edge:SetWidth(3)
+  f.edge:SetColorTexture(Theme:Color("gold"))
   f:EnableMouse(true)
   f:RegisterForDrag("LeftButton")
   f.icon = f:CreateTexture(nil, "ARTWORK")
   f.icon:SetSize(40, 40)
   f.icon:SetPoint("LEFT", 8, 0)
-  f.title = ns.UI.Text(f, "large", "text")
+  f.title = ns.UI.Display(f, "side", "text")
   f.title:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 8, -2)
   f.title:SetPoint("RIGHT", -8, 0)
   f.title:SetJustifyH("LEFT")
@@ -147,6 +153,7 @@ function Toast:Show(opts)
   elseif f.SetBackdropBorderColor then
     f:SetBackdropBorderColor(ns.Theme:Color("border"))
   end
+  if f.edge then f.edge:SetColorTexture(ns.Theme:Color(opts.color or "gold")) end
   f:SetAlpha(1)
   if ns.Theme.uiScale and ns.Theme.uiScale ~= 1 then f:SetScale(ns.Theme.uiScale) end
   f.opts = opts
