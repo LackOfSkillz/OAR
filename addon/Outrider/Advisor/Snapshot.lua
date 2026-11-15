@@ -85,9 +85,17 @@ function Snap:Collect(asked)
     money = GetMoney and GetMoney(),
     where = where(),
     gear = gear(),
-    quests = quests(),
-    modules = plain(fromModules(), 0),
   }
+  -- At logout the game no longer reports position, gear links or gold
+  -- (every logout snapshot had map nil, Khreos's no gear and 0 money; audit
+  -- 2026-11-15): fall back to what was last seen while playing.
+  local live = self.live or {}
+  if not s.where then s.where = live.where end
+  if not next(s.gear) and live.gear then s.gear = live.gear end
+  if (not s.money or s.money == 0) and live.money then s.money = live.money end
+  if (not s.level or s.level == 0) and live.level then s.level = live.level end
+  s.quests = quests()
+  s.modules = plain(fromModules(), 0)
   -- keep the saved file small: drop the largest module parts until it fits
   local size = #ns.Serialize.Encode(s)
   while size > self.MAX_BYTES do
@@ -150,5 +158,25 @@ function Snap:AfterLogin()
   ns.db.char.askPending = nil
   if time() - t < 300 then
     ns.Print("snapshot saved for your advisor. Ask Claude for advice, then /reload and open the Advisor tab (/ride hub).")
+  end
+end
+
+-- What was last seen while playing (used when logout reads come back empty).
+function Snap:Remember()
+  local live = self.live or {}
+  local w = where()
+  if w then live.where = w end
+  local g = gear()
+  if next(g) then live.gear = g end
+  local m = GetMoney and GetMoney()
+  if m and m > 0 then live.money = m end
+  local l = UnitLevel and UnitLevel("player")
+  if l and l > 0 then live.level = l end
+  self.live = live
+end
+
+if ns.Events then
+  for _, e in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_MONEY", "PLAYER_EQUIPMENT_CHANGED", "PLAYER_LEVEL_UP" }) do
+    ns.Events:On(e, Snap, function() Snap:Remember() end)
   end
 end

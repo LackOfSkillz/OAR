@@ -390,7 +390,7 @@ function M.new(opts)
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
   -- known spells by id (weapon skills): game.knownSpells = { [264] = true }; nil = client can't say
   base.IsPlayerSpell = function(id) if game.knownSpells then return game.knownSpells[id] == true end end
-  base.GetMoney = function() return game.money or player.money end
+  base.GetMoney = function() if game.loggingOut then return 0 end return game.money or player.money end
   base.C_AuctionHouse = {
     GetBrowseResults = function() return game.browse or {} end,
     -- game.ahListings = { [itemID] = { name, minPrice, qty, recipe = subclass } }; a query fills game.browse
@@ -433,6 +433,7 @@ function M.new(opts)
     CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
   }
   base.GetInventoryItemLink = function(_, slot)
+    if game.loggingOut then return nil end
     if game.worn and game.worn[slot] then return "|cffffffff|Hitem:" .. game.worn[slot] .. "::::::::24:::::|h[w]|h|r" end
     if slot == 18 and not game.noRanged then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
     if slot == 16 and game.pole then return "|cffffffff|Hitem:6256::::::::24:::::|h[Fishing Pole]|h|r" end
@@ -707,7 +708,7 @@ function M.new(opts)
     }
   end
   base.C_Map = {
-    GetBestMapForUnit = function() return opts.mapID or 1412 end,
+    GetBestMapForUnit = function() if game.loggingOut then return nil end return opts.mapID or 1412 end,
     GetPlayerMapPosition = function()
       local x, y = opts.x or 0.46, opts.y or 0.37
       return { GetXY = function() return x, y end }
