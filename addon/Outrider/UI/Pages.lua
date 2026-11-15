@@ -60,6 +60,14 @@ local function homeCard(parent, title, height)
 end
 
 ns.Hub:AddTab("home", "Home", function(p)
+  if ns.Art:Has("header") then
+    p.scene = p:CreateTexture(nil, "BACKGROUND")
+    p.scene:SetPoint("TOPLEFT", 0, 0)
+    p.scene:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+    p.scene:SetHeight(48)
+    ns.Art:Set(p.scene, "header")
+    if p.scene.SetAlpha then p.scene:SetAlpha(0.55) end
+  end
   p.heading = UI.Display(p, "page", "text")
   p.heading:SetPoint("TOPLEFT", 0, 0)
   p.sub = UI.Text(p, "normal", "muted")

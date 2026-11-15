@@ -3,4 +3,14 @@
 -- for anything not listed here.
 local _, ns = ...
 ns.ArtFiles = {
+  emblem = true,
+  header = true,
+  kind_dungeon = true,
+  kind_errand = true,
+  kind_gather = true,
+  kind_gear = true,
+  kind_gold = true,
+  kind_profession = true,
+  kind_quest = true,
+  kind_rare = true,
 }

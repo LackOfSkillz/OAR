@@ -21,7 +21,8 @@ INCOMING = os.path.join(ROOT, "art", "incoming")
 OUT = os.path.join(ROOT, "addon", "Outrider", "Art")
 
 # name: (width, height). Square art is centre-cropped to a square; the header
-# is centre-cropped to 4:1.
+# is cropped to a 4:1 strip a little above the middle (VY) to keep the castle.
+VY = {"header": 0.35}
 SPECS = {
     "emblem": (128, 128),
     "header": (1024, 256),
@@ -103,14 +104,15 @@ def read_png(path):
     return w, h, rows
 
 
-def crop(w, h, rows, aspect):
-    """Centre-crop to width/height = aspect."""
+def crop(w, h, rows, aspect, vy=0.5):
+    """Crop to width/height = aspect. vy picks the strip's vertical place
+    (0 top, 0.5 centre, 1 bottom) when the picture is too tall."""
     if w / h > aspect:
         nw = int(round(h * aspect))
         x0 = (w - nw) // 2
         return nw, h, [r[x0:x0 + nw] for r in rows]
     nh = int(round(w / aspect))
-    y0 = (h - nh) // 2
+    y0 = int((h - nh) * vy)
     return w, nh, rows[y0:y0 + nh]
 
 
@@ -182,7 +184,7 @@ def main():
             continue
         try:
             w, h, rows = read_png(src)
-            w, h, rows = crop(w, h, rows, tw / th)
+            w, h, rows = crop(w, h, rows, tw / th, VY.get(name, 0.5))
             rows = scale(w, h, rows, tw, th)
             write_tga(os.path.join(OUT, name + ".tga"), tw, th, rows)
             if name not in done:
