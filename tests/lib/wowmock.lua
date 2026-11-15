@@ -794,6 +794,15 @@ function Game:loadAddon()
     setfenv(chunk, self.env)
     chunk(M.ADDON, self.ns)
   end
+  -- The rare seed pack (Data/Rares.lua) holds real Mulgore rares; specs use
+  -- their own made-up rares on the same maps, so it is left out unless a
+  -- spec asks for it with mock.new({ seedRares = true }).
+  if not self.opts.seedRares and self.ns.Data and self.ns.Data.packs.rare then
+    self.ns.Data.packs.rare.seed = nil
+    for _, e in pairs(self.ns.Data.index.rare or {}) do
+      if tostring(e.source or ""):find("2026-11-15", 1, true) then self.ns.Data.index.rare[e.npcID] = nil end
+    end
+  end
   return self.ns
 end
 

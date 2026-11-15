@@ -164,6 +164,19 @@ local function creatures(out, want, text, level)
           .. (e.attackSpeed and string.format(", attacks every %.1fs", e.attackSpeed) or "") })
     end
   end
+  -- the rare pack (Data/Rares.lua) before the Classic creature data: its
+  -- spawns are for Forever's maps (redrawn Mulgore, C14)
+  if want == "rare" and ns.Data then
+    for _, e in ipairs(ns.Data:All("rare")) do
+      local sp = e.spawns and e.spawns[1]
+      if sp and not seen[e.npcID] then
+        seen[e.npcID] = true
+        add(out, "rare", e.name, e.mapID, sp.x, sp.y, { npcID = e.npcID, level = e.level and e.level[2],
+          sub = "rare" .. (#e.spawns > 1 and string.format(", %d spots", #e.spawns) or "")
+            .. (e.verified and "" or ", unchecked") })
+      end
+    end
+  end
   local mobs = M:Mobs()
   for mapID, rows in pairs(mobs or {}) do
     for _, r in ipairs(rows) do

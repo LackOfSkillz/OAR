@@ -99,11 +99,23 @@ T.describe("favor", function()
     T.contains(table.concat(ns.Favor:Lines(), "\n"), "not seen yet")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("Journey finds The Rake at its Forever spawn, not Classic data", function()
+    local game = mock.new({ seedRares = true })
+    local ns = game:loadAddon()
+    game:login()
+    local found
+    for _, e in ipairs(ns.Finder:Find({ kind = "rare", text = "rake" })) do if e.name == "The Rake" then found = e end end
+    T.ok(found, "The Rake listed")
+    T.eq(found.mapID, 1412)
+    T.ok(math.abs(found.x - 0.515) < 1e-6 and math.abs(found.y - 0.275) < 1e-6)
+    T.contains(found.sub, "2 spots")
+  end)
 end)
 
 T.describe("rare seed pack (P2-02)", function()
   T.it("loads without validation errors, every entry cited, verified only where Gary saw it", function()
-    local game = mock.new()
+    local game = mock.new({ seedRares = true })
     local ns = game:loadAddon()
     game:login()
     local all = ns.Data:All("rare")
@@ -111,10 +123,22 @@ T.describe("rare seed pack (P2-02)", function()
     for _, e in ipairs(all) do
       T.ok(type(e.source) == "string" and e.source ~= "", "source for " .. e.name)
       if e.verified then T.ok(e.verifiedOn ~= nil, e.name .. " says when it was verified") end
-      if e.mapID == 1412 then T.eq(#e.spawns, 0, "no Classic coordinates for redrawn Mulgore") end
+      if e.mapID == 1412 then T.ok(e.source:find("Forever", 1, true), "Mulgore spawns only from a Forever source") end
     end
     T.eq(ns.Data:Get("rare", 259388).name, "Mystmane")
     T.eq(ns.Data:Get("rare", 5807).verified, false)
     T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("Journey finds The Rake at its Forever spawn, not Classic data", function()
+    local game = mock.new({ seedRares = true })
+    local ns = game:loadAddon()
+    game:login()
+    local found
+    for _, e in ipairs(ns.Finder:Find({ kind = "rare", text = "rake" })) do if e.name == "The Rake" then found = e end end
+    T.ok(found, "The Rake listed")
+    T.eq(found.mapID, 1412)
+    T.ok(math.abs(found.x - 0.515) < 1e-6 and math.abs(found.y - 0.275) < 1e-6)
+    T.contains(found.sub, "2 spots")
   end)
 end)

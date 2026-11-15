@@ -27,8 +27,14 @@ ns.Data:Register("rare", "seed", {
   { npcID = 259394, name = "Snapbeak the Quick", mapID = 2521, verified = false,
     level = { 9, 9 }, elite = true,
     spawns = { { x = 0.351, y = 0.582 } }, source = DISC },
+  -- Forever spawns from conquestcapped.com/guides/wow-forever/wow-forever-the-rake/
+  -- (read 2026-11-15; a Forever guide, so the redrawn map): main 51.5, 27.5
+  -- west of Red Rocks, north about 49, 16; it wanders a little around each.
   { npcID = 5807, name = "The Rake", mapID = 1412, verified = false, confidence = "community",
-    spawns = {}, notes = "Mulgore was redrawn: no spawn points until Outrider captures it", source = WDB },
+    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.2, abilities = { "Faster Attack" } },
+    spawns = { { x = 0.515, y = 0.275 }, { x = 0.49, y = 0.16 } },
+    notes = "Wanders around each spot: circle the hills west of Red Rocks",
+    source = "conquestcapped.com Forever guide (spawns, family, speed), read 2026-11-15; npcID: " .. WDB },
   { npcID = 3056, name = "Ghost Howl", mapID = 1412, verified = false, confidence = "community",
     spawns = {}, notes = "Mulgore was redrawn: no spawn points until Outrider captures it", source = WDB },
 })
