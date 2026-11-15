@@ -137,6 +137,15 @@ class Answers(unittest.TestCase):
         self.assertEqual(report["mode"], "deterministic")
         self.assertEqual(len(advice["items"]), 3)
 
+    def test_fallback_mixes_kinds(self):
+        quests = [{"candidateId": "quest:%d" % i, "kind": "quest", "title": "Q%d" % i, "label": "community",
+                   "target": {"mapID": 1, "x": 0.1, "y": 0.1}} for i in range(4)]
+        quests.append({"candidateId": "errand:vendor", "kind": "errand", "title": "Sell junk", "label": "observed",
+                       "target": {"mapID": 1, "x": 0.2, "y": 0.2}})
+        env, binding = env_of(snapshot_code(modules={"WhatNow": {"candidates": quests}}))
+        advice, _ = orchestrator.ask("x", env, binding, None)
+        self.assertEqual([it["candidateId"] for it in advice["items"]], ["quest:0", "quest:1", "errand:vendor"])
+
     def test_empty_snapshot(self):
         env, binding = env_of(snapshot_code(modules={}))
         advice, report = orchestrator.ask("x", env, binding, providers.FakeProvider([reply()]))

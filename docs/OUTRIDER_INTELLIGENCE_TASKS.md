@@ -44,24 +44,24 @@ A gate is never ticked on mock tests alone; real-client checks are listed per ta
 - [ ] **AI-G0** gate: baseline reproducible, modules mapped, risks logged, nothing removed (needs Gary's review)
 
 ### AI-01 Reliable grounded data
-- [ ] AI01-01 ContextEnvelope v2 (Python) + additive Lua export metadata
-- [ ] AI01-02 WhatNow `Snapshot()` with candidate ids, why, where, grounded targets
-- [ ] AI01-03 Evidence ids, game build and time fields
-- [ ] AI01-04 Read-only tool interfaces (`get_pathfinder_candidates` first)
-- [ ] AI01-05 Privacy filter and field permissions, sample payload preview
-- [ ] AI01-06 Answer validator (unknown ids, wrong snapshot, unsourced coordinates, unknown actions, stale)
-- [ ] AI01-07 Adversarial and edge-case tests
+- [x] AI01-01 ContextEnvelope v2 (Python) + additive Lua export metadata — 2026-11-15: intelligence/context.py; snapshots carry snapshotId and gameBuild
+- [x] AI01-02 WhatNow `Snapshot()` with candidate ids, why, where, grounded targets — 2026-11-15: top 12 on /ride ask only (not at logout), evidence labels per source
+- [~] AI01-03 Evidence ids, game build and time fields — 2026-11-15: local:<candidateId> evidence ids, labels observed/community/inferred; price sample ages not yet exposed
+- [~] AI01-04 Read-only tool interfaces — 2026-11-15: candidates come through the snapshot code; an MCP tool `get_pathfinder_candidates` is next sprint
+- [~] AI01-05 Privacy filter — 2026-11-15: names, realm, guild and other players never sent; escapes stripped; bounded. Payload preview UI is next sprint
+- [x] AI01-06 Answer validator — 2026-11-15: companion keeps only snapshot candidate ids and rebuilds cards; addon re-checks ids, exact waypoint targets, snapshotId binding, action whitelist
+- [x] AI01-07 Adversarial and edge-case tests — 2026-11-15: 19 companion tests + 3 Lua specs (poisoned picks, escapes, oversize, unknown ids, moved waypoints, wrong snapshot, empty data, corrupt codes)
 - [ ] **AI-G1** gate
 
 ### AI-02 First model vertical slice
-- [ ] AI02-01 `ModelProvider` + OpenAI-compatible local adapter + fake provider
-- [ ] AI02-02 Timeouts, structured errors, bounded retries, token budget, no silent cloud fallback
-- [ ] AI02-03 Orchestrator: question -> candidates -> model -> validator
-- [ ] AI02-04 Command-line ask: snapshot code in, advice code out (MCP entrypoint unchanged)
-- [ ] AI02-05 AdviceLoader v2: answer, plan, sources, limits beside safe actions
-- [ ] AI02-06 Advisor tab shows the answer; copy/paste without reload
-- [ ] AI02-07 Tests: direct answer, plan, unknown question, outage, schema mismatch, poisoned response, prompt injection, timeout, token cap, clipboard corruption
-- [ ] AI02-08 Real client: hunter, warrior and mage (Gary)
+- [~] AI02-01 Provider interface, OpenAI-compatible adapter, fake — 2026-11-15: tested against a real local HTTP server; NOT yet against Ollama/vLLM (none on this PC)
+- [x] AI02-02 Timeouts, errors, retries, budget — 2026-11-15: 60 s timeout, 1 retry on connect errors, 800 output tokens, 12k-char context, loopback-only default, redirects refused, no fallback provider
+- [x] AI02-03 Orchestrator — 2026-11-15: deterministic fallback (2 per kind) when the model is off, fails or picks nothing valid
+- [x] AI02-04 Command-line ask — 2026-11-15: python -m outrider_companion.intelligence.ask (clipboard or files); run.py/MCP unchanged
+- [x] AI02-05 AdviceLoader v2 — 2026-11-15: answer block (headline, summary, limits, sources), candidate-bound cards; schema 1 unchanged
+- [~] AI02-06 Advisor tab shows the answer — 2026-11-15: answer card above the list; paste without reload in specs and tools/ask_demo.lua; free-text question box in game is next sprint
+- [x] AI02-07 Tests — 2026-11-15: all listed cases covered except cancellation (the CLI call is synchronous)
+- [~] AI02-08 Real client — 2026-11-15: offline route with Gary's real data for Khreos (hunter) and Fingerwiggle (mage): snapshot -> answer -> paste -> 3 grounded cards, 0 errors (tools/ask_demo.lua). Needs Gary: in game, and a local model
 - [ ] **AI-G2** gate
 
 ### Later phases (not started; need Gary's review of the slice first)

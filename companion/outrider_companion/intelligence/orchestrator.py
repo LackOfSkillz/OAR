@@ -117,7 +117,18 @@ def validate(reply, env):
 
 
 def fallback(env, reason):
-    top = [c for c in env["candidates"] if card_for(c)][:MAX_PICKS]
+    # like What now?: at most 2 of a kind, then fill up if there is nothing else
+    usable = [c for c in env["candidates"] if card_for(c)]
+    top, per = [], {}
+    for c in usable:
+        if len(top) < MAX_PICKS and per.get(c["kind"], 0) < 2:
+            top.append(c)
+            per[c["kind"]] = per.get(c["kind"], 0) + 1
+    for c in usable:
+        if len(top) >= MAX_PICKS:
+            break
+        if c not in top:
+            top.append(c)
     answer = {"headline": "Outrider's top steps",
               "summary": "No model answer this time (%s). These are Outrider's own picks for your goal." % reason,
               "limits": _auto_limits(top), "sources": ["local:" + c["candidateId"] for c in top]}
