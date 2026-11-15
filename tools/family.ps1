@@ -3,11 +3,12 @@
 # a copy ... easy, as one click as possible, all the db info needs to transfer").
 # Builds dist\family\Install-Outrider.cmd: double-click it on the other PC and
 # it finds WoW Forever and installs Outrider, its data addons (including the
-# private QuestieDB packs, GPLv3, see LICENSE-DATA.txt) and Outrider_Data_Shared:
+# private QuestieDB packs, GPLv3: LICENSE-DATA.txt and gpl-3.0.md go into each)
+# and Outrider_Data_Shared:
 # Gary's world knowledge exported from his SavedVariables (NPCs met, places,
 # nodes, rare sightings, prices; never characters, gold or logs).
 # Also writes dist\family\Outrider-family.zip for unzipping by hand.
-# For family only: don't post it publicly.
+# Published by tools/publish.ps1 (data licensing: docs/DECISIONS.md, Q3).
 #   powershell -ExecutionPolicy Bypass -File tools/family.ps1
 param([switch]$SkipTests)
 . "$PSScriptRoot\common.ps1"
@@ -53,17 +54,37 @@ if (Test-Path $sv) {
   Write-Host "No SavedVariables found: building without shared knowledge." -ForegroundColor Yellow
 }
 
-# licence note for the QuestieDB-derived packs
+# licence note for the QuestieDB-derived packs, plus the full GPLv3 text taken
+# from the QuestieDB source we built them from (QuestieDB/LICENSE.md: the
+# Questie team allows copying under the GPLv3 terms; the Questie name and logo
+# are not ours to use)
 $note = @"
-Outrider family build $version ($stamp)
+Outrider build $version ($stamp)
 
-The Outrider_Data_NPC, _Gear, _Mobs and _Nodes folders are built from QuestieDB
-(https://github.com/Questie/Questie), licensed GPLv3: https://www.gnu.org/licenses/gpl-3.0.html
+The Outrider_Data_NPC, _Gear, _Mobs, _Nodes and _Dungeons folders contain data
+converted from QuestieDB (https://github.com/Questie/Questie), shared under the
+GNU General Public License version 3 (full text in gpl-3.0.md next to this file).
+Upstream licensing notes: https://github.com/Questie/Questie/blob/master/LICENSE.md
+Outrider is not made by or affiliated with the Questie team.
 Outrider_Data_Words has its own licence file inside it.
-For family use; please don't post this build publicly.
 "@
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$gpl = $null
+$qzip = Get-ChildItem -Path (Join-Path $root 'private\questie-source') -Filter '*.zip' -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($qzip) {
+  $za = [System.IO.Compression.ZipFile]::OpenRead($qzip.FullName)
+  try {
+    $e = $za.GetEntry('QuestieDB/gpl-3.0.md')
+    if ($e) { $r = New-Object System.IO.StreamReader($e.Open()); $gpl = $r.ReadToEnd(); $r.Dispose() }
+  } finally { $za.Dispose() }
+}
+if (-not $gpl) { Write-Host "GPLv3 text not found in private\questie-source: not packaging." -ForegroundColor Red; exit 1 }
 foreach ($f in $folders) {
-  if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes)$') { Write-Utf8NoBom (Join-Path $staging "$f\LICENSE-DATA.txt") $note }
+  if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons)$') {
+    Write-Utf8NoBom (Join-Path $staging "$f\LICENSE-DATA.txt") $note
+    Write-Utf8NoBom (Join-Path $staging "$f\gpl-3.0.md") $gpl
+  }
 }
 
 # the updater (installed to %LOCALAPPDATA%\Outrider by the installer, never into AddOns)

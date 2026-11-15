@@ -29,7 +29,7 @@ $Notes
 **Already installed:** double-click "Update Outrider" on your desktop (WoW closed).
 If Windows warns about the file, click More info, then Run anyway.
 
-Includes data packs built from QuestieDB (GPLv3) and world knowledge collected by Outrider (no player names).
+Includes data converted from QuestieDB (https://github.com/Questie/Questie), shared under GPLv3 (gpl-3.0.md inside each data folder), and world knowledge collected by Outrider (no player names). Outrider is not made by or affiliated with the Questie team.
 "@
 $notesFile = Join-Path $dist 'release-notes.md'
 Write-Utf8NoBom $notesFile $body

@@ -29,7 +29,7 @@
 | # | Question | Options | Recommendation | Needed by |
 |---|---|---|---|---|
 | Q2 | Personal use or public release | personal / friends via zip / public on CurseForge and Wago | Personal first, decide at the end of P3 | P3 gate |
-| Q3 | License | GPLv3 / MIT / all rights reserved | GPLv3 if we ever study or reuse GPL addon code; MIT if everything is original | Before any public release |
+| Q3 | License | GPLv3 / MIT / all rights reserved | GPLv3 if we ever study or reuse GPL addon code; MIT if everything is original | Before any public release. 2026-11-14: releases are now public (LackOfSkillz/outrider-releases) and ship data converted from QuestieDB. QuestieDB/LICENSE.md says the Questie team allows copying under GPLv3 terms but cannot promise every historic contributor agrees ("when in doubt ... all rights reserved"). Builds now carry gpl-3.0.md and an attribution note in each QuestieDB-derived folder. Still Gary's call: license Outrider itself GPLv3 (simplest fit with the data), and accept the upstream caveat or keep releases private. |
 | Q5 | Guild sharing on by default for guildmates who install it | yes / opt-in | Opt-in per character | P8 |
 
 - 2026-11-11: Questie and QuestieDB were removed from AddOns at Gary's request. The importers read the saved zip in private/questie-source; Outrider runs without Questie (D10 holds).
