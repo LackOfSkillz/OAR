@@ -207,19 +207,36 @@ function M.PVP(name, giver)
   return false
 end
 
+-- one step per equipment slot: a second item for the same slot (Polished and
+-- Worn Shortbow) becomes that step's alternative
+local function slotOf(itemID)
+  if not itemID then return nil end
+  local _, _, _, loc = C.Call("C_Item.GetItemInfoInstant", itemID)
+  if loc == "INVTYPE_ROBE" then loc = "INVTYPE_CHEST" end
+  if loc == "INVTYPE_RANGEDRIGHT" or loc == "INVTYPE_THROWN" then loc = "INVTYPE_RANGED" end
+  return loc
+end
+
 SOURCES.gear = function()
   if not (ns.Journey and ns.Nearby) then return {} end
-  local out = {}
-  local list = ns.Journey:GearList()
-  for i = 1, math.min(3, #list) do
-    local e = list[i]
-    out[#out + 1] = { key = "gear:" .. tostring(e.name), kind = "gear",
+  local out, bySlot = {}, {}
+  for _, e in ipairs(ns.Journey:GearList()) do
+    local slot = slotOf(e.itemID) or ("item" .. tostring(e.name))
+    local c = { key = "gear:" .. tostring(e.name), kind = "gear",
       title = "Get " .. tostring(e.name),
       why = string.format("A %d%% upgrade for you.", math.floor((e.pct or 0) + 0.5)),
       where = string.format("%s, %s away%s", zone(e.mapID), minutes(e.seconds) or "?", e.note and (" (" .. e.note .. ")") or ""),
       benefit = clamp((e.pct or 0) / 30), confidence = 0.7, seconds = e.seconds,
       caveat = "Where it drops or sells comes from Classic data.",
       go = function() return ns.Journey:Go(e) end }
+    local first = bySlot[slot]
+    if not first then
+      bySlot[slot] = c
+      out[#out + 1] = c
+    elseif not first.alt then
+      first.alt = { text = c.title .. " (" .. c.where .. ")", go = c.go }
+    end
+    if #out >= 3 then break end
   end
   return out
 end

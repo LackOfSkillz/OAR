@@ -116,6 +116,26 @@ T.describe("what now", function()
     T.eq(list[3].key, "quest:look-around")
   end)
 
+  T.it("gear: one step per slot, the second item for a slot is its alternative", function()
+    local game, ns = session({ ammo = 1000 })
+    game.items = game.items or {}
+    game.items[9001] = { name = "Polished Shortbow", equipLoc = "INVTYPE_RANGED", class = 2, subclass = 2 }
+    game.items[9002] = { name = "Worn Shortbow", equipLoc = "INVTYPE_RANGED", class = 2, subclass = 2 }
+    game.items[9003] = { name = "Rusty Sword", equipLoc = "INVTYPE_WEAPON", class = 2, subclass = 7 }
+    local real = ns.Journey.GearList
+    ns.Journey.GearList = function() return {
+      { name = "Polished Shortbow", itemID = 9001, pct = 40, seconds = 60, mapID = 1412 },
+      { name = "Worn Shortbow", itemID = 9002, pct = 35, seconds = 60, mapID = 1412 },
+      { name = "Rusty Sword", itemID = 9003, pct = 20, seconds = 60, mapID = 1412 },
+    } end
+    local list = ns.WhatNow.SOURCES.gear()
+    ns.Journey.GearList = real
+    T.eq(#list, 2)
+    T.eq(list[1].title, "Get Polished Shortbow")
+    T.contains(list[1].alt.text, "Worn Shortbow")
+    T.eq(list[2].title, "Get Rusty Sword")
+  end)
+
   T.it("gear with no real level requirement goes by item level", function()
     local _, ns = session()
     local fits = ns.Nearby.LevelFits

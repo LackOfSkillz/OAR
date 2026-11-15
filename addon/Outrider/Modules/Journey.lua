@@ -48,7 +48,7 @@ function M:GearList()
     local p = w and w.mapID and ns.Travel.Point(w.mapID, w.x, w.y, w.who)
     if p then
       local t = ns.Travel:TimeTo(prep, p)
-      out[#out + 1] = { kind = "gear", name = c.name, pct = c.pct, target = p, seconds = t, mapID = w.mapID,
+      out[#out + 1] = { kind = "gear", name = c.name, itemID = c.itemID, pct = c.pct, target = p, seconds = t, mapID = w.mapID,
         detail = ns.Nearby.Describe(c), note = w.note }
     end
   end
