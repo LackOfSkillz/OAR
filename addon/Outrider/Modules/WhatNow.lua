@@ -175,11 +175,25 @@ SOURCES.quests = function()
   -- keep the 8 best after the hard-fight discount
   table.sort(out, function(x, y) if x.benefit ~= y.benefit then return x.benefit > y.benefit end return x.key < y.key end)
   for i = #out, 9, -1 do out[i] = nil end
+  -- Forever redrew some zones (Coldridge Valley came out with one quest, from a
+  -- chicken): when the data knows fewer than 3 here, say so instead of sending
+  -- the player across the world
+  local here = C.PlayerPosition("player")
+  local local_ = 0
+  for _, e in ipairs(list) do if e.mapID == here and not M.PVP(e.name, e.giver) then local_ = local_ + 1 end end
+  if here and local_ < 3 then
+    out[#out + 1] = { key = "quest:look-around", kind = "quest", title = "Look for quest givers (!) around you",
+      why = string.format("Outrider knows only %d quest%s in %s; Forever added and moved many.", local_, local_ == 1 and "" or "s", zone(here)),
+      where = "nearby: check the minimap for ! marks", benefit = 0.7, confidence = 1, seconds = 60 }
+  end
   return out
 end
 
--- Battleground quests need a battleground, not a walk to the giver.
-local PVP_WORDS = { "warsong gulch", "arathi basin", "alterac valley", "battleground", "warbringer", "brigadier general" }
+-- Battleground quests need a battleground, not a walk to the giver; holiday
+-- quests (Winter's Presents for a level 1 Dwarf) only run during their event.
+local PVP_WORDS = { "warsong gulch", "arathi basin", "alterac valley", "battleground", "warbringer", "brigadier general",
+  "winter's presents", "winter veil", "new year", "wonderform operator", "hallow's end", "midsummer", "brewfest",
+  "lunar festival", "love is in the air", "noblegarden", "children's week", "harvest festival", "pilgrim's bounty" }
 function M.PVP(name, giver)
   local t = (tostring(name) .. " " .. tostring(giver)):lower()
   for _, w in ipairs(PVP_WORDS) do if t:find(w, 1, true) then return true end end

@@ -99,6 +99,8 @@ T.describe("what now", function()
     T.ok(W.PVP("Fight for Warsong Gulch", "x"))
     T.ok(W.PVP("Supplies", "Horde Warbringer"))
     T.no(W.PVP("Cave Mushrooms", "Barithras Moonshade"))
+    T.ok(W.PVP("Winter's Presents", "Wonderform Operator"))
+    T.ok(W.PVP("New Year Celebrations!", "x"))
     local real = ns.Journey.XPList
     ns.Journey.XPList = function() return {
       { name = "Warsong", giver = "Brigadier General", level = 19, xp = 1700, rate = 400, diff = "orange", seconds = 60 },
@@ -107,9 +109,11 @@ T.describe("what now", function()
     } end
     local list = W.SOURCES.quests()
     ns.Journey.XPList = real
-    T.eq(#list, 2)
     T.eq(list[1].key, "quest:Fits")
     T.contains(list[2].why, "hard fights")
+    -- none of them is in this zone: the last step says to look around
+    T.eq(#list, 3)
+    T.eq(list[3].key, "quest:look-around")
   end)
 
   T.it("gear with no real level requirement goes by item level", function()
