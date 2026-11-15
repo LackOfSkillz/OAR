@@ -43,6 +43,14 @@ ns.Data:Register("rare", "seed", {
     spawns = { { x = 0.197, y = 0.656 }, { x = 0.195, y = 0.704 } },
     notes = "Spirit wolf skin; wanders the mushroom ring west of Deathknell; respawn hours, not minutes",
     source = "warcraft.wiki.gg (Forever) and conquestcapped.com Forever guide, read 2026-11-15" },
+  -- Forever-only cat: npcID (its Wowhead link), spawns, speed and look from
+  -- conquestcapped.com/guides/wow-forever/wow-forever-ghostfang/ (read 2026-11-15).
+  -- It waits at one of four points in the eastern hills, no patrol.
+  { npcID = 276111, name = "Ghostfang", mapID = 1426, verified = false, confidence = "community",
+    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 2.0 },
+    spawns = { { x = 0.745, y = 0.632 }, { x = 0.795, y = 0.430 }, { x = 0.808, y = 0.463 }, { x = 0.817, y = 0.555 } },
+    notes = "White coat, blue-violet back (unique skin); no fast-attack ability; respawn about 30 min (beta)",
+    source = "conquestcapped.com Forever guide, read 2026-11-15" },
   { npcID = 3056, name = "Ghost Howl", mapID = 1412, verified = false, confidence = "community",
     spawns = {}, notes = "Mulgore was redrawn: no spawn points until Outrider captures it", source = WDB },
 })
