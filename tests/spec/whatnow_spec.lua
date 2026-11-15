@@ -36,6 +36,22 @@ T.describe("what now", function()
     T.eq(list[1].title, "Repair")
   end)
 
+  T.it("steps in the top step's zone get a small boost; picking never changes the candidates", function()
+    local _, ns = session()
+    local W = ns.WhatNow
+    local cands = {
+      cand("quest", "Top", 0.9, { mapID = 1 }),
+      cand("gear", "Far", 0.44, { mapID = 2 }),  -- 0.352 vs Here 0.336 without the bonus, 0.386 with it
+      cand("gold", "Here", 0.56, { mapID = 1 }),
+    }
+    local list = W.Pick(cands, "mix")
+    T.eq(list[1].title, "Top")
+    T.eq(list[2].title, "Here")
+    T.ok(list[2].near)
+    T.eq(cands[3].near, nil)
+    T.eq(cands[1].score, nil)
+  end)
+
   T.it("picks 3 to 5, at most 2 of a kind, and the next of a kind becomes the alternative", function()
     local _, ns = session()
     local W = ns.WhatNow

@@ -629,7 +629,8 @@ local function stepCard(parent, i, W, p)
     end
     self.why:SetText(s.why or "")
     local trip = s.seconds and ns.Travel and ("   ~" .. ns.Travel.Minutes(s.seconds)) or ""
-    self.where:SetText((s.where and ("Where: " .. s.where) or "") .. trip)
+    self.where:SetText((s.where and ("Where: " .. s.where) or "") .. trip
+      .. (s.near and "   |cffd4a84asame area as step 1|r" or ""))
     self.alt.label:SetText(s.alt and ("Or: " .. tostring(s.alt.text)) or (s.caveat or ""))
     self.go:Show() self.more:Show() self.skip:Show()
   end
