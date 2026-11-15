@@ -387,7 +387,7 @@ local GROUPS = { P0 = "Core", P1 = "Core", P2 = "Rares and class tools", P3 = "M
 local PANEL_W = W - SIDE - 40
 
 Hub:AddTab("modules", L.modules, function(p)
-  local heading = UI.Text(p, "large", "accent")
+  local heading = UI.Display(p, "side", "goldText")
   heading:SetPoint("TOPLEFT", 0, 0)
   heading:SetText(L.modulesHeading)
   p.rows = {}

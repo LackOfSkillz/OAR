@@ -188,7 +188,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   d:SetPoint("TOPLEFT", p.list, "TOPRIGHT", 12, 0)
   d:SetPoint("BOTTOMRIGHT", 0, 0)
   p.detail = d
-  d.title = UI.Text(d, "large", "accent") d.title:SetPoint("TOPLEFT", 0, 0)
+  d.title = UI.Display(d, "side", "goldText") d.title:SetPoint("TOPLEFT", 0, 0)
   d.body = UI.Text(d, "small", "text") d.body:SetPoint("TOPLEFT", 0, -22) d.body:SetWidth(320) d.body:SetJustifyH("LEFT")
   d.explain = UI.Text(d, "small", "muted") d.explain:SetPoint("TOPLEFT", d.body, "BOTTOMLEFT", 0, -10)
   d.explain:SetWidth(320) d.explain:SetJustifyH("LEFT")
