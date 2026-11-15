@@ -510,6 +510,13 @@ function M.new(opts)
       game.sent[#game.sent + 1] = { prefix = prefix, msg = msg, channel = channel, target = target }
     end,
   }
+  -- group loot rolls: game.lootRolls[rollID] = { link, name, quality, bop, canNeed, canGreed }
+  base.GetLootRollItemLink = function(id) local r = game.lootRolls and game.lootRolls[id] return r and r.link end
+  base.GetLootRollItemInfo = function(id)
+    local r = game.lootRolls and game.lootRolls[id]
+    if not r then return nil end
+    return "Interface\Icons\INV_Misc_QuestionMark", r.name, 1, r.quality or 2, r.bop, r.canNeed ~= false, r.canGreed ~= false
+  end
   base.IsInGuild = function() return opts.inGuild or false end
   game.chatFilters = {}
   base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
