@@ -35,6 +35,14 @@ ns.Data:Register("rare", "seed", {
     spawns = { { x = 0.515, y = 0.275 }, { x = 0.49, y = 0.16 } },
     notes = "Wanders around each spot: circle the hills west of Red Rocks",
     source = "conquestcapped.com Forever guide (spawns, family, speed), read 2026-11-15; npcID: " .. WDB },
+  -- Forever-only (added in 1.60.1): npcID and spot from warcraft.wiki.gg/wiki/Coldrasp,
+  -- spawns, speed and abilities from conquestcapped.com/guides/wow-forever/wow-forever-coldrasp/
+  -- (read 2026-11-15). Gary saw one as another hunter's pet: level 12, 1.1 s.
+  { npcID = 274300, name = "Coldrasp", mapID = 1420, verified = false, confidence = "community",
+    level = { 12, 12 }, beast = { family = "Wolf", tameable = true, attackSpeed = 1.5, abilities = { "Furious Howl", "Faster Attack III" } },
+    spawns = { { x = 0.197, y = 0.656 }, { x = 0.195, y = 0.704 } },
+    notes = "Spirit wolf skin; wanders the mushroom ring west of Deathknell; respawn hours, not minutes",
+    source = "warcraft.wiki.gg (Forever) and conquestcapped.com Forever guide, read 2026-11-15" },
   { npcID = 3056, name = "Ghost Howl", mapID = 1412, verified = false, confidence = "community",
     spawns = {}, notes = "Mulgore was redrawn: no spawn points until Outrider captures it", source = WDB },
 })
