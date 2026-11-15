@@ -27,12 +27,19 @@ M.MAX_PENDING_SENDER = 4    -- half-received messages per sender
 M.MAX_PENDING = 32          -- half-received messages in all
 M.EXPIRE = 30               -- seconds before a half-received message is dropped
 M.BURST, M.PACE = 8, 1      -- sending: pieces per batch, seconds between batches
+M.MAX_OUTBOX = 96           -- pieces waiting to go out; a message that won't fit is refused
 local CHANNELS = { GUILD = true, PARTY = true, RAID = true, WHISPER = true }
 M.KNOWN_TYPES = { HELLO = true, RARE = true, LOC = true, NODE = true }
 
 function M:OnInitialize()
   self.inbox, self.peers, self.perSender, self.outbox = {}, {}, {}, {}
   self.pending = 0
+end
+
+-- switched off: drop what is waiting and every half-received message
+function M:OnDisable()
+  self.outbox, self.pumping = {}, false
+  self.inbox, self.perSender, self.pending = {}, {}, 0
 end
 
 function M:OnEnable()
@@ -83,6 +90,10 @@ function M:Send(kind, data, channel, target)
   end
   self.nextId = (self.nextId or math.random(0, 46655)) + 1
   local parts = M.Chunks(body, nil, M.Id(self.nextId))
+  if #self.outbox + #parts > M.MAX_OUTBOX then
+    self:Debug("not sending %s: %d pieces already waiting", kind, #self.outbox)
+    return false, "busy"
+  end
   for _, p in ipairs(parts) do self.outbox[#self.outbox + 1] = { p, channel, target } end
   self:Pump(send)
   self:Debug("sent %s on %s (%d parts)", kind, channel, #parts)
@@ -94,6 +105,7 @@ end
 -- protected actions; nothing here casts, targets or presses anything.)
 function M:Pump(send)
   send = send or C.Resolve("C_ChatInfo.SendAddonMessage") or rawget(_G, "SendAddonMessage")
+  if not self.enabled then self.outbox, self.pumping = {}, false return end
   if self.pumping or type(send) ~= "function" then return end
   for _ = 1, M.BURST do
     local m = table.remove(self.outbox, 1)

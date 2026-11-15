@@ -135,6 +135,35 @@ T.describe("comm", function()
     T.eq(#game.sent, n)
   end)
 
+  T.it("a full outbox refuses new messages; switching off drops what waits", function()
+    local game, ns = session()
+    local sent = 0
+    while true do
+      local ok, why = ns.Comm:Send("RARE", big(150, "Z" .. sent), "GUILD")
+      if not ok then T.eq(why, "busy") break end
+      sent = sent + 1
+      T.ok(sent < 50, "outbox never filled")
+    end
+    T.ok(#ns.Comm.outbox <= ns.Comm.MAX_OUTBOX)
+    game:slash("module Comm off")
+    T.eq(#ns.Comm.outbox, 0)
+    local before = #game.sent
+    game:advance(30)
+    T.eq(#game.sent, before)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a failing send does not stop the rest", function()
+    local game, ns = session()
+    local n = 0
+    game.base.C_ChatInfo.SendAddonMessage = function() n = n + 1 if n == 2 then error("disconnected") end end
+    local ok, parts = ns.Comm:Send("RARE", big(60, "F"), "GUILD")
+    T.ok(ok)
+    game:advance(10)
+    T.eq(n, parts)
+    T.eq(#ns.Comm.outbox, 0)
+  end)
+
   T.it("still reads long messages from older builds (#i/n)", function()
     local g2, ns2 = session({ name = "Other" })
     local got = listener(ns2)

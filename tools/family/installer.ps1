@@ -1,12 +1,17 @@
 # Outrider family installer (embedded in Install-Outrider.cmd by tools/family.ps1).
 # Finds World of Warcraft Forever, then copies Outrider and its data addons into
 # _forever_\Interface\AddOns. Touches nothing else: no settings, no saved data.
-param([string]$Self)
+# The old Outrider folders are backed up first and put back if anything fails.
+# The old Outrider folders are backed up first and put back if anything fails.
+# -TestAddOns <folder> -TestBackup <folder>: install into a scratch folder (specs and
+# tools only): no WoW lookup or check, no updater, no shortcut, no message boxes.
+param([string]$Self, [string]$TestAddOns, [string]$TestBackup, [switch]$TestFail)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Say([string]$text, [string]$icon = 'Information') {
+  if ($TestAddOns) { Write-Host "[$icon] $text"; return }
   [void][System.Windows.Forms.MessageBox]::Show($text, 'Outrider installer', 'OK', $icon)
 }
 
@@ -33,7 +38,7 @@ function Find-Forever {
   return $null
 }
 
-$forever = Find-Forever
+$forever = if ($TestAddOns) { 'test' } else { Find-Forever }
 if (-not $forever) {
   $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
   $dlg.Description = "Couldn't find World of Warcraft Forever. Pick your 'World of Warcraft' folder (the one that holds _forever_)."
@@ -43,11 +48,14 @@ if (-not $forever) {
   elseif ((Split-Path $pick -Leaf) -eq '_forever_') { $forever = $pick }
   else { Say "That folder has no _forever_ inside. Run WoW Forever once from Battle.net, then try again." 'Error'; exit 1 }
 }
-$addons = Join-Path $forever 'Interface\AddOns'
+$addons = if ($TestAddOns) { $TestAddOns } else { Join-Path $forever 'Interface\AddOns' }
 
-# 2. The game should be closed so it loads the new files.
-if (Get-Process -Name 'Wow', 'WowClassic', 'WowT' -ErrorAction SilentlyContinue) {
-  Say "World of Warcraft is running. Close the game first, then click OK to install." 'Warning'
+# 2. The game must be closed: it holds the addon files and would not load the
+#    new ones. Wait until it is (Retry), or stop (Cancel). Nothing is touched yet.
+while (-not $TestAddOns -and (Get-Process -Name 'Wow', 'WowClassic', 'WowT' -ErrorAction SilentlyContinue)) {
+  $a = [System.Windows.Forms.MessageBox]::Show("World of Warcraft is running. Close the game completely, then click Retry.`n`nCancel stops the install; nothing has been changed.",
+    'Outrider installer', 'RetryCancel', 'Warning')
+  if ($a -ne 'Retry') { exit 1 }
 }
 
 # 3. Unpack the embedded zip and copy the addon folders.
@@ -61,24 +69,56 @@ $zip = Join-Path $tmp 'outrider.zip'
 $out = Join-Path $tmp 'files'
 [IO.Compression.ZipFile]::ExtractToDirectory($zip, $out)
 
+# Transactional: copy the current Outrider folders to a backup first
+# (%LOCALAPPDATA%\Outrider\backup\<time>, last 3 kept), then replace them. If
+# anything fails, every folder is put back from the backup and the install stops.
+$folders = @(Get-ChildItem -Path $out -Directory | Where-Object { $_.Name -notlike '_*' })
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$backupRoot = if ($TestBackup) { $TestBackup } else { Join-Path $env:LOCALAPPDATA 'Outrider\backup' }
+$backup = Join-Path $backupRoot $stamp
+$names = @()
+$done = @()
 try {
   New-Item -ItemType Directory -Force -Path $addons | Out-Null
-  $names = @()
-  foreach ($dir in (Get-ChildItem -Path $out -Directory | Where-Object { $_.Name -notlike '_*' })) {
+  New-Item -ItemType Directory -Force -Path $backup | Out-Null
+  foreach ($dir in $folders) {
     $dest = Join-Path $addons $dir.Name
+    if (Test-Path $dest) { Copy-Item -Recurse -Force -Path $dest -Destination (Join-Path $backup $dir.Name) }
+  }
+  foreach ($dir in $folders) {
+    $dest = Join-Path $addons $dir.Name
+    $done += $dir.Name
     if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
     Copy-Item -Recurse -Path $dir.FullName -Destination $dest
     $names += $dir.Name
+    if ($TestFail -and $names.Count -eq 2) { throw 'test failure after two folders' }
   }
-} catch [System.UnauthorizedAccessException] {
-  Say "Windows wouldn't let the installer write to the WoW folder. Right-click Install-Outrider and choose 'Run as administrator'." 'Error'
+} catch {
+  $why = $_.Exception.Message
+  foreach ($n in $done) {
+    $dest = Join-Path $addons $n
+    try {
+      if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+      $saved = Join-Path $backup $n
+      if (Test-Path $saved) { Copy-Item -Recurse -Force -Path $saved -Destination $dest }
+    } catch {}
+  }
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+  if ($_.Exception -is [System.UnauthorizedAccessException]) {
+    Say "Windows wouldn't let the installer write to the WoW folder. Your old Outrider was put back. Right-click Install-Outrider and choose 'Run as administrator'." 'Error'
+  } else {
+    Say ("The install failed and your old Outrider was put back.`n`n" + $why) 'Error'
+  }
   exit 1
 }
+# keep the newest 3 backups
+Get-ChildItem -Path $backupRoot -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending |
+  Select-Object -Skip 3 | ForEach-Object { Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue }
 
 # 4. The updater: a copy in %LOCALAPPDATA%\Outrider and an "Update Outrider"
 #    shortcut on the desktop. It asks GitHub for a newer build when double-clicked.
 $updaterNote = ''
-try {
+if (-not $TestAddOns) { try {
   $src = Join-Path $out '_updater'
   if (Test-Path $src) {
     $home2 = Join-Path $env:LOCALAPPDATA 'Outrider'
@@ -94,7 +134,6 @@ try {
     $sc.Save()
     $updaterNote = "`n`nFor updates: double-click 'Update Outrider' on your desktop (WoW closed)."
   }
-} catch { $updaterNote = '' }
+} catch { $updaterNote = '' } }
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-
 Say ("Outrider is installed in:`n$addons`n`nStart World of Warcraft Forever, log in, and type /ride to open it.`n`nInstalled: " + ($names -join ', ') + $updaterNote)

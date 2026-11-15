@@ -31,8 +31,15 @@ If Windows warns about the file, click More info, then Run anyway.
 
 Includes data converted from QuestieDB (https://github.com/Questie/Questie), shared under GPLv3 (gpl-3.0.md inside each data folder), and world knowledge collected by Outrider (no player names). Outrider is not made by or affiliated with the Questie team.
 "@
+# checksum: the updater refuses an installer whose SHA-256 doesn't match the
+# .sha256 file and the line in the notes (catches a corrupted or swapped download)
+$installerPath = Join-Path $dist 'Install-Outrider.cmd'
+$sha = (Get-FileHash -Algorithm SHA256 -Path $installerPath).Hash.ToLower()
+$shaFile = Join-Path $dist 'Install-Outrider.cmd.sha256'
+Write-Utf8NoBom $shaFile ("$sha  Install-Outrider.cmd`n")
+$body = $body + "`n`nSHA256 (Install-Outrider.cmd): $sha`n"
 $notesFile = Join-Path $dist 'release-notes.md'
 Write-Utf8NoBom $notesFile $body
-& gh release create $tag (Join-Path $dist 'Install-Outrider.cmd') (Join-Path $dist 'Outrider-family.zip') --repo $repo --title "Outrider $date" --notes-file $notesFile
+& gh release create $tag $installerPath $shaFile (Join-Path $dist 'Outrider-family.zip') --repo $repo --title "Outrider $date" --notes-file $notesFile
 if ($LASTEXITCODE -ne 0) { Write-Host "Release failed." -ForegroundColor Red; exit 1 }
 Write-Host "Published $tag to https://github.com/$repo/releases" -ForegroundColor Green

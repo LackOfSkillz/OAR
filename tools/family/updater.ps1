@@ -34,5 +34,26 @@ if ($answer -ne 'Yes') { exit 0 }
 
 $tmp = Join-Path $env:TEMP ('Install-Outrider-' + $latest + '.cmd')
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmp -UseBasicParsing -Headers @{ 'User-Agent' = 'Outrider-Updater' }
+
+# Only run an installer whose SHA-256 matches both the release's .sha256 file
+# and the SHA256 line in its notes. Anything missing or different: stop.
+function Refuse([string]$why) {
+  Remove-Item -Force $tmp -ErrorAction SilentlyContinue
+  [void](Say ("The download couldn't be checked, so it was not installed.`n`n$why`n`nTry again later, or ask Gary.") 'Error')
+  exit 1
+}
+$shaAsset = $rel.assets | Where-Object { $_.name -eq 'Install-Outrider.cmd.sha256' } | Select-Object -First 1
+if (-not $shaAsset) { Refuse 'This release has no checksum file.' }
+try {
+  $shaText = (Invoke-WebRequest -Uri $shaAsset.browser_download_url -UseBasicParsing -Headers @{ 'User-Agent' = 'Outrider-Updater' }).Content
+  if ($shaText -is [byte[]]) { $shaText = [Text.Encoding]::UTF8.GetString($shaText) }
+} catch { Refuse 'The checksum file could not be downloaded.' }
+$expected = ([regex]::Match([string]$shaText, '[0-9a-fA-F]{64}')).Value.ToLower()
+$inNotes = ([regex]::Match([string]$rel.body, 'SHA256[^:]*:\s*([0-9a-fA-F]{64})')).Groups[1].Value.ToLower()
+$actual = (Get-FileHash -Algorithm SHA256 -Path $tmp).Hash.ToLower()
+if (-not $expected) { Refuse 'The checksum file is empty or unreadable.' }
+if ($inNotes -and $inNotes -ne $expected) { Refuse 'The checksum file and the release notes disagree.' }
+if ($actual -ne $expected) { Refuse 'The downloaded installer does not match its checksum.' }
+
 Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "`"$tmp`"" -Wait
 Remove-Item -Force $tmp -ErrorAction SilentlyContinue
