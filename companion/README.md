@@ -96,3 +96,11 @@ Anthropic, OpenAI or Gemini instead of a local model:
 Character names are never sent. Each answer costs tokens on your account;
 the cap stops calls for the day once reached.
 
+## The Ask Outrider window (no command line)
+
+`pythonw -m outrider_companion.intelligence.window` (run in `companion/`).
+In game: Advisor > Ask, Ctrl+C. In the window: Read snapshot, Ask (Enter).
+The answer is copied; in game: Paste advice, Ctrl+V. Preview shows exactly
+what a model would receive; Status shows the setup; Stop waiting lets go of
+a slow model. It never touches the game.
+

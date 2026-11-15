@@ -14,7 +14,7 @@ from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from outrider_companion import codes  # noqa: E402
-from outrider_companion.intelligence import ask, budget, cloud, context, doctor, keys, orchestrator, providers  # noqa: E402
+from outrider_companion.intelligence import ask, budget, cloud, context, doctor, keys, orchestrator, providers, window  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_intelligence import reply, snapshot_code  # noqa: E402
@@ -230,6 +230,42 @@ class Wiring(unittest.TestCase):
         self.assertIn("MISSING", text)
         self.assertIn("NOT given", text)
         self.assertIn("never calls a cloud API", text)
+
+
+class Window(unittest.TestCase):
+    def make(self, clip, replies=None):
+        out = []
+        ctl = window.Controller(cfg={}, read_clip=lambda: clip, write_clip=out.append,
+                                make_provider=lambda: providers.FakeProvider(replies) if replies is not None else None)
+        return ctl, out
+
+    def test_read_preview_ask(self):
+        ctl, out = self.make(snapshot_code(question="45 minutes?", timeBudget=45), [reply()])
+        info = ctl.read_snapshot()
+        self.assertEqual(info["question"], "45 minutes?")
+        self.assertEqual(info["budget"], 45)
+        self.assertIn("Khreos", info["who"])          # shown locally only
+        self.assertNotIn("Khreos", ctl.preview("45 minutes?"))   # never in what a model sees
+        text, copied = ctl.ask("45 minutes?", ctl.start())
+        self.assertTrue(copied)
+        self.assertIn("Paste advice", text)
+        self.assertEqual(codes.import_code(out[0])["kind"], "advice")
+
+    def test_stop_drops_a_late_answer(self):
+        ctl, out = self.make(snapshot_code(), [reply()])
+        ctl.read_snapshot()
+        t = ctl.start()
+        ctl.stop()
+        self.assertIsNone(ctl.ask("x", t))
+        self.assertEqual(out, [])
+
+    def test_needs_a_snapshot(self):
+        ctl, _ = self.make("garbage")
+        with self.assertRaises(Exception):
+            ctl.read_snapshot()
+        with self.assertRaises(ValueError):
+            ctl.ask("x")
+        self.assertIn("off", ctl.status())
 
 
 if __name__ == "__main__":
