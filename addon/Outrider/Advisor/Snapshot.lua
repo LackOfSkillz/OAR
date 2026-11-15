@@ -108,6 +108,12 @@ function Snap:Collect(asked)
   self.asking = asked and true or false   -- modules may add more for a question (WhatNow candidates)
   s.modules = plain(fromModules(), 0)
   self.asking = false
+  -- a refresh (logout) keeps the steps of the last /ride ask, which the
+  -- companion's answers are checked against
+  if not asked and type(prev) == "table" and type(prev.modules) == "table" and prev.modules.WhatNow
+    and not s.modules.WhatNow then
+    s.modules.WhatNow = prev.modules.WhatNow
+  end
   -- keep the saved file small: drop the largest module parts until it fits
   local size = #ns.Serialize.Encode(s)
   while size > self.MAX_BYTES do

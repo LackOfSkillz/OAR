@@ -13,6 +13,7 @@ import json
 import sys
 
 from . import advice, clipboard, codes, store
+from .intelligence import context as ictx, orchestrator, providers
 
 PROTOCOL = "2025-06-18"
 CHAR = {"type": "object", "properties": {"character": {"type": "string", "description": "Character key exactly as list_characters returns it (Name-Realm)"}},
@@ -43,6 +44,28 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {
          "character": {"type": "string"}, "answersSnapshot": {"type": "number"},
          "items": {"type": "array", "items": {"type": "object"}}}, "required": ["character", "answersSnapshot", "items"]}},
+    # Outrider Intelligence (AI03/AI04-03): read-only views of What now?'s steps,
+    # and a validated way for this MCP client to answer as the model.
+    {"name": "get_pathfinder_candidates",
+     "description": ("What now?'s ranked next steps from the character's last /ride ask (or the clipboard snapshot "
+                     "when character is omitted): candidateId, kind, title, why, where, trip minutes, evidence label "
+                     "(observed|community|inferred|unknown), the player's question, time budget and feedback. "
+                     "Character names are left out."),
+     "inputSchema": {"type": "object", "properties": {"character": {"type": "string"}}}},
+    {"name": "get_candidate_explanation",
+     "description": "Everything Outrider recorded for one step: why, where, caveat, label, minutes, target or panel.",
+     "inputSchema": {"type": "object", "properties": {"character": {"type": "string"}, "candidateId": {"type": "string"}},
+                     "required": ["candidateId"]}},
+    {"name": "plan_to_clipboard",
+     "description": ("Answer the clipboard snapshot as the planner model: pick up to 3 candidateIds (from "
+                     "get_pathfinder_candidates) in order, with a short why each, a headline, a summary, optional "
+                     "compare [idA, idB] and limits. Outrider validates it, adds the plan and times, rebuilds every "
+                     "card from its own data and puts an advice code on the clipboard; Gary clicks Paste advice."),
+     "inputSchema": {"type": "object", "properties": {
+         "headline": {"type": "string"}, "summary": {"type": "string"},
+         "picks": {"type": "array", "items": {"type": "object"}},
+         "compare": {"type": "array", "items": {"type": "string"}},
+         "limits": {"type": "array", "items": {"type": "string"}}}, "required": ["picks"]}},
 ]
 
 
@@ -86,7 +109,37 @@ class Server:
             self.write_clipboard(code)
             return {"written": len(data["items"]), "rejected": rejected, "characters": len(code),
                     "next": "Gary clicks Paste advice in the Advisor tab and presses Ctrl+V"}
+        if name in ("get_pathfinder_candidates", "get_candidate_explanation"):
+            env, _ = self.envelope(char)
+            if name == "get_pathfinder_candidates":
+                view = ictx.model_view(env)
+                view["question"], view["snapshotId"] = env.get("question"), env.get("snapshotId")
+                return view
+            cid = args.get("candidateId")
+            for c in env["candidates"]:
+                if c["candidateId"] == cid:
+                    return c
+            raise ValueError("no step %r in that snapshot" % cid)
+        if name == "plan_to_clipboard":
+            env, binding = self.envelope(None)
+            reply = {k: args.get(k) for k in ("headline", "summary", "picks", "compare", "limits")}
+            data, report = orchestrator.ask(None, env, binding, providers.FakeProvider([json.dumps(reply)]))
+            if report.get("mode") != "model":
+                raise ValueError("no usable picks (use candidateIds from get_pathfinder_candidates): %s"
+                                 % "; ".join(report.get("problems") or [report.get("error") or "?"]))
+            code = codes.export(data)
+            self.write_clipboard(code)
+            return {"cards": len(data["items"]), "plan": data["answer"].get("plan"),
+                    "compare": data["answer"].get("compare"), "dropped": report.get("problems"),
+                    "next": "Gary clicks Paste advice in the Advisor tab and presses Ctrl+V"}
         raise KeyError("unknown tool %s" % name)
+
+    def envelope(self, char):
+        """(envelope, binding) from the clipboard snapshot, or the character's saved one."""
+        if char:
+            snap = self.store.snapshot(char)
+            return ictx.build({"kind": "snapshot", "character": char, "snapshot": snap})
+        return ictx.build(codes.import_code(self.read_clipboard()))
 
     # overridable in tests
     def read_clipboard(self):

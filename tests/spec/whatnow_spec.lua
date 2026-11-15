@@ -240,8 +240,9 @@ T.describe("what now", function()
     for _, c in ipairs(snap.candidates) do if c.candidateId == "gather:Peacebloom" then found = c end end
     T.ok(found and found.target.mapID == 1412 and found.target.x == 0.4)
     T.ok(type(s.snapshotId) == "string")
+    -- a logout refresh doesn't compute steps, but keeps the asked ones
     local later = ns.Snapshot:Collect(false)
-    T.eq(later.modules.WhatNow, nil)
+    T.eq(later.modules.WhatNow.candidates[1].candidateId, "errand:repair")
     table.remove(W.ORDER)
     T.eq(#ns.Errors.list, 0)
   end)

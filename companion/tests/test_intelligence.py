@@ -8,7 +8,7 @@ import time
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from outrider_companion import codes  # noqa: E402
+from outrider_companion import codes, server  # noqa: E402
 from outrider_companion.intelligence import ask, context, orchestrator, planner, providers  # noqa: E402
 
 
@@ -299,6 +299,43 @@ class LocalServer(unittest.TestCase):
         with self.assertRaises(providers.ProviderError) as e:
             p.generate([{"role": "user", "content": "x"}], timeout_seconds=2)
         self.assertIn(e.exception.kind, ("connect", "timeout"))
+
+
+class McpTools(unittest.TestCase):
+    def make(self, clip):
+        srv = server.Server.__new__(server.Server)
+        srv.cfg, srv.store, srv.clip, srv.out = {}, None, clip, []
+        srv.read_clipboard = lambda: srv.clip
+        srv.write_clipboard = lambda t: srv.out.append(t)
+        return srv
+
+    def test_candidates_and_explanation_from_clipboard(self):
+        srv = self.make(snapshot_code(question="45 minutes?"))
+        view = srv.call("get_pathfinder_candidates", {})
+        self.assertEqual(view["candidates"][0]["candidateId"], "errand:repair")
+        self.assertEqual(view["question"], "45 minutes?")
+        self.assertNotIn("Khreos", json.dumps(view))
+        one = srv.call("get_candidate_explanation", {"candidateId": "quest:Coming of Age"})
+        self.assertEqual(one["target"]["mapID"], 2521)
+        with self.assertRaises(ValueError):
+            srv.call("get_candidate_explanation", {"candidateId": "quest:Nope"})
+
+    def test_plan_to_clipboard_validates_like_a_model(self):
+        srv = self.make(snapshot_code())
+        out = srv.call("plan_to_clipboard", {"headline": "Go", "summary": "s",
+                                             "picks": [{"candidateId": "quest:Coming of Age", "why": "xp"},
+                                                       {"candidateId": "quest:Invented"}]})
+        self.assertEqual(out["cards"], 1)
+        back = codes.import_code(srv.out[0])
+        self.assertEqual(back["items"][0]["args"]["mapID"], 2521)
+        self.assertEqual(back["answersSnapshotId"], "hunter-1794740000")
+        with self.assertRaises(ValueError):
+            srv.call("plan_to_clipboard", {"picks": [{"candidateId": "quest:Invented"}]})
+
+    def test_tools_listed(self):
+        names = {t["name"] for t in server.TOOLS}
+        self.assertTrue({"get_pathfinder_candidates", "get_candidate_explanation", "plan_to_clipboard"} <= names)
+        self.assertIn("write_advice", names)   # old tools stay
 
 
 class Clipboard(unittest.TestCase):
