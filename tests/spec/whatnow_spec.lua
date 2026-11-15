@@ -67,7 +67,10 @@ T.describe("what now", function()
     T.no(W:List(true)[1].title == "Wolves")
     game:advance(86401)
     T.eq(W:List(true)[1].title, "Wolves")
-    T.ok(W:Store().shown["quest:Wolves"] >= 2)
+    local n = W:Store().shown["quest:Wolves"]
+    T.ok(n >= 2)
+    W:List(true)
+    T.eq(W:Store().shown["quest:Wolves"], n)  -- same list again: not counted twice
     table.remove(W.ORDER)
   end)
 

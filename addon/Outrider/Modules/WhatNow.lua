@@ -386,12 +386,16 @@ function M:List(force)
   self.cache, self.cacheAt, self.failed = list, now, failed
   if not self.loggedAt then self:LogAll("first look") end
   local keys = {}
-  for _, c in ipairs(list) do
-    keys[#keys + 1] = c.key
-    st.shown[c.key] = (st.shown[c.key] or 0) + 1
+  for _, c in ipairs(list) do keys[#keys + 1] = c.key end
+  -- the page refreshes often: log and count only when the steps change
+  -- (the same line every 30 s filled the log, 2026-11-15)
+  local sig = self:Goal() .. "|" .. table.concat(keys, ",")
+  if sig ~= self.lastSig then
+    self.lastSig = sig
+    for _, k in ipairs(keys) do st.shown[k] = (st.shown[k] or 0) + 1 end
+    self:Info("what now (%s): %d candidates -> %s%s", self:Goal(), #cands, table.concat(keys, ", "),
+      #failed > 0 and (" (failed: " .. table.concat(failed, ",") .. ")") or "")
   end
-  self:Info("what now (%s): %d candidates -> %s%s", self:Goal(), #cands, table.concat(keys, ", "),
-    #failed > 0 and (" (failed: " .. table.concat(failed, ",") .. ")") or "")
   return list
 end
 
