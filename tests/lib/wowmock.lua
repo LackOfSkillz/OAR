@@ -515,7 +515,7 @@ function M.new(opts)
   base.GetLootRollItemInfo = function(id)
     local r = game.lootRolls and game.lootRolls[id]
     if not r then return nil end
-    return "Interface\Icons\INV_Misc_QuestionMark", r.name, 1, r.quality or 2, r.bop, r.canNeed ~= false, r.canGreed ~= false
+    return "Interface\\Icons\\INV_Misc_QuestionMark", r.name, 1, r.quality or 2, r.bop, r.canNeed ~= false, r.canGreed ~= false
   end
   base.IsInGuild = function() return opts.inGuild or false end
   game.chatFilters = {}
@@ -568,6 +568,13 @@ function M.new(opts)
       return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r")
     end,
     GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
+    GetContainerNumFreeSlots = function(bag)
+      local b = game.bags and game.bags[bag]
+      if not b then return 0, 0 end
+      local used = 0
+      for _ in pairs(b) do used = used + 1 end
+      return 16 - used, 0
+    end,
     -- game.counts[bag][slot] overrides the default stack of 5
     UseContainerItem = function(bag, slot)
       if game.combat then error("UseContainerItem in combat") end

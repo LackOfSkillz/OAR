@@ -50,4 +50,23 @@ T.describe("dungeon guide", function()
     ns.Hub.frame.tabBar:Select("dungeons")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("ready check: repairs, food and drink, bag space, ammo for hunters", function()
+    local game = mock.new({ ammo = 300 })
+    local ns = game:loadAddon()
+    game:login()
+    game.durability = { [1] = { 10, 50 } }
+    game.bags = { [0] = {} }
+    for s = 1, 13 do game.bags[0][s] = 2512 end
+    local list = ns.DungeonGuide:ReadyCheck()
+    local text = ns.DungeonGuide.ReadyText(list)
+    T.contains(text, "Repair first")
+    T.contains(text, "Only 3 free bag slots")
+    T.contains(text, "300 ammo (buy more)")
+    T.contains(text, "No food")
+    game.durability = { [1] = { 50, 50 } }
+    game.bags[0] = {}
+    T.contains(ns.DungeonGuide.ReadyText(ns.DungeonGuide:ReadyCheck()), "Gear in good repair")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

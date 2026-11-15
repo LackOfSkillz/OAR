@@ -154,6 +154,53 @@ function M:Warm()
   end
 end
 
+-- Ready check before a dungeon (phase 2, 2026-11-15): { {ok, text} }.
+-- Gear not about to break, food (and drink for mana users), bag space for
+-- loot, and ammo for hunters. Anything Outrider can't read is left out.
+M.READY = { durability = 0.6, freeSlots = 6, ammo = 1000 }
+local NO_MANA = { WARRIOR = true, ROGUE = true }
+function M:ReadyCheck()
+  local out = {}
+  local function add(ok, text) out[#out + 1] = { ok = ok and true or false, text = text } end
+  local d = ns.Errands and ns.Errands.Durability and ns.Errands.Durability()
+  if d then
+    add(d >= M.READY.durability, d >= M.READY.durability and string.format("Gear in good repair (%d%%)", math.floor(d * 100))
+      or string.format("Repair first: gear at %d%%", math.floor(d * 100)))
+  end
+  if ns.BagFood then
+    local ok, food, drink = pcall(ns.BagFood.Scan, ns.BagFood)
+    if ok then
+      add(food ~= nil, food and ("Food: " .. tostring(food)) or "No food in your bags")
+      if not NO_MANA[ns.PlayerClass and ns.PlayerClass() or ""] then
+        add(drink ~= nil, drink and ("Drink: " .. tostring(drink)) or "No drink in your bags")
+      end
+    end
+  end
+  local free, known = 0, false
+  for bag = 0, 4 do
+    local n = C.Call("C_Container.GetContainerNumFreeSlots", bag)
+    if type(n) == "number" then free, known = free + n, true end
+  end
+  if known then
+    add(free >= M.READY.freeSlots, free >= M.READY.freeSlots and string.format("%d free bag slots", free)
+      or string.format("Only %d free bag slots: sell or bank something", free))
+  end
+  if ns.PlayerClass and ns.PlayerClass() == "HUNTER" then
+    local ammo = ns.Modules:Get("Ammo")
+    local n = ammo and ammo.Count and ammo:Count()
+    if n then add(n >= M.READY.ammo, string.format("%d ammo%s", n, n >= M.READY.ammo and "" or " (buy more)")) end
+  end
+  return out
+end
+
+function M.ReadyText(list)
+  local lines = {}
+  for _, c in ipairs(list) do
+    lines[#lines + 1] = (c.ok and "|cff66dd77OK|r  " or "|cffff6060X|r  ") .. c.text
+  end
+  return #lines > 0 and table.concat(lines, "\n") or "Nothing to check here."
+end
+
 function M:Activity()
   if not self:Pack() then return "dungeon pack not installed" end
   local rank = self:Rank()
