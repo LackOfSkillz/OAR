@@ -64,7 +64,21 @@ A gate is never ticked on mock tests alone; real-client checks are listed per ta
 - [~] AI02-08 Real client — 2026-11-15: offline route with Gary's real data for Khreos (hunter) and Fingerwiggle (mage): snapshot -> answer -> paste -> 3 grounded cards, 0 errors (tools/ask_demo.lua). Needs Gary: in game, and a local model
 - [ ] **AI-G2** gate
 
-### Later phases (not started; need Gary's review of the slice first)
-AI-03 (Adventure Plan, Compare, feedback), AI-04 (cloud providers, secure keys, more MCP tools),
+### AI-03 Adventure Plan, Compare, and knowledge (Gary said go, 2026-11-15)
+- [x] AI03-01 Deterministic plan evaluator — 2026-11-15: intelligence/planner.py (trip + typical time per kind, labelled estimates, unknown trip times flagged)
+- [x] AI03-02 Time budget and goal-aware planning — 2026-11-15: budget from the Advisor's minutes box or the question; urgent first, same zone together, dungeons last; what doesn't fit moves to "later" with a note
+- [~] AI03-03 Provenance and uncertainty in the UI — evidence labels on every card, "Not checked" line, estimates labelled; a per-card sources view is still to do
+- [x] AI03-04 Compare — 2026-11-15: two steps side by side (time, label, group) from Outrider's data only, shown under the answer
+- [x] AI03-05 Feedback — 2026-11-15: Useful / Wrong data / Done per card, local; Wrong data and Done hide the step for a day; the 20 newest go to the companion
+- [~] AI03-06 Goal profile and plan state — the goal is per character (What now?); plan progress tracking is still to do
+- [x] AI03-07 Tests — 2026-11-15: budgets, ordering, later, compare (unknown ids refused), feedback, plan rows validated in the addon
+- [ ] AI03-08 In-game usability review (Gary, screenshots at small and large window sizes)
+- [ ] **AI-G3** gate
+
+Also done early from AI-04: AI04-03 MCP tools `get_pathfinder_candidates`, `get_candidate_explanation`,
+`plan_to_clipboard` (an MCP client like Claude Code answers as the model; Outrider validates and builds the cards).
+
+### Later phases (not started)
+AI-04 (cloud providers, secure keys, more MCP tools),
 AI-05 (seamless transport spike, optional, policy-gated), AI-06 (release quality and adoption).
 Task lists for these phases are in the spec, section 11.
