@@ -201,6 +201,53 @@ function M.ReadyText(list)
   return #lines > 0 and table.concat(lines, "\n") or "Nothing to check here."
 end
 
+-- Party ready check: one click sends yours to party members who run
+-- Outrider (only when Gary clicks; addon messages, PARTY only); theirs show
+-- under yours for 15 minutes.
+M.PARTY_FOR = 900
+function M:ShareReady()
+  if not (ns.Comm and C.Call("IsInGroup")) then return false, "not in a group" end
+  local checks = {}
+  for _, c in ipairs(self:ReadyCheck()) do checks[#checks + 1] = { ok = c.ok, text = c.text } end
+  local ok = ns.Comm:Send("READY", { level = C.Call("UnitLevel", "player"), class = ns.PlayerClass and ns.PlayerClass(),
+    checks = checks }, "PARTY")
+  self:Info("ready check shared with the party: %s", tostring(ok))
+  return ok
+end
+
+function M:OnReady(_, kind, data, sender)
+  if kind ~= "READY" or type(data) ~= "table" or type(data.checks) ~= "table" then return end
+  self.party = self.party or {}
+  local list = {}
+  for i, c in ipairs(data.checks) do
+    if i > 8 then break end
+    if type(c) == "table" and type(c.text) == "string" then list[#list + 1] = { ok = c.ok == true, text = c.text:sub(1, 80) } end
+  end
+  self.party[tostring(sender)] = { t = time(), level = tonumber(data.level), class = type(data.class) == "string" and data.class or nil, checks = list }
+end
+
+function M:PartyText()
+  local lines, now = {}, time()
+  local names = {}
+  for name, p in pairs(self.party or {}) do
+    if now - p.t <= M.PARTY_FOR then names[#names + 1] = name else self.party[name] = nil end
+  end
+  table.sort(names)
+  for _, name in ipairs(names) do
+    local p = self.party[name]
+    local todo = {}
+    for _, c in ipairs(p.checks) do if not c.ok then todo[#todo + 1] = c.text end end
+    lines[#lines + 1] = string.format("%s%s: %s", name:match("^[^-]+") or name, p.level and (" (" .. p.level .. ")") or "",
+      #todo == 0 and "|cff66dd77all set|r" or ("|cffff6060" .. table.concat(todo, "; ") .. "|r"))
+  end
+  return #lines > 0 and table.concat(lines, "\n") or "No party ready checks yet. Party members who run Outrider can share theirs too."
+end
+
+function M:OnEnable()
+  if ns.Comm then ns.Comm.KNOWN_TYPES.READY = true end
+  self:On("OTR_COMM", self.OnReady)
+end
+
 function M:Activity()
   if not self:Pack() then return "dungeon pack not installed" end
   local rank = self:Rank()
