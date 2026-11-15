@@ -186,6 +186,30 @@ end
 
 -- ---------------------------------------------------------------- graph
 -- Rides usable by this character: { kind, from = point, to = point, cost, label, note }
+-- A dock the guide pack names without coordinates ("Menethil Harbor"): the
+-- town's flight master, from the client's own flight point list (POICapture,
+-- source "client", verified). Harbors sit next to their flight master, so the
+-- arrow leads to the right town instead of the middle of the zone.
+function M:Dock(place)
+  if type(place) ~= "string" or place == "" then return nil end
+  local want = place:lower()
+  for _, p in pairs(ns.db.global.pois or {}) do
+    if p.source == "client" and p.kind == "flight_master" and type(p.name) == "string" then
+      local town = p.name:lower():match("^([^,]+)")
+      if town == want then   -- exact town only: Stormwind's harbor is not by its gryphons
+        local pt = M.Point(p.mapID, p.x, p.y, place)
+        if pt then pt.nearFlight = true return pt end
+      end
+    end
+  end
+  return nil
+end
+
+local function endPoint(self, e)
+  if e.x and e.y then return M.Point(self:MapByName(e.zone), e.x, e.y, e.place) end
+  return self:Dock(e.place) or M.Point(self:MapByName(e.zone), nil, nil, e.place)
+end
+
 function M:Rides()
   local faction = C.Call("UnitFactionGroup", "player")
   local out = {}
@@ -195,9 +219,7 @@ function M:Rides()
   for _, packs in pairs(ns.Data.packs.link or {}) do
     for _, l in ipairs(packs) do
       if not l.faction or l.faction == faction then
-        local fm, tm = self:MapByName(l.from.zone), self:MapByName(l.to.zone)
-        local a = M.Point(fm, l.from.x, l.from.y, l.from.place)
-        local b = M.Point(tm, l.to.x, l.to.y, l.to.place)
+        local a, b = endPoint(self, l.from), endPoint(self, l.to)
         local cost = l.ride or M.RIDE[l.kind] or 180
         add(l.kind, a, b, cost, l.from.place .. " to " .. l.to.place, l.note)
         if not l.oneWay then add(l.kind, b, a, cost, l.to.place .. " to " .. l.from.place, l.note) end
@@ -311,7 +333,8 @@ function M:Route(target, prep)
     local n, h = c.node, c.how
     local where = (n.label or M.ZoneName(n.mapID)) .. ", " .. M.ZoneName(n.mapID)
     if h.kind == "walk" then
-      step("walk", n, "Go to " .. where .. (n.approx and " (dock spot not known yet)" or ""))
+      step("walk", n, "Go to " .. where .. (n.approx and " (dock spot not known yet)" or "")
+        .. (n.nearFlight and " (the dock is by the flight master)" or ""))
     elseif h.kind == "fly" then
       step("fly", n, "Fly to " .. tostring(n.label))
     else

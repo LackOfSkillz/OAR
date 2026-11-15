@@ -57,6 +57,28 @@ T.describe("travel", function()
     T.contains(r.steps[3].text, "Hermit, Far Isle")
   end)
 
+  T.it("a guide boat without dock coordinates leaves from the town's flight master", function()
+    local _, ns = session()
+    ns.db.global.pois = {
+      ["taxi-1"] = { id = "taxi-1", kind = "flight_master", source = "client", name = "Harborton, Eastvale", mapID = 200, x = 0.8, y = 0.2 },
+      ["taxi-2"] = { id = "taxi-2", kind = "flight_master", source = "client", name = "Isleport, Far Isle", mapID = 300, x = 0.3, y = 0.7 },
+    }
+    ns.Data:Register("link", "spec", { { id = "boat-spec", kind = "boat", source = "spec", verified = false,
+      from = { zone = "Eastvale", place = "Harborton" }, to = { zone = "Far Isle", place = "Isleport" } } })
+    local r = ns.Travel:Route(ns.Travel.Point(300, 0.5, 0.5, "Hermit"))
+    T.ok(r, "a route")
+    T.eq(r.steps[1].kind, "walk")
+    T.eq(r.steps[1].to.mapID, 200)
+    T.ok(math.abs(r.steps[1].to.x - 0.8) < 1e-9 and math.abs(r.steps[1].to.y - 0.2) < 1e-9, "walk to the flight master, not the zone middle")
+    T.contains(r.steps[1].text, "the dock is by the flight master")
+    T.eq(r.steps[2].kind, "boat")
+    T.contains(r.steps[3].text, "Hermit, Far Isle")
+    -- no flight master known: the zone middle, marked approximate
+    ns.db.global.pois = {}
+    r = ns.Travel:Route(ns.Travel.Point(300, 0.5, 0.5, "Hermit"))
+    T.contains(r.steps[1].text, "dock spot not known yet")
+  end)
+
   T.it("learns a ride from a loading screen that wasn't a flight or teleport", function()
     local game, ns, opts = session()
     game:fire("LOADING_SCREEN_ENABLED")
