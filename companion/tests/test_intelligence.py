@@ -270,6 +270,7 @@ class LocalServer(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.srv.shutdown()
+        cls.srv.server_close()
 
     def test_round_trip(self):
         _Handler.mode = "ok"

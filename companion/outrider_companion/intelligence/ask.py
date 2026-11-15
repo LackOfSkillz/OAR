@@ -47,7 +47,23 @@ def main(argv=None):
     ap.add_argument("--out")
     ap.add_argument("--no-model", action="store_true")
     ap.add_argument("--config")
+    ap.add_argument("--preview", action="store_true",
+                    help="print exactly what would be sent to the model, send nothing")
     a = ap.parse_args(argv)
+    if a.preview:
+        try:
+            code = open(a.snapshot, encoding="utf-8").read() if a.snapshot else clipboard.read()
+            env, _ = context.build(codes.import_code(code))
+        except (codes.CodeError, context.ContextError, OSError) as e:
+            print("Nothing to preview: %s" % e, file=sys.stderr)
+            return 1
+        msgs = orchestrator._messages(a.question or env.get("question") or "What should I do next?", env)
+        print("This is everything the model would receive (nothing was sent):")
+        print()
+        for m in msgs:
+            print("--- %s ---" % m["role"])
+            print(m["content"])
+        return 0
     try:
         provider = None if a.no_model else providers.from_config(load_config(a.config))
         if provider:

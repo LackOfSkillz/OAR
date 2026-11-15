@@ -21,3 +21,7 @@ companion/**/__pycache__/
 
 # Gary's GPT art originals (the converted TGAs in addon/Outrider/Art are committed)
 art/incoming/
+
+# companion: cloud token usage per day (machine-specific)
+companion/usage.json
+companion/usage.json.tmp

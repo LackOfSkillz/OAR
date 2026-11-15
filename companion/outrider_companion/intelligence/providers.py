@@ -70,6 +70,48 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ProviderError("config", "the model server tried to redirect to %s; refused" % newurl)
 
 
+HTTP_KIND = {400: "bad_request", 401: "auth", 403: "auth", 404: "model", 413: "too_large", 429: "rate_limit"}
+
+
+def post_json(opener, url, body, headers, timeout_seconds, where):
+    """POST JSON, return parsed JSON. Errors become ProviderError with a kind:
+    auth (wrong or missing key), model (wrong model or URL), rate_limit
+    (quota), server (5xx, overloaded), tls, timeout, connect, bad_response.
+    The request body and keys are never put into error messages."""
+    import ssl
+    data = json.dumps(body).encode("utf-8")
+    h = {"Content-Type": "application/json", "User-Agent": "Outrider-Companion"}
+    h.update(headers or {})
+    req = urllib.request.Request(url, data=data, headers=h, method="POST")
+    try:
+        with opener.open(req, timeout=timeout_seconds) as resp:
+            raw = resp.read(MAX_RESPONSE_BYTES + 1)
+    except ProviderError:
+        raise
+    except urllib.error.HTTPError as e:
+        kind = HTTP_KIND.get(e.code) or ("server" if e.code >= 500 else "http")
+        hint = {"auth": "check the API key (keys command)", "model": "check the model name and URL",
+                "rate_limit": "quota or rate limit reached; try later", "server": "the provider is busy or down"}.get(kind, "")
+        raise ProviderError(kind, "the model server answered HTTP %s%s" % (e.code, (": " + hint) if hint else ""))
+    except ssl.SSLError:
+        raise ProviderError("tls", "secure connection to %s failed (certificate or TLS problem)" % where)
+    except (socket.timeout, TimeoutError):
+        raise ProviderError("timeout", "the model took longer than %.0f s" % timeout_seconds)
+    except urllib.error.URLError as e:
+        reason = getattr(e, "reason", None)
+        if isinstance(reason, (socket.timeout, TimeoutError)):
+            raise ProviderError("timeout", "the model took longer than %.0f s" % timeout_seconds)
+        if isinstance(reason, ssl.SSLError):
+            raise ProviderError("tls", "secure connection to %s failed (certificate or TLS problem)" % where)
+        raise ProviderError("connect", "can't reach %s (is it running, or is the network off?)" % where)
+    if len(raw) > MAX_RESPONSE_BYTES:
+        raise ProviderError("bad_response", "the model's answer was too large")
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        raise ProviderError("bad_response", "the model server did not answer with JSON")
+
+
 def _is_loopback(host):
     if host in ("localhost",):
         return True
@@ -104,30 +146,10 @@ class OpenAICompatibleProvider(ModelProvider):
         return {"ok": True, "host": u.hostname}
 
     def _post(self, path, body, timeout_seconds):
-        data = json.dumps(body).encode("utf-8")
-        headers = {"Content-Type": "application/json", "User-Agent": "Outrider-Companion"}
+        headers = {}
         if self.api_key:
             headers["Authorization"] = "Bearer " + self.api_key
-        req = urllib.request.Request(self.base_url + path, data=data, headers=headers, method="POST")
-        try:
-            with self._opener.open(req, timeout=timeout_seconds) as resp:
-                raw = resp.read(MAX_RESPONSE_BYTES + 1)
-        except ProviderError:
-            raise
-        except urllib.error.HTTPError as e:
-            raise ProviderError("http", "the model server answered HTTP %s" % e.code)
-        except (socket.timeout, TimeoutError):
-            raise ProviderError("timeout", "the model took longer than %.0f s" % timeout_seconds)
-        except urllib.error.URLError as e:
-            if isinstance(getattr(e, "reason", None), (socket.timeout, TimeoutError)):
-                raise ProviderError("timeout", "the model took longer than %.0f s" % timeout_seconds)
-            raise ProviderError("connect", "can't reach the model server at %s (is it running?)" % self.base_url)
-        if len(raw) > MAX_RESPONSE_BYTES:
-            raise ProviderError("bad_response", "the model's answer was too large")
-        try:
-            return json.loads(raw.decode("utf-8"))
-        except (ValueError, UnicodeDecodeError):
-            raise ProviderError("bad_response", "the model server did not answer with JSON")
+        return post_json(self._opener, self.base_url + path, body, headers, timeout_seconds, self.base_url)
 
     def generate(self, messages, max_output_tokens=MAX_OUTPUT_TOKENS, timeout_seconds=TIMEOUT):
         self.validate_config()
@@ -154,13 +176,30 @@ class OpenAICompatibleProvider(ModelProvider):
         return text
 
 
-def from_config(cfg):
-    """A provider from companion config {"intelligence": {...}}, or None when off."""
+COMPANION_DIR = __import__("os").path.dirname(__import__("os").path.dirname(
+    __import__("os").path.dirname(__import__("os").path.abspath(__file__))))
+
+
+def from_config(cfg, usage_path=None):
+    """A provider from companion config {"intelligence": {...}}, or None when off.
+
+    provider: "openai-compatible" (local, default), "anthropic", "openai" or
+    "gemini" (cloud: key from the key store, cloudConsent required, daily
+    token cap from dailyTokenCap)."""
     ic = cfg.get("intelligence") if isinstance(cfg, dict) else None
     if not isinstance(ic, dict) or not ic.get("enabled"):
         return None
     kind = ic.get("provider", "openai-compatible")
-    if kind != "openai-compatible":
-        raise ProviderError("config", "provider %r is not available yet (only openai-compatible local models)" % kind)
-    return OpenAICompatibleProvider(ic.get("baseUrl") or "http://127.0.0.1:11434", ic.get("model"),
-                                    allow_remote=ic.get("allowRemote") is True)
+    if kind == "openai-compatible":
+        from . import keys
+        return OpenAICompatibleProvider(ic.get("baseUrl") or "http://127.0.0.1:11434", ic.get("model"),
+                                        allow_remote=ic.get("allowRemote") is True,
+                                        api_key=keys.get("openai-compatible"))
+    from . import budget, cloud, keys
+    if kind not in cloud.CLOUD:
+        raise ProviderError("config", "unknown provider %r (openai-compatible, anthropic, openai, gemini)" % kind)
+    cls, default_model = cloud.CLOUD[kind]
+    prov = cls(keys.get(kind), ic.get("model") or default_model, consent=ic.get("cloudConsent") is True)
+    guard = budget.SpendGuard(usage_path or __import__("os").path.join(COMPANION_DIR, "usage.json"),
+                              ic.get("dailyTokenCap") or budget.DEFAULT_DAILY_TOKENS)
+    return budget.Guarded(prov, guard)
