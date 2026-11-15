@@ -66,6 +66,32 @@ M.REASON_TEXT = {
   ["wrong schema"] = "The advice file is from another version and was ignored.",
 }
 
+-- Feedback on a card (AI03-05): useful / wrong data / done. Wrong data and
+-- done also hide the step from What now? for a day. Local only; the next
+-- snapshot carries the recent ones so the companion can take them into account.
+M.FEEDBACK = { { "useful", "Useful" }, { "wrong", "Wrong data" }, { "done", "Done" } }
+M.FEEDBACK_KEEP = 30
+function M:Feedback(item, verdict)
+  if type(item) ~= "table" or not item.candidateId then return false, "click a suggestion first" end
+  local list = ns.db.char.adviceFeedback
+  if type(list) ~= "table" then list = {} ns.db.char.adviceFeedback = list end
+  list[#list + 1] = { id = item.candidateId, v = verdict, t = time() }
+  while #list > M.FEEDBACK_KEEP do table.remove(list, 1) end
+  if (verdict == "wrong" or verdict == "done") and ns.WhatNow then ns.WhatNow:Skip({ key = item.candidateId }) end
+  self:Info("advice feedback %s: %s", tostring(item.candidateId), verdict)
+  return true, verdict == "useful" and "Noted: useful." or (verdict == "done" and "Marked done; hidden from What now? for a day."
+    or "Marked as wrong data; hidden for a day.")
+end
+
+-- "45", "45 min", "1h" -> minutes (5..600), or nil
+function M.Minutes(text)
+  text = tostring(text or ""):lower()
+  local h = tonumber(text:match("^%s*(%d+%.?%d*)%s*h"))
+  local n = h and h * 60 or tonumber(text:match("^%s*(%d+)"))
+  if not n then return nil end
+  return math.max(5, math.min(600, math.floor(n + 0.5)))
+end
+
 function M:Activity()
   local items, why = self:Items()
   if #items > 0 then return #items .. " suggestions in the Advisor tab" end
@@ -73,9 +99,21 @@ function M:Activity()
 end
 
 ns.Hub:AddTab("advisor", "Advisor", function(p)
+  -- your question and time (AI03): they go into the snapshot, so the
+  -- companion answers what you asked in game
+  p.q = UI:SearchBox(p, 360, "Your question, e.g. what should I do next?")
+  p.q:SetPoint("TOPLEFT", 0, 0)
+  p.q:SetText(ns.db.char.askQuestion or "")
+  p.q:HookScript("OnTextChanged", function(box) ns.db.char.askQuestion = (box:GetText() or ""):sub(1, 200) end)
+  p.mins = UI:SearchBox(p, 70, "minutes")
+  p.mins:SetPoint("LEFT", p.q, "RIGHT", 6, 0)
+  p.mins:SetText(ns.db.char.askMinutes and tostring(ns.db.char.askMinutes) or "")
+  p.mins:HookScript("OnTextChanged", function(box) ns.db.char.askMinutes = M.Minutes(box:GetText()) end)
+  p.askTop = UI:PrimaryButton(p, "Ask", 80, function() ns.Snapshot:AskAdvisor() end)
+  p.askTop:SetPoint("LEFT", p.mins, "RIGHT", 6, 0)
   -- the answer (schema 2): headline, summary and what it couldn't check
   p.answer = UI:Card(p, true)
-  p.answer:SetPoint("TOPLEFT", 0, 0)
+  p.answer:SetPoint("TOPLEFT", p.q, "BOTTOMLEFT", 0, -10)
   p.answer:SetSize(560, 112)
   p.answer.headline = UI.Display(p.answer, "card", "text")
   p.answer.headline:SetPoint("TOPLEFT", 12, -10)
@@ -98,6 +136,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
       row.text:SetText(item.title .. "  |cff888888(" .. item.confidence .. ")|r\n|cffbbbbbb" .. item.why .. "|r")
     end,
     onClick = function(item)
+      p.selected = item
       local ok, msg = M:Perform(item)
       M:Info("advice '%s' -> %s", item.title, tostring(msg))
       p.head:SetText((ok and "" or "|cffff6060") .. tostring(msg))
@@ -117,6 +156,16 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.paste:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -8)
   p.ask = UI:Button(p, "Ask (copy snapshot)", 150, function() ns.Snapshot:AskAdvisor() end)
   p.ask:SetPoint("LEFT", p.paste, "RIGHT", 8, 0)
+  -- feedback on the card you last clicked (AI03-05), kept on this PC
+  local prev = p.ask
+  for _, f in ipairs(M.FEEDBACK) do
+    local b = UI:Button(p, f[2], 96, function()
+      local ok, msg = M:Feedback(p.selected, f[1])
+      p.head:SetText((ok and "" or "|cffff6060") .. msg)
+    end)
+    b:SetPoint("LEFT", prev, "RIGHT", 8, 0)
+    prev = b
+  end
   function p:Refresh()
     local items, why, answer = M:Items()
     if answer then
@@ -130,7 +179,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
     else
       self.answer:Hide()
       self.head:ClearAllPoints()
-      self.head:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
+      self.head:SetPoint("TOPLEFT", self.q, "BOTTOMLEFT", 0, -10)
     end
     self.list:SetItems(items)
     self.head:SetText(#items > 0 and "Click a suggestion to do it. Nothing happens on its own."

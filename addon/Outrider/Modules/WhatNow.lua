@@ -539,7 +539,12 @@ end
 function M:Snapshot()
   -- only for /ride ask: at logout the position is gone and the work is wasted
   if not (ns.Snapshot and ns.Snapshot.asking) then return nil end
-  local out = { goal = self:Goal(), candidates = {} }
+  local out = { goal = self:Goal(), candidates = {}, feedback = {} }
+  local fb = type(ns.db.char.adviceFeedback) == "table" and ns.db.char.adviceFeedback or {}
+  for i = #fb, math.max(1, #fb - 19), -1 do   -- the 20 newest
+    local f = fb[i]
+    out.feedback[#out.feedback + 1] = { id = f.id, v = f.v, t = f.t }
+  end
   for i, c in ipairs(self:Ranked(M.SNAPSHOT_MAX)) do
     out.candidates[i] = {
       candidateId = c.key, kind = c.kind, title = c.title, why = c.why, where = c.where, caveat = c.caveat,

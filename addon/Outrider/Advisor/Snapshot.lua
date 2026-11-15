@@ -98,6 +98,12 @@ function Snap:Collect(asked)
   if not next(s.gear) and live.gear then s.gear = live.gear end
   if (not s.money or s.money == 0) and live.money then s.money = live.money end
   if (not s.level or s.level == 0) and live.level then s.level = live.level end
+  -- the question typed in the Advisor tab and the time you have (AI03)
+  if asked then
+    local q = ns.db.char.askQuestion
+    s.question = type(q) == "string" and q ~= "" and q:sub(1, 200) or nil
+    s.timeBudget = tonumber(ns.db.char.askMinutes)
+  end
   s.quests = quests()
   self.asking = asked and true or false   -- modules may add more for a question (WhatNow candidates)
   s.modules = plain(fromModules(), 0)
