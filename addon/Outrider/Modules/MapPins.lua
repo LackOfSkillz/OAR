@@ -28,7 +28,7 @@ local LABELS = {
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
-  guildmate = "Guildmate",
+  guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took",
 }
 M.LABELS = LABELS
 
@@ -42,10 +42,12 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
+  trail = "trail", ride = "ride",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
   quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 }, guild = { 0.25, 1.00, 0.25 },
+  trail = { 0.95, 0.78, 0.35 }, ride = { 0.55, 0.75, 1.00 },
 }
 M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers", gather = "Herbs, ore & fish" }
 local ICON = {
@@ -54,6 +56,7 @@ local ICON = {
   repair = TRACK .. "Repair", spirit_healer = "Interface\\Icons\\Spell_Holy_Resurrection",
   guild_master = "Interface\\Icons\\INV_Misc_Note_02", tabard = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
+  ride = "Interface\\Icons\\INV_Misc_Map_01",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
   herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01", fish = "Interface\\Icons\\INV_Misc_Fish_02", pool = "Interface\\Icons\\INV_Misc_Fish_14",
 }
@@ -224,6 +227,10 @@ function M:BuildPins(mapID)
       end
     end
   end
+  -- Breadcrumbs: where you walked, and rides you took from here (Trail)
+  if ns.Trail and ns.Trail.enabled then
+    for _, pin in ipairs(ns.Trail:Pins(mapID, hidden)) do out[#out + 1] = pin end
+  end
   -- Herb and ore spawns from the node pack, for what this character can gather
   if ns.NodePack then
     for _, pin in ipairs(ns.NodePack:Pins(mapID, hidden)) do out[#out + 1] = pin end
@@ -304,7 +311,7 @@ end
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
-local NO_MERGE = { rare = true, guild = true }
+local NO_MERGE = { rare = true, guild = true, trail = true, ride = true }
 
 function M.Declutter(pins, px, py)
   local out, cells = {}, {}
@@ -381,7 +388,7 @@ function M:Refresh()
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
-    pin:SetScale(1 / (scale > 0 and scale or 1))
+    pin:SetScale((data.small and 0.55 or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
     M.Paint(pin, data)
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", canvas, "TOPLEFT", data.x * w * scale, -data.y * h * scale)

@@ -140,6 +140,7 @@ Modules\NPCPack.lua
 Modules\Waypoints.lua
 Modules\POICapture.lua
 Modules\Nearest.lua
+Modules\Trail.lua
 Modules\MapPins.lua
 Modules\MinimapPins.lua
 Modules\MapTab.lua

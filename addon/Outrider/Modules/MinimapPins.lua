@@ -113,7 +113,8 @@ function M:Update()
   local s = self:Settings()
   local shown = {}
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
-    if s.quests or pin.kind ~= "quest_giver" then
+    -- breadcrumbs stay on the world map: on the minimap they would crowd out the 12 nearest places
+    if (s.quests or pin.kind ~= "quest_giver") and pin.kind ~= "trail" then
       local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
       local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
       if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
