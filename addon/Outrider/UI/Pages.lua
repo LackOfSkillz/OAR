@@ -445,6 +445,10 @@ local function moneyRows()
     end
   end
   if #ranked == 0 then r({ "note", "No tips for this level yet." }) end
+  if ns.Favor and ns.Favor.enabled then
+    r({ "header", "Merchant's Favor and crates" })
+    r({ "note", function() return table.concat(ns.Favor:Lines(), "\n") end, 80 })
+  end
   r({ "header", "Crafting for profit" })
   r({ "note", function() return table.concat(G:ProfitLines(5), "\n") end, 110 })
   r({ "header", "Your own earnings" })

@@ -55,7 +55,9 @@ Probe.APIS = {
   { "C_AuctionHouse.SendSearchQuery", "P5", "modern AH" }, { "C_AuctionHouse.ReplicateItems", "P5" },
   { "QueryAuctionItems", "P5", "Classic AH" }, { "C_Item.GetItemInfo", "P5" }, { "GetItemInfo", "P5" },
   { "C_TooltipInfo.GetBagItem", "P5" }, { "TooltipDataProcessor.AddTooltipPostCall", "P5" },
-  { "GetLootSlotInfo", "P5" }, { "GetMerchantNumItems", "P5" }, { "C_MerchantFrame.GetBuybackItemID", "P5" },
+  { "GetLootSlotInfo", "P5" }, { "GetMerchantNumItems", "P5" }, { "GetMerchantItemCostInfo", "P5" }, { "GetMerchantItemCostItem", "P5" },
+  { "C_CurrencyInfo.GetCurrencyListSize", "P5" }, { "C_CurrencyInfo.GetCurrencyListInfo", "P5" }, { "C_TooltipInfo.GetBagItem", "P5" },
+  { "C_Reputation.GetNumFactions", "P5" }, { "C_Reputation.GetFactionDataByIndex", "P5" }, { "C_MerchantFrame.GetBuybackItemID", "P5" },
   -- gear
   { "C_Item.GetItemStats", "P6" }, { "GetItemStats", "P6" }, { "C_EquipmentSet.GetEquipmentSetIDs", "P6" },
   { "EquipItemByName", "P6" }, { "GetQuestItemInfo", "P6" }, { "GetNumQuestChoices", "P6" },

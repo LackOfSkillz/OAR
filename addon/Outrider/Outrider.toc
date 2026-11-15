@@ -61,6 +61,7 @@ Data\Herbs.lua
 Data\Transports.lua
 Data\Money.lua
 Data\Dungeons.lua
+Data\Rares.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\SharedData.lua
@@ -88,6 +89,7 @@ Modules\LootLog.lua
 Modules\HerbHelper.lua
 Modules\NodePack.lua
 Modules\MoneyGuide.lua
+Modules\Favor.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua
 Modules\SkillUp.lua
