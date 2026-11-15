@@ -81,6 +81,15 @@ function M.QuestOpen(s, level)
   return true, #notes > 0 and table.concat(notes, ", ") or nil
 end
 
+-- Within reach of this level: required level from 6 below to 3 above. Items
+-- the data lists with no real level requirement (0 or 1: reputation and
+-- event items like Furbolg Medicine Pouch, item level 52) go by item level.
+function M.LevelFits(it, level)
+  local req, ilvl = it[2] or 0, it[3] or 0
+  if req <= 1 and ilvl > level + 10 then return false end
+  return req <= level + 3 and req >= level - 6
+end
+
 -- { {itemID, name, pct, kind, where = {mapID, x, y, who, qlevel, note}, reqLevel} } best first;
 -- quests you cannot take yet come after the ones you can
 function M:Candidates(opts)
@@ -108,7 +117,7 @@ function M:Candidates(opts)
     -- every map (Journey tab): the first source this character can use
     for id, it in pairs(self.pack) do
       local req = it[2] or 0
-      if req <= level + 3 and req >= level - 6 then
+      if M.LevelFits(it, level) then
         for _, s in ipairs(it[4]) do
           if s[7] == nil or s[7] == faction then
             local ok, note = M.QuestOpen(s, level)
@@ -124,7 +133,7 @@ function M:Candidates(opts)
     for _, id in ipairs(self.byMap[mapID] or {}) do
       local it = self.pack[id]
       local req = it[2] or 0
-      if req <= level + 3 and req >= level - 6 then
+      if M.LevelFits(it, level) then
         for _, s in ipairs(it[4]) do
           if s[2] == mapID and (s[7] == nil or s[7] == faction) then
             local ok, note = M.QuestOpen(s, level)

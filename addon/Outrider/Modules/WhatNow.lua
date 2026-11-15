@@ -137,7 +137,7 @@ SOURCES.errands = function()
       c.why = "Gets you what your crafting list is missing."
     end
     if ns.Nearest then
-      local poi, yards = ns.Nearest:Find(e.kind == "trainer" and "trainer" or e.kind)
+      local poi, yards = ns.Nearest:Find(e.kind == "trainer" and "class_trainer" or e.kind)
       if poi then
         c.where = (poi.name or c.where) .. (yards and string.format(" (%d yards)", yards) or "")
         c.seconds = yards and yards / 7 or nil
@@ -263,7 +263,8 @@ SOURCES.gold = function()
   return { { key = "gold:" .. tostring(r.entry.id), kind = "gold", title = tostring(r.entry.title),
     why = M.Safe(G.RateText, r) or "A good earner at your level.",
     where = r.entry.zones and table.concat(r.entry.zones, ", ") or "see the Money page",
-    benefit = 0.6, confidence = r.measured and 0.85 or 0.5,
+    -- "loot everything" is a habit, not a step: it counts for less
+    benefit = r.entry.id == "loot-everything" and 0.3 or 0.6, confidence = r.measured and 0.85 or 0.5,
     caveat = not r.measured and "Rate from guides, not measured on you yet." or nil,
     go = hub("money") } }
 end
@@ -335,6 +336,7 @@ function M:List(force)
   local st = self:Store()
   local list = M.Pick(cands, self:Goal(), st.skip, now)
   self.cache, self.cacheAt, self.failed = list, now, failed
+  if not self.loggedAt then self:LogAll("first look") end
   local keys = {}
   for _, c in ipairs(list) do
     keys[#keys + 1] = c.key
@@ -363,26 +365,34 @@ function M:Skip(c)
   self.cache = nil
 end
 
--- At logout, one log line per goal with what would be suggested, so the
--- suggestions can be judged from the saved log (tests are self-collecting).
-function M:LogAll()
+-- One log line per goal with what would be suggested, so the suggestions can
+-- be judged from the saved log (tests are self-collecting). Taken the first
+-- time the page lists steps in a session, then on each new zone (at most every
+-- 10 min). Not at logout: the game no longer reports the position then, so
+-- every quest's trip time came back empty. Not at login either: it would load
+-- the gear pack (4 MB) for players who never open the page.
+M.LOG_GAP = 600
+function M:LogAll(why)
+  local now = time()
+  if self.loggedAt and now - self.loggedAt < M.LOG_GAP then return end
+  self.loggedAt = now
   local cands, failed = self:Candidates()
   local skip = self:Store().skip
   for _, g in ipairs(M.GOALS) do
     local keys = {}
     for _, c in ipairs(M.Pick(cands, g.id, skip)) do keys[#keys + 1] = string.format("%s %.2f", c.key, c.score or 0) end
-    self:Info("what now at logout (%s): %s", g.id, #keys > 0 and table.concat(keys, "; ") or "nothing")
+    self:Info("what now %s (%s): %s", tostring(why), g.id, #keys > 0 and table.concat(keys, "; ") or "nothing")
   end
   if #failed > 0 then self:Warn("what now sources failed: %s", table.concat(failed, ", ")) end
 end
 
--- tidy old skips at login; log the suggestions at logout
+-- tidy old skips at login; after a first look, log the suggestions on new zones
 function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod)
     local st, now = mod:Store(), time()
     for k, t in pairs(st.skip) do if now - t > M.SKIP_FOR then st.skip[k] = nil end end
   end)
-  self:On("PLAYER_LOGOUT", function(mod) mod:LogAll() end)
+  self:On("ZONE_CHANGED_NEW_AREA", function(mod) if mod.loggedAt then mod:LogAll("new zone") end end)
 end
 
 function M:Activity()

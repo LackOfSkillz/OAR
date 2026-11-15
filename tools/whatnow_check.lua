@@ -68,6 +68,10 @@ for _, key in ipairs(keys) do
   end
   local ns = game:loadAddon()
   game:login()
+  -- the fake client has no real map, so every trip looked like a minute:
+  -- estimate 2 minutes inside the character's zone, 25 minutes elsewhere
+  local here = latestZone(c)
+  ns.Travel.TimeTo = function(_, _, p) if not p then return nil end return p.mapID == here and 120 or 1500 end
   io.write(string.format("\n=== %s  %s %s level %s, zone %s\n", key, tostring(m.race), tostring(m.class), tostring(m.level),
     tostring(latestZone(c))))
   for _, g in ipairs(ns.WhatNow.GOALS) do

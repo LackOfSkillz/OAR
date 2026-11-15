@@ -112,6 +112,46 @@ T.describe("what now", function()
     T.contains(list[2].why, "hard fights")
   end)
 
+  T.it("gear with no real level requirement goes by item level", function()
+    local _, ns = session()
+    local fits = ns.Nearby.LevelFits
+    T.no(fits({ "Furbolg Medicine Pouch", 0, 52 }, 1))
+    T.no(fits({ "Surfer Shoes", 1, 25 }, 1))
+    T.ok(fits({ "Starter Shirt", 0, 5 }, 1))
+    T.ok(fits({ "Blade", 14, 20 }, 15))
+    T.no(fits({ "Big Blade", 20, 25 }, 15))
+  end)
+
+  T.it("the trainer errand finds a trainer of your own class", function()
+    local game, ns = session({ ammo = 1000 })
+    local W = ns.Waypoints
+    ns.db.global.pois = {
+      a = { kind = "trainer", title = "Priest Trainer", name = "Priesty", mapID = 1412, x = 0.46, y = 0.37 },
+      b = { kind = "trainer", title = "Hunter Trainer", name = "Huntress", mapID = 1412, x = 0.47, y = 0.38 },
+      c = { kind = "trainer", title = "Cook", name = "Cooky", mapID = 1412, x = 0.461, y = 0.371 },
+    }
+    local p = ns.Nearest:Find("class_trainer")
+    T.eq(p and p.name, "Huntress")
+    T.eq(ns.Nearest:Find("trainer").name, "Priesty")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("every goal is logged the first time the page lists steps, then on new zones at most every 10 minutes", function()
+    local game, ns = session({ ammo = 1000 })
+    T.eq(ns.WhatNow.loggedAt, nil)
+    game:fire("ZONE_CHANGED_NEW_AREA")
+    T.eq(ns.WhatNow.loggedAt, nil)
+    ns.WhatNow:List(true)
+    local logged = ns.WhatNow.loggedAt
+    T.ok(logged ~= nil)
+    game:fire("ZONE_CHANGED_NEW_AREA")
+    T.eq(ns.WhatNow.loggedAt, logged)
+    game:advance(601)
+    game:fire("ZONE_CHANGED_NEW_AREA")
+    T.ok(ns.WhatNow.loggedAt > logged)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("goal is per character and set by /ride now; the page builds", function()
     local game, ns = session()
     game:slash("now gold")
