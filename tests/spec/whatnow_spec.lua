@@ -224,4 +224,25 @@ T.describe("what now", function()
     T.ok(page.chips[1].on)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("an asked snapshot carries the ranked candidates with ids and grounded targets; logout's does not", function()
+    local game, ns = session({ level = 24, ammo = 1000 })
+    game.durability = { [1] = { 2, 50 } }
+    local W = ns.WhatNow
+    W.SOURCES.spec = function() return { cand("gather", "Peacebloom", 0.5, { target = { mapID = 1412, x = 0.4, y = 0.5 }, label = "observed" }) } end
+    table.insert(W.ORDER, "spec")
+    local s = ns.Snapshot:Collect(true)
+    local snap = s.modules.WhatNow
+    T.ok(snap and #snap.candidates >= 2)
+    T.eq(snap.candidates[1].candidateId, "errand:repair")
+    T.eq(snap.candidates[1].label, "observed")
+    local found
+    for _, c in ipairs(snap.candidates) do if c.candidateId == "gather:Peacebloom" then found = c end end
+    T.ok(found and found.target.mapID == 1412 and found.target.x == 0.4)
+    T.ok(type(s.snapshotId) == "string")
+    local later = ns.Snapshot:Collect(false)
+    T.eq(later.modules.WhatNow, nil)
+    table.remove(W.ORDER)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

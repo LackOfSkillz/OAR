@@ -19,6 +19,10 @@
 
 local _, ns = ...
 local Advice = { name = "advice", SCHEMA = 1, MAX_ITEMS = 12 }
+-- Schema 2 (Outrider Intelligence, AI02-05): adds answer = { headline,
+-- summary, limits = {..}, sources = {..} } and items may name the WhatNow
+-- candidate they act on (candidateId). Everything in schema 1 still works.
+Advice.SCHEMAS = { [1] = true, [2] = true }
 ns.Advice = Advice
 
 -- Arg kinds: "id" = positive integer below 2^31, "frac" = finite 0..1,
@@ -30,7 +34,7 @@ Advice.ALLOWED = {
   show_item   = { itemID = "id" },
 }
 Advice.PANELS = { hub = true, rares = true, pet = true, macros = true, gear = true, professions = true, map = true }
-Advice.CONFIDENCE = { verified = true, community = true, inferred = true, unknown = true }
+Advice.CONFIDENCE = { verified = true, community = true, inferred = true, unknown = true, observed = true }
 
 local function isId(v) return type(v) == "number" and v == v and v >= 1 and v < 2147483648 and v == math.floor(v) end
 local function isFrac(v) return type(v) == "number" and v == v and v >= 0 and v <= 1 end
@@ -74,7 +78,7 @@ end
 -- Clean items and "ok", or {} and the reason, for one advice table.
 function Advice:Check(a)
   if type(a) ~= "table" then return {}, "no advice file" end
-  if a.schema ~= self.SCHEMA then return {}, "wrong schema" end
+  if not self.SCHEMAS[a.schema] then return {}, "wrong schema" end
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
   local snaps = rawget(_G, "Outrider_Snapshots")
   local snap = type(snaps) == "table" and snaps[ns.db.key]
@@ -87,15 +91,61 @@ function Advice:Check(a)
     local age = (snap.takenAt or 0) - (tonumber(a.answersSnapshot) or 0)
     if age < 0 or age > 6 * 3600 then return {}, "advice is stale" end
   end
+  -- schema 2 answers name the snapshot they answer; a mismatch is stale
+  if a.schema == 2 and a.answersSnapshotId and snap.snapshotId and a.answersSnapshotId ~= snap.snapshotId then
+    return {}, "advice is stale"
+  end
+  local cands = Advice.Candidates(snap)
   local out = {}
   if type(a.items) == "table" then
     for _, item in ipairs(a.items) do
       local c = clean(item)
+      if c and a.schema == 2 and not Advice.Grounded(item, c, cands) then c = nil end
       if c then out[#out + 1] = c end
       if #out >= self.MAX_ITEMS then break end
     end
   end
-  return out, "ok"
+  return out, "ok", a.schema == 2 and Advice.CleanAnswer(a.answer) or nil
+end
+
+-- The WhatNow candidates the snapshot carried, by id (or nil if it had none).
+function Advice.Candidates(snap)
+  local w = type(snap.modules) == "table" and snap.modules.WhatNow
+  if type(w) ~= "table" or type(w.candidates) ~= "table" then return nil end
+  local by = {}
+  for _, c in ipairs(w.candidates) do if type(c) == "table" and type(c.candidateId) == "string" then by[c.candidateId] = c end end
+  return by
+end
+
+-- A schema 2 item that names a candidate must name one from this snapshot,
+-- and a waypoint must go exactly where Outrider recorded that candidate.
+function Advice.Grounded(item, c, cands)
+  local id = item.candidateId
+  if id == nil then return c.action ~= "waypoint" end   -- a free waypoint is never trusted
+  if type(id) ~= "string" or not cands or not cands[id] then return false end
+  c.candidateId = id
+  if c.action == "waypoint" then
+    local t = cands[id].target
+    if type(t) ~= "table" or t.mapID ~= c.args.mapID or t.x ~= c.args.x or t.y ~= c.args.y then return false end
+  end
+  return true
+end
+
+function Advice.CleanAnswer(ans)
+  if type(ans) ~= "table" then return nil end
+  local out = { headline = plain(ans.headline, 120), summary = plain(ans.summary, 600), limits = {}, sources = {} }
+  for i, l in ipairs(type(ans.limits) == "table" and ans.limits or {}) do
+    if i > 4 then break end
+    local t = plain(l, 160)
+    if t then out.limits[#out.limits + 1] = t end
+  end
+  for i, l in ipairs(type(ans.sources) == "table" and ans.sources or {}) do
+    if i > 8 then break end
+    local t = plain(l, 80)
+    if t then out.sources[#out.sources + 1] = t end
+  end
+  if not (out.headline or out.summary) then return nil end
+  return out
 end
 
 -- Pasted advice (no reload, ns.db.char.pastedAdvice) wins over Advice.lua
@@ -103,8 +153,8 @@ end
 function Advice:Load()
   local pasted = ns.db and ns.db.char and ns.db.char.pastedAdvice
   if type(pasted) == "table" then
-    local items, why = self:Check(pasted)
-    if why == "ok" then return items, why end
+    local items, why, answer = self:Check(pasted)
+    if why == "ok" then return items, why, answer end
   end
   return self:Check(rawget(_G, "Outrider_Advice"))
 end
@@ -114,9 +164,9 @@ function Advice:Paste(text)
   local data, err = ns.Serialize.Import(text)
   if type(data) ~= "table" then return 0, err or "not an Outrider code" end
   if data.kind ~= "advice" then return 0, "that code is not advice" end
-  local items, why = self:Check(data)
+  local items, why, answer = self:Check(data)
   if why ~= "ok" then return 0, why end
-  if #items == 0 then return 0, "no usable suggestions in that code" end
+  if #items == 0 and not answer then return 0, "no usable suggestions in that code" end
   ns.db.char.pastedAdvice = data
   return #items, "ok"
 end

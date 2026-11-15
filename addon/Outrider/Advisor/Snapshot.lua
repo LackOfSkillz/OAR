@@ -80,6 +80,10 @@ function Snap:Collect(asked)
     takenAt = now,
     askedAt = asked and now or (type(prev) == "table" and (prev.askedAt or prev.takenAt)) or now,
     addon = ns.version, build = ns.build,
+    -- Outrider Intelligence (AI01-01/03): an id for this snapshot and the
+    -- client build, so answers can be bound to the snapshot they answer
+    snapshotId = string.format("%s-%d", tostring(meta.class or "char"):lower(), now),
+    gameBuild = GetBuildInfo and select(1, GetBuildInfo()) or nil,
     level = UnitLevel and UnitLevel("player"),
     class = meta.class, race = meta.race, faction = meta.faction,
     money = GetMoney and GetMoney(),
@@ -95,7 +99,9 @@ function Snap:Collect(asked)
   if (not s.money or s.money == 0) and live.money then s.money = live.money end
   if (not s.level or s.level == 0) and live.level then s.level = live.level end
   s.quests = quests()
+  self.asking = asked and true or false   -- modules may add more for a question (WhatNow candidates)
   s.modules = plain(fromModules(), 0)
+  self.asking = false
   -- keep the saved file small: drop the largest module parts until it fits
   local size = #ns.Serialize.Encode(s)
   while size > self.MAX_BYTES do

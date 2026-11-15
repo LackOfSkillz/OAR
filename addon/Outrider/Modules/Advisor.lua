@@ -27,9 +27,9 @@ M.PANEL_TAB = { hub = "overview", rares = "rares", pet = "pet", macros = "macros
   professions = "crafting", map = "map" }
 
 function M:Items()
-  local items, why = ns.Advice:Load()
-  self.reason = why
-  return items, why
+  local items, why, answer = ns.Advice:Load()
+  self.reason, self.answer = why, answer
+  return items, why, answer
 end
 
 -- Performs one cleaned advice item; returns ok, message.
@@ -73,8 +73,24 @@ function M:Activity()
 end
 
 ns.Hub:AddTab("advisor", "Advisor", function(p)
+  -- the answer (schema 2): headline, summary and what it couldn't check
+  p.answer = UI:Card(p, true)
+  p.answer:SetPoint("TOPLEFT", 0, 0)
+  p.answer:SetSize(560, 112)
+  p.answer.headline = UI.Display(p.answer, "card", "text")
+  p.answer.headline:SetPoint("TOPLEFT", 12, -10)
+  p.answer.headline:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
+  p.answer.summary = UI.Text(p.answer, "normal", "body")
+  p.answer.summary:SetPoint("TOPLEFT", 12, -34)
+  p.answer.summary:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
+  p.answer.summary:SetJustifyH("LEFT") p.answer.summary:SetJustifyV("TOP")
+  p.answer.summary:SetHeight(44)
+  p.answer.limits = UI.Text(p.answer, "small", "muted")
+  p.answer.limits:SetPoint("TOPLEFT", 12, -82)
+  p.answer.limits:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
+  p.answer.limits:SetJustifyH("LEFT")
   p.head = UI.Text(p, "small", "muted")
-  p.head:SetPoint("TOPLEFT", 0, 0)
+  p.head:SetPoint("TOPLEFT", p.answer, "BOTTOMLEFT", 0, -8)
   p.head:SetWidth(560) p.head:SetJustifyH("LEFT")
   p.list = UI:ScrollList(p, {
     rows = 8, rowHeight = 40,
@@ -102,7 +118,20 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.ask = UI:Button(p, "Ask (copy snapshot)", 150, function() ns.Snapshot:AskAdvisor() end)
   p.ask:SetPoint("LEFT", p.paste, "RIGHT", 8, 0)
   function p:Refresh()
-    local items, why = M:Items()
+    local items, why, answer = M:Items()
+    if answer then
+      self.answer:Show()
+      self.answer.headline:SetText(answer.headline or "")
+      self.answer.summary:SetText(answer.summary or "")
+      local lim = table.concat(answer.limits or {}, "  |  ")
+      self.answer.limits:SetText(lim ~= "" and ("Not checked: " .. lim) or "")
+      self.head:ClearAllPoints()
+      self.head:SetPoint("TOPLEFT", self.answer, "BOTTOMLEFT", 0, -8)
+    else
+      self.answer:Hide()
+      self.head:ClearAllPoints()
+      self.head:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
+    end
     self.list:SetItems(items)
     self.head:SetText(#items > 0 and "Click a suggestion to do it. Nothing happens on its own."
       or (M.REASON_TEXT[why] or tostring(why)))

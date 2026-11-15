@@ -136,7 +136,7 @@ SOURCES.errands = function()
   local d = ns.Errands.Durability()
   local ammo = ns.Modules:Get("Ammo")
   for _, e in ipairs(ns.Errands:List()) do
-    local c = { key = "errand:" .. e.kind, kind = "errand", title = e.text, benefit = 0.4, confidence = 1,
+    local c = { key = "errand:" .. e.kind, kind = "errand", title = e.text, benefit = 0.4, confidence = 1, label = "observed",
       where = ERRAND_WHERE[e.kind], go = function() return ns.Errands:Go(e) end }
     if e.kind == "repair" then
       c.benefit = clamp(1 - (d or 1) / 0.35) + 0.3
@@ -162,6 +162,7 @@ SOURCES.errands = function()
         c.where = (poi.name or c.where) .. (yards and string.format(" (%d yards)", yards) or "")
         c.seconds = yards and yards / 7 or nil
         c.mapID = poi.mapID
+        c.target = poi.x and poi.y and { mapID = poi.mapID, x = poi.x, y = poi.y } or nil
       else
         c.alt = { text = "No " .. (ERRAND_WHERE[e.kind] or e.kind) .. " known nearby yet: the closest town will have one." }
       end
@@ -188,7 +189,8 @@ SOURCES.quests = function()
         why = string.format("About %d XP, %d XP a minute counting the trip.%s", e.xp or 0, math.floor((e.rate or 0) + 0.5),
           hard and " Several levels above you: expect hard fights." or ""),
         where = string.format("%s, %s, %s away", tostring(e.giver or "quest giver"), zone(e.mapID), minutes(e.seconds) or "?"),
-        benefit = benefit, confidence = 0.6, seconds = e.seconds, mapID = e.mapID,
+        benefit = benefit, confidence = 0.6, seconds = e.seconds, mapID = e.mapID, label = "community",
+        target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
         caveat = "Quest spots come from Classic data and may have moved on Forever.",
         go = function() return ns.Journey:Go(e) end }
     end
@@ -247,7 +249,9 @@ SOURCES.gear = function()
       title = "Get " .. tostring(e.name),
       why = string.format("A %d%% upgrade for you.", math.floor((e.pct or 0) + 0.5)),
       where = string.format("%s, %s away%s", zone(e.mapID), minutes(e.seconds) or "?", e.note and (" (" .. e.note .. ")") or ""),
-      benefit = clamp((e.pct or 0) / 30), confidence = 0.7, seconds = e.seconds, mapID = e.mapID,
+      benefit = clamp((e.pct or 0) / 30), confidence = 0.7, seconds = e.seconds, mapID = e.mapID, label = "community",
+      itemID = e.itemID, panel = "gear",
+      target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
       caveat = "Where it drops or sells comes from Classic data.",
       go = function() return ns.Journey:Go(e) end }
     local first = bySlot[slot]
@@ -279,7 +283,8 @@ SOURCES.dungeons = function()
       if not secs then secs, routeNote = 3600, ", no known route" end
       out[#out + 1] = { key = "dungeon:" .. r.name, kind = "dungeon", title = "Run " .. r.name,
         why = string.format("%d upgrade%s for you. %s", r.count, r.count == 1 and "" or "s", M.Safe(G.UpgradeLine, r.ups, 2) or ""),
-        where = zone(r.map) .. " (needs a group" .. routeNote .. ")", seconds = secs, mapID = r.map,
+        where = zone(r.map) .. " (needs a group" .. routeNote .. ")", seconds = secs, mapID = r.map, label = "community",
+        target = r.map and r.x and r.y and { mapID = r.map, x = r.x, y = r.y } or nil,
         benefit = (clamp((r.value or 0) / 60) * 0.9 + 0.1) * 0.75, confidence = 0.6,
         caveat = "Loot lists come from Classic data; Forever may differ.",
         go = function() return G:Go(r) end }
@@ -298,6 +303,7 @@ SOURCES.training = function()
     title = string.format("Train %s (+%d expected)", prof, total),
     why = "You already carry what it needs: no shopping trip.",
     where = "anywhere (press your Training key)", benefit = clamp(total / 10), confidence = 0.85,
+    label = "observed", panel = "professions",
     go = hub("professions") } }
 end
 
@@ -317,7 +323,9 @@ SOURCES.rares = function()
           where = zone(last.mapID) .. " (last seen spot)", benefit = win.state == "alive" and 0.9 or 0.6,
           confidence = win.state == "alive" and 0.8 or 0.4,
           caveat = win.state ~= "alive" and "Respawn windows are a guess from a few sightings." or nil,
-          mapID = last.mapID, go = wp(last.mapID, last.x, last.y, name) }
+          mapID = last.mapID, label = win.state == "alive" and "observed" or "inferred", panel = "rares",
+          target = last.x and last.y and { mapID = last.mapID, x = last.x, y = last.y } or nil,
+          go = wp(last.mapID, last.x, last.y, name) }
       end
     end
   end
@@ -334,6 +342,7 @@ SOURCES.gold = function()
     where = r.entry.zones and table.concat(r.entry.zones, ", ") or "see the Money page",
     -- "loot everything" is a habit, not a step: it counts for less
     benefit = r.entry.id == "loot-everything" and 0.3 or 0.6, confidence = r.measured and 0.85 or 0.5,
+    label = r.measured and "observed" or "community", panel = "hub",
     caveat = not r.measured and "Rate from guides, not measured on you yet." or nil,
     go = hub("money") } }
 end
@@ -351,7 +360,8 @@ SOURCES.gather = function()
         kind = "gather", title = fish and ("Fish here (" .. tostring(n.name or "pool") .. ")") or ("Gather " .. tostring(n.name or n.kind)),
         why = string.format("You saw it up %d minute%s ago.", math.floor((age or 0) / 60), math.floor((age or 0) / 60) == 1 and "" or "s"),
         where = zone(n.mapID) .. " (nearby)",
-        benefit = 0.5, confidence = 0.7, mapID = n.mapID, go = wp(n.mapID, n.x, n.y, n.name) }
+        benefit = 0.5, confidence = 0.7, mapID = n.mapID, label = "observed",
+        target = { mapID = n.mapID, x = n.x, y = n.y }, go = wp(n.mapID, n.x, n.y, n.name) }
       if #out >= 2 then break end
     end
   end
@@ -501,6 +511,46 @@ function M.ItemLevel()
     end
   end
   return n > 0 and math.floor(sum / n + 0.5) or nil
+end
+
+-- For the AI companion (Outrider Intelligence, AI01-02): the top candidates
+-- for the current goal, best first, as plain data. Every place comes from
+-- Outrider's own records (target = map id and coordinates, or a panel to
+-- open); the companion may only point at these, never invent one.
+M.SNAPSHOT_MAX = 12
+function M:Ranked(n)
+  local cands = self:Candidates()
+  local goal, skip, now = self:Goal(), self:Store().skip, time()
+  local list = {}
+  for _, c in ipairs(cands) do
+    local hidden = skip[c.key] and now - skip[c.key] < M.SKIP_FOR
+    if not hidden and (c.benefit or 0) > 0 then
+      local copy = {}
+      for k, v in pairs(c) do copy[k] = v end
+      copy.score = M.Score(copy, goal)
+      list[#list + 1] = copy
+    end
+  end
+  table.sort(list, function(a, b) if a.score ~= b.score then return a.score > b.score end return tostring(a.key) < tostring(b.key) end)
+  for i = #list, (n or M.SNAPSHOT_MAX) + 1, -1 do list[i] = nil end
+  return list
+end
+
+function M:Snapshot()
+  -- only for /ride ask: at logout the position is gone and the work is wasted
+  if not (ns.Snapshot and ns.Snapshot.asking) then return nil end
+  local out = { goal = self:Goal(), candidates = {} }
+  for i, c in ipairs(self:Ranked(M.SNAPSHOT_MAX)) do
+    out.candidates[i] = {
+      candidateId = c.key, kind = c.kind, title = c.title, why = c.why, where = c.where, caveat = c.caveat,
+      minutes = c.seconds and math.floor(c.seconds / 60 + 0.5) or nil,
+      score = math.floor((c.score or 0) * 1000 + 0.5) / 1000,
+      label = c.label or ((c.confidence or 1) >= 0.7 and "inferred" or "unknown"),
+      urgent = c.urgent or nil, itemID = c.itemID, panel = c.panel,
+      target = c.target,
+    }
+  end
+  return out
 end
 
 function M:Activity()
