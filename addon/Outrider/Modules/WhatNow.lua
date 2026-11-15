@@ -184,7 +184,7 @@ SOURCES.quests = function()
   -- quests the data knows here at all (done, in the log, locked behind a
   -- chain): the Skyborne start zone has 98, 97 of them behind Coming of Age
   local known = local_
-  local rep = here and ns.NPCPack.ZoneReport and M.Safe(ns.NPCPack.ZoneReport, ns.NPCPack, here)
+  local rep = here and ns.NPCPack.ZoneReport and M.Safe(ns.NPCPack.ZoneReport, ns.NPCPack, here, true)
   if type(rep) == "table" then
     known = #(rep.available or {}) + #(rep.locked or {}) + #(rep.active or {}) + (tonumber(rep.done) or 0)
   end

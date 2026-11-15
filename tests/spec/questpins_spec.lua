@@ -75,4 +75,23 @@ T.describe("quest pins", function()
     end
     T.ok(logged, "logged at login")
   end)
+
+  T.it("saved zone reports are compact and only the 8 newest zones are kept", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local P = ns.NPCPack
+    local full = { t = 5, level = 3, done = 2, active = { {}, {} },
+      available = { { name = "A", level = 1 }, { name = "B", level = 2 } }, locked = { { why = "x" }, { why = "y" }, { why = "z" } } }
+    local c = P.Compact(full)
+    T.eq(c.done, 2) T.eq(c.active, 2) T.eq(c.locked, 3) T.eq(c.availableCount, 2)
+    T.eq(c.available[2], "B [2]")
+    T.eq(P.Compact(c), c)
+    local zones = {}
+    for i = 1, 12 do zones[1000 + i] = { t = i } end
+    P.Prune(zones)
+    local n = 0
+    for k in pairs(zones) do n = n + 1 T.ok(k > 1004) end
+    T.eq(n, 8)
+  end)
 end)

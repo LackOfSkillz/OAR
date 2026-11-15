@@ -32,6 +32,19 @@ function M:OnEnable()
     self:On(e, function() ns.Events:Fire("OTR_DATA_CHANGED", "quests") end)
   end
   self:On("PLAYER_ENTERING_WORLD", function(mod)
+    -- older saves kept full reports: shrink them, for every character (all
+    -- of them sit in memory, not only the one playing)
+    if not mod.compacted then
+      mod.compacted = true
+      local db = rawget(_G, "Outrider_DB")
+      for _, ch in pairs(type(db) == "table" and type(db.chars) == "table" and db.chars or {}) do
+        local zq = type(ch) == "table" and ch.zoneQuests
+        if type(zq) == "table" then
+          for k, v in pairs(zq) do zq[k] = M.Compact(v) end
+          M.Prune(zq)
+        end
+      end
+    end
     if not mod.raceLogged then
       mod.raceLogged = true
       local name, file, raceID = C.Call("UnitRace", "player")
@@ -264,8 +277,33 @@ function M:ZoneReport(mapID, nosave)
   table.sort(rep.available, function(a, b) return a.level < b.level end)
   if nosave then return rep end
   ns.db.char.zoneQuests = type(ns.db.char.zoneQuests) == "table" and ns.db.char.zoneQuests or {}
-  ns.db.char.zoneQuests[mapID] = rep
+  ns.db.char.zoneQuests[mapID] = M.Compact(rep)
+  M.Prune(ns.db.char.zoneQuests)
   return rep
+end
+
+-- What gets saved: counts and up to 20 available quest names. The full report
+-- (every locked quest with its reason) took 124 KB for a level 1 in one zone,
+-- 2026-11-15; the log line at login still lists what is available.
+M.KEEP_ZONES, M.KEEP_NAMES = 8, 20
+function M.Compact(rep)
+  if type(rep) ~= "table" then return rep end
+  if type(rep.locked) == "number" then return rep end -- already compact
+  local names = {}
+  for i, q in ipairs(rep.available or {}) do
+    if i > M.KEEP_NAMES then break end
+    names[#names + 1] = string.format("%s [%d]", tostring(q.name), tonumber(q.level) or 0)
+  end
+  return { t = rep.t, level = rep.level, done = rep.done, active = #(rep.active or {}),
+    availableCount = #(rep.available or {}), available = names, locked = #(rep.locked or {}) }
+end
+
+-- Keep the newest KEEP_ZONES zones.
+function M.Prune(zones)
+  local keys = {}
+  for k, v in pairs(zones) do keys[#keys + 1] = { k, type(v) == "table" and tonumber(v.t) or 0 } end
+  table.sort(keys, function(a, b) return a[2] > b[2] end)
+  for i = M.KEEP_ZONES + 1, #keys do zones[keys[i][1]] = nil end
 end
 
 -- Every quest you could pick up now, anywhere the pack knows: { {id, name, level, giver, mapID, x, y, diff} }
