@@ -444,7 +444,7 @@ local KIND_ICON = {
   profession = "Interface\\Icons\\Trade_Alchemy", rare = "Interface\\Icons\\Ability_Hunter_SniperShot",
   gold = "Interface\\Icons\\INV_Misc_Coin_02", gather = "Interface\\Icons\\INV_Misc_Flower_02",
 }
-local CARD_H, CARD_GAP, SIDE_W, TOP = 104, 8, 176, 84
+local CARD_H, CARD_GAP, SIDE_W, TOP = 112, 8, 176, 84
 
 local function wrap(fs, lines)
   if fs.SetWordWrap then fs:SetWordWrap(lines > 1) end
@@ -473,7 +473,7 @@ local function stepCard(parent, i, W, p)
   c.why:SetHeight(30)
   wrap(c.why, 2)
   c.where = UI.Text(c, "small", "muted")
-  c.where:SetPoint("TOPLEFT", 12, -62)
+  c.where:SetPoint("TOPLEFT", 12, -66)
   c.where:SetPoint("RIGHT", c, "RIGHT", -12, 0)
   wrap(c.where, 1)
   c.go = UI:Button(c, "Go", 64, function() local s = c.step if s then W:Go(s) end end)

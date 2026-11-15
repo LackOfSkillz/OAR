@@ -12,7 +12,7 @@ ns.Theme = Theme
 -- colour when that setting is on (Gary, 2026-11-13); `gold` marks what is
 -- selected or the main action on a page, whatever the class.
 Theme.colors = {
-  bg      = { 0.059, 0.067, 0.086, 0.96 },
+  bg      = { 0.059, 0.067, 0.086, 1.00 },  -- solid: nothing behind shows through
   panel   = { 0.043, 0.051, 0.067, 0.98 },  -- sidebar, title bar
   raised  = { 0.086, 0.102, 0.133, 1.00 },  -- cards, buttons
   hover   = { 0.110, 0.137, 0.188, 1.00 },  -- selected sidebar row, hovered card

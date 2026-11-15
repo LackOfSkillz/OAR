@@ -245,11 +245,21 @@ SOURCES.dungeons = function()
   local G = ns.DungeonGuide
   if not (G and G:Pack()) then return {} end
   local out = {}
+  -- the trip counts (the Deadmines from Zephras Isle is a long way: it had no
+  -- time and outranked nearby quests, 2026-11-15), and a group has to be found
+  local prep = ns.Travel and M.Safe(ns.Travel.Prepare, ns.Travel)
   for _, r in ipairs(G:Rank()) do
     if r.status == "ready" and (r.count or 0) > 0 then
+      local secs, routeNote = nil, ""
+      if prep and r.map and r.x and r.y then
+        local pt = ns.Travel.Point(r.map, r.x, r.y, r.name)
+        secs = pt and M.Safe(ns.Travel.TimeTo, ns.Travel, prep, pt)
+      end
+      if not secs then secs, routeNote = 3600, ", no known route" end
       out[#out + 1] = { key = "dungeon:" .. r.name, kind = "dungeon", title = "Run " .. r.name,
         why = string.format("%d upgrade%s for you. %s", r.count, r.count == 1 and "" or "s", M.Safe(G.UpgradeLine, r.ups, 2) or ""),
-        where = zone(r.map) .. " (needs a group)", benefit = clamp((r.value or 0) / 60) * 0.9 + 0.1, confidence = 0.6,
+        where = zone(r.map) .. " (needs a group" .. routeNote .. ")", seconds = secs,
+        benefit = (clamp((r.value or 0) / 60) * 0.9 + 0.1) * 0.75, confidence = 0.6,
         caveat = "Loot lists come from Classic data; Forever may differ.",
         go = function() return G:Go(r) end }
       if #out >= 2 then break end
