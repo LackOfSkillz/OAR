@@ -84,6 +84,13 @@ foreach ($f in $folders) {
   if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons)$') {
     Write-Utf8NoBom (Join-Path $staging "$f\LICENSE-DATA.txt") $note
     Write-Utf8NoBom (Join-Path $staging "$f\gpl-3.0.md") $gpl
+    # the generated TOC still carries the private-copy note: say what applies
+    $tocPath = Join-Path $staging "$f\$f.toc"
+    if (Test-Path $tocPath) {
+      $lines = Get-Content $tocPath | ForEach-Object {
+        if ($_ -match '^##\s*Notes:') { '## Notes: Data converted from QuestieDB, shared under GPLv3 (see LICENSE-DATA.txt).' } else { $_ } }
+      Write-Utf8NoBom $tocPath (($lines -join "`n") + "`n")
+    }
   }
 }
 

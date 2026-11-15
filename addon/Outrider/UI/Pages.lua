@@ -434,6 +434,48 @@ ns.Hub:AddTab("dungeons", "Dungeons", function(p)
   UI:FormPage(p, dungeonRows())
 end)
 
+-- ------------------------------------------------------------- What now?
+-- Pathfinder Lite: five card slots that re-read the list on every refresh.
+ns.Hub:AddTab("whatnow", "What now?", function(p)
+  local W = ns.WhatNow
+  if not W then UI:FormPage(p, { { "note", "What now? is switched off (Modules page)." } }) return end
+  local list = {}
+  local function card(i) return list[i] end
+  local rows = {}
+  local function r(t) rows[#rows + 1] = t end
+  r({ "header", "What now?" })
+  r({ "note", function()
+    local goal = W:Goal()
+    for _, g in ipairs(W.GOALS) do if g.id == goal then return "Your goal: " .. g.label .. ". Pick another:" end end
+    return "Pick a goal:"
+  end })
+  local function goalBtn(g) return { g.label, function() W:SetGoal(g.id) p:Refresh() end } end
+  r({ "buttons", { goalBtn(W.GOALS[1]), goalBtn(W.GOALS[2]), goalBtn(W.GOALS[3]) } })
+  r({ "buttons", { goalBtn(W.GOALS[4]), goalBtn(W.GOALS[5]), goalBtn(W.GOALS[6]) } })
+  for i = 1, W.MAX do
+    r({ "note", function()
+      if i == 1 then list = W:List() end
+      local c = card(i)
+      if not c then
+        return i == 1 and "Nothing stands out right now. Outrider learns more as you play: talk to NPCs, open your profession windows, visit the auction house." or ""
+      end
+      local t = { string.format("|cffffd100%d. %s|r", i, c.title) }
+      if c.why then t[#t + 1] = c.why end
+      if c.where then t[#t + 1] = "|cffbbbbbbWhere: " .. c.where .. "|r" end
+      if c.caveat then t[#t + 1] = "|cff999999" .. c.caveat .. "|r" end
+      if c.alt then t[#t + 1] = "|cffbbbbbbOr: " .. c.alt.text .. "|r" end
+      return table.concat(t, "\n")
+    end, 74 })
+    r({ "buttons", {
+      { "Go", function() if card(i) then W:Go(card(i)) end end },
+      { "Not useful", function() if card(i) then W:Skip(card(i)) p:Refresh() end end },
+      { "Do the other one", function() local c = card(i) if c and c.alt and c.alt.go then pcall(c.alt.go) end end },
+    } })
+  end
+  r({ "note", "Steps come from what Outrider has seen and from its data packs. Grey lines say when a step rests on unchecked data. Not useful hides a step for a day." })
+  UI:FormPage(p, rows)
+end)
+
 -- ----------------------------------------------------------------- Chat
 ns.Hub:AddTab("chat", "Chat", function(p)
   local function words()

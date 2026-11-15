@@ -104,6 +104,7 @@ Modules\GatherShare.lua
 Modules\LocationShare.lua
 Modules\Forecasts.lua
 Modules\Errands.lua
+Modules\WhatNow.lua
 Modules\Feed.lua
 Modules\Chat.lua
 Modules\Find.lua

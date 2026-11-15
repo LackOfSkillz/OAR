@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Sharing hardened:** long messages between Outrider users carry a message id, so two from one sender never mix; limits on pieces, size and half-received messages, 30-second expiry, duplicate and malformed pieces ignored, sending paced. Older builds' messages are still read.
+- **What now? (Pathfinder Lite):** a new page right under Home (`/ride now`) with the 3 to 5 steps worth doing next, each with what, why, where, a Go button and an alternative. Pick a goal (level up, make gold, better gear, professions, explore, a bit of everything) and the same candidates are weighed differently. Draws on errands, quests, gear, dungeons, profession training, watched rares, gold methods and gathering spots; scores by benefit, goal, distance and how sure the data is, and says so when a step rests on unchecked data. Quests several levels up count for less; battleground quests are left out. Not useful hides a step for a day. The suggestions for every goal are logged at logout. `tools/whatnow_check.lua` runs it against a copy of the saved data.
 - **Licence files:** every data folder built from QuestieDB carries the full GPLv3 text and an attribution note.
 
 ## Family builds (2026-11-14, release build-20261114-1625)
