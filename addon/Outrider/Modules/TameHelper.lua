@@ -38,13 +38,31 @@ M.TEMPLATE = table.concat({
   "/cast [combat] Tame Beast",
 }, "\n")
 
+-- Solo (no pet at all): the macro Torrant tamed Mystmane with on 2026-11-11,
+-- back for Khreos at Gary's ask (2026-11-15). One press, one action:
+--   out of combat  target her, Concussive Shot pulls and slows
+--   in combat      Tame Beast; if her stun breaks it: Wing Clip, then Tame
+--                  Beast again (the sequence keeps alternating)
+--   Shift          Concussive Shot again (she wandered off), and the
+--                  sequence starts over at Tame Beast
+-- Wing Clip and Tame Beast share the global cooldown, so they are two presses.
+M.SOLO = table.concat({
+  "#showtooltip",
+  "/stopmacro [channeling]",
+  "/cleartarget",
+  "/targetexact {NAME}",
+  "/stopmacro [noexists][noharm][dead]",
+  "/cast [nocombat][mod:shift] Concussive Shot",
+  "/castsequence [combat] reset=combat/shift Tame Beast, Wing Clip",
+}, "\n")
+
 -- "mystmane" -> "Mystmane", "ghost howl" -> "Ghost Howl" (names are typed by hand).
 function M.Capitalize(name)
   return (name:gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end))
 end
 
-function M:Body(beast)
-  return (self.TEMPLATE:gsub("{NAME}", beast))
+function M:Body(beast, solo)
+  return ((solo and self.SOLO or self.TEMPLATE):gsub("{NAME}", beast))
 end
 
 -- ------------------------------------------------------------ name check
@@ -119,7 +137,7 @@ function M:OnEnable()
 end
 
 -- Returns ok, message. macroName defaults to the beast name (16 chars max).
-function M:WriteMacro(beast, macroName)
+function M:WriteMacro(beast, macroName, solo)
   if type(beast) ~= "string" or beast == "" then return false, "usage: /ride tamemacro <Beast Name>" end
   if C.InCombat() then return false, "not in combat: macros can only be changed out of combat" end
   beast = M.Capitalize(beast)
@@ -127,7 +145,7 @@ function M:WriteMacro(beast, macroName)
   if changed then ns.Print("no creature called %s; using %s", beast, fixed) end
   beast = fixed
   macroName = (macroName or beast):sub(1, 16)
-  local body = self:Body(beast)
+  local body = self:Body(beast, solo)
   if #body > 255 then return false, "macro would be over 255 characters" end
   local index = C.Call("GetMacroIndexByName", macroName) or 0
   if index > 0 then
@@ -149,13 +167,16 @@ function M:WriteMacro(beast, macroName)
   return true, "created macro '" .. macroName .. "' (drag it from the macro window to your bar)"
 end
 
-ns.AddCommand("tamemacro", "<Beast Name>  write a pull + tame macro for that beast", function(arg)
+ns.AddCommand("tamemacro", "[solo] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks)", function(arg)
   if ns.PlayerClass() ~= "HUNTER" then ns.Print("tame macros are for hunters") return end
-  local ok, msg = M:WriteMacro(arg and strtrim(arg))
+  arg = arg and strtrim(arg) or ""
+  local solo = arg:lower():match("^solo%s+") ~= nil
+  if solo then arg = strtrim((arg:gsub("^%S+%s+", ""))) end
+  local ok, msg = M:WriteMacro(arg, nil, solo)
   ns.Print(msg)
   -- A beast worth a tame macro is worth an alert: watch it on this character.
   local scan = ns.Modules:Get("RareScan")
-  if ok and scan then scan:Watch((M:CheckName(M.Capitalize(strtrim(arg)))), true) end
+  if ok and scan then scan:Watch((M:CheckName(M.Capitalize(arg))), true) end
 end)
 
 function M:Activity() return "/ride tamemacro <Beast> writes a pull + tame macro" end
