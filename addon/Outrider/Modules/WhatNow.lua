@@ -181,7 +181,14 @@ SOURCES.quests = function()
   local here = C.PlayerPosition("player")
   local local_ = 0
   for _, e in ipairs(list) do if e.mapID == here and not M.PVP(e.name, e.giver) then local_ = local_ + 1 end end
-  if here and local_ < 3 then
+  -- quests the data knows here at all (done, in the log, locked behind a
+  -- chain): the Skyborne start zone has 98, 97 of them behind Coming of Age
+  local known = local_
+  local rep = here and ns.NPCPack.ZoneReport and M.Safe(ns.NPCPack.ZoneReport, ns.NPCPack, here)
+  if type(rep) == "table" then
+    known = #(rep.available or {}) + #(rep.locked or {}) + #(rep.active or {}) + (tonumber(rep.done) or 0)
+  end
+  if here and local_ < 3 and known < 5 then
     out[#out + 1] = { key = "quest:look-around", kind = "quest", title = "Look for quest givers (!) around you",
       why = string.format("Outrider knows only %d quest%s in %s; Forever added and moved many.", local_, local_ == 1 and "" or "s", zone(here)),
       where = "nearby: check the minimap for ! marks", benefit = 0.7, confidence = 1, seconds = 60 }
