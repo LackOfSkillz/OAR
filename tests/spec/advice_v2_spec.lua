@@ -107,4 +107,26 @@ T.describe("advice schema 2", function()
     T.contains(ns.Advisor.PlanLine(answer), "about 12 min of 30")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("cards show text source chips, done marks and plan progress; status tells the snapshot's age", function()
+    local game, ns, snap = session()
+    T.contains(ns.Advisor.Chip("community"), "[Community]")
+    T.contains(ns.Advisor.Chip("nonsense"), "[Unknown]")
+    T.contains(ns.Advisor:Status(), "just taken")
+    local ans = { headline = "Plan", summary = "s", planMinutes = 10, plan = { { candidateId = "gather:Peacebloom", minutes = 6 } } }
+    ns.Advice:Paste(code(ns, snap, { answer = ans, items = {
+      { title = "Go gather", action = "waypoint", candidateId = "gather:Peacebloom", confidence = "observed",
+        args = { mapID = 1412, x = 0.4, y = 0.5 } } } }))
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("advisor")
+    local p = ns.Hub.byId.advisor.panel
+    T.contains(p.answer.plan.__text, "(0 of 1 done)")
+    T.ok(ns.Advisor:Feedback({ candidateId = "gather:Peacebloom" }, "done"))
+    p:Refresh()
+    T.contains(p.answer.plan.__text, "(1 of 1 done)")
+    T.ok(ns.Advisor:IsDone("gather:Peacebloom"))
+    game:advance(2 * 3600)
+    T.contains(ns.Advisor:Status(), "Ask again")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

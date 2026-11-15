@@ -59,8 +59,49 @@ function M:Perform(item)
   return false, "not allowed"
 end
 
+-- Source chips (spec 8.3): text and colour, never colour alone; this is
+-- where the data came from, not how sure a model is.
+M.CHIP = { observed = { "Observed", "66dd77" }, verified = { "Verified", "66dd77" }, community = { "Community", "d4a84a" },
+  inferred = { "Estimated", "8fb3ff" }, unknown = { "Unknown", "8f96a6" } }
+M.CHIP_TEXT = {
+  observed = "Observed: seen in your game",
+  verified = "Verified on WoW Forever",
+  community = "Community data (Classic sources); may differ on Forever",
+  inferred = "Estimated from other data",
+  unknown = "Unknown: no source to back it",
+}
+function M.Chip(conf)
+  local c = M.CHIP[conf] or M.CHIP.unknown
+  return string.format("|cff%s[%s]|r", c[2], c[1])
+end
+
+function M:IsDone(candidateId)
+  if not candidateId then return false end
+  for _, f in ipairs(type(ns.db.char.adviceFeedback) == "table" and ns.db.char.adviceFeedback or {}) do
+    if f.id == candidateId and f.v == "done" then return true end
+  end
+  return false
+end
+
+-- "Snapshot 12 min old" (spec 8.1 status: no fake spinners, there is no live link)
+function M:Status()
+  local snaps = rawget(_G, "Outrider_Snapshots")
+  local snap = type(snaps) == "table" and snaps[ns.db.key]
+  if not snap then return "No snapshot yet" end
+  local age = math.max(0, time() - (snap.askedAt or snap.takenAt or time()))
+  local mins = math.floor(age / 60)
+  local t = mins < 1 and "Snapshot just taken" or (mins < 120 and string.format("Snapshot %d min old", mins)
+    or string.format("Snapshot %d h old", math.floor(mins / 60)))
+  if mins >= 60 then t = t .. ": Ask again for fresh steps" end
+  return t
+end
+
+M.ONBOARD = "How it works: 1. type a question (and minutes) above and click Ask; 2. press Ctrl+C and give the code to "
+  .. "Claude or the companion (ask command); 3. click Paste advice and press Ctrl+V. Your character's name is never sent, "
+  .. "and nothing is done for you: every card is a click."
+
 M.REASON_TEXT = {
-  ["no advice file"] = "No advice yet. Click Ask, press Ctrl+C, tell Claude 'advise', then Paste advice.",
+  ["no advice file"] = "No advice yet. " .. M.ONBOARD,
   ["advice is stale"] = "The advice answers an older snapshot. Click Ask again.",
   ["advice is for another character"] = "That advice is for another character.",
   ["wrong schema"] = "The advice file is from another version and was ignored.",
@@ -129,6 +170,8 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.mins:HookScript("OnTextChanged", function(box) ns.db.char.askMinutes = M.Minutes(box:GetText()) end)
   p.askTop = UI:PrimaryButton(p, "Ask", 80, function() ns.Snapshot:AskAdvisor() end)
   p.askTop:SetPoint("LEFT", p.mins, "RIGHT", 6, 0)
+  p.status = UI.Text(p, "small", "muted")
+  p.status:SetPoint("LEFT", p.askTop, "RIGHT", 10, 0)
   -- the answer (schema 2): headline, summary and what it couldn't check
   p.answer = UI:Card(p, true)
   p.answer:SetPoint("TOPLEFT", p.q, "BOTTOMLEFT", 0, -10)
@@ -155,7 +198,24 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.list = UI:ScrollList(p, {
     rows = 8, rowHeight = 40,
     render = function(row, item)
-      row.text:SetText(item.title .. "  |cff888888(" .. item.confidence .. ")|r\n|cffbbbbbb" .. item.why .. "|r")
+      local done = M:IsDone(item.candidateId)
+      row.text:SetText((done and "|cff66dd77[done]|r " or "") .. item.title .. "  " .. M.Chip(item.confidence)
+        .. "\n|cffbbbbbb" .. item.why .. "|r")
+    end,
+    build = function(row)
+      -- hover: the evidence behind the card (AI03-03)
+      row:SetScript("OnEnter", function(self)
+        local tip, item = rawget(_G, "GameTooltip"), self.item
+        if not (tip and item) then return end
+        tip:SetOwner(self, "ANCHOR_RIGHT")
+        tip:AddLine(item.title, 1, 0.82, 0.3)
+        if item.why ~= "" then tip:AddLine(item.why, 0.85, 0.85, 0.85, true) end
+        tip:AddLine("Source: " .. (M.CHIP_TEXT[item.confidence] or item.confidence), 0.7, 0.7, 0.7, true)
+        if item.candidateId then tip:AddLine("Outrider step: " .. item.candidateId, 0.5, 0.5, 0.5) end
+        tip:AddLine("Click to do it. Nothing happens on its own.", 0.5, 0.5, 0.5)
+        tip:Show()
+      end)
+      row:SetScript("OnLeave", function() local tip = rawget(_G, "GameTooltip") if tip then tip:Hide() end end)
     end,
     onClick = function(item)
       p.selected = item
@@ -194,7 +254,11 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
       self.answer:Show()
       self.answer.headline:SetText(answer.headline or "")
       self.answer.summary:SetText(answer.summary or "")
-      self.answer.plan:SetText(M.PlanLine(answer))
+      local line = M.PlanLine(answer)
+      local total, done = 0, 0
+      for _, r in ipairs(answer.plan or {}) do total = total + 1 if M:IsDone(r.candidateId) then done = done + 1 end end
+      if total > 0 and not answer.compare then line = line .. string.format("   |cff8f96a6(%d of %d done)|r", done, total) end
+      self.answer.plan:SetText(line)
       local lim = table.concat(answer.limits or {}, "  |  ")
       self.answer.limits:SetText(lim ~= "" and ("Not checked: " .. lim) or "")
       self.head:ClearAllPoints()
@@ -205,6 +269,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
       self.head:SetPoint("TOPLEFT", self.q, "BOTTOMLEFT", 0, -10)
     end
     self.list:SetItems(items)
+    if self.status then self.status:SetText(M:Status()) end
     self.head:SetText(#items > 0 and "Click a suggestion to do it. Nothing happens on its own."
       or (M.REASON_TEXT[why] or tostring(why)))
   end
