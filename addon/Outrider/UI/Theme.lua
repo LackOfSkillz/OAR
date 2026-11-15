@@ -7,14 +7,25 @@ local _, ns = ...
 local Theme = { name = "theme" }
 ns.Theme = Theme
 
+-- Expedition look (Gary chose the mockup, 2026-11-15): near-black window, a
+-- darker sidebar, cards one step up, hairline borders. `accent` is the class
+-- colour when that setting is on (Gary, 2026-11-13); `gold` marks what is
+-- selected or the main action on a page, whatever the class.
 Theme.colors = {
-  bg      = { 0.06, 0.07, 0.09, 0.94 },
-  panel   = { 0.10, 0.11, 0.14, 0.96 },
-  raised  = { 0.14, 0.15, 0.19, 1.00 },
-  border  = { 0.22, 0.24, 0.30, 1.00 },
-  text    = { 0.92, 0.93, 0.95, 1.00 },
-  muted   = { 0.62, 0.65, 0.72, 1.00 },
+  bg      = { 0.059, 0.067, 0.086, 0.96 },
+  panel   = { 0.043, 0.051, 0.067, 0.98 },  -- sidebar, title bar
+  raised  = { 0.086, 0.102, 0.133, 1.00 },  -- cards, buttons
+  hover   = { 0.110, 0.137, 0.188, 1.00 },  -- selected sidebar row, hovered card
+  border  = { 0.149, 0.169, 0.212, 1.00 },
+  strong  = { 0.227, 0.255, 0.314, 1.00 },  -- button borders
+  text    = { 0.910, 0.918, 0.937, 1.00 },
+  body    = { 0.765, 0.784, 0.824, 1.00 },  -- card body text
+  muted   = { 0.561, 0.588, 0.651, 1.00 },
   accent  = { 0.56, 0.82, 1.00, 1.00 },
+  gold    = { 0.831, 0.659, 0.290, 1.00 },
+  goldSoft = { 0.165, 0.141, 0.078, 1.00 },
+  goldText = { 0.945, 0.835, 0.557, 1.00 },
+  onGold  = { 0.110, 0.078, 0.020, 1.00 },
   good    = { 0.40, 0.85, 0.50, 1.00 },
   warn    = { 1.00, 0.78, 0.30, 1.00 },
   bad     = { 1.00, 0.38, 0.38, 1.00 },
@@ -22,7 +33,7 @@ Theme.colors = {
 
 Theme.font = {
   path = "Fonts\\FRIZQT__.TTF",
-  small = 11, normal = 12, large = 14, title = 16,
+  small = 11, normal = 12, large = 14, title = 16, heading = 18,
 }
 
 Theme.space = { xs = 4, sm = 8, md = 12, lg = 16 }
@@ -56,11 +67,11 @@ function Theme:BackdropTemplate()
   return rawget(_G, "BackdropTemplateMixin") and "BackdropTemplate" or nil
 end
 
-function Theme:ApplyPanel(frame, colorName)
+function Theme:ApplyPanel(frame, colorName, borderName)
   if not frame.SetBackdrop then return end
   frame:SetBackdrop(self.BACKDROP)
   frame:SetBackdropColor(self:Color(colorName or "panel"))
-  frame:SetBackdropBorderColor(self:Color("border"))
+  frame:SetBackdropBorderColor(self:Color(borderName or "border"))
 end
 
 function Theme:StyleText(fs, size, colorName)

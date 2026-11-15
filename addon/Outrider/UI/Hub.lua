@@ -109,11 +109,18 @@ local function Sidebar(parent, onSelect)
   end)
   function bar:Add(id, title, icon)
     local b = CreateFrame("Button", nil, self)
-    b:SetSize(SIDE - 8, 20)
+    b:SetSize(SIDE - 8, 22)
     b.bg = b:CreateTexture(nil, "BACKGROUND")
     b.bg:SetAllPoints()
-    b.bg:SetColorTexture(Theme:Color("raised"))
+    b.bg:SetColorTexture(Theme:Color("hover"))
     b.bg:Hide()
+    -- the current page: lighter row and a gold strip on the left
+    b.mark = b:CreateTexture(nil, "ARTWORK")
+    b.mark:SetPoint("TOPLEFT", 0, 0)
+    b.mark:SetPoint("BOTTOMLEFT", 0, 0)
+    b.mark:SetWidth(2)
+    b.mark:SetColorTexture(Theme:Color("gold"))
+    b.mark:Hide()
     local hl = b:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
     local hr, hg, hb = Theme:Color("accent")
@@ -122,7 +129,7 @@ local function Sidebar(parent, onSelect)
     b.icon:SetSize(16, 16)
     b.icon:SetPoint("LEFT", 6, 0)
     if icon then b.icon:SetTexture(icon) b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
-    b.label = UI.Text(b, "normal", "text")
+    b.label = UI.Text(b, "normal", "body")
     b.label:SetPoint("LEFT", 28, 0)
     b.label:SetText(title)
     b.id = id
@@ -161,7 +168,7 @@ local function Sidebar(parent, onSelect)
       last = g
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", 4, y)
-      y = y - 21
+      y = y - 23
     end
     self.listHeight = top - y
   end
@@ -170,8 +177,9 @@ local function Sidebar(parent, onSelect)
     if not id then return end
     self.selected = id
     for tid, b in pairs(self.buttons) do
-      b.label:SetTextColor(Theme:Color(tid == id and "accent" or "text"))
+      b.label:SetTextColor(Theme:Color(tid == id and "text" or "body"))
       b.bg:SetShown(tid == id)
+      if b.mark then b.mark:SetShown(tid == id) end
     end
     if onSelect then ns.Safe("tabs:select", onSelect, id) end
   end

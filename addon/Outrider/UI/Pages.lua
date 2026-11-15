@@ -435,45 +435,236 @@ ns.Hub:AddTab("dungeons", "Dungeons", function(p)
 end)
 
 -- ------------------------------------------------------------- What now?
--- Pathfinder Lite: five card slots that re-read the list on every refresh.
+-- Pathfinder Lite in the Expedition look (Gary chose the mockup, 2026-11-15):
+-- who you are, goal chips, step cards (as many as fit), and a side column with
+-- errands, rare watch and this session's gold.
+local KIND_ICON = {
+  errand = "Interface\\Icons\\INV_Misc_Bag_08", quest = "Interface\\GossipFrame\\AvailableQuestIcon",
+  gear = "Interface\\Icons\\INV_Chest_Chain", dungeon = "Interface\\Icons\\INV_Misc_Key_14",
+  profession = "Interface\\Icons\\Trade_Alchemy", rare = "Interface\\Icons\\Ability_Hunter_SniperShot",
+  gold = "Interface\\Icons\\INV_Misc_Coin_02", gather = "Interface\\Icons\\INV_Misc_Flower_02",
+}
+local CARD_H, CARD_GAP, SIDE_W, TOP = 104, 8, 176, 84
+
+local function wrap(fs, lines)
+  if fs.SetWordWrap then fs:SetWordWrap(lines > 1) end
+  if fs.SetMaxLines then pcall(fs.SetMaxLines, fs, lines) end
+  if fs.SetJustifyH then fs:SetJustifyH("LEFT") end
+  if fs.SetJustifyV then fs:SetJustifyV("TOP") end
+end
+
+local function stepCard(parent, i, W, p)
+  local c = UI:Card(parent, i == 1)
+  c:SetHeight(CARD_H)
+  c.icon = c:CreateTexture(nil, "ARTWORK")
+  c.icon:SetSize(16, 16)
+  c.icon:SetPoint("TOPLEFT", 12, -10)
+  c.title = UI.Text(c, "large", "text")
+  c.title:SetPoint("TOPLEFT", 34, -10)
+  c.title:SetPoint("RIGHT", c, "RIGHT", -110, 0)
+  wrap(c.title, 1)
+  c.time = UI.Text(c, "small", "muted")
+  c.time:SetPoint("TOPRIGHT", -12, -12)
+  c.tag = UI:Tag(c, "unchecked")
+  c.tag:SetPoint("RIGHT", c.time, "LEFT", -8, 0)
+  c.why = UI.Text(c, "normal", "body")
+  c.why:SetPoint("TOPLEFT", 12, -32)
+  c.why:SetPoint("RIGHT", c, "RIGHT", -12, 0)
+  c.why:SetHeight(30)
+  wrap(c.why, 2)
+  c.where = UI.Text(c, "small", "muted")
+  c.where:SetPoint("TOPLEFT", 12, -62)
+  c.where:SetPoint("RIGHT", c, "RIGHT", -12, 0)
+  wrap(c.where, 1)
+  c.go = UI:Button(c, "Go", 64, function() local s = c.step if s then W:Go(s) end end)
+  c.go:SetPoint("BOTTOMLEFT", 12, 8)
+  UI.SetPrimary(c.go, i == 1)
+  c.skip = UI:Button(c, "Not useful", 92, function() local s = c.step if s then W:Skip(s) p:Refresh() end end)
+  c.skip:SetPoint("LEFT", c.go, "RIGHT", 6, 0)
+  c.alt = CreateFrame("Button", nil, c)
+  c.alt:SetHeight(20)
+  c.alt:SetPoint("LEFT", c.skip, "RIGHT", 10, 0)
+  c.alt:SetPoint("RIGHT", c, "RIGHT", -12, 0)
+  c.alt.label = UI.Text(c.alt, "small", "muted")
+  c.alt.label:SetAllPoints()
+  wrap(c.alt.label, 1)
+  if c.alt.label.SetJustifyH then c.alt.label:SetJustifyH("RIGHT") end
+  c.alt:SetScript("OnClick", function()
+    local s = c.step
+    if s and s.alt and s.alt.go then
+      W:Info("what now alternative: %s -> %s", tostring(s.key), tostring(s.alt.text))
+      ns.Safe("whatnow:alt", s.alt.go)
+    end
+  end)
+  c.alt:SetScript("OnEnter", function() if c.step and c.step.alt and c.step.alt.go then c.alt.label:SetTextColor(Theme:Color("goldText")) end end)
+  c.alt:SetScript("OnLeave", function() c.alt.label:SetTextColor(Theme:Color("muted")) end)
+  function c:Fill(s)
+    self.step = s
+    self.icon:SetTexture(KIND_ICON[s.kind] or KIND_ICON.quest)
+    self.title:SetText(s.title or "")
+    local t = s.seconds and ns.Travel and ns.Travel.Minutes(s.seconds) or (s.kind == "profession" and "here" or "")
+    self.time:SetText(t)
+    local unsure = (s.confidence or 1) < 0.7
+    self.tag:SetShown(unsure)
+    if unsure then self.tag:SetLabel(s.kind == "rare" and "guess" or "unchecked") end
+    self.why:SetText((s.why or "") .. (s.caveat and ("  |cff8f96a6" .. s.caveat .. "|r") or ""))
+    self.where:SetText(s.where and ("Where: " .. s.where) or "")
+    self.alt.label:SetText(s.alt and ("Or: " .. tostring(s.alt.text)) or "")
+    self.go:Show() self.skip:Show()
+  end
+  function c:Empty()
+    self.step = nil
+    self.icon:SetTexture(KIND_ICON.quest)
+    self.title:SetText("Nothing stands out right now")
+    self.time:SetText("")
+    self.tag:Hide()
+    self.why:SetText("Outrider learns more as you play: talk to NPCs, open your profession windows, visit the auction house.")
+    self.where:SetText("")
+    self.alt.label:SetText("")
+    self.go:Hide() self.skip:Hide()
+  end
+  return c
+end
+
+local function glanceCard(parent)
+  local c = UI:Card(parent)
+  c:SetHeight(62)
+  c.label = UI.Text(c, "small", "muted")
+  c.label:SetPoint("TOPLEFT", 10, -8)
+  c.value = UI.Text(c, "normal", "text")
+  c.value:SetPoint("TOPLEFT", 10, -24)
+  c.value:SetPoint("RIGHT", c, "RIGHT", -8, 0)
+  wrap(c.value, 1)
+  c.sub = UI.Text(c, "small", "muted")
+  c.sub:SetPoint("TOPLEFT", 10, -42)
+  c.sub:SetPoint("RIGHT", c, "RIGHT", -8, 0)
+  wrap(c.sub, 1)
+  function c:Set(label, value, sub) self.label:SetText(label) self.value:SetText(value or "") self.sub:SetText(sub or "") end
+  return c
+end
+
+local function glances()
+  local out = {}
+  -- errands
+  local list = {}
+  if ns.Errands then
+    local ok, l = pcall(ns.Errands.List, ns.Errands)
+    if ok and type(l) == "table" then list = l end
+  end
+  out[1] = { "Errands", #list == 0 and "None" or (list[1].text or ""), #list > 1 and string.format("and %d more", #list - 1) or "" }
+  -- rare watch: a watched rare whose window is open, else the first one
+  local scan, S = ns.Modules:Get("RareScan"), ns.Sightings
+  local rare = { "Rare watch", "Nothing watched", "" }
+  if scan and S then
+    local npcs = ns.db.global.discovered and ns.db.global.discovered.npcs or {}
+    for id in pairs(scan:Settings().watch or {}) do
+      if type(id) == "number" then
+        local ok, w = pcall(S.Window, S, id)
+        local name = npcs[id] and npcs[id].name or ("rare " .. id)
+        local state = ok and type(w) == "table" and w.state or "unknown"
+        rare = { "Rare watch", name, state == "unknown" and "no sightings yet" or ("window " .. tostring(state)) }
+        if state == "open" or state == "alive" or state == "overdue" then break end
+      end
+    end
+  end
+  out[2] = rare
+  -- this session's gold
+  local money = ns.Prices and ns.Prices.Money
+  local net, perHour = 0, 0
+  if ns.Ledger then
+    local ok, a, b = pcall(ns.Ledger.Summary, ns.Ledger)
+    if ok then net, perHour = tonumber(a) or 0, tonumber(b) or 0 end
+  end
+  out[3] = { "This session", money and ((net >= 0 and "+" or "-") .. money(math.abs(net))) or tostring(net),
+    money and (money(math.max(0, math.floor(perHour))) .. " an hour") or "" }
+  return out
+end
+
 ns.Hub:AddTab("whatnow", "What now?", function(p)
   local W = ns.WhatNow
   if not W then UI:FormPage(p, { { "note", "What now? is switched off (Modules page)." } }) return end
-  local list = {}
-  local function card(i) return list[i] end
-  local rows = {}
-  local function r(t) rows[#rows + 1] = t end
-  r({ "header", "What now?" })
-  r({ "note", function()
-    local goal = W:Goal()
-    for _, g in ipairs(W.GOALS) do if g.id == goal then return "Your goal: " .. g.label .. ". Pick another:" end end
-    return "Pick a goal:"
-  end })
-  local function goalBtn(g) return { g.label, function() W:SetGoal(g.id) p:Refresh() end } end
-  r({ "buttons", { goalBtn(W.GOALS[1]), goalBtn(W.GOALS[2]), goalBtn(W.GOALS[3]) } })
-  r({ "buttons", { goalBtn(W.GOALS[4]), goalBtn(W.GOALS[5]), goalBtn(W.GOALS[6]) } })
-  for i = 1, W.MAX do
-    r({ "note", function()
-      if i == 1 then list = W:List() end
-      local c = card(i)
-      if not c then
-        return i == 1 and "Nothing stands out right now. Outrider learns more as you play: talk to NPCs, open your profession windows, visit the auction house." or ""
-      end
-      local t = { string.format("|cffffd100%d. %s|r", i, c.title) }
-      if c.why then t[#t + 1] = c.why end
-      if c.where then t[#t + 1] = "|cffbbbbbbWhere: " .. c.where .. "|r" end
-      if c.caveat then t[#t + 1] = "|cff999999" .. c.caveat .. "|r" end
-      if c.alt then t[#t + 1] = "|cffbbbbbbOr: " .. c.alt.text .. "|r" end
-      return table.concat(t, "\n")
-    end, 74 })
-    r({ "buttons", {
-      { "Go", function() if card(i) then W:Go(card(i)) end end },
-      { "Not useful", function() if card(i) then W:Skip(card(i)) p:Refresh() end end },
-      { "Do the other one", function() local c = card(i) if c and c.alt and c.alt.go then pcall(c.alt.go) end end },
-    } })
+  -- header: who you are
+  p.avatar = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
+  p.avatar:SetSize(34, 34)
+  p.avatar:SetPoint("TOPLEFT", 0, 0)
+  p.avatar.letter = UI.Text(p.avatar, "large", "text")
+  p.avatar.letter:SetPoint("CENTER")
+  p.name = UI.Text(p, "title", "text")
+  p.name:SetPoint("TOPLEFT", p.avatar, "TOPRIGHT", 10, -1)
+  p.info = UI.Text(p, "small", "muted")
+  p.info:SetPoint("TOPLEFT", p.name, "BOTTOMLEFT", 0, -3)
+  -- goal chips
+  p.chips = {}
+  local prev
+  for _, g in ipairs(W.GOALS) do
+    local chip = UI:Chip(p, g.label, function() W:SetGoal(g.id) p:Refresh() end)
+    chip.goal = g.id
+    if prev then chip:SetPoint("LEFT", prev, "RIGHT", 6, 0) else chip:SetPoint("TOPLEFT", 0, -46) end
+    p.chips[#p.chips + 1] = chip
+    prev = chip
   end
-  r({ "note", "Steps come from what Outrider has seen and from its data packs. Grey lines say when a step rests on unchecked data. Not useful hides a step for a day." })
-  UI:FormPage(p, rows)
+  -- step cards on the left, glance cards on the right
+  p.cards = {}
+  for i = 1, W.MAX do
+    local c = stepCard(p, i, W, p)
+    c:SetPoint("TOPLEFT", 0, -TOP - (i - 1) * (CARD_H + CARD_GAP))
+    c:SetPoint("RIGHT", p, "RIGHT", -(SIDE_W + 12), 0)
+    p.cards[i] = c
+  end
+  p.side = {}
+  for i = 1, 3 do
+    local g = glanceCard(p)
+    g:SetPoint("TOPRIGHT", 0, -TOP - (i - 1) * 70)
+    g:SetWidth(SIDE_W)
+    p.side[i] = g
+  end
+  p.more = UI.Text(p, "small", "muted")
+  function p:Refresh()
+    -- header
+    local key = tostring(ns.db.key)
+    local name = key:match("^[^-]+") or "?"
+    local cls = ns.PlayerClass and ns.PlayerClass() or ""
+    local colors = rawget(_G, "RAID_CLASS_COLORS")
+    local cc = colors and colors[cls]
+    local r, g, b = 0.9, 0.9, 0.9
+    if cc then r, g, b = cc.r, cc.g, cc.b end
+    Theme:ApplyPanel(self.avatar, "raised", "border")
+    if self.avatar.SetBackdropBorderColor then self.avatar:SetBackdropBorderColor(r, g, b, 1) end
+    self.avatar.letter:SetText(name:sub(1, 1))
+    self.avatar.letter:SetTextColor(r, g, b)
+    local className = tostring(C.Call("UnitClass", "player") or cls)
+    self.name:SetText(string.format("%s  |cff%02x%02x%02x%s|r", name, r * 255, g * 255, b * 255, className))
+    local mapID = C.PlayerPosition("player")
+    local zone = mapID and ns.Travel and ns.Travel.ZoneName(mapID) or ""
+    local money = ns.Prices and ns.Prices.Money and ns.Prices.Money(C.Call("GetMoney") or 0) or ""
+    self.info:SetText(string.format("Level %s%s%s", tostring(C.Call("UnitLevel", "player") or "?"),
+      zone ~= "" and ("   " .. zone) or "", money ~= "" and ("   " .. money) or ""))
+    -- goal chips
+    local goal = W:Goal()
+    for _, chip in ipairs(self.chips) do chip:SetOn(chip.goal == goal) end
+    -- steps: as many cards as the window has room for
+    local list = W:List()
+    local room = math.floor(((self:GetHeight() or 0) - TOP + CARD_GAP) / (CARD_H + CARD_GAP))
+    if room < 1 then room = W.MAX end
+    local shown = 0
+    for i, c in ipairs(self.cards) do
+      local s = list[i]
+      if i <= room and (s or i == 1) then
+        if s then c:Fill(s) else c:Empty() end
+        c:Show()
+        shown = i
+      else
+        c:Hide()
+      end
+    end
+    local hidden = #list - math.min(#list, shown)
+    self.more:ClearAllPoints()
+    self.more:SetPoint("TOPLEFT", 0, -TOP - shown * (CARD_H + CARD_GAP))
+    self.more:SetText(hidden > 0 and string.format("%d more step%s: make the window taller to see %s.", hidden,
+      hidden == 1 and "" or "s", hidden == 1 and "it" or "them") or "")
+    -- side column
+    for i, gl in ipairs(glances()) do self.side[i]:Set(gl[1], gl[2], gl[3]) end
+  end
 end)
 
 -- ----------------------------------------------------------------- Chat
