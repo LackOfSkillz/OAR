@@ -1,5 +1,12 @@
 {
   "enabled": false,
   "savedVariablesFile": "",
-  "addonsDir": ""
+  "addonsDir": "",
+  "intelligence": {
+    "enabled": false,
+    "provider": "openai-compatible",
+    "baseUrl": "http://127.0.0.1:11434",
+    "model": "",
+    "allowRemote": false
+  }
 }

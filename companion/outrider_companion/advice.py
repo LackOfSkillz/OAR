@@ -21,7 +21,7 @@ ALLOWED = {
     "show_item": {"itemID": "id"},
 }
 PANELS = {"hub", "rares", "pet", "macros", "gear", "professions", "map"}
-CONFIDENCE = {"verified", "community", "inferred", "unknown"}
+CONFIDENCE = {"verified", "community", "inferred", "unknown", "observed"}
 ADVICE_SUFFIX = os.path.join("Interface", "AddOns", "Outrider", "Advisor", "Advice.lua")
 
 

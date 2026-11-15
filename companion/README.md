@@ -61,3 +61,24 @@ Note: `tools/deploy.ps1` replaces the Outrider folder, which removes
 ## Tests
 
 `py -I companion/tests/test_companion.py` (also run by `tools/test.ps1`).
+
+## Ask Outrider (local model, sprint 1 of Outrider Intelligence)
+
+A grounded answer to "what should I do?" from a model running on your own PC.
+The model only explains and orders Outrider's own What now? steps; every
+place, id and action is rebuilt from Outrider's data and checked again in game.
+
+1. Run a local model server that speaks the OpenAI chat API (Ollama, LM Studio,
+   vLLM, llama.cpp). In `companion/config.json` add:
+   `"intelligence": {"enabled": true, "provider": "openai-compatible",
+   "baseUrl": "http://127.0.0.1:11434", "model": "<your model>", "allowRemote": false}`.
+   A server on another machine (a GX10 on the LAN) needs `"allowRemote": true`;
+   your data then travels to that machine.
+2. In game: Advisor tab > Ask (copy snapshot), Ctrl+C.
+3. `python -m outrider_companion.intelligence.ask "I have 45 minutes, what should I do?"`
+   (run in `companion/`). The advice code goes to the clipboard.
+4. In game: Advisor tab > Paste advice. No reload.
+
+Without a model (or with `--no-model`) you get Outrider's own top steps.
+Privacy and limits: `docs/AI_PRIVACY_AND_TRANSPORT.md`.
+
