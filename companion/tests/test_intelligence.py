@@ -333,6 +333,27 @@ class McpTools(unittest.TestCase):
         with self.assertRaises(ValueError):
             srv.call("plan_to_clipboard", {"picks": [{"candidateId": "quest:Invented"}]})
 
+    def test_module_tools_are_cleaned(self):
+        mods = {"WhatNow": {"candidates": []},
+                "Nearby": {"candidates": [{"name": "|cff00ff00Sword|r", "pct": 20, "who": "Varia", "sender": "Torrant-Mcluvin"}]},
+                "DungeonGuide": {"ready": [{"name": "The Deadmines", "upgrades": 4, "ups": [{"item": "Trousers", "pct": 88}]}]},
+                "MoneyGuide": {"methods": [{"title": "Skin boars", "copperPerHour": 17500}], "crafts": []},
+                "Sightings": {"recent": [{"npc": 259388, "layer": 8, "player": "Someone"}] * 50}}
+        srv = self.make(snapshot_code(modules=mods))
+        gear = srv.call("get_gear_opportunities", {})
+        self.assertEqual(gear["nearby"]["candidates"][0]["name"], "Sword")
+        self.assertNotIn("sender", gear["nearby"]["candidates"][0])
+        self.assertEqual(srv.call("get_dungeon_opportunities", {})["ready"][0]["ups"][0]["pct"], 88)
+        self.assertEqual(srv.call("get_gold_options", {})["guide"]["methods"][0]["copperPerHour"], 17500)
+        rares = srv.call("get_rare_evidence", {})
+        self.assertEqual(len(rares["sightings"]["recent"]), 20)
+        self.assertNotIn("player", rares["sightings"]["recent"][0])
+        srv2 = self.make(snapshot_code(modules={}))
+        self.assertIn("note", srv2.call("get_dungeon_opportunities", {}))
+        srv3 = self.make("not a code")
+        with self.assertRaises(Exception):
+            srv3.call("get_gold_options", {})
+
     def test_tools_listed(self):
         names = {t["name"] for t in server.TOOLS}
         self.assertTrue({"get_pathfinder_candidates", "get_candidate_explanation", "plan_to_clipboard"} <= names)

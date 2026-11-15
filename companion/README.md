@@ -82,3 +82,17 @@ place, id and action is rebuilt from Outrider's data and checked again in game.
 Without a model (or with `--no-model`) you get Outrider's own top steps.
 Privacy and limits: `docs/AI_PRIVACY_AND_TRANSPORT.md`.
 
+## Cloud models (optional, off by default)
+
+Anthropic, OpenAI or Gemini instead of a local model:
+1. `python -m outrider_companion.intelligence.keys set anthropic` (the key is
+   asked for hidden and stored in Windows Credential Manager).
+2. In `companion/config.json`: `"intelligence": {"enabled": true, "provider": "anthropic",
+   "model": "claude-opus-5-5", "dailyTokenCap": 100000}`.
+3. `python -m outrider_companion.intelligence.ask --preview`: everything that
+   would be sent. If you're happy with it, add `"cloudConsent": true`.
+4. `python -m outrider_companion.intelligence.doctor` shows what is set up.
+
+Character names are never sent. Each answer costs tokens on your account;
+the cap stops calls for the day once reached.
+

@@ -146,3 +146,36 @@ def model_view(env):
         "zone": env["currentZone"]["name"],
         "candidates": [{k: c[k] for k in keep if c.get(k) not in (None, False)} for c in env["candidates"]],
     }
+
+
+# fields that can name people (players, senders, owners) never leave
+PERSON_KEYS = {"sender", "owner", "by", "player", "players", "character", "sharedBy", "from", "to", "alt", "alts",
+               "guild", "realm", "account"}
+
+
+def clean_tree(v, depth=0, max_list=20):
+    """Module data for tools: plain text, no person fields, bounded."""
+    if isinstance(v, str):
+        return clean_text(v, MAX_TEXT)
+    if isinstance(v, bool) or v is None:
+        return v
+    if isinstance(v, (int, float)):
+        return v
+    if depth >= 5:
+        return None
+    if isinstance(v, list):
+        return [clean_tree(x, depth + 1, max_list) for x in v[:max_list]]
+    if isinstance(v, dict):
+        out = {}
+        for k, x in list(v.items())[:60]:
+            if isinstance(k, str) and k in PERSON_KEYS:
+                continue
+            out[k if isinstance(k, (str, int)) else str(k)] = clean_tree(x, depth + 1, max_list)
+        return out
+    return None
+
+
+def module(snapshot, name):
+    mods = snapshot.get("modules") if isinstance(snapshot.get("modules"), dict) else {}
+    return clean_tree(mods.get(name)) if name in mods else None
+

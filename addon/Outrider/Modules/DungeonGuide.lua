@@ -243,6 +243,26 @@ function M:PartyText()
   return #lines > 0 and table.concat(lines, "\n") or "No party ready checks yet. Party members who run Outrider can share theirs too."
 end
 
+-- For the AI companion (AI04-03): dungeons that fit now and the next tier,
+-- with the upgrades in each, as plain data. Only on /ride ask.
+function M:Snapshot()
+  if not (ns.Snapshot and ns.Snapshot.asking) or not self:Pack() then return nil end
+  local out = { ready = {}, soon = {} }
+  for _, r in ipairs(self:Rank()) do
+    local row = { name = r.name, min = r.info and r.info.min, max = r.info and r.info.max, status = r.status,
+      upgrades = r.count, laterUpgrades = r.laterCount, raid = r.info and r.info.raid or nil,
+      target = r.map and r.x and r.y and { mapID = r.map, x = r.x, y = r.y } or nil, ups = {} }
+    for _, u in ipairs(r.ups or {}) do
+      if #row.ups >= 4 then break end
+      row.ups[#row.ups + 1] = { item = u.name, pct = u.pct and math.floor(u.pct + 0.5), boss = u.boss,
+        later = u.later or nil, reqLevel = u.reqLevel }
+    end
+    local list = r.status == "ready" and out.ready or out.soon
+    if #list < 5 then list[#list + 1] = row end
+  end
+  return out
+end
+
 function M:OnEnable()
   if ns.Comm then ns.Comm.KNOWN_TYPES.READY = true end
   self:On("OTR_COMM", self.OnReady)

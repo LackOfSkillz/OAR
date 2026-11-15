@@ -78,7 +78,16 @@ A gate is never ticked on mock tests alone; real-client checks are listed per ta
 Also done early from AI-04: AI04-03 MCP tools `get_pathfinder_candidates`, `get_candidate_explanation`,
 `plan_to_clipboard` (an MCP client like Claude Code answers as the model; Outrider validates and builds the cards).
 
+### AI-04 Cloud provider flexibility and MCP robustness (Gary said go, 2026-11-15)
+- [~] AI04-01 Native cloud adapters — 2026-11-15: Anthropic (Messages API, server-side fallback on refusals), OpenAI, Gemini; raw HTTP (the companion installs nothing); tested only against local stand-in servers, never a real provider
+- [x] AI04-02 Secrets, consent, preview, spend caps — 2026-11-15: keys in Windows Credential Manager (real round trip verified), env override, never printed; cloudConsent gate; `ask --preview`; daily token cap with usage.json
+- [x] AI04-03 More read-only MCP tools — 2026-11-15: pathfinder candidates, candidate explanation, gear, dungeons, gold, rare evidence; module data cleaned (escapes, person fields, bounds); old tools unchanged
+- [!] AI04-04 External reference MCP (warcraftforever.com) — blocked: needs Gary's OK to contact an outside server and a license/accuracy review
+- [x] AI04-05 Offline answers and tool errors — 2026-11-15: deterministic fallback on every failure kind incl. budget and consent; errors never become answer text
+- [x] AI04-06 Diagnostics — 2026-11-15: `doctor` (settings, key stored yes/no, consent, tokens today; `--check` pings local servers only); tests for wrong key, wrong model, quota, overloaded, TLS, network off, server down
+- [ ] AI04-07 Benchmark 25 questions across providers — needs Gary's providers and his OK to spend
+- [ ] **AI-G4** gate
+
 ### Later phases (not started)
-AI-04 (cloud providers, secure keys, more MCP tools),
 AI-05 (seamless transport spike, optional, policy-gated), AI-06 (release quality and adoption).
 Task lists for these phases are in the spec, section 11.

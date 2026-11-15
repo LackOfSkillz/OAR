@@ -17,8 +17,14 @@ or local until Gary changes it.
   `http://127.0.0.1:<port>`. A LAN or internet URL has to be typed into
   `companion/config.json` by Gary, and a LAN machine is not private to this PC.
 - No automatic fallback to a paid or cloud provider.
-- Cloud providers and API keys come later (AI-04); keys will live in Windows
-  Credential Manager, never in SavedVariables, codes, logs or the repo.
+- Cloud providers (Anthropic, OpenAI, Gemini; AI-04) work only when Gary
+  picks one, stores its key, looks at `ask --preview` and sets
+  `"cloudConsent": true`. Keys live in Windows Credential Manager, never in
+  SavedVariables, codes, logs or the repo. A daily token cap
+  (`dailyTokenCap`, default 100,000) stops cloud calls past the limit.
+- Anthropic requests use server-side fallback on refusals (`fallbacks:
+  "default"`): a declined request is retried on another Claude model in the
+  same call. Remove it in cloud.py if that's unwanted.
 
 ## What the model sees
 - A context built from the snapshot: class, level, faction, goal, zone name and

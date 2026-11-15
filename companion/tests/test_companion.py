@@ -132,7 +132,8 @@ class ServerTests(unittest.TestCase):
         names = [t["name"] for t in self.rpc("tools/list")["result"]["tools"]]
         self.assertEqual(names, ["list_characters", "get_snapshot", "get_rare_log", "get_gear", "get_professions", "write_advice",
                                  "read_clipboard_snapshot", "advice_to_clipboard", "get_pathfinder_candidates",
-                                 "get_candidate_explanation", "plan_to_clipboard"])
+                                 "get_candidate_explanation", "get_gear_opportunities", "get_dungeon_opportunities",
+                                 "get_gold_options", "get_rare_evidence", "plan_to_clipboard"])
         self.assertIsNone(self.srv.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}))
         self.assertEqual(self.rpc("nope")["error"]["code"], -32601)
 

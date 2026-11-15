@@ -228,6 +228,26 @@ function M:ProfitLines(n)
   return lines
 end
 
+-- For the AI companion (AI04-03): ranked gold methods and crafting profit.
+-- Only on /ride ask.
+function M:Snapshot()
+  if not (ns.Snapshot and ns.Snapshot.asking) then return nil end
+  local out = { methods = {}, crafts = {} }
+  for i, r in ipairs(self:Rank() or {}) do
+    if i > 6 then break end
+    local e = r.entry or {}
+    out.methods[i] = { id = e.id, title = e.title, how = e.how, zones = e.zones, source = e.source,
+      copperPerHour = r.rate, measured = r.measured and true or false, verified = e.verified and true or false }
+  end
+  local list, skipped = self:CraftProfits()
+  for i = 1, math.min(5, #list) do
+    local c = list[i]
+    out.crafts[i] = { recipe = c.name, profession = c.prof, profit = c.profit, sells = c.sell, materials = c.cost, makes = c.makes }
+  end
+  out.craftsSkipped = skipped
+  return out
+end
+
 function M:Activity()
   local r = self:Rank()
   local top = r[1]
