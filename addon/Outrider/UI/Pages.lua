@@ -423,6 +423,7 @@ local function moneyRows()
     return rows
   end
   local level = ns.Compat.Call("UnitLevel", "player") or 1
+  r({ "header", "Money" })
   r({ "header", "Best ways to earn at level " .. level })
   r({ "note", "Ranked for your level and professions. Guide numbers are early Forever reports (unverified); after 15 minutes of a kind of earning your own gold per hour replaces them." })
   local ranked = G:Rank(level)
@@ -444,6 +445,8 @@ local function moneyRows()
     end
   end
   if #ranked == 0 then r({ "note", "No tips for this level yet." }) end
+  r({ "header", "Crafting for profit" })
+  r({ "note", function() return table.concat(G:ProfitLines(5), "\n") end, 110 })
   r({ "header", "Your own earnings" })
   r({ "note", function()
     local lines = G:YourLines()

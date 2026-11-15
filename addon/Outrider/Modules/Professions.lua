@@ -91,8 +91,9 @@ function M:ScanModern()
     local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)
     if type(info) == "table" and info.learned ~= false then
       -- diff: the client's color, 0 orange, 1 yellow, 2 green, 3 grey (relativeDifficulty)
+      local product, makes = M.Output(id)
       recipes[id] = { name = C.Readable(info.name), learned = info.learned ~= false, reagents = reagentsModern(id),
-        diff = C.Readable(info.relativeDifficulty), skillUps = C.Readable(info.numSkillUps) }
+        diff = C.Readable(info.relativeDifficulty), skillUps = C.Readable(info.numSkillUps), product = product, makes = makes }
     end
   end
   M.lastLine = type(base) == "table" and C.Readable(base.professionID) or nil
@@ -102,6 +103,16 @@ function M:ScanModern()
 end
 
 M.Reagents = reagentsModern
+
+-- What a recipe makes: itemID, how many (nil when the client doesn't say).
+function M.Output(recipeID)
+  local schem = C.Call("C_TradeSkillUI.GetRecipeSchematic", recipeID, false)
+  if type(schem) ~= "table" then return nil end
+  local id = C.Readable(schem.outputItemID)
+  if type(id) ~= "number" or id <= 0 then return nil end
+  local n = C.Readable(schem.quantityMin)
+  return id, type(n) == "number" and n > 0 and n or 1
+end
 
 function M:ScanClassic()
   local n = C.Call("GetNumTradeSkills")

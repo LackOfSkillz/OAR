@@ -466,7 +466,7 @@ function M.new(opts)
       local r = game.prof.recipes[id]
       local slots = {}
       for item, n in pairs(r.reagents) do slots[#slots + 1] = { reagents = { { itemID = item } }, quantityRequired = n } end
-      return { reagentSlotSchematics = slots }
+      return { reagentSlotSchematics = slots, outputItemID = r.product, quantityMin = r.makes or 1 }
     end,
   }
   base.GetRepairAllCost = function() return game.repairCost or 0, (game.repairCost or 0) > 0 end

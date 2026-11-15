@@ -89,3 +89,38 @@ T.describe("money guide late prices", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("money guide crafting profit", function()
+  T.it("ranks known recipes by profit after the AH cut and skips ones with a missing price", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions = { Alchemy = { skill = 40, recipes = {
+      [1] = { name = "Good Potion", product = 100, makes = 1, reagents = { [10] = 2 } },
+      [2] = { name = "Bad Potion", product = 101, makes = 1, reagents = { [11] = 1 } },
+      [3] = { name = "Unknown Potion", product = 102, makes = 1, reagents = { [12] = 1 } },
+      [4] = { name = "Old record without product", reagents = { [10] = 1 } },
+    } } }
+    local prices = { [100] = 1000, [10] = 200, [101] = 100, [11] = 500, [102] = 900 }
+    local real = ns.Prices.Get
+    ns.Prices.Get = function(_, id) return prices[id] end
+    local list, skipped = ns.MoneyGuide:CraftProfits()
+    T.eq(#list, 2)
+    T.eq(list[1].name, "Good Potion")
+    T.eq(list[1].profit, 550)   -- 1000 less 5% = 950, minus 2 x 200
+    T.eq(skipped, 1)            -- Unknown Potion: its reagent has no price
+    local text = table.concat(ns.MoneyGuide:ProfitLines(5), "\n")
+    T.contains(text, "Good Potion")
+    T.no(text:find("Bad Potion", 1, true))
+    ns.Prices.Get = real
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a profession scan records what each recipe makes", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    game.prof = { line = 171, recipes = { [7] = { name = "Elixir", reagents = { [10] = 1 }, product = 2454, makes = 1 } } }
+    T.eq(ns.Professions.Output(7), 2454)
+  end)
+end)
