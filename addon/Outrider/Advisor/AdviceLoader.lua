@@ -105,7 +105,7 @@ function Advice:Check(a)
       if #out >= self.MAX_ITEMS then break end
     end
   end
-  return out, "ok", a.schema == 2 and Advice.CleanAnswer(a.answer) or nil
+  return out, "ok", a.schema == 2 and Advice.CleanAnswer(a.answer, cands) or nil
 end
 
 -- The WhatNow candidates the snapshot carried, by id (or nil if it had none).
@@ -131,9 +131,30 @@ function Advice.Grounded(item, c, cands)
   return true
 end
 
-function Advice.CleanAnswer(ans)
+local function minutes(v) return type(v) == "number" and v == v and v >= 0 and v <= 600 and math.floor(v) or nil end
+
+function Advice.CleanAnswer(ans, cands)
   if type(ans) ~= "table" then return nil end
-  local out = { headline = plain(ans.headline, 120), summary = plain(ans.summary, 600), limits = {}, sources = {} }
+  local out = { headline = plain(ans.headline, 120), summary = plain(ans.summary, 600), limits = {}, sources = {},
+    plan = {}, compare = nil, budget = minutes(ans.budget), planMinutes = minutes(ans.planMinutes) }
+  -- plan and compare rows (AI03) must name steps from this snapshot; titles
+  -- come from the snapshot too, never from the answer
+  for i, r in ipairs(type(ans.plan) == "table" and ans.plan or {}) do
+    if i > 5 then break end
+    local c = type(r) == "table" and cands and cands[r.candidateId]
+    if c then out.plan[#out.plan + 1] = { candidateId = r.candidateId, title = plain(c.title, 120) or r.candidateId,
+      minutes = minutes(r.minutes) } end
+  end
+  if type(ans.compare) == "table" then
+    local rows = {}
+    for i, r in ipairs(ans.compare) do
+      if i > 2 then break end
+      local c = type(r) == "table" and cands and cands[r.candidateId]
+      if c then rows[#rows + 1] = { candidateId = r.candidateId, title = plain(c.title, 120) or r.candidateId,
+        minutes = minutes(r.minutes), label = Advice.CONFIDENCE[r.label] and r.label or "unknown", group = r.group == true } end
+    end
+    if #rows == 2 then out.compare = rows end
+  end
   for i, l in ipairs(type(ans.limits) == "table" and ans.limits or {}) do
     if i > 4 then break end
     local t = plain(l, 160)

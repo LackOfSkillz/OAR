@@ -93,4 +93,18 @@ T.describe("advice schema 2", function()
     T.eq(again.modules.WhatNow.feedback[1].v, "done")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("plan and compare rows keep only steps from this snapshot, with the snapshot's titles", function()
+    local _, ns, snap = session()
+    local ans = { headline = "Plan", summary = "s", budget = 30, planMinutes = 12,
+      plan = { { candidateId = "gather:Peacebloom", minutes = 6 }, { candidateId = "quest:Fake", minutes = 5 } },
+      compare = { { candidateId = "gather:Peacebloom", minutes = 6, label = "observed" }, { candidateId = "quest:Fake" } } }
+    ns.Advice:Paste(code(ns, snap, { answer = ans, items = { { title = "Open gear", action = "open_panel", args = { panel = "gear" } } } }))
+    local _, _, answer = ns.Advice:Load()
+    T.eq(#answer.plan, 1)
+    T.eq(answer.plan[1].title, "Gather Peacebloom")
+    T.eq(answer.compare, nil)   -- one of the two is unknown: no compare
+    T.contains(ns.Advisor.PlanLine(answer), "about 12 min of 30")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

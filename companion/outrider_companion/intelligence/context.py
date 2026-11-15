@@ -78,6 +78,20 @@ def candidates_of(snapshot):
     return out, (clean_text(w.get("goal"), 20) or "mix")
 
 
+def _feedback(snap):
+    mods = snap.get("modules") if isinstance(snap.get("modules"), dict) else {}
+    w = mods.get("WhatNow") if isinstance(mods.get("WhatNow"), dict) else {}
+    out = []
+    for f in w.get("feedback") if isinstance(w.get("feedback"), list) else []:
+        if isinstance(f, dict) and f.get("v") in ("useful", "wrong", "done"):
+            cid = clean_text(f.get("id"), 120)
+            if cid:
+                out.append({"candidateId": cid, "verdict": f["v"]})
+        if len(out) >= 20:
+            break
+    return out
+
+
 def build(code_data):
     """Envelope from a decoded snapshot code ({kind, character, snapshot})."""
     if not isinstance(code_data, dict) or code_data.get("kind") != "snapshot":
@@ -107,6 +121,9 @@ def build(code_data):
             "money": snap.get("money") if isinstance(snap.get("money"), int) else None,
         },
         "goal": goal,
+        "question": clean_text(snap.get("question"), 200),
+        "timeBudget": snap.get("timeBudget") if isinstance(snap.get("timeBudget"), (int, float)) and not isinstance(snap.get("timeBudget"), bool) else None,
+        "feedback": _feedback(snap),
         "currentZone": {"mapID": where.get("mapID") if _id(where.get("mapID")) else None,
                         "name": clean_text(where.get("zone"), 60)},
         "candidates": cands,
@@ -124,6 +141,8 @@ def model_view(env):
     return {
         "character": {k: env["character"][k] for k in ("class", "race", "level", "faction")},
         "goal": env["goal"],
+        "timeBudgetMinutes": env.get("timeBudget"),
+        "playerFeedback": env.get("feedback") or [],
         "zone": env["currentZone"]["name"],
         "candidates": [{k: c[k] for k in keep if c.get(k) not in (None, False)} for c in env["candidates"]],
     }

@@ -9,7 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from outrider_companion import codes  # noqa: E402
-from outrider_companion.intelligence import ask, context, orchestrator, providers  # noqa: E402
+from outrider_companion.intelligence import ask, context, orchestrator, planner, providers  # noqa: E402
 
 
 def snapshot_code(**over):
@@ -151,6 +151,69 @@ class Answers(unittest.TestCase):
         advice, report = orchestrator.ask("x", env, binding, providers.FakeProvider([reply()]))
         self.assertEqual(report["mode"], "empty")
         self.assertEqual(advice["items"], [])
+
+
+class Planning(unittest.TestCase):
+    def test_budget_from_box_or_question(self):
+        self.assertEqual(planner.budget_from("anything", 45), 45)
+        self.assertEqual(planner.budget_from("I have 45 minutes"), 45)
+        self.assertEqual(planner.budget_from("got 2h tonight"), 120)
+        self.assertEqual(planner.budget_from("about an hour?"), 60)
+        self.assertEqual(planner.budget_from("I have 1 min"), planner.MIN_BUDGET)
+        self.assertIsNone(planner.budget_from("what now?"))
+
+    def test_order_urgent_first_dungeon_last_same_zone_together(self):
+        cs = [
+            {"candidateId": "dungeon:DM", "kind": "dungeon", "minutes": 25, "target": {"mapID": 9, "x": 0.1, "y": 0.1}},
+            {"candidateId": "quest:A", "kind": "quest", "minutes": 2, "target": {"mapID": 1, "x": 0.1, "y": 0.1}},
+            {"candidateId": "gather:B", "kind": "gather", "minutes": 20, "target": {"mapID": 2, "x": 0.1, "y": 0.1}},
+            {"candidateId": "quest:C", "kind": "quest", "minutes": 3, "target": {"mapID": 1, "x": 0.2, "y": 0.2}},
+            {"candidateId": "errand:repair", "kind": "errand", "minutes": 1, "urgent": True},
+        ]
+        ids = [c["candidateId"] for c in planner.order(cs)]
+        self.assertEqual(ids, ["errand:repair", "quest:A", "quest:C", "gather:B", "dungeon:DM"])
+
+    def test_budget_moves_steps_to_later(self):
+        cs = [{"candidateId": "quest:A", "kind": "quest", "minutes": 5},
+              {"candidateId": "dungeon:DM", "kind": "dungeon", "minutes": 25},
+              {"candidateId": "gather:B", "kind": "gather", "minutes": None}]
+        p = planner.plan(cs, 30)
+        self.assertEqual([s["candidateId"] for s in p["steps"]], ["quest:A", "gather:B"])
+        self.assertEqual(p["later"][0]["candidateId"], "dungeon:DM")
+        self.assertEqual(p["unknownTime"], ["gather:B"])
+        text = " ".join(planner.limits_for(p, {"dungeon:DM": "Run The Deadmines"}))
+        self.assertIn("Run The Deadmines", text)
+        self.assertIn("estimates", text)
+
+    def test_answer_carries_plan_within_budget(self):
+        env, binding = env_of(snapshot_code(timeBudget=15, question="I have 15 minutes"))
+        advice, report = orchestrator.ask(None, env, binding, providers.FakeProvider([reply()]))
+        ans = advice["answer"]
+        self.assertEqual(ans["type"], "plan")
+        self.assertEqual(ans["budget"], 15)
+        self.assertLessEqual(ans["planMinutes"], 15)
+        self.assertEqual(ans["plan"][0]["candidateId"], "errand:repair")
+        self.assertIn('"timeBudgetMinutes":15', report and json.dumps(context.model_view(env), separators=(",", ":")))
+
+    def test_compare_rows_only_from_outrider_data(self):
+        self.assertTrue(orchestrator.is_compare("Should I run Deadmines or stay on my island?"))
+        self.assertTrue(orchestrator.is_compare("compare these two"))
+        self.assertFalse(orchestrator.is_compare("what should I do next?"))
+        env, binding = env_of(snapshot_code(question="Should I repair or quest?"))
+        r = reply(compare=["errand:repair", "quest:Coming of Age", "quest:Made Up"])
+        advice, _ = orchestrator.ask(None, env, binding, providers.FakeProvider([r]))
+        rows = advice["answer"]["compare"]
+        self.assertEqual(advice["answer"]["type"], "compare")
+        self.assertEqual([x["candidateId"] for x in rows], ["errand:repair", "quest:Coming of Age"])
+        self.assertEqual(rows[1]["minutes"], 1 + planner.ACTIVITY["quest"])
+        bad = reply(compare=["quest:Made Up", "errand:repair"])
+        advice, _ = orchestrator.ask(None, env, binding, providers.FakeProvider([bad]))
+        self.assertNotIn("compare", advice["answer"])
+
+    def test_feedback_reaches_the_model_view(self):
+        code = snapshot_code(modules={"WhatNow": {"candidates": [], "feedback": [{"id": "quest:X", "v": "wrong"}, {"id": "y", "v": "hack"}]}})
+        env, _ = env_of(code)
+        self.assertEqual(env["feedback"], [{"candidateId": "quest:X", "verdict": "wrong"}])
 
 
 class Provider(unittest.TestCase):

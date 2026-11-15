@@ -83,6 +83,24 @@ function M:Feedback(item, verdict)
     or "Marked as wrong data; hidden for a day.")
 end
 
+-- One line under the answer: the compare (A vs B) or the plan with times.
+function M.PlanLine(answer)
+  if answer.compare then
+    local a, b = answer.compare[1], answer.compare[2]
+    local function one(r) return string.format("%s (~%s min, %s%s)", r.title, tostring(r.minutes or "?"), r.label,
+      r.group and ", needs a group" or "") end
+    return "Compare: " .. one(a) .. "  vs  " .. one(b)
+  end
+  if answer.plan and #answer.plan > 0 then
+    local parts = {}
+    for i, r in ipairs(answer.plan) do parts[#parts + 1] = string.format("%d. %s ~%s min", i, r.title, tostring(r.minutes or "?")) end
+    local head = answer.planMinutes and string.format("Plan, about %d min%s: ", answer.planMinutes,
+      answer.budget and (" of " .. answer.budget) or "") or "Plan: "
+    return head .. table.concat(parts, "  ")
+  end
+  return ""
+end
+
 -- "45", "45 min", "1h" -> minutes (5..600), or nil
 function M.Minutes(text)
   text = tostring(text or ""):lower()
@@ -114,7 +132,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   -- the answer (schema 2): headline, summary and what it couldn't check
   p.answer = UI:Card(p, true)
   p.answer:SetPoint("TOPLEFT", p.q, "BOTTOMLEFT", 0, -10)
-  p.answer:SetSize(560, 112)
+  p.answer:SetSize(560, 124)
   p.answer.headline = UI.Display(p.answer, "card", "text")
   p.answer.headline:SetPoint("TOPLEFT", 12, -10)
   p.answer.headline:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
@@ -123,8 +141,12 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.answer.summary:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
   p.answer.summary:SetJustifyH("LEFT") p.answer.summary:SetJustifyV("TOP")
   p.answer.summary:SetHeight(44)
+  p.answer.plan = UI.Text(p.answer, "small", "goldText")
+  p.answer.plan:SetPoint("TOPLEFT", 12, -82)
+  p.answer.plan:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
+  p.answer.plan:SetJustifyH("LEFT")
   p.answer.limits = UI.Text(p.answer, "small", "muted")
-  p.answer.limits:SetPoint("TOPLEFT", 12, -82)
+  p.answer.limits:SetPoint("TOPLEFT", 12, -100)
   p.answer.limits:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
   p.answer.limits:SetJustifyH("LEFT")
   p.head = UI.Text(p, "small", "muted")
@@ -172,6 +194,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
       self.answer:Show()
       self.answer.headline:SetText(answer.headline or "")
       self.answer.summary:SetText(answer.summary or "")
+      self.answer.plan:SetText(M.PlanLine(answer))
       local lim = table.concat(answer.limits or {}, "  |  ")
       self.answer.limits:SetText(lim ~= "" and ("Not checked: " .. lim) or "")
       self.head:ClearAllPoints()

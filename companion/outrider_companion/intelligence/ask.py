@@ -41,7 +41,8 @@ def run(snapshot_code, question, provider):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Ask Outrider (local model, validated answer)")
-    ap.add_argument("question", nargs="?", default="What should I do next?")
+    ap.add_argument("question", nargs="?", default=None,
+                    help="optional: the question typed in the Advisor tab is used when this is left out")
     ap.add_argument("--snapshot")
     ap.add_argument("--out")
     ap.add_argument("--no-model", action="store_true")
@@ -67,6 +68,11 @@ def main(argv=None):
         clipboard.write(out)
     ans = advice["answer"]
     print(ans.get("headline") or "")
+    if ans.get("plan"):
+        print("Plan: about %d minutes%s" % (ans.get("planMinutes", 0),
+                                           (" of %d" % ans["budget"]) if ans.get("budget") else ""))
+    for r in ans.get("compare") or []:
+        print("  compare: %s (~%d min, %s%s)" % (r["title"], r["minutes"], r["label"], ", needs a group" if r["group"] else ""))
     if ans.get("summary"):
         print(ans["summary"])
     for i, it in enumerate(advice["items"], 1):
