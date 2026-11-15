@@ -17,6 +17,7 @@ money, and the trustworthiness of the advice.
 | Companion -> network | Data sent somewhere unexpected | Local loopback default; LAN needs allowRemote; cloud needs key + preview + cloudConsent; redirects refused; no fallback to cloud | test_intelligence (URL rules, redirect), test_cloud (consent, keys) |
 | Keys | Leak through files or logs | Windows Credential Manager; never printed, never in errors; secrets scan of the repo | test_cloud (status never shows keys), test_security (no keys in repo) |
 | Money | Runaway cloud spend | Daily token cap before every cloud call; one call per click; Stop waiting ignores late answers | test_cloud (cap), window tests |
+| Player's PC | Screen capture, input, memory reading creep in | Advice only (D18): forbidden in companion, tools and addon | test_security (capture/input/memory scan) |
 | External MCP servers | Untrusted reference data, exfiltration | Not connected (AI04-04 blocked on Gary's OK) | n/a |
 
 ## Residual risks

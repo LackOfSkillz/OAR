@@ -71,6 +71,28 @@ class Static(unittest.TestCase):
                     bad.append("%s: %s" % (os.path.relpath(path, ADDON), pat))
         self.assertEqual(bad, [])
 
+    def test_no_capture_input_or_memory_access_anywhere(self):
+        # decision D18: advice only. Nothing captures the screen or the game
+        # window, simulates input or reads game memory, in the companion, the
+        # tools or the addon (WoW's own Screenshot() included: Print Screen is Gary's key).
+        banned = [r"ImageGrab", r"\bmss\b", r"pyautogui", r"pynput", r"^\s*import keyboard", r"win32gui", r"win32api",
+                  r"SendInput", r"keybd_event", r"mouse_event", r"\bGetDC\b", r"BitBlt", r"PrintWindow",
+                  r"ReadProcessMemory", r"WriteProcessMemory", r"OpenProcess", r"CopyFromScreen", r"SendKeys",
+                  r"\bScreenshot\s*\("]
+        bad = []
+        tools_dir = os.path.join(ROOT, "tools")
+        for base, exts in ((COMPANION, (".py",)), (tools_dir, (".py", ".ps1", ".lua")), (ADDON, (".lua",))):
+            for ext in exts:
+                for path in files(base, ext):
+                    if os.path.abspath(path) == os.path.abspath(__file__):
+                        continue
+                    raw = open(path, encoding="utf-8", errors="replace").read()
+                    text = strip_lua_comments(raw) if ext == ".lua" else strip_py_comments(raw)
+                    for pat in banned:
+                        if re.search(pat, text, re.M):
+                            bad.append("%s: %s" % (os.path.relpath(path, ROOT), pat))
+        self.assertEqual(bad, [])
+
     def test_no_secrets_in_the_repo_tree(self):
         pat = re.compile(r"sk-(ant-)?[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_\-]{30,}")
         hits = []

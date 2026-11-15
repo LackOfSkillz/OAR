@@ -1,5 +1,9 @@
 # Transport feasibility (AI05-01): getting answers into the game
 
+> **Decided 2026-11-15 (D18): advice only.** Gary rejected every in-game bridge (screen capture, runtime addon
+> rewrites, side channels): Outrider is game intelligence, not game automation. Advice reaches the game as a
+> pasted code (no reload) or the data-only Advice.lua (after a /reload). Options C1-C3 below are closed.
+
 Spec section 9 and phase AI-05. Written 2026-11-15. **No experiment has been
 run.** The spec requires Gary's explicit approval before any risky experiment,
 and prefers shipping without a bridge to using a questionable workaround.

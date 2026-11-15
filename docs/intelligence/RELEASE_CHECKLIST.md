@@ -12,7 +12,7 @@ Silence is never a pass.
 | AI-G2 first slice | **not verified** | Route proven offline with real saved data (hunter, mage); needs a real model and the real client |
 | AI-G3 plan/compare | **not verified** | Planner, compare, feedback built and tested; needs Gary's usability review at 860x520 and 1400x1000 |
 | AI-G4 providers | **not verified** | Local + 3 cloud adapters tested on stand-in servers; no real provider call yet; external MCP blocked |
-| AI-G5 bridge | **not attempted** | Feasibility written; needs Gary's approval and a policy review (docs/intelligence/TRANSPORT_FEASIBILITY.md) |
+| AI-G5 bridge | **closed** | Gary rejected any in-game bridge (D18, advice only); enforced by test_security.py |
 | AI-G6 public release | **not verified** | Needs the items below |
 
 ## Release targets (spec 12.2)
@@ -38,6 +38,6 @@ Silence is never a pass.
    waypoints, empty cards or UI overflow; after /reload, logout, restart;
    with no model, model down, no internet, wrong key, stale advice.
 3. One real model answer: local (Ollama/LM Studio/GX10) or a cloud key; measure times.
-4. Decide Q3 (license) and whether the companion ships in the family installer.
+4. Decide Q3 (license) and whether the companion ships in the family installer. (The bridge is settled: none, D18.)
 5. Family beta with consent; fix severity 1-2 issues.
 6. Then `tools/publish.ps1` (it runs the full suite with Python required).

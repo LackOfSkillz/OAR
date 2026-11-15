@@ -90,8 +90,8 @@ Also done early from AI-04: AI04-03 MCP tools `get_pathfinder_candidates`, `get_
 
 ### AI-05 Seamless transport feasibility (optional)
 - [x] AI05-01 Feasibility matrix — 2026-11-15: docs/intelligence/TRANSPORT_FEASIBILITY.md (A kept, B built, C1/C2 not recommended)
-- [!] AI05-02..06 Bridge prototype and checks — blocked: needs Gary's explicit approval and a policy review; the spec prefers shipping without
-- [ ] **AI-G5** gate — not attempted
+- [x] AI05-02..06 Bridge prototype and checks — 2026-11-15: rejected by Gary (D18, advice only); not built, and test_security.py fails on any screen capture, input or memory access
+- [x] **AI-G5** gate — closed: no bridge (D18)
 
 ### AI-06 Release quality, polish, adoption
 - [x] AI06-01 Onboarding — 2026-11-15: "how it works" help in the Advisor tab, user guide (docs/intelligence/USER_GUIDE.md)

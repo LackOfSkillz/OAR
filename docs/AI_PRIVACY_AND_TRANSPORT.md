@@ -9,8 +9,9 @@ or local until Gary changes it.
   code back on the clipboard; Gary pastes it into the Advisor tab. No reload, no
   game files read while playing, no network from Lua.
 - Advice.lua (the reload route) keeps working unchanged.
-- No in-game bridge (screen capture, resource tricks, anything else) without a
-  separate feasibility, policy and safety review and Gary's approval.
+- No in-game bridge, ever (D18, advice only): no screen or window capture, no
+  runtime addon rewrites, no input, no memory reading. The data-only Advice.lua
+  (`write_advice`, seen after a /reload) stays.
 
 ## What leaves the PC
 - Nothing by default. The model provider is local: the default base URL is
