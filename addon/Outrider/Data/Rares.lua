@@ -37,7 +37,7 @@ ns.Data:Register("rare", "seed", {
     level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.17, abilities = { "Faster Attack" } },
     verifiedOn = { date = "2026-11-15", note = "Torrant's tamed pet: stable creatureID 5807, pet speed 1.17 s" },
     spawns = { { x = 0.515, y = 0.275 }, { x = 0.49, y = 0.16 } },
-    notes = "Wanders around each spot: circle the hills west of Red Rocks",
+    notes = "Wanders around each spot: circle the hills west of Red Rocks. Khreos tamed it at 52.0, 27.4 (2026-11-15, layer 23)",
     source = "conquestcapped.com Forever guide (spawns, family, speed), read 2026-11-15; npcID: " .. WDB },
   -- Forever-only (added in 1.60.1): npcID and spot from warcraft.wiki.gg/wiki/Coldrasp,
   -- spawns, speed and abilities from conquestcapped.com/guides/wow-forever/wow-forever-coldrasp/
