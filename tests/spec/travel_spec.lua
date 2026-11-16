@@ -174,6 +174,54 @@ T.describe("travel", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("travel finder: every portal, boat and zeppelin, searchable, on the map where the spot is known", function()
+    local _, ns = session()
+    ns.db.global.pois = {
+      ["taxi-1"] = { id = "taxi-1", kind = "flight_master", source = "client", name = "Harborton, Eastvale", mapID = 200, x = 0.8, y = 0.2 },
+    }
+    ns.Data:Register("link", "spec", {
+      { id = "portal-spec", kind = "portal", source = "spec", verified = false, oneWay = true,
+        from = { zone = "Westfield", place = "Mage Tower", x = 0.3, y = 0.4 }, to = { zone = "Far Isle", place = "Isleport" } },
+      { id = "boat-spec", kind = "boat", source = "spec", verified = false,
+        from = { zone = "Eastvale", place = "Harborton" }, to = { zone = "Far Isle", place = "Isleport" } },
+      { id = "zep-spec", kind = "zeppelin", faction = "Alliance", source = "spec", verified = false,
+        from = { zone = "Westfield", place = "Tower", x = 0.5, y = 0.5 }, to = { zone = "Eastvale", place = "Harborton" } },
+      { id = "race-spec", kind = "portal", race = "Nobody", source = "spec", verified = false, oneWay = true,
+        from = { zone = "Westfield", place = "Secret", x = 0.6, y = 0.6 }, to = { zone = "Far Isle", place = "Isleport" } },
+    })
+    local by = {}
+    for _, d in ipairs(ns.Travel:Departures()) do by[d.name .. " @" .. tostring(d.place)] = d end
+    T.eq(by["Portal to Isleport @Mage Tower"].where, "exact")
+    T.eq(by["Boat to Isleport @Harborton"].where, "flight")
+    T.eq(by["Boat to Harborton @Isleport"].where, "zone", "the way back: dock not known")
+    T.eq(by["Zeppelin to Harborton @Tower"], nil, "other faction's zeppelin left out")
+    T.eq(by["Portal to Isleport @Secret"], nil, "another race's portal left out")
+    T.eq(by["Portal to Mage Tower @Isleport"], nil, "one-way portal has no way back")
+    -- Journey's search finds them by kind words
+    local found = ns.Finder:Find({ kind = "all", text = "portal" })
+    local names = {}
+    for _, e in ipairs(found) do if e.kind == "travel" then names[#names + 1] = e.name end end
+    T.eq(#names, 1)
+    T.eq(names[1], "Portal to Isleport")
+    found = ns.Finder:Find({ kind = "travel", text = "ship" })
+    T.ok(#found >= 1, "boats answer to ship")
+    T.contains(found[1].sub, "from ")
+    -- map pins: the portal on Westfield, the boat by Eastvale's flight master; none for the unknown dock
+    ns.MapPins:Invalidate()
+    local w = {}
+    for _, pin in ipairs(ns.MapPins:PinsFor(100)) do if pin.kind == "transport" then w[#w + 1] = pin end end
+    T.eq(#w, 1)
+    T.eq(w[1].name, "Portal to Isleport")
+    local e = {}
+    for _, pin in ipairs(ns.MapPins:PinsFor(200)) do if pin.kind == "transport" then e[#e + 1] = pin end end
+    T.eq(#e, 1)
+    T.contains(e[1].title, "by the flight master")
+    local f = 0
+    for _, pin in ipairs(ns.MapPins:PinsFor(300)) do if pin.kind == "transport" then f = f + 1 end end
+    T.eq(f, 0)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("XP estimate grows with level and is cut for low quests", function()
     local _, ns = session()
     T.ok(ns.Journey.XP(13, 13) > ns.Journey.XP(10, 13))

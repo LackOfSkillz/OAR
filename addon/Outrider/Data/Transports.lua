@@ -9,12 +9,16 @@
 -- Sources (read 2026-11-13):
 --   CWF = classicwowforever.com/boats-and-zeppelins/
 --   LEP = leprestore.com/guides/world-of-warcraft-forever/wow-forever-travel-guide/ (pre-launch, beta data)
+--   MGG = method.gg/wow-forever/all-travel-routes-in-wow-forever-boats-zeppelins (read 2026-11-16)
+-- Captured: the Dalaran portal's spot is where Gary stepped through it
+-- (a learned ride in his saved data, 2026-11-13).
 -- At launch Blizzard put temporary portals by most docks while ships were
 -- lost in the Maelstrom; guides disagree on whether they are gone. Either
 -- way the dock is the place to go.
 
 local _, ns = ...
 local CWF, LEP, BOTH = "classicwowforever.com", "leprestore.com (beta data)", "classicwowforever.com, leprestore.com"
+local MGG = "method.gg (read 2026-11-16)"
 
 ns.Data:Register("link", "forever-guides", {
   { id = "boat-stormwind-auberdine", kind = "boat", faction = "Alliance", source = BOTH, verified = false,
@@ -49,6 +53,14 @@ ns.Data:Register("link", "forever-guides", {
     note = "first ride comes with the quest The Magical City of Dalaran" },
   { id = "tram-ironforge-stormwind", kind = "tram", faction = "Alliance", source = CWF, verified = false, ride = 60,
     from = { zone = "Ironforge", place = "Tinker Town" }, to = { zone = "Stormwind City", place = "Dwarven District" } },
+  { id = "boat-feathermoon-coast", kind = "boat", faction = "Alliance", source = MGG, verified = false,
+    from = { zone = "Feralas", place = "Feathermoon Stronghold" }, to = { zone = "Feralas", place = "the Forgotten Coast" } },
+  -- Skyborne only and one way: guides say the way back went on 2026-10-17
+  -- (method.gg, blizzardwatch.com). The spot is Gary's own ride.
+  { id = "portal-dalaran-stormwind", kind = "portal", faction = "Alliance", race = "Skyborne", oneWay = true, ride = 10,
+    source = MGG .. "; spot captured 2026-11-13", verified = false,
+    from = { zone = "Alterac Mountains", place = "Dalaran", x = 0.120, y = 0.564 }, to = { zone = "Stormwind City", place = "Stormwind" },
+    note = "Skyborne only; no portal back" },
   { id = "portal-ruttheran-darnassus", kind = "portal", faction = "Alliance", source = LEP, verified = false, ride = 10,
     from = { zone = "Teldrassil", place = "Rut'theran Village" }, to = { zone = "Darnassus", place = "Darnassus" } },
 })

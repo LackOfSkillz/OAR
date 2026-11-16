@@ -28,7 +28,7 @@ local LABELS = {
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
-  guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took",
+  guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
 }
 M.LABELS = LABELS
 
@@ -42,7 +42,7 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
-  trail = "trail", ride = "ride",
+  trail = "trail", ride = "ride", transport = "ride",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
@@ -57,6 +57,7 @@ local ICON = {
   guild_master = "Interface\\Icons\\INV_Misc_Note_02", tabard = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
   ride = "Interface\\Icons\\INV_Misc_Map_01",
+  transport = "Interface\\Icons\\Spell_Arcane_TeleportStormWind",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
   herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01", fish = "Interface\\Icons\\INV_Misc_Fish_02", pool = "Interface\\Icons\\INV_Misc_Fish_14",
 }
@@ -232,6 +233,18 @@ function M:BuildPins(mapID)
       end
     end
   end
+  -- Portals, boats, zeppelins and the tram leaving from this map, where the
+  -- departure spot is known (a guide's spot, or the dock by the flight
+  -- master); rides you took are the Trail's own pins below.
+  if not hidden.transport and ns.Travel then
+    for i, d in ipairs(ns.Travel:Departures()) do
+      local a = d.from
+      if a.mapID == mapID and d.where ~= "zone" and d.where ~= "taken" then
+        out[#out + 1] = { id = "transport-" .. i, kind = "transport", mapID = mapID, x = a.x, y = a.y, name = d.name,
+          title = d.where == "flight" and ("from " .. tostring(d.place) .. ": the dock is by the flight master") or ("from " .. tostring(d.place)) }
+      end
+    end
+  end
   -- Breadcrumbs: where you walked, and rides you took from here (Trail)
   if ns.Trail and ns.Trail.enabled then
     for _, pin in ipairs(ns.Trail:Pins(mapID, hidden)) do out[#out + 1] = pin end
@@ -316,7 +329,7 @@ end
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
-local NO_MERGE = { rare = true, guild = true, trail = true, ride = true }
+local NO_MERGE = { rare = true, guild = true, trail = true, ride = true, transport = true }
 
 function M.Declutter(pins, px, py)
   local out, cells = {}, {}

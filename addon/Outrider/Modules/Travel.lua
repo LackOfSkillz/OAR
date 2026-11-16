@@ -212,17 +212,18 @@ end
 
 function M:Rides()
   local faction = C.Call("UnitFactionGroup", "player")
+  local race = C.Call("UnitRace", "player")
   local out = {}
-  local function add(kind, a, b, cost, label, note)
-    if a and b then out[#out + 1] = { kind = kind, from = a, to = b, cost = cost, label = label, note = note } end
+  local function add(kind, a, b, cost, label, note, l)
+    if a and b then out[#out + 1] = { kind = kind, from = a, to = b, cost = cost, label = label, note = note, link = l } end
   end
   for _, packs in pairs(ns.Data.packs.link or {}) do
     for _, l in ipairs(packs) do
-      if not l.faction or l.faction == faction then
+      if (not l.faction or l.faction == faction) and (not l.race or l.race == race) then
         local a, b = endPoint(self, l.from), endPoint(self, l.to)
         local cost = l.ride or M.RIDE[l.kind] or 180
-        add(l.kind, a, b, cost, l.from.place .. " to " .. l.to.place, l.note)
-        if not l.oneWay then add(l.kind, b, a, cost, l.to.place .. " to " .. l.from.place, l.note) end
+        add(l.kind, a, b, cost, l.from.place .. " to " .. l.to.place, l.note, l)
+        if not l.oneWay then add(l.kind, b, a, cost, l.to.place .. " to " .. l.from.place, l.note, l) end
       end
     end
   end
@@ -230,8 +231,27 @@ function M:Rides()
     if not l.faction or l.faction == faction then
       local a = M.Point(l.from.mapID, l.from.x, l.from.y, M.ZoneName(l.from.mapID))
       local b = M.Point(l.to.mapID, l.to.x, l.to.y, M.ZoneName(l.to.mapID))
-      add("learned", a, b, M.RIDE.learned, M.ZoneName(l.from.mapID) .. " to " .. M.ZoneName(l.to.mapID))
+      add("learned", a, b, M.RIDE.learned, M.ZoneName(l.from.mapID) .. " to " .. M.ZoneName(l.to.mapID), nil, l)
     end
+  end
+  return out
+end
+
+-- Every way to travel from one place to another that this character can
+-- use (Gary, 2026-11-16: "a way to find the portals, ships and airships"):
+-- { kind, name = "Boat to Theramore", from = point, to = point, where, place }
+-- where: "exact" (guide or captured spot), "flight" (the town's flight
+-- master, the dock is nearby), "zone" (only the zone is known), "taken"
+-- (a ride you took, from the spot you left).
+M.KIND_NAME = { boat = "Boat", zeppelin = "Zeppelin", skycutter = "Skyship", tram = "Tram", portal = "Portal", learned = "Ride" }
+function M:Departures()
+  local out = {}
+  for _, r in ipairs(self:Rides()) do
+    local a = r.from
+    local where = r.kind == "learned" and "taken" or (a.approx and "zone") or (a.nearFlight and "flight") or "exact"
+    local toName = r.kind == "learned" and M.ZoneName(r.to.mapID) or r.to.label or M.ZoneName(r.to.mapID)
+    out[#out + 1] = { kind = r.kind, name = (M.KIND_NAME[r.kind] or "Ride") .. " to " .. tostring(toName), from = a, to = r.to,
+      where = where, place = a.label, note = r.note, link = r.link }
   end
   return out
 end

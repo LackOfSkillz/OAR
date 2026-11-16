@@ -29,14 +29,14 @@ ns.Finder = M
 
 M.MOBS_ADDON = "Outrider_Data_Mobs"
 M.CAP = 300
-M.KINDS = { "all", "zone", "gear", "item", "quest", "rare", "mob", "node", "npc", "place" }
-M.KIND_LABEL = { all = "All", zone = "Zones", node = "Herbs, ore", gear = "Gear", item = "Items", quest = "Quests", rare = "Rares", mob = "Creatures",
+M.KINDS = { "all", "zone", "travel", "gear", "item", "quest", "rare", "mob", "node", "npc", "place" }
+M.KIND_LABEL = { all = "All", zone = "Zones", travel = "Travel", node = "Herbs, ore", gear = "Gear", item = "Items", quest = "Quests", rare = "Rares", mob = "Creatures",
   npc = "NPCs", place = "Places" }
 M.SORTS = { "nearest", "xpmin", "xp", "gain", "level", "name", "zone" }
 M.SORT_LABEL = { nearest = "nearest", xpmin = "XP per minute", xp = "most XP", gain = "best gear", level = "your level",
   name = "name", zone = "zone" }
 M.DEFAULT_SORT = { node = "nearest", zone = "xp", gear = "gain", quest = "xpmin", item = "nearest", rare = "nearest", mob = "level", npc = "nearest",
-  place = "nearest", all = "nearest" }
+  place = "nearest", all = "nearest", travel = "nearest" }
 local RANK = { [1] = "elite", [2] = "rare elite", [3] = "boss", [4] = "rare" }
 
 function M:Mobs()
@@ -242,6 +242,21 @@ function P.node(out)
   end
 end
 
+-- Portals, boats, zeppelins, skyships and the tram (Travel:Departures):
+-- one line per way out, at its departure spot. Search "portal", "boat",
+-- "zeppelin", "ship" or a town name.
+local WHERE = { exact = "", flight = ", dock by the flight master", zone = ", dock spot not known yet", taken = ", you took it" }
+local ALIAS = { boat = "ship", zeppelin = "airship", skycutter = "airship ship", portal = "teleport", tram = "train", learned = "portal ship" }
+function P.travel(out)
+  for _, d in ipairs(ns.Travel:Departures()) do
+    local a = d.from
+    add(out, "travel", d.name, a.mapID, a.x, a.y, {
+      sub = string.format("from %s%s%s", tostring(d.place or ns.Travel.ZoneName(a.mapID)), WHERE[d.where] or "",
+        d.note and (". " .. d.note) or ""),
+      keywords = (d.kind .. " " .. (ALIAS[d.kind] or "") .. " travel"), approx = d.where == "zone" or nil })
+  end
+end
+
 function P.place(out)
   local mine = myFaction()
   local d = met()
@@ -260,7 +275,7 @@ end
 
 -- ---------------------------------------------------------------- search
 local ALL_BASE = { "zone", "gear", "quest", "rare", "place" }      -- "All" with no search text
-local ALL_TEXT = { "zone", "gear", "item", "quest", "rare", "mob", "node", "npc", "place" }
+local ALL_TEXT = { "zone", "travel", "gear", "item", "quest", "rare", "mob", "node", "npc", "place" }
 
 local SORTERS = {
   nearest = function(a, b) return (a.seconds or 1e12) < (b.seconds or 1e12) end,
@@ -294,7 +309,7 @@ function M:Find(opts)
     e.zone = ns.Travel.ZoneName(e.mapID)
     local keep = true
     if text then
-      local hay = (tostring(e.name) .. " " .. tostring(e.sub or "") .. " " .. e.zone .. " " .. (M.KIND_LABEL[e.kind] or "")):lower()
+      local hay = (tostring(e.name) .. " " .. tostring(e.sub or "") .. " " .. e.zone .. " " .. (M.KIND_LABEL[e.kind] or "") .. " " .. (e.keywords or "")):lower()
       keep = hay:find(text, 1, true) ~= nil
     end
     if keep then
@@ -319,7 +334,7 @@ function M:Find(opts)
   return out, total, sort
 end
 
-local KIND_TAG = { node = "node", zone = "zone", gear = "gear", item = "item", quest = "quest", rare = "RARE", mob = "creature", npc = "npc", place = "place" }
+local KIND_TAG = { travel = "travel", node = "node", zone = "zone", gear = "gear", item = "item", quest = "quest", rare = "RARE", mob = "creature", npc = "npc", place = "place" }
 
 function M.Line(e)
   local parts = {}
