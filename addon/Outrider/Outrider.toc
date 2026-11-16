@@ -28,6 +28,8 @@ Core\Probe.lua
 
 # UI kit
 UI\Theme.lua
+Art\Manifest.lua
+UI\Art.lua
 UI\Widgets.lua
 UI\WidgetsExtra.lua
 UI\SecureButtons.lua
@@ -59,6 +61,7 @@ Data\Herbs.lua
 Data\Transports.lua
 Data\Money.lua
 Data\Dungeons.lua
+Data\Rares.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\SharedData.lua
@@ -86,6 +89,7 @@ Modules\LootLog.lua
 Modules\HerbHelper.lua
 Modules\NodePack.lua
 Modules\MoneyGuide.lua
+Modules\Favor.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua
 Modules\SkillUp.lua
@@ -98,6 +102,7 @@ Modules\Nearby.lua
 Modules\GearQuestBridge.lua
 Modules\Comm.lua
 Modules\KitShare.lua
+Modules\LootRolls.lua
 Modules\Updates.lua
 Modules\RareShare.lua
 Modules\GatherShare.lua
@@ -135,7 +140,9 @@ Modules\NPCPack.lua
 Modules\Waypoints.lua
 Modules\POICapture.lua
 Modules\Nearest.lua
+Modules\Trail.lua
 Modules\MapPins.lua
+Modules\ZoneLevels.lua
 Modules\MinimapPins.lua
 Modules\MapTab.lua
 Modules\Coords.lua

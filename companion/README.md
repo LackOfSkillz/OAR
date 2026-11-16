@@ -46,7 +46,7 @@ nothing to install, no network.
 2. Tell Claude "advise" (or `/advise`). It reads the code from the clipboard
    (`read_clipboard_snapshot`) and puts an advice code on the clipboard
    (`advice_to_clipboard`).
-3. In the Advisor tab: **Paste advice**, Ctrl+V, Accept. The suggestions show
+3. In the Advisor tab: **Paste advice** (or your Paste key), Ctrl+V. The suggestions show
    at once. Click one to do it. Nothing happens on its own.
 
 Older route (needs a reload): `/ride ask reload`, then `write_advice`, then
@@ -61,3 +61,49 @@ Note: `tools/deploy.ps1` replaces the Outrider folder, which removes
 ## Tests
 
 `py -I companion/tests/test_companion.py` (also run by `tools/test.ps1`).
+
+## Ask Outrider (local model, sprint 1 of Outrider Intelligence)
+
+A grounded answer to "what should I do?" from a model running on your own PC.
+The model only explains and orders Outrider's own What now? steps; every
+place, id and action is rebuilt from Outrider's data and checked again in game.
+
+1. Run a local model server that speaks the OpenAI chat API (Ollama, LM Studio,
+   vLLM, llama.cpp). In `companion/config.json` add:
+   `"intelligence": {"enabled": true, "provider": "openai-compatible",
+   "baseUrl": "http://127.0.0.1:11434", "model": "<your model>", "allowRemote": false}`.
+   A server on another machine (a GX10 on the LAN) needs `"allowRemote": true`;
+   your data then travels to that machine.
+2. In game: Advisor tab > Ask (copy snapshot), Ctrl+C.
+3. `python -m outrider_companion.intelligence.ask "I have 45 minutes, what should I do?"`
+   (run in `companion/`). The advice code goes to the clipboard.
+4. In game: Advisor tab > Paste advice. No reload.
+
+Without a model (or with `--no-model`) you get Outrider's own top steps.
+Privacy and limits: `docs/AI_PRIVACY_AND_TRANSPORT.md`.
+
+## Cloud models (optional, off by default)
+
+Anthropic, OpenAI or Gemini instead of a local model:
+1. `python -m outrider_companion.intelligence.keys set anthropic` (the key is
+   asked for hidden and stored in Windows Credential Manager).
+2. In `companion/config.json`: `"intelligence": {"enabled": true, "provider": "anthropic",
+   "model": "claude-opus-5-5", "dailyTokenCap": 100000}`.
+3. `python -m outrider_companion.intelligence.ask --preview`: everything that
+   would be sent. If you're happy with it, add `"cloudConsent": true`.
+4. `python -m outrider_companion.intelligence.doctor` shows what is set up.
+
+Character names are never sent. Each answer costs tokens on your account;
+the cap stops calls for the day once reached.
+
+## The Ask Outrider window (no command line)
+
+`pythonw -m outrider_companion.intelligence.window` (run in `companion/`).
+In game: your Ask key (or Advisor > Ask), Ctrl+C. With "Answer by itself"
+on (the default) the window notices the new snapshot code on its clipboard and
+asks; otherwise Read snapshot, Ask (Enter). The answer is copied; in game:
+your Paste key (or Paste advice), Ctrl+V; it applies without an Accept click.
+Each code you copy is one model call (the daily cap still applies). Preview shows exactly
+what a model would receive; Status shows the setup; Stop waiting lets go of
+a slow model. It never touches the game.
+

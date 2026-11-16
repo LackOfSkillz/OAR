@@ -22,11 +22,21 @@ ns.TooltipLines:Add("unit", "beast", M, function(tip) return M:OnTooltip(tip) en
 function M:Lines(unit, shift)
   if not C.Call("UnitExists", unit) or C.Call("UnitIsPlayer", unit) then return {} end
   local family = C.Readable(C.Call("UnitCreatureFamily", unit))
-  local npcID = C.UnitNpcID(unit)
-  local pack = npcID and ns.Data:Get("rare", npcID)
-  local known = npcID and ns.Sightings and ns.Sightings.db and ns.Sightings.db[npcID]
+  local npcID, g = C.UnitNpcID(unit)
+  -- someone's pet. Warlock demons carry their own creature id; every hunter
+  -- pet on Forever carries the same placeholder id (captured 2026-11-15: a
+  -- bear, a wolf and Khreos's tamed Ghostfang all read 165189, while the
+  -- stable list showed Ghostfang's real creatureID 276111), so a hunter
+  -- pet's GUID says nothing about what it was tamed from.
+  local petOf = g and g.kind == "Pet" and npcID or nil
+  if petOf == M.HUNTER_PET_ID then petOf = false end
+  local isPet = petOf ~= nil
+  if not petOf then petOf = nil end
+  local pack = npcID and not isPet and ns.Data:Get("rare", npcID)
+  local known = npcID and not isPet and ns.Sightings and ns.Sightings.db and ns.Sightings.db[npcID]
   if not family and not pack and not known then return {} end
   local lines = {}
+  if petOf then lines[#lines + 1] = "Tamed from: " .. M.TamedFrom(petOf) end
   local level = C.Readable(C.Call("UnitLevel", unit))
   local mine = C.Call("UnitLevel", "player")
   if family then
@@ -52,6 +62,11 @@ function M:Lines(unit, shift)
         lines[#lines + 1] = string.format("Attacks every %.1fs (%s)", speed, feel)
         local d = npcID and ns.db.global.discovered and ns.db.global.discovered.npcs[npcID]
         if d then d.attackSpeed = speed end
+        -- another hunter's pet (Gary, 2026-11-15: "Ice Ember, level 12, 1.1 s,
+        -- where do I get that?"): pets carry their owner's name for them, so
+        -- keep what identifies the beast (family, level, speed, model), never
+        -- the owner's or the pet's name, once per pet per session
+        if isPet and not C.Call("UnitIsUnit", unit, "pet") then self:NotePet(unit, family, level, speed, petOf) end
       end
     end
   end
@@ -65,6 +80,41 @@ function M:Lines(unit, shift)
     if b.abilities then lines[#lines + 1] = "Abilities: " .. table.concat(b.abilities, ", ") .. tag end
   end
   return lines
+end
+
+-- Fast pets other hunters have: ns.db.global.petsSeen (newest 50), so Claude
+-- can match family + speed to a rare. The model id (display) tells beasts of
+-- one family apart; the client exposes it only through the model frame, so
+-- it is left out unless C_PlayerInfo/UnitCreatureDisplayID exists.
+M.HUNTER_PET_ID = 165189   -- the id in every hunter pet's GUID (see Lines)
+
+-- "The Rake (rare, Mulgore)" / "Plainstrider (npc 2955)" / "npc 12345"
+function M.TamedFrom(npcID)
+  local pack = ns.Data:Get("rare", npcID)
+  if pack then return string.format("%s (rare, %s)", pack.name, ns.Travel and ns.Travel.ZoneName(pack.mapID) or "?") end
+  local d = ns.db.global.discovered and ns.db.global.discovered.npcs and ns.db.global.discovered.npcs[npcID]
+  if d and d.name then
+    local rare = d.classification == "rare" or d.classification == "rareelite"
+    return string.format("%s (%s%s)", d.name, rare and "rare, " or "", d.mapID and ns.Travel and ns.Travel.ZoneName(d.mapID) or ("npc " .. npcID))
+  end
+  return "npc " .. npcID
+end
+
+function M:NotePet(unit, family, level, speed, npcID)
+  local guid = C.Call("UnitGUID", unit)
+  self.petNoted = self.petNoted or {}
+  if not guid or self.petNoted[guid] then return end
+  self.petNoted[guid] = true
+  local g = ns.db.global
+  g.petsSeen = type(g.petsSeen) == "table" and g.petsSeen or {}
+  local mapID = C.PlayerPosition("player")
+  local display = C.Readable(C.Call("UnitCreatureDisplayID", unit))
+  local e = { npcID = npcID, from = npcID and M.TamedFrom(npcID) or "unknown (hunter pet)", family = family, level = type(level) == "number" and level or nil, speed = speed, mapID = mapID,
+    display = type(display) == "number" and display or nil, t = time() }
+  table.insert(g.petsSeen, e)
+  while #g.petsSeen > 50 do table.remove(g.petsSeen, 1) end
+  self:Info("hunter pet seen: tamed from %s, %s level %s, attacks every %.2fs%s (map %s)", tostring(e.from), tostring(family), tostring(e.level), speed,
+    e.display and (", model " .. e.display) or "", tostring(mapID))
 end
 
 function M:OnTooltip(tip)

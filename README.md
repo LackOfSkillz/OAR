@@ -29,8 +29,12 @@ Open the hub with `/ride` (or the minimap button). Pages are grouped in the side
 - Waypoints with an arrow, coordinates, quest givers colored by your level, service NPCs, flight paths, rare spawn spots, herb, ore and fishing spots (picked nodes dim for 15 minutes, nodes seen up show green).
 - Finder: search gear, items, quests, rares, creatures, NPCs and places. Journey: best quests anywhere and the quickest route, including flights, boats and portals.
 
+**What now?**
+- The next 3 to 5 steps worth doing, picked for your goal (level up, gold, gear, professions, explore, a bit of everything) from your quests, gear, dungeons, training, rares, gold methods, gathering and errands. Each says why and where, with Go, Details, Not useful and an alternative. Unchecked data is labelled.
+
 **Dungeons**
-- Dungeons page: which dungeons fit your level now, the upgrades for you in each, the next tier, and an arrow to the entrance.
+- Dungeons page: which dungeons fit your level now, the upgrades for you in each, the next tier, an arrow to the entrance, and a ready check (repairs, food, bag space, ammo).
+- Loot roll advice on the item tooltip: Need, Greed for one of your alts, Greed or Pass. You still click the roll.
 
 **Professions and gold**
 - Training button for every crafting profession: one key makes what still gives skill. For cooking it makes the campfire, places it and cooks (never a second campfire).

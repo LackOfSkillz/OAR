@@ -50,4 +50,39 @@ T.describe("dungeon guide", function()
     ns.Hub.frame.tabBar:Select("dungeons")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("ready check: repairs, food and drink, bag space, ammo for hunters", function()
+    local game = mock.new({ ammo = 300 })
+    local ns = game:loadAddon()
+    game:login()
+    game.durability = { [1] = { 10, 50 } }
+    game.bags = { [0] = {} }
+    for s = 1, 13 do game.bags[0][s] = 2512 end
+    local list = ns.DungeonGuide:ReadyCheck()
+    local text = ns.DungeonGuide.ReadyText(list)
+    T.contains(text, "Repair first")
+    T.contains(text, "Only 3 free bag slots")
+    T.contains(text, "300 ammo (buy more)")
+    T.contains(text, "No food")
+    game.durability = { [1] = { 50, 50 } }
+    game.bags[0] = {}
+    T.contains(ns.DungeonGuide.ReadyText(ns.DungeonGuide:ReadyCheck()), "Gear in good repair")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("party ready check: sent only on request, shown for party members", function()
+    local game = mock.new({ inGroup = true })
+    local ns = game:loadAddon()
+    game:login()
+    T.eq(game.sent, nil)                       -- nothing goes out by itself
+    T.ok(ns.DungeonGuide:ShareReady())
+    T.eq(game.sent[1].channel, "PARTY")
+    local msg = ns.Comm:Encode("READY", { level = 16, class = "PRIEST", checks = { { ok = true, text = "Food: Bread" }, { ok = false, text = "No drink in your bags" } } })
+    game:fire("CHAT_MSG_ADDON", "Outrider", msg, "PARTY", "Healy-Realm")
+    T.contains(ns.DungeonGuide:PartyText(), "Healy (16): ")
+    T.contains(ns.DungeonGuide:PartyText(), "No drink")
+    game:advance(901)
+    T.contains(ns.DungeonGuide:PartyText(), "No party ready checks yet")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

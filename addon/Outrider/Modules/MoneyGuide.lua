@@ -174,6 +174,80 @@ function M:YourLines()
   return out
 end
 
+-- Crafting for profit (2026-11-15): for every recipe this character knows
+-- whose product and reagents all have an auction price, what one craft earns
+-- after the auction house's 5% cut. { {name, prof, profit, sell, cost, makes} },
+-- best first, and how many recipes were skipped for a missing price.
+M.AH_CUT = 0.05
+function M:CraftProfits()
+  local out, skipped = {}, 0
+  local P = ns.Prices
+  if not P then return out, 0 end
+  local function price(id) local v = P:Get(id) return type(v) == "number" and v > 0 and v or nil end
+  for prof, rec in pairs(ns.db.char.professions or {}) do
+    for _, r in pairs(type(rec) == "table" and rec.recipes or {}) do
+      if type(r) == "table" and r.product and type(r.reagents) == "table" and next(r.reagents) then
+        local sell = price(r.product)
+        local cost, ok = 0, sell ~= nil
+        if ok then
+          for id, n in pairs(r.reagents) do
+            local p = price(id)
+            if not p then ok = false break end
+            cost = cost + p * n
+          end
+        end
+        if ok then
+          local makes = r.makes or 1
+          out[#out + 1] = { name = r.name, prof = prof, sell = sell, cost = cost, makes = makes,
+            profit = math.floor(sell * makes * (1 - M.AH_CUT) - cost) }
+        else
+          skipped = skipped + 1
+        end
+      end
+    end
+  end
+  table.sort(out, function(a, b) if a.profit ~= b.profit then return a.profit > b.profit end return tostring(a.name) < tostring(b.name) end)
+  return out, skipped
+end
+
+function M:ProfitLines(n)
+  local list, skipped = self:CraftProfits()
+  local lines = {}
+  local money = ns.Prices.Money
+  for i = 1, math.min(n or 5, #list) do
+    local c = list[i]
+    if c.profit <= 0 then break end
+    lines[#lines + 1] = string.format("%s (%s): +%s a craft (sells %s%s, materials %s)", tostring(c.name), c.prof,
+      money(c.profit), money(c.sell), c.makes > 1 and (" x" .. c.makes) or "", money(c.cost))
+  end
+  if #lines == 0 then
+    lines[1] = #list > 0 and "Nothing you can craft sells for more than its materials right now."
+      or "No prices yet: open your profession windows, then scan prices at the auction house."
+  end
+  if skipped > 0 then lines[#lines + 1] = string.format("|cff8f96a6%d recipes skipped: a price is missing.|r", skipped) end
+  return lines
+end
+
+-- For the AI companion (AI04-03): ranked gold methods and crafting profit.
+-- Only on /ride ask.
+function M:Snapshot()
+  if not (ns.Snapshot and ns.Snapshot.asking) then return nil end
+  local out = { methods = {}, crafts = {} }
+  for i, r in ipairs(self:Rank() or {}) do
+    if i > 6 then break end
+    local e = r.entry or {}
+    out.methods[i] = { id = e.id, title = e.title, how = e.how, zones = e.zones, source = e.source,
+      copperPerHour = r.rate, measured = r.measured and true or false, verified = e.verified and true or false }
+  end
+  local list, skipped = self:CraftProfits()
+  for i = 1, math.min(5, #list) do
+    local c = list[i]
+    out.crafts[i] = { recipe = c.name, profession = c.prof, profit = c.profit, sells = c.sell, materials = c.cost, makes = c.makes }
+  end
+  out.craftsSkipped = skipped
+  return out
+end
+
 function M:Activity()
   local r = self:Rank()
   local top = r[1]

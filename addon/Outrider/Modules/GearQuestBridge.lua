@@ -76,3 +76,15 @@ function M:Activity()
   if self.broken then return "GearQuest changed (" .. self.broken .. " failed); bridge off this session" end
   return "GearQuest picks show in the Gear tab"
 end
+
+-- One line at login: is GearQuest Forever loaded, and does it expose the
+-- table the bridge reads? (audit 2026-11-15: it was enabled but never seen)
+function M:OnEnable()
+  self:On("PLAYER_ENTERING_WORLD", function(mod)
+    if mod.reported then return end
+    mod.reported = true
+    local loaded = C.IsAddOnLoaded("GearQuestForever") or C.IsAddOnLoaded("GearQuest")
+    mod:Info("GearQuest Forever loaded: %s; GearQuest table: %s; picks: %s", tostring(loaded and true or false),
+      mod:GQ() and "yes" or "no", mod:GQ() and tostring(#(mod:Picks() or {})) or "-")
+  end)
+end

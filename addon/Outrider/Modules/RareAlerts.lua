@@ -46,6 +46,9 @@ function M:Text(info)
   if info.classification == "rareelite" then parts[#parts + 1] = "elite" end
   if info.family then parts[#parts + 1] = info.family end
   parts[#parts + 1] = HOW[info.how] or info.how
+  -- which way to look (Gary, 2026-11-15: lost The Rake among the beasts)
+  local dir = info.how == "nameplate" and info.unit and ns.RarePlates and ns.RarePlates.Direction(info.unit)
+  if dir then parts[#parts + 1] = dir end
   return table.concat(parts, " · ")
 end
 
@@ -87,6 +90,7 @@ function M:OnRareSeen(_, info)
   -- Hard to miss while camping (Gary, 2026-11-14): a red pulse round the screen
   -- edge, and the arrow to her when her exact spot is known (minimap marker).
   if s.flash then self:Flash() end
+  if ns.MinimapPins and ns.MinimapPins.enabled and ns.MinimapPins.MarkRare then ns.MinimapPins:MarkRare(info) end
   if s.arrow and info.exact and info.mapID and ns.Waypoints then
     ns.Waypoints:Set(info.mapID, info.x, info.y, "Rare: " .. info.name)
   end

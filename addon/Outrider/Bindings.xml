@@ -2,4 +2,10 @@
   <Binding name="OUTRIDER_FIND" header="OUTRIDER" category="ADDONS">
     if Outrider and Outrider.Find then Outrider.Find:Toggle() end
   </Binding>
+  <Binding name="OUTRIDER_ASK" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.Advisor then Outrider.Advisor:AskKey() end
+  </Binding>
+  <Binding name="OUTRIDER_PASTE" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.Advisor then Outrider.Advisor:OpenPaste() end
+  </Binding>
 </Bindings>

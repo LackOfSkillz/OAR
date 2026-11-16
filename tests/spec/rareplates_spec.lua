@@ -30,4 +30,28 @@ T.describe("rare plates", function()
     T.eq(#P.pool, 1)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("the star is big, gold for a pack rare, and the alert says which way to look", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Data:Register("rare", "spec", { { npcID = 82010, name = "Pack Cat", mapID = 1412, verified = false } })
+    game.units = { nameplate1 = mob(82010, "Pack Cat", { classification = "rare" }) }
+    local plate = game.env.C_NamePlate.GetNamePlateForUnit("nameplate1")
+    local w = game.env.UIParent:GetWidth()
+    plate.GetCenter = function() return w * 0.9, 300 end
+    game:fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    local P = ns.RarePlates
+    local m = P.active.nameplate1
+    T.ok(m, "marker")
+    T.ok(m:GetWidth() >= 40, "big")
+    T.eq(P.Direction("nameplate1"), "to your right")
+    plate.GetCenter = function() return w * 0.5, 300 end
+    T.eq(P.Direction("nameplate1"), "straight ahead")
+    plate.GetCenter = function() return w * 0.3, 300 end
+    T.eq(P.Direction("nameplate1"), "ahead, slightly left")
+    T.contains(ns.Modules:Get("RareAlerts"):Text({ how = "nameplate", unit = "nameplate1", level = 10 }), "ahead, slightly left")
+    T.eq(P.Direction("target"), nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

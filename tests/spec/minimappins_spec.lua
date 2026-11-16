@@ -77,3 +77,31 @@ T.describe("minimap pins direction", function()
     T.ok(x2 > 0 and x2 < x1 and y2 > 0 and y2 < y1, "closer to the centre")
   end)
 end)
+
+T.describe("minimap rare box", function()
+  T.it("when a rare's alarm goes off, a blue box marks its nearest spawn spot for a few minutes", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    ns.Data:Register("rare", "spec", { { npcID = 83001, name = "Spec Cat", mapID = 1412, verified = false,
+      spawns = { { x = 0.47, y = 0.37 }, { x = 0.90, y = 0.90 } } } })
+    local M = ns.MinimapPins
+    ns.Events:Fire("OTR_RARE_SEEN", { npcID = 83001, name = "Spec Cat", how = "nameplate", mapID = 1412 })
+    local box
+    for _, d in ipairs(M.used) do if d.pin and d.pin.box then box = d end end
+    T.ok(box, "blue box on the minimap")
+    T.eq(box.pin.x, 0.47, "the near spawn spot, not the far one")
+    T.eq(box.pin.box, M.BLUE)
+    T.eq(box:GetWidth(), M.BOX)
+    -- gone after a few minutes
+    game:advance(M.LIVE + 2)
+    for _, d in ipairs(M.used) do T.ok(not (d.pin and d.pin.box), "box expired") end
+    -- a rare with no spawn spot near you: no box, no error
+    ns.Events:Fire("OTR_RARE_SEEN", { npcID = 99999, name = "Nobody", how = "nameplate", mapID = 1412 })
+    T.eq(M:MarkRare({ npcID = 83001, name = "Spec Cat" }) ~= nil, true)
+    game.opts.x = 0.10
+    T.eq(M:MarkRare({ npcID = 83001, name = "Spec Cat" }), nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

@@ -57,6 +57,28 @@ T.describe("travel", function()
     T.contains(r.steps[3].text, "Hermit, Far Isle")
   end)
 
+  T.it("a guide boat without dock coordinates leaves from the town's flight master", function()
+    local _, ns = session()
+    ns.db.global.pois = {
+      ["taxi-1"] = { id = "taxi-1", kind = "flight_master", source = "client", name = "Harborton, Eastvale", mapID = 200, x = 0.8, y = 0.2 },
+      ["taxi-2"] = { id = "taxi-2", kind = "flight_master", source = "client", name = "Isleport, Far Isle", mapID = 300, x = 0.3, y = 0.7 },
+    }
+    ns.Data:Register("link", "spec", { { id = "boat-spec", kind = "boat", source = "spec", verified = false,
+      from = { zone = "Eastvale", place = "Harborton" }, to = { zone = "Far Isle", place = "Isleport" } } })
+    local r = ns.Travel:Route(ns.Travel.Point(300, 0.5, 0.5, "Hermit"))
+    T.ok(r, "a route")
+    T.eq(r.steps[1].kind, "walk")
+    T.eq(r.steps[1].to.mapID, 200)
+    T.ok(math.abs(r.steps[1].to.x - 0.8) < 1e-9 and math.abs(r.steps[1].to.y - 0.2) < 1e-9, "walk to the flight master, not the zone middle")
+    T.contains(r.steps[1].text, "the dock is by the flight master")
+    T.eq(r.steps[2].kind, "boat")
+    T.contains(r.steps[3].text, "Hermit, Far Isle")
+    -- no flight master known: the zone middle, marked approximate
+    ns.db.global.pois = {}
+    r = ns.Travel:Route(ns.Travel.Point(300, 0.5, 0.5, "Hermit"))
+    T.contains(r.steps[1].text, "dock spot not known yet")
+  end)
+
   T.it("learns a ride from a loading screen that wasn't a flight or teleport", function()
     local game, ns, opts = session()
     game:fire("LOADING_SCREEN_ENABLED")
@@ -90,6 +112,113 @@ T.describe("travel", function()
     game:fire("PLAYER_ENTERING_WORLD", false, false)
     game:advance(3)
     T.eq(ns.Waypoints.current.mapID, 300, "arrow moved to the target")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("at the dock the guide says the ride once and stops re-setting the arrow", function()
+    local game, ns, opts = session()
+    ns.db.global.travelLinks = { { kind = "learned", from = { mapID = 200, x = 0.5, y = 0.9 }, to = { mapID = 300, x = 0.1, y = 0.1 }, oneWay = true } }
+    ns.Journey:Go({ name = "Bow", target = ns.Travel.Point(300, 0.5, 0.5, "Hermit"), seconds = 600 })
+    -- Gary walks to the dock: the arrow arrives
+    opts.mapID, opts.x, opts.y = 200, 0.5, 0.9
+    local sets = 0
+    ns.Events:On("OTR_WAYPOINT_SET", "spec", function() sets = sets + 1 end)
+    game:advance(10)
+    T.ok(sets <= 1, "no set/arrive loop (" .. sets .. " sets)")
+    T.eq(ns.Waypoints.current, nil)
+    local told = 0
+    for _, l in ipairs(game.chat) do if l:find("Now: Take the ride you took before", 1, true) then told = told + 1 end end
+    T.eq(told, 1)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a journey carries on after a reload", function()
+    local game, ns = session()
+    ns.db.global.travelLinks = { { kind = "learned", from = { mapID = 200, x = 0.5, y = 0.9 }, to = { mapID = 300, x = 0.1, y = 0.1 }, oneWay = true } }
+    ns.Journey:Go({ name = "Bow", target = ns.Travel.Point(300, 0.5, 0.5, "Hermit"), seconds = 600 })
+    -- the reload: the module starts over with only what was saved
+    ns.Journey.goal = nil
+    ns.Waypoints:Clear("reload", true)
+    ns.Modules:SetEnabled("Journey", false)
+    ns.Modules:SetEnabled("Journey", true)
+    game:advance(3)
+    T.ok(ns.Journey.goal, "goal back")
+    T.eq(ns.Journey.goal.name, "Bow")
+    T.eq(ns.Waypoints.current.mapID, 200, "arrow at the dock again")
+    ns.Journey:Stop("done")
+    T.eq(ns.Journey:Settings().goal, nil)
+  end)
+
+  T.it("a journey to a rare ends when it is tamed", function()
+    local _, ns = session()
+    ns.Journey:Go({ name = "Spec Cat", npcID = 83002, target = ns.Travel.Point(200, 0.9, 0.5, "Spec Cat"), seconds = 300 })
+    T.ok(ns.Journey.goal)
+    ns.Events:Fire("OTR_SIGHTING_ADDED", 99999, { state = "tamed" })
+    T.ok(ns.Journey.goal, "another creature changes nothing")
+    ns.Events:Fire("OTR_SIGHTING_ADDED", 83002, { state = "tamed" })
+    T.eq(ns.Journey.goal, nil)
+    T.eq(ns.Journey:Settings().goal, nil, "not resumed after a reload")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("an old saved journey to a rare already tamed is dropped at login", function()
+    local game, ns = session()
+    ns.Data:Register("rare", "spec", { { npcID = 83003, name = "Old Cat", mapID = 200, verified = false } })
+    ns.Journey:Settings().goal = { name = "Old Cat", target = { mapID = 200, x = 0.9, y = 0.5 } }   -- no npcID, no t
+    ns.Sightings:Record(83003, { state = "tamed", t = game.env.time(), mapID = 200 })
+    ns.Modules:SetEnabled("Journey", false)
+    ns.Modules:SetEnabled("Journey", true)
+    game:advance(3)
+    T.eq(ns.Journey.goal, nil)
+    T.eq(ns.Journey:Settings().goal, nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("travel finder: every portal, boat and zeppelin, searchable, on the map where the spot is known", function()
+    local _, ns = session()
+    ns.db.global.pois = {
+      ["taxi-1"] = { id = "taxi-1", kind = "flight_master", source = "client", name = "Harborton, Eastvale", mapID = 200, x = 0.8, y = 0.2 },
+    }
+    ns.Data:Register("link", "spec", {
+      { id = "portal-spec", kind = "portal", source = "spec", verified = false, oneWay = true,
+        from = { zone = "Westfield", place = "Mage Tower", x = 0.3, y = 0.4 }, to = { zone = "Far Isle", place = "Isleport" } },
+      { id = "boat-spec", kind = "boat", source = "spec", verified = false,
+        from = { zone = "Eastvale", place = "Harborton" }, to = { zone = "Far Isle", place = "Isleport" } },
+      { id = "zep-spec", kind = "zeppelin", faction = "Alliance", source = "spec", verified = false,
+        from = { zone = "Westfield", place = "Tower", x = 0.5, y = 0.5 }, to = { zone = "Eastvale", place = "Harborton" } },
+      { id = "race-spec", kind = "portal", race = "Nobody", source = "spec", verified = false, oneWay = true,
+        from = { zone = "Westfield", place = "Secret", x = 0.6, y = 0.6 }, to = { zone = "Far Isle", place = "Isleport" } },
+    })
+    local by = {}
+    for _, d in ipairs(ns.Travel:Departures()) do by[d.name .. " @" .. tostring(d.place)] = d end
+    T.eq(by["Portal to Isleport @Mage Tower"].where, "exact")
+    T.eq(by["Boat to Isleport @Harborton"].where, "flight")
+    T.eq(by["Boat to Harborton @Isleport"].where, "zone", "the way back: dock not known")
+    T.eq(by["Zeppelin to Harborton @Tower"], nil, "other faction's zeppelin left out")
+    T.eq(by["Portal to Isleport @Secret"], nil, "another race's portal left out")
+    T.eq(by["Portal to Mage Tower @Isleport"], nil, "one-way portal has no way back")
+    -- Journey's search finds them by kind words
+    local found = ns.Finder:Find({ kind = "all", text = "portal" })
+    local names = {}
+    for _, e in ipairs(found) do if e.kind == "travel" then names[#names + 1] = e.name end end
+    T.eq(#names, 1)
+    T.eq(names[1], "Portal to Isleport")
+    found = ns.Finder:Find({ kind = "travel", text = "ship" })
+    T.ok(#found >= 1, "boats answer to ship")
+    T.contains(found[1].sub, "from ")
+    -- map pins: the portal on Westfield, the boat by Eastvale's flight master; none for the unknown dock
+    ns.MapPins:Invalidate()
+    local w = {}
+    for _, pin in ipairs(ns.MapPins:PinsFor(100)) do if pin.kind == "transport" then w[#w + 1] = pin end end
+    T.eq(#w, 1)
+    T.eq(w[1].name, "Portal to Isleport")
+    local e = {}
+    for _, pin in ipairs(ns.MapPins:PinsFor(200)) do if pin.kind == "transport" then e[#e + 1] = pin end end
+    T.eq(#e, 1)
+    T.contains(e[1].title, "by the flight master")
+    local f = 0
+    for _, pin in ipairs(ns.MapPins:PinsFor(300)) do if pin.kind == "transport" then f = f + 1 end end
+    T.eq(f, 0)
     T.eq(#ns.Errors.list, 0)
   end)
 

@@ -46,4 +46,16 @@ T.describe("snapshot", function()
     T.ok(s.bytes <= 600 or next(s.modules) == nil)
     ns.Snapshot.MAX_BYTES = 50 * 1024
   end)
+
+  T.it("the logout snapshot keeps map, gear and gold seen while playing", function()
+    local game = mock.new({ money = 45678 })
+    local ns = game:loadAddon()
+    game:login()
+    game.loggingOut = true   -- what the client reports during logout
+    local s = ns.Snapshot:Collect()
+    T.ok(s.where and s.where.mapID == 1412)
+    T.ok(next(s.gear) ~= nil)
+    T.eq(s.money, 45678)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

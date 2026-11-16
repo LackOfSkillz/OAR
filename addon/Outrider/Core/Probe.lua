@@ -13,7 +13,7 @@ ns.Probe = Probe
 Probe.APIS = {
   -- core
   { "C_AddOns.GetAddOnMetadata", "P1" }, { "C_AddOns.IsAddOnLoaded", "P1" }, { "C_AddOns.LoadAddOn", "P1" },
-  { "C_Timer.After", "P1" }, { "C_Timer.NewTicker", "P1" }, { "GetServerTime", "P1" },
+  { "C_Timer.After", "P1" }, { "GetLootRollItemLink", "P6" }, { "GetLootRollItemInfo", "P6" }, { "C_Timer.NewTicker", "P1" }, { "GetServerTime", "P1" },
   { "issecretvalue", "P1", "secret values present" }, { "Settings.RegisterCanvasLayoutCategory", "P1" },
   { "Settings.RegisterAddOnCategory", "P1" }, { "InterfaceOptions_AddCategory", "P1", "old options API" },
   { "UpdateAddOnMemoryUsage", "P1" }, { "GetAddOnMemoryUsage", "P1" }, { "C_AddOns.GetAddOnMemoryUsage", "P1" },
@@ -42,7 +42,7 @@ Probe.APIS = {
   { "C_SuperTrack.SetSuperTrackedUserWaypoint", "P3" }, { "UiMapPoint.CreateFromCoordinates", "P3" },
   { "GetPlayerFacing", "P3" }, { "WorldMapFrame.AddDataProvider", "P3" }, { "MapCanvasDataProviderMixin", "P3" },
   { "MapCanvasPinMixin", "P3" }, { "C_Minimap.GetViewRadius", "P3" }, { "C_QuestLog.GetInfo", "P3" },
-  { "GetQuestLogTitle", "P3", "Classic quest API" }, { "C_TaxiMap.GetAllTaxiNodes", "P3" }, { "GetTaxiMapID", "P3" }, { "C_Map.GetMapChildrenInfo", "P3" }, { "UnitOnTaxi", "P3" },
+  { "GetQuestLogTitle", "P3", "Classic quest API" }, { "C_TaxiMap.GetAllTaxiNodes", "P3" }, { "GetTaxiMapID", "P3" }, { "C_Map.GetMapChildrenInfo", "P3" }, { "C_Map.GetMapRectOnMap", "P3", "zone levels" }, { "UnitOnTaxi", "P3" },
   -- macros
   { "CreateMacro", "P4" }, { "EditMacro", "P4" }, { "GetNumMacros", "P4" }, { "GetMacroIndexByName", "P4" },
   { "PickupSpell", "P4" }, { "PlaceAction", "P4" }, { "GetActionInfo", "P4" },
@@ -55,7 +55,9 @@ Probe.APIS = {
   { "C_AuctionHouse.SendSearchQuery", "P5", "modern AH" }, { "C_AuctionHouse.ReplicateItems", "P5" },
   { "QueryAuctionItems", "P5", "Classic AH" }, { "C_Item.GetItemInfo", "P5" }, { "GetItemInfo", "P5" },
   { "C_TooltipInfo.GetBagItem", "P5" }, { "TooltipDataProcessor.AddTooltipPostCall", "P5" },
-  { "GetLootSlotInfo", "P5" }, { "GetMerchantNumItems", "P5" }, { "C_MerchantFrame.GetBuybackItemID", "P5" },
+  { "GetLootSlotInfo", "P5" }, { "GetMerchantNumItems", "P5" }, { "GetMerchantItemCostInfo", "P5" }, { "GetMerchantItemCostItem", "P5" },
+  { "C_CurrencyInfo.GetCurrencyListSize", "P5" }, { "C_CurrencyInfo.GetCurrencyListInfo", "P5" }, { "C_TooltipInfo.GetBagItem", "P5" },
+  { "C_Reputation.GetNumFactions", "P5" }, { "C_Reputation.GetFactionDataByIndex", "P5" }, { "C_MerchantFrame.GetBuybackItemID", "P5" },
   -- gear
   { "C_Item.GetItemStats", "P6" }, { "GetItemStats", "P6" }, { "C_EquipmentSet.GetEquipmentSetIDs", "P6" },
   { "EquipItemByName", "P6" }, { "GetQuestItemInfo", "P6" }, { "GetNumQuestChoices", "P6" },

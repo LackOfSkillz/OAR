@@ -25,6 +25,44 @@ T.describe("beast info", function()
     T.contains(M:Lines("mouseover")[1], "tameable at 30")
   end)
 
+  T.it("another hunter's pet: says what it was tamed from, logs family and speed, never names", function()
+    local game, ns, M = session()
+    ns.Data:Register("rare", "spec", { { npcID = 7210, name = "Swift Cat", mapID = 1412, verified = false } })
+    game.units.mouseover = { guid = "Pet-0-5250-0-777-7210-0102030405", name = "Ice Ember", level = 12, family = "Cat",
+      attackSpeed = 1.1, controlled = true }
+    local lines = M:Lines("mouseover")
+    T.eq(lines[1]:sub(1, 23), "Tamed from: Swift Cat (")
+    local found
+    for _, l in ipairs(lines) do if l:find("Attacks every 1.1s", 1, true) then found = true end end
+    T.ok(found, "speed line")
+    for _, l in ipairs(lines) do T.ok(not l:find("Rare:", 1, true), "a pet is not the rare itself") end
+    local seen = ns.db.global.petsSeen
+    T.eq(#seen, 1)
+    T.eq(seen[1].npcID, 7210)
+    T.eq(seen[1].speed, 1.1)
+    for _, v in pairs(seen[1]) do T.ok(v ~= "Ice Ember", "the pet's name is not kept") end
+    M:Lines("mouseover")
+    T.eq(#ns.db.global.petsSeen, 1)   -- once per pet
+    -- unknown creature: just its id
+    game.units.mouseover.guid = "Pet-0-5250-0-777-99999-0102030406"
+    T.eq(M:Lines("mouseover")[1], "Tamed from: npc 99999")
+  end)
+
+  T.it("a hunter pet's placeholder id gives no tamed-from line; your own pet is not logged", function()
+    local game, ns, M = session()
+    ns.Data:Register("rare", "spec", { { npcID = M.HUNTER_PET_ID, name = "Wrong", mapID = 1412, verified = false } })
+    game.units.mouseover = { guid = "Pet-0-5250-0-777-" .. M.HUNTER_PET_ID .. "-0102030407", name = "Ice Ember", level = 12,
+      family = "Wolf", attackSpeed = 1.1, controlled = true }
+    local lines = M:Lines("mouseover")
+    for _, l in ipairs(lines) do
+      T.ok(not l:find("Tamed from", 1, true), "no guess")
+      T.ok(not l:find("Rare:", 1, true), "not a rare")
+    end
+    T.eq(#ns.db.global.petsSeen, 1)
+    T.eq(ns.db.global.petsSeen[1].npcID, nil)
+    T.eq(ns.db.global.petsSeen[1].from, "unknown (hunter pet)")
+  end)
+
   T.it("other classes get no tame text; non-beasts get nothing", function()
     local game, ns, M = session({ class = "PRIEST" })
     game.units.mouseover = beast(7201, 12)

@@ -1,26 +1,31 @@
-# Next play session (one pass, about 30 minutes)
+# Next play session (one pass, about 45 minutes)
 
-Everything below is self-collecting: you only play. Outrider logs what Claude
+Everything is self-collecting: you only play. Outrider logs what Claude
 needs; at the end, log out and say "done".
 
-1. Exit WoW fully and start it again (today added new files).
-2. Log in on Torrant.
-3. Type `/ride ask` once (out of combat). It takes a snapshot and reloads.
-   Tell Claude, who writes fresh advice; then `/reload` and open the hub's
-   **Advisor** tab and click one suggestion.
-4. Open, one after the other: character sheet (C), bags (B), spellbook (P),
-   quest log (L), the game menu (Esc). They should look Clean dark.
-5. Hover a mob, a player and an item: tooltip style, Target line, item lines.
-6. Open the world map (M) in the zone you are in: your arrow on top, fewer
-   dots, quest givers in level colors.
-7. Fight two or three mobs (checks the health bar colors and that nothing is
-   blocked in combat).
-8. Walk into a town: the errand toast. Talk to a vendor (Merchant panel).
-9. If you pass one: a Merchant's Favor quartermaster window (Durotar Supply
-   and Logistics). Open it and press Print Screen; Outrider does not read
-   that window yet, the screenshot tells Claude what to build.
-10. Log out. Say "done".
+**Before you start**
+1. Exit WoW fully and start it again (new files today).
+2. Esc > Options > Key Bindings > AddOns > Outrider: bind **Ask** and
+   **Paste advice** (for example Ctrl+F1 and Ctrl+F2).
+3. On the PC, open the Ask Outrider window and leave it open.
 
-What it confirms: P7-04/05/06 skins, P7-11 feed, P8-06 errands, P9-02/04
-advisor round trip, P3 map readability, G7 "no taint in combat", and starts
-P5-06 (Favor planner data).
+**On Torrant**
+4. Press your Ask key, Ctrl+C. When the window title says "answer ready",
+   press your Paste key, Ctrl+V. Click one card.
+5. Open What now?, Home, Money and Dungeons once each and press Print Screen
+   on each (the new look).
+6. Fight a few mobs; loot whatever drops.
+7. Ride to Mulgore: talk to three NPCs in Bloodhoof Village (any vendor or
+   trainer). Then fly to Durotar: talk to three in Razor Hill.
+8. If you have or find a Waylaid Crate: hover it in your bags. If you pass
+   Durotar Supply and Logistics: open the quartermaster's window.
+9. In a city: visit a vendor and the auction house.
+10. Log out.
+
+**On the priest or mage**
+11. Log in, play five minutes (a fight, a vendor), log out. Say "done".
+
+What it confirms: the paste route, the Expedition look (G7 screenshots),
+no taint in combat, P3-11 outdoor Mulgore and Durotar coordinates, P5-06
+Favor data, settings per character (G1), and the rare and gear checks that
+run on their own along the way.

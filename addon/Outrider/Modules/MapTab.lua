@@ -7,7 +7,7 @@ local _, ns = ...
 local UI = ns.UI
 
 local KINDS = { "rare", "vendor", "repair", "trainer", "flight_master", "spirit_healer", "bank", "auction",
-  "stable_master", "mailbox", "innkeeper", "guild_master", "tabard", "quest_giver", "herb", "ore", "fish", "guildmate" }
+  "stable_master", "mailbox", "innkeeper", "guild_master", "tabard", "quest_giver", "herb", "ore", "fish", "guildmate", "trail", "ride", "transport" }
 
 local T = { name = "maptab" }
 ns.MapTab = T
@@ -28,7 +28,7 @@ function T:ClearAll()
 end
 
 ns.Hub:AddTab("map", "Map", function(p)
-  local head = UI.Text(p, "large", "accent")
+  local head = UI.Display(p, "side", "goldText")
   head:SetPoint("TOPLEFT", 0, 0)
   head:SetText("Pins shown on the world map and minimap")
   p.checks = {}
@@ -46,7 +46,7 @@ ns.Hub:AddTab("map", "Map", function(p)
     p.checks[#p.checks + 1] = c
   end
   local y = -24 - math.ceil(#KINDS / 2) * 22 - 14
-  local head2 = UI.Text(p, "large", "accent")
+  local head2 = UI.Display(p, "side", "goldText")
   head2:SetPoint("TOPLEFT", 0, y)
   head2:SetText("Recording (account-wide, never leaves this PC)")
   p.disc = UI:Check(p, "Record NPCs I meet (Discovery)",

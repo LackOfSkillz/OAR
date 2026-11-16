@@ -26,6 +26,12 @@ if TASKS.exists():
             note = ""
             if " — " in m.group(3):
                 note = m.group(3).split(" — ", 1)[1]
+            else:
+                # some notes were written as " · 2026-11-11: ..."; keep them too
+                # (a rebuild dropped them, 2026-11-15)
+                d = re.search(r" · (\d{4}-\d\d-\d\d.*)$", m.group(3))
+                if d:
+                    note = d.group(1)
             old[m.group(2)] = (m.group(1), note)
 
 out = [

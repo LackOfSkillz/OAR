@@ -27,6 +27,7 @@ ns.Journey = M
 
 M.QUEST_TIME = 300 -- seconds to do a quest once there (estimate)
 M.MAX = 40
+M.AT = 30         -- yards: standing at a step's end (a dock spot is approximate)
 
 -- Estimated quest XP (no XP data in the pack): grows with quest level,
 -- cut for quests far below you (Classic: 6 levels 80%, 7 60%, 8 40%, 9 20%, 10+ 10%).
@@ -94,6 +95,10 @@ end
 function M:Go(entry)
   self.goal = entry
   self.said = {}
+  -- kept per character so a /reload, logout or loading screen doesn't end it
+  local t = entry.target
+  self:Settings().goal = { name = entry.name, sub = entry.sub, seconds = entry.seconds, npcID = entry.npcID, t = time(),
+    target = { mapID = t.mapID, x = t.x, y = t.y, label = t.label } }
   self:Info("journey to %s (%s), about %s", tostring(entry.name), zone(entry.target.mapID), ns.Travel.Minutes(entry.seconds))
   return self:Step("start")
 end
@@ -102,6 +107,7 @@ function M:Stop(why)
   if not self.goal then return end
   self:Info("journey stopped (%s)", tostring(why))
   self.goal = nil
+  self:Settings().goal = nil
   if ns.Waypoints.current and ns.Waypoints.current.opts and ns.Waypoints.current.opts.journey then
     ns.Waypoints:Clear("journey stopped", true)
   end
@@ -125,6 +131,24 @@ function M:Step(why)
     return nil
   end
   local first = route.steps[1]
+  -- Already at the end of the walk to a dock or flight master (Gary,
+  -- 2026-11-15, Menethil: the arrow was "arrived", set again and cleared
+  -- once a second): the step now is the ride, which is Gary's to take, so
+  -- say it once and wait for the loading screen or landing.
+  if first.kind == "walk" and route.steps[2] and first.to and first.to.wx then
+    local here = ns.Travel.Here()
+    if here and here.wx and math.sqrt((here.wx - first.to.wx) ^ 2 + (here.wy - first.to.wy) ^ 2) < M.AT then
+      table.remove(route.steps, 1)
+      first = route.steps[1]
+      if ns.Waypoints.current and ns.Waypoints.current.opts and ns.Waypoints.current.opts.journey then
+        ns.Waypoints:Clear("journey ride", true)
+      end
+      say(self, "Now: " .. first.text)
+      self:Debug("journey step (%s): %s", tostring(why), first.text)
+      self.route = route
+      return route
+    end
+  end
   if #route.steps == 1 then
     local here = ns.Travel.Here()
     local dx = here and (here.wx - goal.target.wx) or 1e9
@@ -132,6 +156,7 @@ function M:Step(why)
     if math.sqrt(dx * dx + dy * dy) < 25 then
       say(self, "you're there: " .. tostring(goal.name))
       self.goal = nil
+      self:Settings().goal = nil
       return route
     end
   end
@@ -212,9 +237,42 @@ function M:OnEnable()
     M.mapHooked = true
     map:HookScript("OnShow", function() if M.enabled then ns.Safe("journey:pins", M.HookPins, M) end end)
   end
+  -- a journey from before the /reload or logout carries on
+  local saved = self:Settings().goal
+  if not self.goal and type(saved) == "table" and type(saved.target) == "table" and saved.target.mapID then
+    local t = saved.target
+    local p = ns.Travel.Point(t.mapID, t.x, t.y, t.label)
+    -- a rare goal that was tamed or killed meanwhile is done, not resumed
+    -- (journeys saved before 2026-11-15 21:30 carry no npcID: found by name)
+    local npcID = saved.npcID
+    if not npcID then
+      for _, e in ipairs(ns.Data:All("rare")) do if e.name == saved.name then npcID = e.npcID end end
+    end
+    local last = npcID and ns.Sightings and ns.Sightings.Last and ns.Sightings:Last(npcID)
+    if last and (last.state == "tamed" or last.state == "dead") and (not saved.t or (last.t or 0) >= saved.t) then
+      self:Info("journey to %s not resumed: it was %s", tostring(saved.name), last.state)
+      self:Settings().goal = nil
+      p = nil
+    end
+    if p then
+      self.goal = { name = saved.name, sub = saved.sub, seconds = saved.seconds, npcID = saved.npcID, target = p }
+      self.said = {}
+      self:Info("journey to %s carries on after the reload", tostring(saved.name))
+      ns.Throttle("journey", 2, function() if M.goal then M:Step("resumed") end end)
+    end
+  end
   local function again(why) return function(mod) if mod.goal then ns.Throttle("journey", 2, function() mod:Step(why) end) end end end
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
     if mod.goal and why == "arrived" and w and w.opts and w.opts.journey then mod:Step("arrived") end
+  end)
+  -- a journey to a rare ends when it is tamed or killed (Gary, 2026-11-15:
+  -- after taming The Rake the guide kept sending him back to Mulgore)
+  self:On("OTR_SIGHTING_ADDED", function(mod, _, npcID, sight)
+    local g = mod.goal
+    if g and g.npcID and g.npcID == npcID and type(sight) == "table" and (sight.state == "tamed" or sight.state == "dead") then
+      say(mod, string.format("%s %s: journey done", tostring(g.name), sight.state == "tamed" and "tamed" or "killed"))
+      mod:Stop(sight.state)
+    end
   end)
   self:On("ZONE_CHANGED_NEW_AREA", again("zone"))
   self:On("PLAYER_CONTROL_GAINED", again("landed"))

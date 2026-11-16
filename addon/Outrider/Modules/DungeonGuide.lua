@@ -154,6 +154,120 @@ function M:Warm()
   end
 end
 
+-- Ready check before a dungeon (phase 2, 2026-11-15): { {ok, text} }.
+-- Gear not about to break, food (and drink for mana users), bag space for
+-- loot, and ammo for hunters. Anything Outrider can't read is left out.
+M.READY = { durability = 0.6, freeSlots = 6, ammo = 1000 }
+local NO_MANA = { WARRIOR = true, ROGUE = true }
+function M:ReadyCheck()
+  local out = {}
+  local function add(ok, text) out[#out + 1] = { ok = ok and true or false, text = text } end
+  local d = ns.Errands and ns.Errands.Durability and ns.Errands.Durability()
+  if d then
+    add(d >= M.READY.durability, d >= M.READY.durability and string.format("Gear in good repair (%d%%)", math.floor(d * 100))
+      or string.format("Repair first: gear at %d%%", math.floor(d * 100)))
+  end
+  if ns.BagFood then
+    local ok, food, drink = pcall(ns.BagFood.Scan, ns.BagFood)
+    if ok then
+      add(food ~= nil, food and ("Food: " .. tostring(food)) or "No food in your bags")
+      if not NO_MANA[ns.PlayerClass and ns.PlayerClass() or ""] then
+        add(drink ~= nil, drink and ("Drink: " .. tostring(drink)) or "No drink in your bags")
+      end
+    end
+  end
+  local free, known = 0, false
+  for bag = 0, 4 do
+    local n = C.Call("C_Container.GetContainerNumFreeSlots", bag)
+    if type(n) == "number" then free, known = free + n, true end
+  end
+  if known then
+    add(free >= M.READY.freeSlots, free >= M.READY.freeSlots and string.format("%d free bag slots", free)
+      or string.format("Only %d free bag slots: sell or bank something", free))
+  end
+  if ns.PlayerClass and ns.PlayerClass() == "HUNTER" then
+    local ammo = ns.Modules:Get("Ammo")
+    local n = ammo and ammo.Count and ammo:Count()
+    if n then add(n >= M.READY.ammo, string.format("%d ammo%s", n, n >= M.READY.ammo and "" or " (buy more)")) end
+  end
+  return out
+end
+
+function M.ReadyText(list)
+  local lines = {}
+  for _, c in ipairs(list) do
+    lines[#lines + 1] = (c.ok and "|cff66dd77OK|r  " or "|cffff6060X|r  ") .. c.text
+  end
+  return #lines > 0 and table.concat(lines, "\n") or "Nothing to check here."
+end
+
+-- Party ready check: one click sends yours to party members who run
+-- Outrider (only when Gary clicks; addon messages, PARTY only); theirs show
+-- under yours for 15 minutes.
+M.PARTY_FOR = 900
+function M:ShareReady()
+  if not (ns.Comm and C.Call("IsInGroup")) then return false, "not in a group" end
+  local checks = {}
+  for _, c in ipairs(self:ReadyCheck()) do checks[#checks + 1] = { ok = c.ok, text = c.text } end
+  local ok = ns.Comm:Send("READY", { level = C.Call("UnitLevel", "player"), class = ns.PlayerClass and ns.PlayerClass(),
+    checks = checks }, "PARTY")
+  self:Info("ready check shared with the party: %s", tostring(ok))
+  return ok
+end
+
+function M:OnReady(_, kind, data, sender)
+  if kind ~= "READY" or type(data) ~= "table" or type(data.checks) ~= "table" then return end
+  self.party = self.party or {}
+  local list = {}
+  for i, c in ipairs(data.checks) do
+    if i > 8 then break end
+    if type(c) == "table" and type(c.text) == "string" then list[#list + 1] = { ok = c.ok == true, text = c.text:sub(1, 80) } end
+  end
+  self.party[tostring(sender)] = { t = time(), level = tonumber(data.level), class = type(data.class) == "string" and data.class or nil, checks = list }
+end
+
+function M:PartyText()
+  local lines, now = {}, time()
+  local names = {}
+  for name, p in pairs(self.party or {}) do
+    if now - p.t <= M.PARTY_FOR then names[#names + 1] = name else self.party[name] = nil end
+  end
+  table.sort(names)
+  for _, name in ipairs(names) do
+    local p = self.party[name]
+    local todo = {}
+    for _, c in ipairs(p.checks) do if not c.ok then todo[#todo + 1] = c.text end end
+    lines[#lines + 1] = string.format("%s%s: %s", name:match("^[^-]+") or name, p.level and (" (" .. p.level .. ")") or "",
+      #todo == 0 and "|cff66dd77all set|r" or ("|cffff6060" .. table.concat(todo, "; ") .. "|r"))
+  end
+  return #lines > 0 and table.concat(lines, "\n") or "No party ready checks yet. Party members who run Outrider can share theirs too."
+end
+
+-- For the AI companion (AI04-03): dungeons that fit now and the next tier,
+-- with the upgrades in each, as plain data. Only on /ride ask.
+function M:Snapshot()
+  if not (ns.Snapshot and ns.Snapshot.asking) or not self:Pack() then return nil end
+  local out = { ready = {}, soon = {} }
+  for _, r in ipairs(self:Rank()) do
+    local row = { name = r.name, min = r.info and r.info.min, max = r.info and r.info.max, status = r.status,
+      upgrades = r.count, laterUpgrades = r.laterCount, raid = r.info and r.info.raid or nil,
+      target = r.map and r.x and r.y and { mapID = r.map, x = r.x, y = r.y } or nil, ups = {} }
+    for _, u in ipairs(r.ups or {}) do
+      if #row.ups >= 4 then break end
+      row.ups[#row.ups + 1] = { item = u.name, pct = u.pct and math.floor(u.pct + 0.5), boss = u.boss,
+        later = u.later or nil, reqLevel = u.reqLevel }
+    end
+    local list = r.status == "ready" and out.ready or out.soon
+    if #list < 5 then list[#list + 1] = row end
+  end
+  return out
+end
+
+function M:OnEnable()
+  if ns.Comm then ns.Comm.KNOWN_TYPES.READY = true end
+  self:On("OTR_COMM", self.OnReady)
+end
+
 function M:Activity()
   if not self:Pack() then return "dungeon pack not installed" end
   local rank = self:Rank()

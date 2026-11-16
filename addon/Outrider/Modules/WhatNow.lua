@@ -22,6 +22,7 @@ ns.WhatNow = M
 M.MAX, M.MIN, M.PER_KIND = 5, 3, 2
 M.CACHE = 30          -- seconds a list stays fresh
 M.SKIP_FOR = 86400    -- "Not useful" hides a step this long
+M.NEAR_BONUS = 1.15   -- steps in the same zone as the top step
 
 M.GOALS = {
   { id = "level", label = "Level up" },
@@ -59,17 +60,36 @@ end
 function M.Pick(cands, goal, skip, now)
   now = now or time()
   local list = {}
-  for _, c in ipairs(cands) do
-    local hidden = skip and skip[c.key] and now - skip[c.key] < M.SKIP_FOR
-    if not hidden and (c.benefit or 0) > 0 then
+  for _, src in ipairs(cands) do
+    local hidden = skip and skip[src.key] and now - skip[src.key] < M.SKIP_FOR
+    if not hidden and (src.benefit or 0) > 0 then
+      -- a copy: the same candidates are picked once per goal for the log,
+      -- and one goal's score or alternative must not leak into the next
+      local c = {}
+      for k, v in pairs(src) do c[k] = v end
       c.score = M.Score(c, goal)
       list[#list + 1] = c
     end
   end
-  table.sort(list, function(a, b)
+  local function order(a, b)
     if a.score ~= b.score then return a.score > b.score end
     return tostring(a.key) < tostring(b.key)
-  end)
+  end
+  table.sort(list, order)
+  -- a little route-planning: once the top step is known, steps in the same
+  -- zone count 15% more ("while you're there")
+  local top = list[1]
+  if top and top.mapID then
+    for i = 2, #list do
+      local c = list[i]
+      if c.mapID == top.mapID then c.score = c.score * M.NEAR_BONUS c.near = true end
+    end
+    local rest = {}
+    for i = 2, #list do rest[#rest + 1] = list[i] end
+    table.sort(rest, order)
+    list = { top }
+    for _, c in ipairs(rest) do list[#list + 1] = c end
+  end
   local out, per, used = {}, {}, {}
   for _, c in ipairs(list) do
     if #out >= M.MAX then break end
@@ -116,7 +136,7 @@ SOURCES.errands = function()
   local d = ns.Errands.Durability()
   local ammo = ns.Modules:Get("Ammo")
   for _, e in ipairs(ns.Errands:List()) do
-    local c = { key = "errand:" .. e.kind, kind = "errand", title = e.text, benefit = 0.4, confidence = 1,
+    local c = { key = "errand:" .. e.kind, kind = "errand", title = e.text, benefit = 0.4, confidence = 1, label = "observed",
       where = ERRAND_WHERE[e.kind], go = function() return ns.Errands:Go(e) end }
     if e.kind == "repair" then
       c.benefit = clamp(1 - (d or 1) / 0.35) + 0.3
@@ -141,6 +161,8 @@ SOURCES.errands = function()
       if poi then
         c.where = (poi.name or c.where) .. (yards and string.format(" (%d yards)", yards) or "")
         c.seconds = yards and yards / 7 or nil
+        c.mapID = poi.mapID
+        c.target = poi.x and poi.y and { mapID = poi.mapID, x = poi.x, y = poi.y } or nil
       else
         c.alt = { text = "No " .. (ERRAND_WHERE[e.kind] or e.kind) .. " known nearby yet: the closest town will have one." }
       end
@@ -167,7 +189,8 @@ SOURCES.quests = function()
         why = string.format("About %d XP, %d XP a minute counting the trip.%s", e.xp or 0, math.floor((e.rate or 0) + 0.5),
           hard and " Several levels above you: expect hard fights." or ""),
         where = string.format("%s, %s, %s away", tostring(e.giver or "quest giver"), zone(e.mapID), minutes(e.seconds) or "?"),
-        benefit = benefit, confidence = 0.6, seconds = e.seconds,
+        benefit = benefit, confidence = 0.6, seconds = e.seconds, mapID = e.mapID, label = "community",
+        target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
         caveat = "Quest spots come from Classic data and may have moved on Forever.",
         go = function() return ns.Journey:Go(e) end }
     end
@@ -184,7 +207,7 @@ SOURCES.quests = function()
   -- quests the data knows here at all (done, in the log, locked behind a
   -- chain): the Skyborne start zone has 98, 97 of them behind Coming of Age
   local known = local_
-  local rep = here and ns.NPCPack.ZoneReport and M.Safe(ns.NPCPack.ZoneReport, ns.NPCPack, here)
+  local rep = here and ns.NPCPack.ZoneReport and M.Safe(ns.NPCPack.ZoneReport, ns.NPCPack, here, true)
   if type(rep) == "table" then
     known = #(rep.available or {}) + #(rep.locked or {}) + #(rep.active or {}) + (tonumber(rep.done) or 0)
   end
@@ -226,7 +249,9 @@ SOURCES.gear = function()
       title = "Get " .. tostring(e.name),
       why = string.format("A %d%% upgrade for you.", math.floor((e.pct or 0) + 0.5)),
       where = string.format("%s, %s away%s", zone(e.mapID), minutes(e.seconds) or "?", e.note and (" (" .. e.note .. ")") or ""),
-      benefit = clamp((e.pct or 0) / 30), confidence = 0.7, seconds = e.seconds,
+      benefit = clamp((e.pct or 0) / 30), confidence = 0.7, seconds = e.seconds, mapID = e.mapID, label = "community",
+      itemID = e.itemID, panel = "gear",
+      target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
       caveat = "Where it drops or sells comes from Classic data.",
       go = function() return ns.Journey:Go(e) end }
     local first = bySlot[slot]
@@ -245,11 +270,22 @@ SOURCES.dungeons = function()
   local G = ns.DungeonGuide
   if not (G and G:Pack()) then return {} end
   local out = {}
+  -- the trip counts (the Deadmines from Zephras Isle is a long way: it had no
+  -- time and outranked nearby quests, 2026-11-15), and a group has to be found
+  local prep = ns.Travel and M.Safe(ns.Travel.Prepare, ns.Travel)
   for _, r in ipairs(G:Rank()) do
     if r.status == "ready" and (r.count or 0) > 0 then
+      local secs, routeNote = nil, ""
+      if prep and r.map and r.x and r.y then
+        local pt = ns.Travel.Point(r.map, r.x, r.y, r.name)
+        secs = pt and M.Safe(ns.Travel.TimeTo, ns.Travel, prep, pt)
+      end
+      if not secs then secs, routeNote = 3600, ", no known route" end
       out[#out + 1] = { key = "dungeon:" .. r.name, kind = "dungeon", title = "Run " .. r.name,
         why = string.format("%d upgrade%s for you. %s", r.count, r.count == 1 and "" or "s", M.Safe(G.UpgradeLine, r.ups, 2) or ""),
-        where = zone(r.map) .. " (needs a group)", benefit = clamp((r.value or 0) / 60) * 0.9 + 0.1, confidence = 0.6,
+        where = zone(r.map) .. " (needs a group" .. routeNote .. ")", seconds = secs, mapID = r.map, label = "community",
+        target = r.map and r.x and r.y and { mapID = r.map, x = r.x, y = r.y } or nil,
+        benefit = (clamp((r.value or 0) / 60) * 0.9 + 0.1) * 0.75, confidence = 0.6,
         caveat = "Loot lists come from Classic data; Forever may differ.",
         go = function() return G:Go(r) end }
       if #out >= 2 then break end
@@ -267,6 +303,7 @@ SOURCES.training = function()
     title = string.format("Train %s (+%d expected)", prof, total),
     why = "You already carry what it needs: no shopping trip.",
     where = "anywhere (press your Training key)", benefit = clamp(total / 10), confidence = 0.85,
+    label = "observed", panel = "professions",
     go = hub("professions") } }
 end
 
@@ -286,6 +323,8 @@ SOURCES.rares = function()
           where = zone(last.mapID) .. " (last seen spot)", benefit = win.state == "alive" and 0.9 or 0.6,
           confidence = win.state == "alive" and 0.8 or 0.4,
           caveat = win.state ~= "alive" and "Respawn windows are a guess from a few sightings." or nil,
+          mapID = last.mapID, label = win.state == "alive" and "observed" or "inferred", panel = "rares",
+          target = last.x and last.y and { mapID = last.mapID, x = last.x, y = last.y } or nil,
           go = wp(last.mapID, last.x, last.y, name) }
       end
     end
@@ -303,6 +342,7 @@ SOURCES.gold = function()
     where = r.entry.zones and table.concat(r.entry.zones, ", ") or "see the Money page",
     -- "loot everything" is a habit, not a step: it counts for less
     benefit = r.entry.id == "loot-everything" and 0.3 or 0.6, confidence = r.measured and 0.85 or 0.5,
+    label = r.measured and "observed" or "community", panel = "hub",
     caveat = not r.measured and "Rate from guides, not measured on you yet." or nil,
     go = hub("money") } }
 end
@@ -320,7 +360,8 @@ SOURCES.gather = function()
         kind = "gather", title = fish and ("Fish here (" .. tostring(n.name or "pool") .. ")") or ("Gather " .. tostring(n.name or n.kind)),
         why = string.format("You saw it up %d minute%s ago.", math.floor((age or 0) / 60), math.floor((age or 0) / 60) == 1 and "" or "s"),
         where = zone(n.mapID) .. " (nearby)",
-        benefit = 0.5, confidence = 0.7, go = wp(n.mapID, n.x, n.y, n.name) }
+        benefit = 0.5, confidence = 0.7, mapID = n.mapID, label = "observed",
+        target = { mapID = n.mapID, x = n.x, y = n.y }, go = wp(n.mapID, n.x, n.y, n.name) }
       if #out >= 2 then break end
     end
   end
@@ -376,12 +417,20 @@ function M:List(force)
   self.cache, self.cacheAt, self.failed = list, now, failed
   if not self.loggedAt then self:LogAll("first look") end
   local keys = {}
-  for _, c in ipairs(list) do
-    keys[#keys + 1] = c.key
-    st.shown[c.key] = (st.shown[c.key] or 0) + 1
+  for _, c in ipairs(list) do keys[#keys + 1] = c.key end
+  -- the page refreshes often: log and count only when the steps change
+  -- (the same line every 30 s filled the log, 2026-11-15)
+  local sig = self:Goal() .. "|" .. table.concat(keys, ",")
+  if sig ~= self.lastSig then
+    self.lastSig = sig
+    for _, k in ipairs(keys) do st.shown[k] = (st.shown[k] or 0) + 1 end
+    self:Info("what now (%s): %d candidates -> %s%s", self:Goal(), #cands, table.concat(keys, ", "),
+      #failed > 0 and (" (failed: " .. table.concat(failed, ",") .. ")") or "")
+    -- keep the steps as of now (position known) for the logout snapshot, so
+    -- an advisor reading the saved file has candidates without an Ask
+    local ok, snap = pcall(self.BuildSnapshot, self)
+    if ok and snap then snap.seenAt = now self.lastSnap = snap end
   end
-  self:Info("what now (%s): %d candidates -> %s%s", self:Goal(), #cands, table.concat(keys, ", "),
-    #failed > 0 and (" (failed: " .. table.concat(failed, ",") .. ")") or "")
   return list
 end
 
@@ -429,8 +478,93 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod)
     local st, now = mod:Store(), time()
     for k, t in pairs(st.skip) do if now - t > M.SKIP_FOR then st.skip[k] = nil end end
+    -- where this session started (XP, level, gold), for the "This session" card
+    if not mod.session then
+      mod.session = { t = now, level = C.Call("UnitLevel", "player") or 1, xp = C.Call("UnitXP", "player") or 0,
+        money = C.Call("GetMoney") or 0 }
+    end
   end)
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) if mod.loggedAt then mod:LogAll("new zone") end end)
+end
+
+-- This session so far: xpGained (counts whole levels in between using the XP
+-- needed at the current level, close enough), gold, seconds played.
+function M:SessionStats()
+  local s = self.session
+  if not s then return nil end
+  local level = C.Call("UnitLevel", "player") or s.level
+  local xp, max = C.Call("UnitXP", "player") or 0, C.Call("UnitXPMax", "player") or 0
+  local gained = level == s.level and (xp - s.xp) or ((max - s.xp) + xp + (level - s.level - 1) * max)
+  return { xp = math.max(0, gained), levels = level - s.level, money = (C.Call("GetMoney") or 0) - s.money,
+    seconds = time() - s.t }
+end
+
+-- Average level of the gear worn, or nil.
+function M.ItemLevel()
+  local avg = C.Call("GetAverageItemLevel")
+  if type(avg) == "number" and avg > 0 then return math.floor(avg + 0.5) end
+  local sum, n = 0, 0
+  for slot = 1, 18 do
+    if slot ~= 4 then
+      local link = C.Call("GetInventoryItemLink", "player", slot)
+      if link then
+        local _, _, _, ilvl = C.Call("C_Item.GetItemInfo", link)
+        if type(ilvl) ~= "number" then _, _, _, ilvl = C.Call("GetItemInfo", link) end
+        if type(ilvl) == "number" then sum, n = sum + ilvl, n + 1 end
+      end
+    end
+  end
+  return n > 0 and math.floor(sum / n + 0.5) or nil
+end
+
+-- For the AI companion (Outrider Intelligence, AI01-02): the top candidates
+-- for the current goal, best first, as plain data. Every place comes from
+-- Outrider's own records (target = map id and coordinates, or a panel to
+-- open); the companion may only point at these, never invent one.
+M.SNAPSHOT_MAX = 12
+function M:Ranked(n)
+  local cands = self:Candidates()
+  local goal, skip, now = self:Goal(), self:Store().skip, time()
+  local list = {}
+  for _, c in ipairs(cands) do
+    local hidden = skip[c.key] and now - skip[c.key] < M.SKIP_FOR
+    if not hidden and (c.benefit or 0) > 0 then
+      local copy = {}
+      for k, v in pairs(c) do copy[k] = v end
+      copy.score = M.Score(copy, goal)
+      list[#list + 1] = copy
+    end
+  end
+  table.sort(list, function(a, b) if a.score ~= b.score then return a.score > b.score end return tostring(a.key) < tostring(b.key) end)
+  for i = #list, (n or M.SNAPSHOT_MAX) + 1, -1 do list[i] = nil end
+  return list
+end
+
+function M:Snapshot()
+  -- /ride ask: fresh. At logout the position is gone, so the steps last seen
+  -- while playing (seenAt) are saved instead; nil if What now? never ran.
+  if not (ns.Snapshot and ns.Snapshot.asking) then return self.lastSnap end
+  return self:BuildSnapshot()
+end
+
+function M:BuildSnapshot()
+  local out = { goal = self:Goal(), candidates = {}, feedback = {} }
+  local fb = type(ns.db.char.adviceFeedback) == "table" and ns.db.char.adviceFeedback or {}
+  for i = #fb, math.max(1, #fb - 19), -1 do   -- the 20 newest
+    local f = fb[i]
+    out.feedback[#out.feedback + 1] = { id = f.id, v = f.v, t = f.t }
+  end
+  for i, c in ipairs(self:Ranked(M.SNAPSHOT_MAX)) do
+    out.candidates[i] = {
+      candidateId = c.key, kind = c.kind, title = c.title, why = c.why, where = c.where, caveat = c.caveat,
+      minutes = c.seconds and math.floor(c.seconds / 60 + 0.5) or nil,
+      score = math.floor((c.score or 0) * 1000 + 0.5) / 1000,
+      label = c.label or ((c.confidence or 1) >= 0.7 and "inferred" or "unknown"),
+      urgent = c.urgent or nil, itemID = c.itemID, panel = c.panel,
+      target = c.target,
+    }
+  end
+  return out
 end
 
 function M:Activity()

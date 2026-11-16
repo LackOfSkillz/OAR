@@ -14,7 +14,7 @@ function UI:ScrollList(parent, opts)
   opts = opts or {}
   local rowH = opts.rowHeight or 22
   local list = CreateFrame("Frame", nil, parent, Theme:BackdropTemplate())
-  Theme:ApplyPanel(list, "panel")
+  Theme:ApplyPanel(list, "raised")
   list.rowH, list.offset, list.items, list.rowFrames = rowH, 0, {}, {}
   list.render = opts.render or function(row, item) row.text:SetText(tostring(item)) end
   local n = opts.rows or 10
@@ -24,11 +24,17 @@ function UI:ScrollList(parent, opts)
     row:SetHeight(rowH)
     row:SetPoint("TOPLEFT", 2, -2 - (i - 1) * rowH)
     row:SetPoint("RIGHT", list, "RIGHT", -2, 0)
+    -- Expedition look: faint stripe on every other row, gold-tinted hover
+    if i % 2 == 0 then
+      local stripe = row:CreateTexture(nil, "BACKGROUND")
+      stripe:SetAllPoints()
+      stripe:SetColorTexture(1, 1, 1, 0.025)
+    end
     local hl = row:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
-    local hr, hg, hb = Theme:Color("accent")
-    hl:SetColorTexture(hr, hg, hb, 0.15) -- see-through: the highlight layer draws over the text
-    row.text = UI.Text(row, "normal", "text")
+    local hr, hg, hb = Theme:Color("gold")
+    hl:SetColorTexture(hr, hg, hb, 0.12) -- see-through: the highlight layer draws over the text
+    row.text = UI.Text(row, "normal", "body")
     row.text:SetPoint("LEFT", 6, 0)
     row.text:SetPoint("RIGHT", -6, 0)
     row.text:SetJustifyH("LEFT")
@@ -122,8 +128,11 @@ function UI:Tabs(parent, tabs, onSelect, vertical)
     if not id then return end
     self.selected = id
     for tid, b in pairs(self.buttons) do
-      b.label:SetTextColor(Theme:Color(tid == id and "accent" or "muted"))
-      if b.SetBackdropColor then b:SetBackdropColor(Theme:Color(tid == id and "raised" or "panel")) end
+      local on = tid == id
+      -- selected tab: the gold chip look; others plain
+      b.rest = on and "gold" or "strong"
+      Theme:ApplyPanel(b, on and "goldSoft" or "raised", b.rest)
+      b.label:SetTextColor(Theme:Color(on and "goldText" or "muted"))
     end
     if onSelect then ns.Safe("tabs:select", onSelect, id) end
   end

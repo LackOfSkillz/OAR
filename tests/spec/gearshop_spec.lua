@@ -165,3 +165,65 @@ T.describe("class weapon rules", function()
     T.eq(A("WARRIOR", 39), 3) T.eq(A("PALADIN", 40), 4)
   end)
 end)
+
+T.describe("gear shop bags", function()
+  local function bagSession(opts)
+    local game = mock.new({ level = 15 })
+    game.money = opts.money or 100000
+    game.items = {
+      [801] = { name = "Small Pouch", class = 1, subclass = 0 },
+      [802] = { name = "Linen Bag", class = 1, subclass = 0 },
+      [803] = { name = "Big Sack", class = 1, subclass = 0 },
+      [804] = { name = "Dear Pack", class = 1, subclass = 0 },
+      [805] = { name = "Herb Pouch", class = 1, subclass = 2 },
+      [806] = { name = "Soul Pouch", class = 1, subclass = 1 },
+      [807] = { name = "Light Quiver", class = 11, subclass = 2 },
+      [808] = { name = "Big Quiver", class = 11, subclass = 2, reqLevel = 40 },
+    }
+    game.itemTips = { [801] = { "Small Pouch", "6 Slot Bag" }, [802] = { "Linen Bag", "10 Slot Bag" },
+      [803] = { "Big Sack", "14 Slot Bag" }, [804] = { "Dear Pack", "16 Slot Bag" }, [805] = { "Herb Pouch", "12 Slot Herb Bag" },
+      [806] = { "Soul Pouch", "20 Slot Soul Bag" }, [807] = { "Light Quiver", "12 Slot Quiver" }, [808] = { "Big Quiver", "18 Slot Quiver" } }
+    game.ahListings = {}
+    for id, it in pairs(game.items) do game.ahListings[id] = { name = it.name, minPrice = opts.prices and opts.prices[id] or 1000, class = it.class } end
+    -- carried: 10, 8, 8 and a 6-slot quiver (hunter)
+    game.bagSize = { [1] = 10, [2] = 8, [3] = 8, [4] = 6 }
+    game.bagFamily = { [4] = 1 }
+    local ns = game:loadAddon()
+    game:login()
+    if opts.herbalist then ns.db.char.professions = { Herbalism = { skill = 30, max = 75 } } end
+    game:fire("AUCTION_HOUSE_SHOW")
+    ns.GearShop:Start("bags")
+    local guard = 0
+    while ns.GearShop.queue and guard < 5 do guard = guard + 1 game:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED") end
+    return game, ns
+  end
+
+  T.it("bags bigger than your smallest, most slots first; hunters get a quiver; no soul bags", function()
+    local game, ns = bagSession({ prices = { [804] = 500000 } })
+    T.eq(#game.queries, 2, "bags and quivers")
+    local list, skipped = ns.GearShop:Results()
+    T.eq(list[1].itemID, 803, "14 slots: +6 over the 8-slot bag")
+    T.eq(list[1].gain, 6)
+    T.eq(list[2].itemID, 802)
+    T.eq(skipped, 1, "the 16-slot pack is past the gold")
+    local ids = {}
+    for _, b in ipairs(list) do ids[b.itemID] = b end
+    T.eq(ids[801], nil, "6 slots is smaller than what you carry")
+    T.eq(ids[806], nil, "soul bags are for warlocks")
+    T.eq(ids[805], nil, "herb bags only for herbalists")
+    T.eq(ids[808], nil, "level 40 quiver is too high")
+    T.eq(ids[807].gain, 6, "12-slot quiver over the 6-slot one")
+    T.contains(ns.GearShop.BagLine(list[1]), "replaces your 8-slot bag")
+    T.contains(ns.GearShop.Gain(list[1]), "+6 slots")
+    ns.GearShop:Refresh()
+    T.contains(ns.GearShop.frame.rows[1].text:GetText(), "Bag: Big Sack")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a herbalist also sees herb bags, after the general ones", function()
+    local _, ns = bagSession({ herbalist = true })
+    local list = ns.GearShop:Results()
+    T.eq(list[#list].itemID, 805)
+    T.contains(ns.GearShop.BagLine(list[#list]), "herb only")
+  end)
+end)

@@ -14,6 +14,12 @@
 -- the gold carried are left out. Each line has a Buy button: AHBuy looks up
 -- the cheapest listing and its confirm bar buys it on Gary's click.
 -- Random-suffix items ("of the Monkey") are scored on their base item.
+--   * Search bags (Gary, 2026-11-16: "scan for bags as well"): bags bigger
+--     than the smallest one you carry, ranked by slots gained; hunters also
+--     get quivers or ammo pouches for the weapon they shoot; profession bags
+--     only for a profession you have. Slots come from the item tooltip
+--     ("16 Slot Bag"); your bags from the container API (an empty bag slot
+--     counts as 0).
 
 local _, ns = ...
 local C = ns.Compat
@@ -35,11 +41,27 @@ M.INVTYPES = { { 1, "Head" }, { 2, "Neck" }, { 3, "Shoulder" }, { 16, "Back" }, 
 M.ANY_MATERIAL = { INVTYPE_CLOAK = true, INVTYPE_NECK = true, INVTYPE_FINGER = true, INVTYPE_TRINKET = true,
   INVTYPE_HOLDABLE = true, INVTYPE_SHIELD = true }
 M.LEVELS_BACK, M.WAIT, M.TOP = 10, 4, 10
+M.CONTAINER, M.QUIVER = 1, 11 -- item classes (Enum.ItemClass)
+-- container subclasses (Enum.ItemContainerSubclass / Enum.ItemQuiverSubclass):
+-- who may use them and what they are called
+M.BAG_KINDS = {
+  [M.CONTAINER] = { [0] = { name = "Bag" }, [1] = { name = "Soul bag", class = "WARLOCK" },
+    [2] = { name = "Herb bag", prof = "Herbalism" }, [3] = { name = "Enchanting bag", prof = "Enchanting" },
+    [4] = { name = "Engineering bag", prof = "Engineering" }, [6] = { name = "Mining bag", prof = "Mining" },
+    [7] = { name = "Leatherworking bag", prof = "Leatherworking" } },
+  [M.QUIVER] = { [2] = { name = "Quiver", class = "HUNTER", ammo = "arrows" },
+    [3] = { name = "Ammo pouch", class = "HUNTER", ammo = "bullets" } },
+}
 
 function M:Queries(mode)
   local level = C.Call("UnitLevel", "player") or 1
   local lo = math.max(1, level - M.LEVELS_BACK)
   local q = {}
+  if mode == "bags" then
+    q[1] = { text = "Bags", filters = { { classID = M.CONTAINER } } }
+    if M.PlayerClass() == "HUNTER" then q[2] = { text = "Quivers", filters = { { classID = M.QUIVER } } } end
+    return q
+  end
   if mode == "weapons" then
     q[1] = { text = "Weapons", minLevel = lo, maxLevel = level, filters = { { classID = M.WEAPON } } }
   else
@@ -124,9 +146,108 @@ function M:Fits(itemID)
   return true
 end
 
+function M.PlayerClass()
+  local _, token = C.Call("UnitClass", "player")
+  return token
+end
+
+-- Slots a bag has, from its tooltip ("16 Slot Bag"); nil until the item is loaded.
+function M.BagSlotsOf(itemID)
+  local tip = C.Call("C_TooltipInfo.GetItemByID", itemID)
+  for _, line in ipairs(type(tip) == "table" and tip.lines or {}) do
+    local t = C.Readable(line.leftText)
+    local n = type(t) == "string" and t:match("(%d+) Slot")
+    if n then return tonumber(n) end
+  end
+end
+
+-- The bags you carry: smallest general bag (0 for an empty bag slot) and the
+-- quiver or pouch, if any. A bag's family comes from GetContainerNumFreeSlots
+-- (0 = holds anything; 1 arrows, 2 bullets).
+function M:WornBags()
+  local general, quiver = {}, nil
+  for bag = 1, 4 do
+    local slots = C.NumSlots(bag) or 0
+    local _, family = C.Call("C_Container.GetContainerNumFreeSlots", bag)
+    if family == nil then _, family = C.Call("GetContainerNumFreeSlots", bag) end
+    family = tonumber(C.Readable(family)) or 0
+    if slots == 0 or family == 0 then general[#general + 1] = slots
+    elseif family == 1 or family == 2 then quiver = math.max(quiver or 0, slots) end
+  end
+  table.sort(general)
+  return { smallest = general[1], general = general, quiver = quiver }
+end
+
+-- Which ammo the worn ranged weapon shoots: "arrows" (bow, crossbow), "bullets" (gun) or nil.
+function M.AmmoKind()
+  local link = C.Call("GetInventoryItemLink", "player", 18)
+  local id = link and tonumber(tostring(link):match("item:(%d+)"))
+  local _, class, sub = instant(id or 0)
+  if class ~= M.WEAPON then return nil end
+  if sub == 2 or sub == 18 then return "arrows" end
+  if sub == 3 then return "bullets" end
+end
+
+local function hasProf(name)
+  local p = ns.db.char.professions
+  return type(p) == "table" and p[name] ~= nil
+end
+
+-- Bags worth buying: { kind, name, slots, gain, replaces, price, perSlot }.
+-- General bags first (most slots gained, then cheapest), then quivers, then
+-- profession bags. Returns list, skippedForGold.
+function M:BagResults()
+  local money = ns.AHBuy and ns.AHBuy.Money() or 0
+  local level = C.Call("UnitLevel", "player") or 1
+  local cls, ammo, worn = M.PlayerClass(), M.AmmoKind(), self:WornBags()
+  local all, skipped = {}, 0
+  for itemID, f in pairs(self.found or {}) do
+    local _, class, sub = instant(itemID)
+    local kind = M.BAG_KINDS[class or -1] and M.BAG_KINDS[class][sub or -1]
+    local slots = kind and M.BagSlotsOf(itemID)
+    local info = C.ItemInfo("item:" .. itemID)
+    local ok = kind and slots and (not kind.class or kind.class == cls) and (not kind.prof or hasProf(kind.prof))
+      and (not kind.ammo or not ammo or kind.ammo == ammo)
+      and not (info and type(info.reqLevel) == "number" and info.reqLevel > level)
+    if ok then
+      local replaces, order
+      if class == M.QUIVER then replaces, order = worn.quiver or 0, 2
+      elseif sub == 0 then replaces, order = worn.smallest or (#worn.general < 4 and 0) or slots, 1
+      else replaces, order = 0, 3 end
+      local gain = slots - replaces
+      if gain > 0 then
+        if f.price > money then skipped = skipped + 1
+        else
+          all[#all + 1] = { mode = "bags", kind = kind.name, order = order, itemID = itemID, itemKey = f.itemKey,
+            price = f.price, slots = slots, gain = gain, replaces = replaces,
+            name = info and info.name or ("item " .. itemID), perSlot = math.floor(f.price / gain) }
+        end
+      end
+    end
+  end
+  table.sort(all, function(a, b)
+    if a.order ~= b.order then return a.order < b.order end
+    if a.gain ~= b.gain then return a.gain > b.gain end
+    return a.price < b.price
+  end)
+  local out = {}
+  for i = 1, math.min(M.TOP, #all) do out[i] = all[i] end
+  return out, skipped
+end
+
+-- Second line for a bag: what it replaces and the price per new slot.
+function M.BagLine(b)
+  local what
+  if b.order == 3 then what = string.format("%d slots (%s only)", b.slots, b.kind:gsub(" bag$", ""):lower())
+  elseif b.replaces == 0 then what = string.format("%d slots in an empty %s slot", b.slots, b.order == 2 and "quiver" or "bag")
+  else what = string.format("%d slots, replaces your %d-slot %s", b.slots, b.replaces, b.order == 2 and "quiver" or "bag") end
+  return string.format("%s   |cffcccccc%s per new slot|r", what, ns.Prices.Money(b.perSlot))
+end
+
 -- Upgrades you can afford: weapons the top 10 by gain; armor the best per slot.
 -- Returns list, skippedForGold.
 function M:Results()
+  if self.mode == "bags" then return self:BagResults() end
   local G = ns.GearScore
   if not G or not self.found then return {}, 0 end
   local money = ns.AHBuy and ns.AHBuy.Money() or 0
@@ -174,6 +295,7 @@ function M.Overall(b)
 end
 
 function M.Gain(b)
+  if b.mode == "bags" then return string.format("+%d slots", b.gain) end
   if b.learn then return string.format("|cffffc84d%s first|r", b.learn) end
   if b.empty then return "empty slot" end
   if b.capped then return "big upgrade" end
@@ -226,7 +348,7 @@ function M:Build()
   f.gold = UI.Text(f, "normal", "warn")
   f.gold:SetPoint("RIGHT", f.scan, "LEFT", -10, 0)
   local function tab(label, x, onClick)
-    local b = UI:Button(f, label, 146, onClick)
+    local b = UI:Button(f, label, 110, onClick)
     b:SetHeight(26)
     b:SetPoint("TOPLEFT", x, -44)
     return b
@@ -239,11 +361,14 @@ function M:Build()
     end
     M:Refresh()
   end)
-  f.weapons = tab("Weapons", 167, function()
+  f.weapons = tab("Weapons", 128, function()
     if M.queue and M.manual then M:Next() else M:Start("weapons") end
   end)
-  f.armor = tab("Armor", 320, function()
+  f.armor = tab("Armor", 242, function()
     if M.queue and M.manual then M:Next() else M:Start("armor") end
+  end)
+  f.bags = tab("Bags", 356, function()
+    if M.queue and M.manual then M:Next() else M:Start("bags") end
   end)
   f.divider = f:CreateTexture(nil, "ARTWORK")
   f.divider:SetPoint("TOPLEFT", 1, -85)
@@ -303,7 +428,7 @@ function M:StyleTabs()
   local f, Theme = self.frame, ns.Theme
   if not f then return end
   local active = self.mode or "training"
-  for mode, b in pairs({ training = f.training, weapons = f.weapons, armor = f.armor }) do
+  for mode, b in pairs({ training = f.training, weapons = f.weapons, armor = f.armor, bags = f.bags }) do
     local on = mode == active
     if b.SetBackdropBorderColor then b:SetBackdropBorderColor(Theme:Color(on and "accent" or "border")) end
     if b.SetBackdropColor then
@@ -331,6 +456,7 @@ function M:Refresh()
     for _, row in ipairs(f.rows) do row:Hide() end
     f.weapons.label:SetText("Weapons")
     f.armor.label:SetText("Armor")
+    f.bags.label:SetText("Bags")
     f:Show()
     self:Resize()
     return
@@ -341,10 +467,13 @@ function M:Refresh()
     local row, b = f.rows[i], list[i]
     row.item = b
     if b then
-      local label = self.mode == "weapons" and (i .. ". ") or (ns.TitleCase(b.slotName) .. ": ")
+      local label = self.mode == "weapons" and (i .. ". ") or (b.mode == "bags" and (b.kind .. ": ")) or (ns.TitleCase(b.slotName) .. ": ")
       row.text:SetText(string.format("%s%s  |cff7fff7f%s|r  |cffffd100%s|r", label, b.name, M.Gain(b), ns.Prices.Money(b.price)))
-      local diff = ns.GearScore:Diff("item:" .. b.itemID, b.against)
-      row.stats:SetText((#diff > 0 and ns.GearScore.DiffText(diff, 6) or "no stat changes listed") .. "   " .. M.Overall(b))
+      if b.mode == "bags" then row.stats:SetText(M.BagLine(b))
+      else
+        local diff = ns.GearScore:Diff("item:" .. b.itemID, b.against)
+        row.stats:SetText((#diff > 0 and ns.GearScore.DiffText(diff, 6) or "no stat changes listed") .. "   " .. M.Overall(b))
+      end
       row:Show()
     else
       row:Hide()
@@ -356,15 +485,18 @@ function M:Refresh()
     local label = self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching..."
     f.weapons.label:SetText(self.mode == "weapons" and label or "Weapons")
     f.armor.label:SetText(self.mode == "armor" and label or "Armor")
+    f.bags.label:SetText(self.mode == "bags" and label or "Bags")
     f.status:SetText(string.format("Searching: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
   else
     f.weapons.label:SetText("Weapons")
     f.armor.label:SetText("Armor")
+    f.bags.label:SetText("Bags")
     if self.found then
-      local head = self.mode == "weapons" and "Top weapons you can afford" or "Best armor per slot you can afford"
+      local head = (self.mode == "weapons" and "Top weapons you can afford")
+        or (self.mode == "bags" and "Bigger bags you can afford") or "Best armor per slot you can afford"
       f.status:SetText(string.format("%s (you have %s)%s:", head, gold,
         skipped > 0 and string.format("; %d better ones cost more", skipped) or "")
-        .. (#list == 0 and "\nNothing better for sale in your level range right now." or ""))
+        .. (#list == 0 and (self.mode == "bags" and "\nNo bag bigger than yours for sale right now." or "\nNothing better for sale in your level range right now.") or ""))
     else
       f.status:SetText("Finds upgrades your class can use, in your level range, that your gold covers (" .. gold .. "). Buy is your click.")
     end
@@ -390,5 +522,5 @@ end
 function M:OnDisable() if self.frame then self.frame:Hide() end end
 
 function M:Activity()
-  return "open the auction house: Search weapons / Search armor"
+  return "open the auction house: Weapons / Armor / Bags"
 end

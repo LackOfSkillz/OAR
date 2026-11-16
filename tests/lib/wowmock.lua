@@ -390,7 +390,7 @@ function M.new(opts)
   base.UnitCreatureFamily = function(unit) return game.units and game.units[unit] and game.units[unit].family end
   -- known spells by id (weapon skills): game.knownSpells = { [264] = true }; nil = client can't say
   base.IsPlayerSpell = function(id) if game.knownSpells then return game.knownSpells[id] == true end end
-  base.GetMoney = function() return game.money or player.money end
+  base.GetMoney = function() if game.loggingOut then return 0 end return game.money or player.money end
   base.C_AuctionHouse = {
     GetBrowseResults = function() return game.browse or {} end,
     -- game.ahListings = { [itemID] = { name, minPrice, qty, recipe = subclass } }; a query fills game.browse
@@ -433,6 +433,7 @@ function M.new(opts)
     CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
   }
   base.GetInventoryItemLink = function(_, slot)
+    if game.loggingOut then return nil end
     if game.worn and game.worn[slot] then return "|cffffffff|Hitem:" .. game.worn[slot] .. "::::::::24:::::|h[w]|h|r" end
     if slot == 18 and not game.noRanged then return "|cffffffff|Hitem:2504::::::::24:::::|h[Worn Shortbow]|h|r" end
     if slot == 16 and game.pole then return "|cffffffff|Hitem:6256::::::::24:::::|h[Fishing Pole]|h|r" end
@@ -466,7 +467,7 @@ function M.new(opts)
       local r = game.prof.recipes[id]
       local slots = {}
       for item, n in pairs(r.reagents) do slots[#slots + 1] = { reagents = { { itemID = item } }, quantityRequired = n } end
-      return { reagentSlotSchematics = slots }
+      return { reagentSlotSchematics = slots, outputItemID = r.product, quantityMin = r.makes or 1 }
     end,
   }
   base.GetRepairAllCost = function() return game.repairCost or 0, (game.repairCost or 0) > 0 end
@@ -510,6 +511,13 @@ function M.new(opts)
       game.sent[#game.sent + 1] = { prefix = prefix, msg = msg, channel = channel, target = target }
     end,
   }
+  -- group loot rolls: game.lootRolls[rollID] = { link, name, quality, bop, canNeed, canGreed }
+  base.GetLootRollItemLink = function(id) local r = game.lootRolls and game.lootRolls[id] return r and r.link end
+  base.GetLootRollItemInfo = function(id)
+    local r = game.lootRolls and game.lootRolls[id]
+    if not r then return nil end
+    return "Interface\\Icons\\INV_Misc_QuestionMark", r.name, 1, r.quality or 2, r.bop, r.canNeed ~= false, r.canGreed ~= false
+  end
   base.IsInGuild = function() return opts.inGuild or false end
   game.chatFilters = {}
   base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
@@ -560,7 +568,19 @@ function M.new(opts)
       local id = game.bags and game.bags[bag] and game.bags[bag][slot]
       return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r")
     end,
-    GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
+    -- game.bagSize[bag] / game.bagFamily[bag] (1 arrows, 2 bullets) override the default 16-slot bag
+    GetContainerNumSlots = function(bag)
+      if game.bagSize and game.bagSize[bag] then return game.bagSize[bag] end
+      return game.bags and game.bags[bag] and 16 or 0
+    end,
+    GetContainerNumFreeSlots = function(bag)
+      local b = game.bags and game.bags[bag]
+      if game.bagSize and game.bagSize[bag] then return game.bagSize[bag], game.bagFamily and game.bagFamily[bag] or 0 end
+      if not b then return 0, 0 end
+      local used = 0
+      for _ in pairs(b) do used = used + 1 end
+      return 16 - used, 0
+    end,
     -- game.counts[bag][slot] overrides the default stack of 5
     UseContainerItem = function(bag, slot)
       if game.combat then error("UseContainerItem in combat") end
@@ -693,14 +713,14 @@ function M.new(opts)
     }
   end
   base.C_Map = {
-    GetBestMapForUnit = function() return opts.mapID or 1412 end,
+    GetBestMapForUnit = function() if game.loggingOut then return nil end return opts.mapID or 1412 end,
     GetPlayerMapPosition = function()
       local x, y = opts.x or 0.46, opts.y or 0.37
       return { GetXY = function() return x, y end }
     end,
     GetMapInfo = function(id)
       local m = game.maps and game.maps[id]
-      if m then return { mapID = id, name = m.name, parentMapID = m.parent or 0 } end
+      if m then return { mapID = id, name = m.name, parentMapID = m.parent or 0, mapType = m.mapType } end
       return { mapID = id, name = "Mulgore" }
     end,
     -- game.maps[id] = { name, parent }: every map below id (all descendants)
@@ -712,6 +732,11 @@ function M.new(opts)
       return out
     end,
   }
+  -- game.maps[id].rect = { minX, maxX, minY, maxY } on its parent map
+  base.C_Map.GetMapRectOnMap = function(id, top)
+    local m = game.maps and game.maps[id]
+    if m and m.rect and m.parent == top then return m.rect[1], m.rect[2], m.rect[3], m.rect[4] end
+  end
   base.C_Map.SetUserWaypoint = function(p) game.userWaypoint = p end
   base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end
   -- world yards: 1 map unit = 1000 yards on every test map
@@ -778,6 +803,15 @@ function Game:loadAddon()
     if not chunk then error("syntax error: " .. tostring(err), 0) end
     setfenv(chunk, self.env)
     chunk(M.ADDON, self.ns)
+  end
+  -- The rare seed pack (Data/Rares.lua) holds real Mulgore rares; specs use
+  -- their own made-up rares on the same maps, so it is left out unless a
+  -- spec asks for it with mock.new({ seedRares = true }).
+  if not self.opts.seedRares and self.ns.Data and self.ns.Data.packs.rare then
+    self.ns.Data.packs.rare.seed = nil
+    for _, e in pairs(self.ns.Data.index.rare or {}) do
+      if tostring(e.source or ""):find("2026-11-15", 1, true) then self.ns.Data.index.rare[e.npcID] = nil end
+    end
   end
   return self.ns
 end

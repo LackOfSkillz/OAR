@@ -80,14 +80,40 @@ function Snap:Collect(asked)
     takenAt = now,
     askedAt = asked and now or (type(prev) == "table" and (prev.askedAt or prev.takenAt)) or now,
     addon = ns.version, build = ns.build,
+    -- Outrider Intelligence (AI01-01/03): an id for this snapshot and the
+    -- client build, so answers can be bound to the snapshot they answer
+    snapshotId = string.format("%s-%d", tostring(meta.class or "char"):lower(), now),
+    gameBuild = GetBuildInfo and select(1, GetBuildInfo()) or nil,
     level = UnitLevel and UnitLevel("player"),
     class = meta.class, race = meta.race, faction = meta.faction,
     money = GetMoney and GetMoney(),
     where = where(),
     gear = gear(),
-    quests = quests(),
-    modules = plain(fromModules(), 0),
   }
+  -- At logout the game no longer reports position, gear links or gold
+  -- (every logout snapshot had map nil, Khreos's no gear and 0 money; audit
+  -- 2026-11-15): fall back to what was last seen while playing.
+  local live = self.live or {}
+  if not s.where then s.where = live.where end
+  if not next(s.gear) and live.gear then s.gear = live.gear end
+  if (not s.money or s.money == 0) and live.money then s.money = live.money end
+  if (not s.level or s.level == 0) and live.level then s.level = live.level end
+  -- the question typed in the Advisor tab and the time you have (AI03)
+  if asked then
+    local q = ns.db.char.askQuestion
+    s.question = type(q) == "string" and q ~= "" and q:sub(1, 200) or nil
+    s.timeBudget = tonumber(ns.db.char.askMinutes)
+  end
+  s.quests = quests()
+  self.asking = asked and true or false   -- modules may add more for a question (WhatNow candidates)
+  s.modules = plain(fromModules(), 0)
+  self.asking = false
+  -- a refresh (logout) keeps the steps of the last /ride ask, which the
+  -- companion's answers are checked against
+  if not asked and type(prev) == "table" and type(prev.modules) == "table" and prev.modules.WhatNow
+    and not s.modules.WhatNow then
+    s.modules.WhatNow = prev.modules.WhatNow
+  end
   -- keep the saved file small: drop the largest module parts until it fits
   local size = #ns.Serialize.Encode(s)
   while size > self.MAX_BYTES do
@@ -128,9 +154,12 @@ function Snap:AskAdvisor(mode)
     return
   end
   local code = self:Code()
-  ns.UI:TextDialog("Copy for your advisor", code, "copy")
+  ns.UI:TextDialog("Copy for your advisor", code, "copy", function()
+    ns.Print("snapshot copied: your advisor reads it from the clipboard. Then your Paste key and Ctrl+V.")
+    ns.Log:Info("snapshot", "ask: snapshot copied with Ctrl+C")
+  end)
   local d = ns.UI.dialog
-  if d and d.hint then d.hint:SetText("Ctrl+C, then tell Claude 'advise'. Paste the answer in the Advisor tab.") end
+  if d and d.hint then d.hint:SetText("Press Ctrl+C: the box closes and your advisor reads it.") end
   ns.Log:Info("snapshot", "ask: snapshot code shown (%d characters)", #code)
 end
 
@@ -150,5 +179,25 @@ function Snap:AfterLogin()
   ns.db.char.askPending = nil
   if time() - t < 300 then
     ns.Print("snapshot saved for your advisor. Ask Claude for advice, then /reload and open the Advisor tab (/ride hub).")
+  end
+end
+
+-- What was last seen while playing (used when logout reads come back empty).
+function Snap:Remember()
+  local live = self.live or {}
+  local w = where()
+  if w then live.where = w end
+  local g = gear()
+  if next(g) then live.gear = g end
+  local m = GetMoney and GetMoney()
+  if m and m > 0 then live.money = m end
+  local l = UnitLevel and UnitLevel("player")
+  if l and l > 0 then live.level = l end
+  self.live = live
+end
+
+if ns.Events then
+  for _, e in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_MONEY", "PLAYER_EQUIPMENT_CHANGED", "PLAYER_LEVEL_UP" }) do
+    ns.Events:On(e, Snap, function() Snap:Remember() end)
   end
 end

@@ -28,7 +28,7 @@ local LABELS = {
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
-  guildmate = "Guildmate",
+  guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
 }
 M.LABELS = LABELS
 
@@ -42,10 +42,12 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
+  trail = "trail", ride = "ride", transport = "ride",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
   quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 }, guild = { 0.25, 1.00, 0.25 },
+  trail = { 0.95, 0.78, 0.35 }, ride = { 0.55, 0.75, 1.00 },
 }
 M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers", gather = "Herbs, ore & fish" }
 local ICON = {
@@ -54,6 +56,8 @@ local ICON = {
   repair = TRACK .. "Repair", spirit_healer = "Interface\\Icons\\Spell_Holy_Resurrection",
   guild_master = "Interface\\Icons\\INV_Misc_Note_02", tabard = "Interface\\Icons\\INV_Shirt_GuildTabard_01",
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
+  ride = "Interface\\Icons\\INV_Misc_Map_01",
+  transport = "Interface\\Icons\\Spell_Arcane_TeleportStormWind",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
   herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01", fish = "Interface\\Icons\\INV_Misc_Fish_02", pool = "Interface\\Icons\\INV_Misc_Fish_14",
 }
@@ -105,12 +109,17 @@ local function outline(frame)
 end
 
 function M.Paint(frame, pin)
-  local hollow = M.GATHER[pin.kind]
+  local hollow = M.GATHER[pin.kind] or pin.box
   if hollow then
-    local st = ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
-    local c = M.STATE_COLOR[st or ""] or M.GROUP_COLOR.gather or { 0.4, 0.9, 0.4 }
+    local st = not pin.box and ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
+    local c = pin.box or M.STATE_COLOR[st or ""] or M.GROUP_COLOR.gather or { 0.4, 0.9, 0.4 }
     frame.ring:Hide() frame.icon:Hide()
-    for _, t in ipairs(outline(frame)) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 0.9) t:Show() end
+    local edges = outline(frame)
+    for i, t in ipairs(edges) do
+      local w = pin.box and 2.5 or 1.5
+      if i <= 2 then t:SetHeight(w) else t:SetWidth(w) end
+      t:SetColorTexture(c[1], c[2], c[3], c[4] or 0.9) t:Show()
+    end
     return
   end
   frame.ring:Show() frame.icon:Show()
@@ -224,6 +233,22 @@ function M:BuildPins(mapID)
       end
     end
   end
+  -- Portals, boats, zeppelins and the tram leaving from this map, where the
+  -- departure spot is known (a guide's spot, or the dock by the flight
+  -- master); rides you took are the Trail's own pins below.
+  if not hidden.transport and ns.Travel then
+    for i, d in ipairs(ns.Travel:Departures()) do
+      local a = d.from
+      if a.mapID == mapID and d.where ~= "zone" and d.where ~= "taken" then
+        out[#out + 1] = { id = "transport-" .. i, kind = "transport", mapID = mapID, x = a.x, y = a.y, name = d.name,
+          title = d.where == "flight" and ("from " .. tostring(d.place) .. ": the dock is by the flight master") or ("from " .. tostring(d.place)) }
+      end
+    end
+  end
+  -- Breadcrumbs: where you walked, and rides you took from here (Trail)
+  if ns.Trail and ns.Trail.enabled then
+    for _, pin in ipairs(ns.Trail:Pins(mapID, hidden)) do out[#out + 1] = pin end
+  end
   -- Herb and ore spawns from the node pack, for what this character can gather
   if ns.NodePack then
     for _, pin in ipairs(ns.NodePack:Pins(mapID, hidden)) do out[#out + 1] = pin end
@@ -304,7 +329,7 @@ end
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
-local NO_MERGE = { rare = true, guild = true }
+local NO_MERGE = { rare = true, guild = true, trail = true, ride = true, transport = true }
 
 function M.Declutter(pins, px, py)
   local out, cells = {}, {}
@@ -381,7 +406,7 @@ function M:Refresh()
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
-    pin:SetScale(1 / (scale > 0 and scale or 1))
+    pin:SetScale((data.small and 0.55 or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
     M.Paint(pin, data)
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", canvas, "TOPLEFT", data.x * w * scale, -data.y * h * scale)

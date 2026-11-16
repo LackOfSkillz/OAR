@@ -16,8 +16,9 @@ param([switch]$SkipTests)
 $root = Get-RepoRoot
 $cfg = Get-OarConfig
 if (-not $SkipTests) {
-  $code = Invoke-OarLua @('tests/run_tests.lua')
-  if ($code -ne 0) { Write-Host "Tests failed. Not packaging." -ForegroundColor Red; exit 1 }
+  # the full suite, companion included and required (AI spec 12.4)
+  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'test.ps1') -RequirePython | Out-Host
+  if ($LASTEXITCODE -ne 0) { Write-Host "Tests failed. Not packaging." -ForegroundColor Red; exit 1 }
 }
 
 $dist = Join-Path $root 'dist\family'

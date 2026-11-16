@@ -17,7 +17,7 @@ ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 19 -- visible module rows; the list scrolls with the mouse wheel
-local W, H = 900, 640        -- starting size; the window is resizable (Gary, 2026-11-13)
+local W, H = 1080, 720        -- starting size; the window is resizable (Gary, 2026-11-13)
 local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1400, 1000
 local SIDE = 160             -- grouped sidebar on the left; pages to its right
 
@@ -109,11 +109,18 @@ local function Sidebar(parent, onSelect)
   end)
   function bar:Add(id, title, icon)
     local b = CreateFrame("Button", nil, self)
-    b:SetSize(SIDE - 8, 20)
+    b:SetSize(SIDE - 8, 22)
     b.bg = b:CreateTexture(nil, "BACKGROUND")
     b.bg:SetAllPoints()
-    b.bg:SetColorTexture(Theme:Color("raised"))
+    b.bg:SetColorTexture(Theme:Color("hover"))
     b.bg:Hide()
+    -- the current page: lighter row and a gold strip on the left
+    b.mark = b:CreateTexture(nil, "ARTWORK")
+    b.mark:SetPoint("TOPLEFT", 0, 0)
+    b.mark:SetPoint("BOTTOMLEFT", 0, 0)
+    b.mark:SetWidth(2)
+    b.mark:SetColorTexture(Theme:Color("gold"))
+    b.mark:Hide()
     local hl = b:CreateTexture(nil, "HIGHLIGHT")
     hl:SetAllPoints()
     local hr, hg, hb = Theme:Color("accent")
@@ -122,7 +129,7 @@ local function Sidebar(parent, onSelect)
     b.icon:SetSize(16, 16)
     b.icon:SetPoint("LEFT", 6, 0)
     if icon then b.icon:SetTexture(icon) b.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
-    b.label = UI.Text(b, "normal", "text")
+    b.label = UI.Text(b, "normal", "body")
     b.label:SetPoint("LEFT", 28, 0)
     b.label:SetText(title)
     b.id = id
@@ -133,9 +140,23 @@ local function Sidebar(parent, onSelect)
   end
   local function head(self, i, text)
     local h = self.heads[i]
-    if not h then h = UI.Text(self, "small", "muted") self.heads[i] = h end
-    h:SetText(text)
+    if not h then
+      h = UI.Text(self, "small", "muted")
+      -- group heading: small capitals in muted gold, a hairline to the right
+      local r, g, b = Theme:Color("gold")
+      h:SetTextColor(r * 0.8, g * 0.8, b * 0.8)
+      h.line = self:CreateTexture(nil, "ARTWORK")
+      h.line:SetHeight(1)
+      h.line:SetPoint("LEFT", h, "RIGHT", 6, 0)
+      h.line:SetPoint("RIGHT", self, "RIGHT", -10, 0)
+      h.line:SetColorTexture(Theme:Color("border"))
+      local hs = h.Hide
+      h.Hide = function(s) hs(s) s.line:Hide() end
+      self.heads[i] = h
+    end
+    h:SetText(tostring(text):upper())
     h:Show()
+    h.line:Show()
     return h
   end
   function bar:SetOrder(ids, groups)
@@ -161,7 +182,7 @@ local function Sidebar(parent, onSelect)
       last = g
       b:ClearAllPoints()
       b:SetPoint("TOPLEFT", 4, y)
-      y = y - 21
+      y = y - 23
     end
     self.listHeight = top - y
   end
@@ -170,8 +191,9 @@ local function Sidebar(parent, onSelect)
     if not id then return end
     self.selected = id
     for tid, b in pairs(self.buttons) do
-      b.label:SetTextColor(Theme:Color(tid == id and "accent" or "text"))
+      b.label:SetTextColor(Theme:Color(tid == id and "text" or "body"))
       b.bg:SetShown(tid == id)
+      if b.mark then b.mark:SetShown(tid == id) end
     end
     if onSelect then ns.Safe("tabs:select", onSelect, id) end
   end
@@ -192,13 +214,29 @@ end
 -- Top bar: who you are, and one search box for everything (Enter opens the
 -- Journey page with that search).
 function Hub:TopBar(f)
+  -- Expedition look: gold window edge, emblem, the name in the display font
+  if f.SetBackdropBorderColor then f:SetBackdropBorderColor(Theme:Color("gold")) end
+  f.emblem = f.bar:CreateTexture(nil, "ARTWORK")
+  f.emblem:SetSize(20, 20)
+  f.emblem:SetPoint("LEFT", 8, 0)
+  ns.Art:Set(f.emblem, "emblem")
+  f.title:ClearAllPoints()
+  f.title:SetPoint("LEFT", f.emblem, "RIGHT", 6, 0)
+  Theme:StyleDisplay(f.title, "brand", "gold")
   f.title:SetText("Outrider")
-  f.title:SetTextColor(Theme:Color("accent"))
   f.who = UI.Text(f.bar, "small", "muted")
   f.who:SetPoint("LEFT", f.title, "RIGHT", 12, 0)
-  f.search = UI:SearchBox(f.bar, 240, "Search anything (Enter)")
+  f.gear = CreateFrame("Button", nil, f.bar)
+  f.gear:SetSize(18, 18)
+  f.gear:SetPoint("RIGHT", f.close, "LEFT", -6, 0)
+  f.gear.tex = f.gear:CreateTexture(nil, "ARTWORK")
+  f.gear.tex:SetAllPoints()
+  f.gear.tex:SetTexture("Interface\\Icons\\Trade_Engineering")
+  f.gear.tex:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  f.gear:SetScript("OnClick", function() f.tabBar:Select("settings") end)
+  f.search = UI:SearchBox(f.bar, 240, "Search Outrider (Enter)")
   f.search:SetHeight(20)
-  f.search:SetPoint("RIGHT", f.close, "LEFT", -8, 0)
+  f.search:SetPoint("RIGHT", f.gear, "LEFT", -8, 0)
   f.search:SetScript("OnEnterPressed", function(box)
     local text = box:GetText() or ""
     box:ClearFocus()
@@ -267,13 +305,42 @@ function Hub:Build()
   return f
 end
 
+-- Pages that draw their own heading (Expedition layouts) skip the title strip.
+Hub.OWN_HEADING = { home = true, whatnow = true }
+Hub.TITLE_H = 52
+
 function Hub:Panel(t)
   if t.panel then return t.panel end
   local p = CreateFrame("Frame", nil, self.frame.content)
-  p:SetPoint("TOPLEFT", SIDE + 14, -2)
   p:SetPoint("BOTTOMRIGHT", -6, 14)
   p:Hide()
   t.panel = p
+  if self.OWN_HEADING[t.id] then
+    p:SetPoint("TOPLEFT", SIDE + 14, -2)
+  else
+    -- Expedition look on every page (2026-11-15): the page title in the
+    -- display font over the header scene, a gold rule, then the page. The
+    -- strip belongs to the panel (drawn above its top edge) so it shows and
+    -- hides with it. A form page's first heading replaces the title text.
+    p:SetPoint("TOPLEFT", SIDE + 14, -(self.TITLE_H + 2))
+    if ns.Art and ns.Art:Has("header") then
+      p.scene = p:CreateTexture(nil, "BACKGROUND")
+      p.scene:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 6)
+      p.scene:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+      p.scene:SetHeight(self.TITLE_H - 6)
+      ns.Art:Set(p.scene, "header")
+      if p.scene.SetAlpha then p.scene:SetAlpha(0.45) end
+    end
+    p.hubTitle = UI.Display(p, "page", "text")
+    p.hubTitle:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 14)
+    p.hubTitle:SetText(t.title or "")
+    p.hubRule = p:CreateTexture(nil, "ARTWORK")
+    p.hubRule:SetHeight(1)
+    p.hubRule:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 6)
+    p.hubRule:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+    local r, g, b = Theme:Color("gold")
+    p.hubRule:SetColorTexture(r, g, b, 0.5)
+  end
   if t.build then ns.Safe("hub:build:" .. t.id, t.build, p) end
   return p
 end
@@ -303,23 +370,35 @@ function Hub:Toggle()
 end
 
 -- ------------------------------------------------------------- Overview
+-- Expedition look: a card filling a hand-built page, kept at the page's own
+-- frame level so the page's checks and buttons draw above it.
+local function pageCard(p, height)
+  local card = UI:Card(p)
+  card:SetPoint("TOPLEFT", 0, 0)
+  if height then card:SetPoint("RIGHT", p, "RIGHT", -4, 0) card:SetHeight(height)
+  else card:SetPoint("BOTTOMRIGHT", -4, 0) end
+  if card.SetFrameLevel and p.GetFrameLevel then card:SetFrameLevel(p:GetFrameLevel() or 1) end
+  return card
+end
+
 local function textLine(p, size, color, y)
   local fs = UI.Text(p, size, color)
-  fs:SetPoint("TOPLEFT", 0, y)
-  fs:SetWidth(W - SIDE - 40)
+  fs:SetPoint("TOPLEFT", 14, y - 12)
+  fs:SetWidth(W - SIDE - 68)
   fs:SetJustifyH("LEFT")
   return fs
 end
 
 Hub:AddTab("overview", L.overview, function(p)
-  p.who = textLine(p, "large", "text", 0)
-  p.build = textLine(p, "small", "muted", -22)
-  p.sv = textLine(p, "normal", "text", -50)
-  p.errors = textLine(p, "normal", "text", -72)
-  p.probe = textLine(p, "normal", "text", -94)
-  p.mods = textLine(p, "normal", "text", -116)
-  p.layer = textLine(p, "normal", "text", -138)
-  p.addons = textLine(p, "small", "muted", -164)
+  local box = pageCard(p, 196)
+  p.who = textLine(box, "large", "text", 0)
+  p.build = textLine(box, "small", "muted", -22)
+  p.sv = textLine(box, "normal", "text", -50)
+  p.errors = textLine(box, "normal", "text", -72)
+  p.probe = textLine(box, "normal", "text", -94)
+  p.mods = textLine(box, "normal", "text", -116)
+  p.layer = textLine(box, "normal", "text", -138)
+  p.addons = textLine(box, "small", "muted", -164)
   function p:Refresh()
     local meta = ns.db.char.meta
     self.who:SetText(string.format("%s  |  %s %s %s", ns.db.key, tostring(meta.race or ""), tostring(meta.class),
@@ -349,8 +428,9 @@ local GROUPS = { P0 = "Core", P1 = "Core", P2 = "Rares and class tools", P3 = "M
 local PANEL_W = W - SIDE - 40
 
 Hub:AddTab("modules", L.modules, function(p)
-  local heading = UI.Text(p, "large", "accent")
-  heading:SetPoint("TOPLEFT", 0, 0)
+  local box = pageCard(p)
+  local heading = UI.Display(box, "side", "goldText")
+  heading:SetPoint("TOPLEFT", 14, -10)
   heading:SetText(L.modulesHeading)
   p.rows = {}
   for i = 1, MAX_ROWS do
@@ -362,8 +442,8 @@ Hub:AddTab("modules", L.modules, function(p)
         if not ok then ns.Print("%s: %s", mod.name, err) end
         p:Refresh()
       end)
-    row:SetPoint("TOPLEFT", 0, -24 - (i - 1) * 21)
-    row:SetWidth(PANEL_W)
+    row:SetPoint("TOPLEFT", 14, -36 - (i - 1) * 21)
+    row:SetWidth(PANEL_W - 28)
     row.label:SetWidth(210) row.label:SetJustifyH("LEFT") row.label:SetWordWrap(false)
     row.note:SetWidth(PANEL_W - 240) row.note:SetJustifyH("LEFT") row.note:SetWordWrap(false)
     row.head = UI.Text(row, "normal", "accent")
@@ -460,9 +540,10 @@ end
 
 -- ------------------------------------------------------------- Tools
 Hub:AddTab("tools", L.tools, function(p)
+  local box = pageCard(p, 260)
   local function btn(label, x, y, fn)
     local b = UI:Button(p, label, 130, fn)
-    b:SetPoint("TOPLEFT", x, y)
+    b:SetPoint("TOPLEFT", x + 14, y - 12)
     return b
   end
   btn("Export", 0, 0, function()
@@ -483,17 +564,17 @@ Hub:AddTab("tools", L.tools, function(p)
   btn("Reload UI", 140, -30, function() ReloadUI() end)
   p.debug = UI:Check(p, "Debug logging", function() return ns.db.global.debug end,
     function(on) ns.db.global.debug = on and true or false end)
-  p.debug:SetPoint("TOPLEFT", 0, -66)
+  p.debug:SetPoint("TOPLEFT", 14, -78)
   p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent ~= false end,
     function(on) ns.db.char.classAccent = on and true or false end)
-  p.accent:SetPoint("TOPLEFT", 0, -90)
-  p.probe = UI.Text(p, "small", "muted")
-  p.probe:SetPoint("TOPLEFT", 0, -122)
-  p.probe:SetWidth(W - SIDE - 40)
+  p.accent:SetPoint("TOPLEFT", 14, -102)
+  p.probe = UI.Text(box, "small", "muted")
+  p.probe:SetPoint("TOPLEFT", 14, -134)
+  p.probe:SetWidth(W - SIDE - 68)
   p.probe:SetJustifyH("LEFT")
-  p.recent = UI.Text(p, "small", "muted")
-  p.recent:SetPoint("TOPLEFT", 0, -144)
-  p.recent:SetWidth(W - SIDE - 40)
+  p.recent = UI.Text(box, "small", "muted")
+  p.recent:SetPoint("TOPLEFT", 14, -156)
+  p.recent:SetWidth(W - SIDE - 68)
   p.recent:SetJustifyH("LEFT")
   function p:Refresh()
     self.errorsBtn.label:SetText("Errors (" .. #ns.Errors.list .. ")")

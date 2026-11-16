@@ -108,13 +108,13 @@ end
 ns.Hub:AddTab("forecasts", "Forecasts", function(p)
   p.gold = UI.Text(p, "normal", "text")
   p.gold:SetPoint("TOPLEFT", 0, 0)
-  p.gold:SetWidth(560) p.gold:SetJustifyH("LEFT")
+  p.gold:SetPoint("RIGHT", p, "RIGHT", -4, 0) p.gold:SetJustifyH("LEFT")
   p.list = UI:ScrollList(p, {
     rows = 12, rowHeight = 22,
     render = function(row, l) row.text:SetText(l.name .. "  |cffbbbbbb" .. l.text .. "|r") end,
   })
   p.list:SetPoint("TOPLEFT", p.gold, "BOTTOMLEFT", 0, -10)
-  p.list:SetWidth(560)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   function p:Refresh()
     self.gold:SetText(M:GoldLine())
     self.list:SetItems(M:RespawnLines())

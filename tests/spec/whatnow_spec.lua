@@ -36,6 +36,22 @@ T.describe("what now", function()
     T.eq(list[1].title, "Repair")
   end)
 
+  T.it("steps in the top step's zone get a small boost; picking never changes the candidates", function()
+    local _, ns = session()
+    local W = ns.WhatNow
+    local cands = {
+      cand("quest", "Top", 0.9, { mapID = 1 }),
+      cand("gear", "Far", 0.44, { mapID = 2 }),  -- 0.352 vs Here 0.336 without the bonus, 0.386 with it
+      cand("gold", "Here", 0.56, { mapID = 1 }),
+    }
+    local list = W.Pick(cands, "mix")
+    T.eq(list[1].title, "Top")
+    T.eq(list[2].title, "Here")
+    T.ok(list[2].near)
+    T.eq(cands[3].near, nil)
+    T.eq(cands[1].score, nil)
+  end)
+
   T.it("picks 3 to 5, at most 2 of a kind, and the next of a kind becomes the alternative", function()
     local _, ns = session()
     local W = ns.WhatNow
@@ -67,7 +83,10 @@ T.describe("what now", function()
     T.no(W:List(true)[1].title == "Wolves")
     game:advance(86401)
     T.eq(W:List(true)[1].title, "Wolves")
-    T.ok(W:Store().shown["quest:Wolves"] >= 2)
+    local n = W:Store().shown["quest:Wolves"]
+    T.ok(n >= 2)
+    W:List(true)
+    T.eq(W:Store().shown["quest:Wolves"], n)  -- same list again: not counted twice
     table.remove(W.ORDER)
   end)
 
@@ -186,6 +205,62 @@ T.describe("what now", function()
     ns.Hub:Build():Show()
     ns.Hub:ShowTab("whatnow")
     T.eq(ns.Hub.current, "whatnow")
+    local page = ns.Hub.byId.whatnow.panel
+    T.eq(#page.chips, 6)
+    for _, chip in ipairs(page.chips) do T.eq(chip.on, chip.goal == "gold") end
+    T.ok(page.cards[1]:IsShown())
+    T.ok((page.cards[1].title.__text or "") ~= "")
+    T.eq(page.errands.head.__text, "Errands")
+    T.eq(page.session.rows[1][1].__text, "XP gained")
+    T.eq(page.snap.rows[1][1].__text, "XP")
+    T.ok(page.cards[1].tag.label.__text == "Recommended")
+    ns.Hub:ShowTab("home")
+    local home = ns.Hub.byId.home.panel
+    T.contains(home.heading.__text, "Welcome back")
+    T.ok((home.next.title.__text or "") ~= "")
+    ns.Hub:ShowTab("whatnow")
+    page.chips[1]:Click()
+    T.eq(ns.WhatNow:Goal(), "level")
+    T.ok(page.chips[1].on)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("an asked snapshot carries the ranked candidates with ids and grounded targets; logout's does not", function()
+    local game, ns = session({ level = 24, ammo = 1000 })
+    game.durability = { [1] = { 2, 50 } }
+    local W = ns.WhatNow
+    W.SOURCES.spec = function() return { cand("gather", "Peacebloom", 0.5, { target = { mapID = 1412, x = 0.4, y = 0.5 }, label = "observed" }) } end
+    table.insert(W.ORDER, "spec")
+    local s = ns.Snapshot:Collect(true)
+    local snap = s.modules.WhatNow
+    T.ok(snap and #snap.candidates >= 2)
+    T.eq(snap.candidates[1].candidateId, "errand:repair")
+    T.eq(snap.candidates[1].label, "observed")
+    local found
+    for _, c in ipairs(snap.candidates) do if c.candidateId == "gather:Peacebloom" then found = c end end
+    T.ok(found and found.target.mapID == 1412 and found.target.x == 0.4)
+    T.ok(type(s.snapshotId) == "string")
+    -- a logout refresh doesn't compute steps, but keeps the asked ones
+    local later = ns.Snapshot:Collect(false)
+    T.eq(later.modules.WhatNow.candidates[1].candidateId, "errand:repair")
+    table.remove(W.ORDER)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("without an Ask, logout saves the steps last seen while playing", function()
+    local game, ns = session({ level = 24, ammo = 1000 })
+    local W = ns.WhatNow
+    W.SOURCES.spec = function() return { cand("gather", "Peacebloom", 0.9, { target = { mapID = 1412, x = 0.4, y = 0.5 }, label = "observed" }) } end
+    table.insert(W.ORDER, "spec")
+    T.eq(ns.Snapshot:Collect(false).modules.WhatNow, nil)   -- never looked: nothing to save
+    W:List(true)                                            -- the page or Home showed the steps
+    table.remove(W.ORDER)
+    local s = ns.Snapshot:Collect(false)
+    local snap = s.modules.WhatNow
+    T.ok(snap and snap.seenAt, "steps with the time they were seen")
+    local found
+    for _, c in ipairs(snap.candidates) do if c.candidateId == "gather:Peacebloom" then found = c end end
+    T.ok(found and found.target.x == 0.4)
     T.eq(#ns.Errors.list, 0)
   end)
 end)

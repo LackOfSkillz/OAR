@@ -108,7 +108,7 @@ ns.Hub:AddTab("errands", "Errands", function(p)
     onClick = function(e) M:Go(e) end,
   })
   p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
-  p.list:SetWidth(420)
+  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   function p:Refresh() self.list:SetItems(M:List()) end
 end, 47)
 
