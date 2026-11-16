@@ -568,9 +568,14 @@ function M.new(opts)
       local id = game.bags and game.bags[bag] and game.bags[bag][slot]
       return id and ("|cffffffff|Hitem:" .. id .. "::::::::24:::::|h[x]|h|r")
     end,
-    GetContainerNumSlots = function(bag) return game.bags and game.bags[bag] and 16 or 0 end,
+    -- game.bagSize[bag] / game.bagFamily[bag] (1 arrows, 2 bullets) override the default 16-slot bag
+    GetContainerNumSlots = function(bag)
+      if game.bagSize and game.bagSize[bag] then return game.bagSize[bag] end
+      return game.bags and game.bags[bag] and 16 or 0
+    end,
     GetContainerNumFreeSlots = function(bag)
       local b = game.bags and game.bags[bag]
+      if game.bagSize and game.bagSize[bag] then return game.bagSize[bag], game.bagFamily and game.bagFamily[bag] or 0 end
       if not b then return 0, 0 end
       local used = 0
       for _ in pairs(b) do used = used + 1 end
