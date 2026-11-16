@@ -247,6 +247,70 @@ function Probe:Units()
   return res
 end
 
+-- The shape of a value for the log: types and keys, never a secret value
+-- (a secret is written as "secret" and never touched further, hard rule 4).
+function Probe.Shape(v, depth, budget)
+  budget = budget or { n = 0 }
+  budget.n = budget.n + 1
+  if budget.n > 200 then return "..." end
+  if ns.Compat.IsSecret(v) then return "secret" end
+  local t = type(v)
+  if t == "string" then return string.format("%q", #v > 40 and v:sub(1, 40) .. "..." or v) end
+  if t == "number" or t == "boolean" or t == "nil" then return tostring(v) end
+  if t ~= "table" then return t end
+  if (depth or 0) >= 3 then return "{...}" end
+  local keys = {}
+  for k in pairs(v) do keys[#keys + 1] = k end
+  table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+  local parts = {}
+  for i, k in ipairs(keys) do
+    if i > 12 then parts[#parts + 1] = string.format("+%d more", #keys - 12) break end
+    parts[#parts + 1] = tostring(k) .. "=" .. Probe.Shape(v[k], (depth or 0) + 1, budget)
+  end
+  return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+-- Blizzard's damage meter (the official way to see a fight on this client;
+-- the combat log is blocked). Call shapes aren't documented for Forever, so
+-- this logs what each call returns, or the error it gives, after a fight.
+-- Read only; nothing here changes the meter.
+function Probe:DamageMeter(why)
+  local dm = rawget(_G, "C_DamageMeter")
+  if type(dm) ~= "table" then ns.Log:Info("probe", "damage meter (%s): no C_DamageMeter", tostring(why)) return end
+  local enum = rawget(_G, "Enum") or {}
+  local function try(label, fn, ...)
+    if type(fn) ~= "function" then ns.Log:Info("probe", "dm %s: missing", label) return end
+    local res = { pcall(fn, ...) }
+    if not res[1] then ns.Log:Info("probe", "dm %s: error %s", label, tostring(res[2])) return end
+    local out = {}
+    for i = 2, math.max(2, #res) do out[#out + 1] = Probe.Shape(res[i]) end
+    ns.Log:Info("probe", "dm %s -> %s", label, table.concat(out, " | "))
+    return res[2]
+  end
+  ns.Log:Info("probe", "damage meter (%s): Enum.DamageMeterType=%s Enum.DamageMeterSessionType=%s", tostring(why),
+    Probe.Shape(enum.DamageMeterType), Probe.Shape(enum.DamageMeterSessionType))
+  try("IsDamageMeterAvailable()", dm.IsDamageMeterAvailable)
+  local sessions = try("GetAvailableCombatSessions()", dm.GetAvailableCombatSessions)
+  local meterTypes = type(enum.DamageMeterType) == "table" and enum.DamageMeterType or { Damage = 0 }
+  local sessionTypes = type(enum.DamageMeterSessionType) == "table" and enum.DamageMeterSessionType or { Current = 1 }
+  local guid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "player"))
+  local petGuid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "pet"))
+  local n = 0
+  for sName, s in pairs(sessionTypes) do
+    for mName, m in pairs(meterTypes) do
+      n = n + 1
+      if n > 8 then break end
+      try(string.format("GetCombatSessionFromType(%s, %s)", sName, mName), dm.GetCombatSessionFromType, s, m)
+      if guid then try(string.format("GetCombatSessionSourceFromType(%s, %s, player)", sName, mName), dm.GetCombatSessionSourceFromType, s, m, guid) end
+      if petGuid then try(string.format("GetCombatSessionSourceFromType(%s, %s, pet)", sName, mName), dm.GetCombatSessionSourceFromType, s, m, petGuid) end
+    end
+  end
+  if type(sessions) == "table" and type(sessions[1]) == "table" then
+    local id = ns.Compat.Readable(sessions[1].sessionID)
+    if id then try("GetCombatSessionFromID(first, Damage)", dm.GetCombatSessionFromID, id, meterTypes.Damage or 0) end
+  end
+end
+
 function Probe:Summary()
   local p = ns.db.global.probe
   if not p then return "no probe yet: type /ride probe" end
