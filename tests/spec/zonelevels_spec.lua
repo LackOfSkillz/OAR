@@ -9,6 +9,7 @@ local function session(level)
     [102] = { name = "Midmoor", parent = 10, mapType = 3, rect = { 0.4, 0.6, 0.4, 0.6 } },
     [103] = { name = "Highpeak", parent = 10, mapType = 3, rect = { 0.7, 0.9, 0.7, 0.9 } },
     [104] = { name = "Emptycity", parent = 10, mapType = 3, rect = { 0.0, 0.1, 0.9, 1.0 } },
+    [105] = { name = "Ironforge", parent = 10, mapType = 3, rect = { 0.3, 0.4, 0.0, 0.1 } },
   }
   local ns = game:loadAddon()
   game:login()
@@ -18,6 +19,11 @@ local function session(level)
     [101] = { { 1, "Rat", 2, 4 }, { 2, "Wolf", 5, 6 }, { 3, "Boar", 6, 7 }, { 4, "Boss", 30, 30, 3 } },
     [102] = { { 5, "Gnoll", 14, 15 }, { 6, "Murloc", 15, 17 }, { 7, "Spider", 16, 18 }, { 8, "Rare", 40, 40, 4 } },
     [103] = { { 9, "Giant", 30, 32 }, { 10, "Yeti", 31, 33 }, { 11, "Drake", 33, 35 } },
+    [105] = { { 12, "Rat", 2, 3 }, { 13, "Guard", 55, 55 }, { 14, "Guard", 55, 55 } },
+    -- a forest with guards at 55 and pets at 1: the zone is still 5-11; two areas, west low, east higher
+    [106] = { { 20, "Wolf", 5, 6, 0, { 0.1, 0.1, 0.15, 0.12 } }, { 21, "Kobold", 6, 7, 0, { 0.12, 0.2 } }, { 22, "Spider", 5, 7, 0, { 0.2, 0.15 } },
+      { 23, "Bear", 9, 10, 0, { 0.8, 0.8 } }, { 24, "Thief", 10, 11, 0, { 0.85, 0.82 } }, { 25, "Boar", 9, 11, 0, { 0.82, 0.9 } },
+      { 26, "City Guard", 55, 55, 0, { 0.5, 0.05 } }, { 27, "Pony", 1, 1, 0, { 0.5, 0.5 } } },
   } }
   ns.Finder.mobs = nil
   return game, ns
@@ -29,17 +35,18 @@ T.describe("zone levels", function()
     local Z = ns.ZoneLevels
     local by = {}
     for _, l in ipairs(Z:Labels(10)) do by[l.name] = l end
-    T.eq(by.Lowvale.lo, 2)
+    T.eq(by.Lowvale.lo, 4)
     T.eq(by.Lowvale.hi, 7, "the boss does not stretch the range")
     T.eq(by.Lowvale.color, "muted", "too low at 15")
-    T.eq(by.Midmoor.lo, 14)
+    T.eq(by.Midmoor.lo, 15)
     T.eq(by.Midmoor.hi, 18, "the rare is left out")
     T.eq(by.Midmoor.color, "good")
     T.eq(by.Highpeak.color, "bad")
     T.eq(by.Emptycity, nil, "a city without creatures gets no label")
+    T.eq(by.Ironforge, nil, "capital cities get no label")
     T.ok(math.abs(by.Midmoor.x - 0.5) < 1e-9 and math.abs(by.Midmoor.y - 0.5) < 1e-9, "at the zone's middle")
     T.eq(by.Midmoor.source, "classic")
-    T.eq(Z:Text(by.Midmoor), "Midmoor\n14-18")
+    T.eq(Z:Text(by.Midmoor), "Midmoor\n15-18")
   end)
 
   T.it("creatures you met win over the Classic data once there are enough", function()
@@ -54,6 +61,20 @@ T.describe("zone levels", function()
     T.eq(source, "seen")
     T.eq(lo, 20)
     T.eq(hi, 22)
+  end)
+
+  T.it("guards and pets don't stretch a zone; a zone map shows a range per area", function()
+    local game, ns = session(8)
+    game.maps[106] = { name = "Forest", parent = 10, mapType = 3, rect = { 0.0, 0.1, 0.0, 0.1 } }
+    local lo, hi = ns.ZoneLevels:Range(106)
+    T.eq(lo, 5)
+    T.eq(hi, 11)
+    local areas = {}
+    for _, l in ipairs(ns.ZoneLevels:Labels(106)) do if l.area then areas[#areas + 1] = l end end
+    T.eq(#areas, 2)
+    T.ok(areas[1].x < 0.5 and areas[1].hi <= 7, "north-west area is low")
+    T.ok(areas[2].x > 0.5 and areas[2].lo >= 9, "south-east area is higher")
+    T.eq(ns.ZoneLevels:Text(areas[1]), areas[1].lo .. "-" .. areas[1].hi)
   end)
 
   T.it("a zone map shows its own range at the top; draws on the map and can be switched off", function()
