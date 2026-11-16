@@ -271,7 +271,7 @@ local KEY_NOTE = {
   PRIEST = "Fight (Shadow Word: Pain once, Mind Blast, Smite) and Heal follow your spellbook.",
 }
 
-local function classRows(cls)
+local function classRows(cls, page)
   local rows = {}
   local function r(t) rows[#rows + 1] = t end
   local F = function() return set("HunterFight") end
@@ -298,6 +298,25 @@ local function classRows(cls)
       function(on) if ns.PetStatus then ns.PetStatus:SetPanel(on) end end })
     r({ "note", function() local m = mod("PetStatus") return m and m.enabled and m:Activity() or "" end })
     r({ "note", function() local m = mod("Ammo") return m and m.enabled and m:Activity() or "" end })
+  end
+  -- click-to-heal bars (Modules/HealPanel.lua)
+  local HP = ns.HealPanel
+  if HP and HP.spec.classes[cls or ""] then
+    r({ "header", "Heal bars" })
+    r({ "note", function() return HP:Summary() end })
+    r({ "check", "Show the heal bars in a group", function() return set("HealPanel").show ~= "off" end,
+      function(on) ns.Slash:Run("heal " .. (on and "group" or "off")) end })
+    if cls ~= "HUNTER" then
+      r({ "check", "Keep my own bar when players are assigned", function() return set("HealPanel").withSelf end,
+        function(on) ns.Slash:Run("heal self " .. onoff(on)) end })
+      r({ "note", "Assigned to you: click a name (out of combat). With anyone assigned, only they get bars." })
+      r({ "list", 6, function(row, name)
+        row.text:SetText((HP:IsAssigned(name) and "|cffffd100[assigned]|r " or "[ ] ") .. name)
+      end, function(name)
+        HP:Assign(name, not HP:IsAssigned(name))
+        if page and page.Refresh then page:Refresh() end
+      end, function() return HP:Members() end })
+    end
   end
   -- talent advisor (Modules/Talents.lua)
   local Tal = ns.Talents
@@ -340,7 +359,7 @@ end
 do
   local cls = ns.PlayerClass and ns.PlayerClass() or nil
   ns.Hub:AddTab("class", CLASS_NAME[cls or ""] or "Class", function(p)
-    UI:FormPage(p, classRows(ns.PlayerClass()))
+    UI:FormPage(p, classRows(ns.PlayerClass(), p))
   end, nil, { icon = cls and (CLASS_ICON .. (CLASS_NAME[cls] or "")) or nil })
 end
 

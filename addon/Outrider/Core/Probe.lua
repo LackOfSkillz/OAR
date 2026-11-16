@@ -37,6 +37,7 @@ Probe.APIS = {
   { "UnitRangedAttackPower", "P4" }, { "GetCritChance", "P4" }, { "GetRangedCritChance", "P4" }, { "GetHitModifier", "P4" },
   { "UnitArmor", "P4" }, { "UnitStat", "P4" }, { "GetDodgeChance", "P4" },
   { "UnitThreatSituation", "P4", "who the mob is hitting" }, { "UnitDetailedThreatSituation", "P4", "threat %" },
+  { "UnitInRange", "P4", "heal bars" }, { "UnitIsDeadOrGhost", "P4", "heal bars" }, { "GetNumGroupMembers", "P4", "heal bars" },
   { "UnitXP", "P4" }, { "UnitXPMax", "P4" }, { "GetXPExhaustion", "P4", "rested XP" },
   { "UnitGUID", "P2" }, { "UnitClassification", "P2" }, { "UnitCreatureFamily", "P2" },
   { "UnitCreatureType", "P2" }, { "C_NamePlate.GetNamePlates", "P2" }, { "C_NamePlate.GetNamePlateForUnit", "P2" },

@@ -71,6 +71,7 @@ Modules\Spellbook.lua
 Modules\MacroLibrary.lua
 Modules\RankCheck.lua
 Modules\HunterFight.lua
+Modules\HealPanel.lua
 Modules\BagFood.lua
 Modules\RareMacros.lua
 Modules\Inventory.lua

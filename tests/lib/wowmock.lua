@@ -541,8 +541,15 @@ function M.new(opts)
   end }
   base.IsResting = function() return game.resting or false end
   base.GetInventoryItemDurability = function(slot) local d = game.durability and game.durability[slot] if d then return d[1], d[2] end end
-  base.IsInGroup = function() return opts.inGroup or false end
-  base.IsInRaid = function() return opts.inRaid or false end
+  base.IsInGroup = function() if game.inGroup ~= nil then return game.inGroup end return opts.inGroup or false end
+  base.IsInRaid = function() if game.inRaid ~= nil then return game.inRaid end return opts.inRaid or false end
+  base.GetNumGroupMembers = function()
+    local n = 0
+    for k in pairs(game.units or {}) do if tostring(k):match("^party%d") or tostring(k):match("^raid%d") then n = n + 1 end end
+    return n > 0 and n + 1 or 0
+  end
+  base.UnitInRange = function(unit) local d = game.units and game.units[unit] if d then return d.inRange ~= false, true end end
+  base.UnitIsDeadOrGhost = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
