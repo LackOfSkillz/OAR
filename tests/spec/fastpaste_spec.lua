@@ -69,6 +69,27 @@ T.describe("fast paste", function()
     T.eq(d.edit.__scripts.OnTextChanged, nil)
   end)
 
+  T.it("Ctrl+C in the copy box closes it by itself and says it was copied", function()
+    local game, ns = session()
+    ns.Snapshot:AskAdvisor()
+    local d = ns.UI.dialog
+    game.env.IsControlKeyDown = function() return false end
+    d.edit.__scripts.OnKeyDown(d.edit, "C")
+    game:advance(1)
+    T.ok(d:IsShown(), "plain C does nothing")
+    game.env.IsControlKeyDown = function() return true end
+    d.edit.__scripts.OnKeyDown(d.edit, "C")
+    game:advance(1)
+    T.no(d:IsShown())
+    local said
+    for _, l in ipairs(game.chat) do if l:find("snapshot copied", 1, true) then said = true end end
+    T.ok(said)
+    -- the paste box has no copy handler
+    local p = ns.Advisor:OpenPaste()
+    T.eq(p.edit.__scripts.OnKeyDown, nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("Ask key refuses in combat; binding labels exist", function()
     local game, ns = session()
     T.ok(game.env.BINDING_NAME_OUTRIDER_ASK ~= nil and game.env.BINDING_NAME_OUTRIDER_PASTE ~= nil)

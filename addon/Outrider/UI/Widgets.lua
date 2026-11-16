@@ -260,11 +260,25 @@ function UI:TextDialog(title, body, mode, onAccept, auto)
   end
   d.title:SetText(title)
   d.edit:SetScript("OnTextChanged", nil)
+  d.edit:SetScript("OnKeyDown", nil)
   d.edit:SetText(body or "")
   if mode == "copy" then
     d.hint:SetText("Press Ctrl+C to copy, Esc to close.")
     d.accept:Hide()
     d.edit:HighlightText()
+    -- WoW keeps the clipboard for Blizzard's own code (CopyToClipboard is
+    -- protected, Forever 1.60.1), so Gary's Ctrl+C does the copy; the box
+    -- then closes by itself (Gary, 2026-11-16: "the button should copy it").
+    -- onAccept, when given, runs after the copy.
+    d.edit:SetScript("OnKeyDown", function(_, key)
+      local ctrl = ns.Compat.Call("IsControlKeyDown") or ns.Compat.Call("IsMetaKeyDown")
+      if key == "C" and ctrl then
+        ns.Timer.After(0.15, function()
+          d:Hide()
+          if onAccept then ns.Safe("dialog:copied", onAccept) end
+        end, "dialog:copied")
+      end
+    end)
   else
     d.hint:SetText(auto and "Press Ctrl+V. It applies by itself." or "Paste with Ctrl+V, then Accept.")
     d.accept:Show()
