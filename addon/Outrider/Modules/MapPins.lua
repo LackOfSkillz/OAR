@@ -108,12 +108,17 @@ local function outline(frame)
 end
 
 function M.Paint(frame, pin)
-  local hollow = M.GATHER[pin.kind]
+  local hollow = M.GATHER[pin.kind] or pin.box
   if hollow then
-    local st = ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
-    local c = M.STATE_COLOR[st or ""] or M.GROUP_COLOR.gather or { 0.4, 0.9, 0.4 }
+    local st = not pin.box and ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
+    local c = pin.box or M.STATE_COLOR[st or ""] or M.GROUP_COLOR.gather or { 0.4, 0.9, 0.4 }
     frame.ring:Hide() frame.icon:Hide()
-    for _, t in ipairs(outline(frame)) do t:SetColorTexture(c[1], c[2], c[3], c[4] or 0.9) t:Show() end
+    local edges = outline(frame)
+    for i, t in ipairs(edges) do
+      local w = pin.box and 2.5 or 1.5
+      if i <= 2 then t:SetHeight(w) else t:SetWidth(w) end
+      t:SetColorTexture(c[1], c[2], c[3], c[4] or 0.9) t:Show()
+    end
     return
   end
   frame.ring:Show() frame.icon:Show()

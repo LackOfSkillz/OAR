@@ -20,6 +20,14 @@ local M = ns:NewModule("MinimapPins", {
   defaults = { max = 12, quests = false },
 })
 M.CLEAR, M.SIZE = 11, 10
+ns.MinimapPins = M
+-- A rare that just showed up (Gary, 2026-11-15: "put a blue box around him",
+-- like the yellow herb boxes): the game gives no NPC positions, so the box
+-- marks its nearest known spawn spot (rare pack) within NEAR yards of where
+-- you stood when the alarm went off, for LIVE seconds. Drawn on top of the
+-- 12 nearest places, bigger than them.
+M.BLUE = { 0.25, 0.6, 1, 1 }
+M.LIVE, M.NEAR, M.BOX = 180, 200, 22
 
 -- Set true to log the numbers behind the nearest dot once a second (used to
 -- fix the drifting dots on 2026-11-11; off once verified in game).
@@ -112,6 +120,15 @@ function M:Update()
   local nearest
   local s = self:Settings()
   local shown = {}
+  local now = GetTime and GetTime() or time()
+  local live = {}
+  for _, pin in ipairs(self.live or {}) do
+    if pin.untilT > now and pin.mapID == mapID then
+      local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
+      local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
+      if x then live[#live + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast } end
+    end
+  end
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
     -- breadcrumbs stay on the world map: on the minimap they would crowd out the 12 nearest places
     if (s.quests or pin.kind ~= "quest_giver") and pin.kind ~= "trail" then
@@ -123,8 +140,11 @@ function M:Update()
     end
   end
   table.sort(shown, function(a, b) return a.dist < b.dist end)
-  for i = 1, math.min(#shown, s.max or 12) do
-    local e = shown[i]
+  local list = {}
+  for i = 1, math.min(#shown, s.max or 12) do list[#list + 1] = shown[i] end
+  for _, e in ipairs(live) do list[#list + 1] = e end   -- drawn last: on top
+  for i = 1, #list do
+    local e = list[i]
     local pin, x, y, dist, dSouth, dEast = e.pin, e.x, e.y, e.dist, e.dSouth, e.dEast
     do
       if x then
@@ -134,6 +154,8 @@ function M:Update()
         if M.DIAG and (not nearest or dist < nearest.dist) then
           nearest = { name = pin.name, dist = dist, dN = -dSouth, dW = -dEast, x = x, y = y }
         end
+        d:SetSize(pin.box and M.BOX or M.SIZE, pin.box and M.BOX or M.SIZE)
+        if pin.box then d:SetFrameLevel((Minimap.GetFrameLevel and Minimap:GetFrameLevel() or 1) + 8) end
         ns.MapPins.Paint(d, pin)
         d:ClearAllPoints()
         d:SetPoint("CENTER", Minimap, "CENTER", x, y)
@@ -158,6 +180,29 @@ function M:Update()
     self.lastCount = n
     self:Debug("minimap pins: %d (radius %s)", n, tostring(radius))
   end
+end
+
+-- Called by RareAlerts. Returns the pin when a spawn spot was near.
+function M:MarkRare(info)
+  local pack = info and info.npcID and ns.Data:Get("rare", info.npcID)
+  local mapID, px, py = C.PlayerPosition("player")
+  if not (pack and pack.spawns and mapID and px and pack.mapID == mapID) then return nil end
+  local w, h = ns.Waypoints.MapSize(mapID)
+  w, h = w or 1000, h or 1000
+  local best, bestD
+  for _, sp in ipairs(pack.spawns) do
+    local dx, dy = (sp.x - px) * w, (sp.y - py) * h
+    local d = math.sqrt(dx * dx + dy * dy)
+    if d <= M.NEAR and (not bestD or d < bestD) then best, bestD = sp, d end
+  end
+  if not best then return nil end
+  local now = GetTime and GetTime() or time()
+  self.live = { { id = "live-" .. info.npcID, kind = "rare", mapID = mapID, x = best.x, y = best.y, box = M.BLUE,
+    name = (info.name or pack.name) .. ": just showed up near this spawn spot", npcID = info.npcID, rare = true, untilT = now + M.LIVE } }
+  self:Info("blue box for %s at its spawn spot %.1f,%.1f (%.0f yards from you)", tostring(info.name or pack.name), best.x * 100, best.y * 100, bestD)
+  self:Update()
+  ns.Timer.After(M.LIVE + 1, function() M:Update() end, "minimappins:live")   -- the box goes even when standing still
+  return self.live[1]
 end
 
 function M:Activity()

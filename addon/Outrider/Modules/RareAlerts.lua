@@ -90,6 +90,7 @@ function M:OnRareSeen(_, info)
   -- Hard to miss while camping (Gary, 2026-11-14): a red pulse round the screen
   -- edge, and the arrow to her when her exact spot is known (minimap marker).
   if s.flash then self:Flash() end
+  if ns.MinimapPins and ns.MinimapPins.enabled and ns.MinimapPins.MarkRare then ns.MinimapPins:MarkRare(info) end
   if s.arrow and info.exact and info.mapID and ns.Waypoints then
     ns.Waypoints:Set(info.mapID, info.x, info.y, "Rare: " .. info.name)
   end
