@@ -13,7 +13,8 @@
 -- changes. Each is an ordinary macro: every press does what a hand-written
 -- macro would do (hard rule 1). Outrider never casts anything.
 --   Fight  - ranged: Hunter's Mark, Concussive Shot, Auto Shot (once), Serpent Sting, then Arcane Shot
---   Strike - melee:  Raptor Strike, Wing Clip, Mongoose Bite
+--   Strike - melee:  Aspect of the Monkey (once), Wing Clip, Raptor Strike, Mongoose Bite
+--   (Fight puts Hawk back: before the pull, and in a fight when nothing else is ready)
 --
 -- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
 --   * one spell attempt per press: a line that casts, or is refused for a real
@@ -49,17 +50,19 @@ M.KINDS = { "ranged", "melee", "pet" } -- the hunter's; see M:Kinds()
 M.CLASS_KINDS = { HUNTER = { "ranged", "melee", "pet" }, MAGE = { "ranged", "melee" }, PRIEST = { "ranged", "heal" } }
 M.SUFFIX = { ranged = "fight", melee = "strike", pet = "pet", heal = "heal" }
 
--- Is Aspect of the Hawk on the player? (buff names; secret or unreadable = assume off)
-function M.HawkOn()
+-- Is this buff on the player? (buff names; secret or unreadable = assume off)
+function M.AuraOn(name)
   local get = C.Resolve("C_UnitAuras.GetAuraDataByIndex")
   if type(get) ~= "function" then return false end
   for i = 1, 40 do
     local ok, a = pcall(get, "player", i, "HELPFUL")
     if not ok or type(a) ~= "table" then break end
-    if C.Readable(a.name) == "Aspect of the Hawk" then return true end
+    if C.Readable(a.name) == name then return true end
   end
   return false
 end
+function M.HawkOn() return M.AuraOn("Aspect of the Hawk") end
+function M.MonkeyOn() return M.AuraOn("Aspect of the Monkey") end
 
 function M:Kinds() return M.CLASS_KINDS[ns.PlayerClass()] or {} end
 function M:Supported() return M.CLASS_KINDS[ns.PlayerClass()] ~= nil end
@@ -148,6 +151,13 @@ function M:Lines(kind)
   if s.pet then add(9, "/petattack [pet,harm]", "sends the pet at your target every press, so it pulls aggro off you") end
   if kind == "melee" then
     add(1, "/startattack", "keeps swinging")
+    -- Gary, 2026-11-16: Strike means melee, so switch to Monkey (Fight
+    -- switches back to Hawk). Once per fight: a macro can't see buffs and
+    -- "!" on an aspect that is already up still spends the press. Left out
+    -- only when Monkey is already up and nothing (no Hawk) will replace it.
+    if known("Aspect of the Monkey") and not (M.MonkeyOn() and not known("Aspect of the Hawk")) then
+      add(3, "/castsequence reset=combat !Aspect of the Monkey,null", "first press in melee: Monkey on (once per fight)")
+    end
     if s.wingclip and known("Wing Clip") then
       add(5, "/castsequence reset=combat/target Wing Clip,null", "slows once per pull so you can step back and shoot")
     end
@@ -182,6 +192,12 @@ function M:Lines(kind)
       (table.concat(seq, ", then "):gsub("!", "")) .. ": once each per pull (and per new target)")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
+  -- Back to Hawk after Strike put Monkey up (Gary, 2026-11-16). Last line,
+  -- so it is only reached when Arcane Shot is cooling down: a press that
+  -- would do nothing else. Hawk already up = that press does nothing.
+  if known("Aspect of the Hawk") and known("Aspect of the Monkey") then
+    add(7, "/cast [combat] !Aspect of the Hawk", "in a fight, back to Hawk when Arcane Shot is cooling down")
+  end
   return L
 end
 
@@ -434,13 +450,13 @@ function M:OnEnable()
   end)
   self:On("SPELLS_CHANGED", function(mod) if mod:Settings().auto then later("spells") end end)
   self:On("PLAYER_LEVEL_UP", function(mod) if mod:Settings().auto then later("level") end end)
-  -- Hawk on or off changes Fight: rewrite when it flips (out of combat)
+  -- Hawk or Monkey on or off changes Fight and Strike: rewrite when one flips (out of combat)
   self:On("UNIT_AURA", function(mod, _, unit)
     if unit ~= "player" or not mod:Settings().auto or ns.PlayerClass() ~= "HUNTER" then return end
-    local on = M.HawkOn()
-    if on ~= mod.hawkWas then
-      mod.hawkWas = on
-      later(on and "hawk on" or "hawk off")
+    local on = (M.HawkOn() and "hawk on" or "hawk off") .. ", " .. (M.MonkeyOn() and "monkey on" or "monkey off")
+    if on ~= mod.aspectWas then
+      mod.aspectWas = on
+      later(on)
     end
   end)
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod, _, slot)
