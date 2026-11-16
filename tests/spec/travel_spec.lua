@@ -115,6 +115,40 @@ T.describe("travel", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("at the dock the guide says the ride once and stops re-setting the arrow", function()
+    local game, ns, opts = session()
+    ns.db.global.travelLinks = { { kind = "learned", from = { mapID = 200, x = 0.5, y = 0.9 }, to = { mapID = 300, x = 0.1, y = 0.1 }, oneWay = true } }
+    ns.Journey:Go({ name = "Bow", target = ns.Travel.Point(300, 0.5, 0.5, "Hermit"), seconds = 600 })
+    -- Gary walks to the dock: the arrow arrives
+    opts.mapID, opts.x, opts.y = 200, 0.5, 0.9
+    local sets = 0
+    ns.Events:On("OTR_WAYPOINT_SET", "spec", function() sets = sets + 1 end)
+    game:advance(10)
+    T.ok(sets <= 1, "no set/arrive loop (" .. sets .. " sets)")
+    T.eq(ns.Waypoints.current, nil)
+    local told = 0
+    for _, l in ipairs(game.chat) do if l:find("Now: Take the ride you took before", 1, true) then told = told + 1 end end
+    T.eq(told, 1)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a journey carries on after a reload", function()
+    local game, ns = session()
+    ns.db.global.travelLinks = { { kind = "learned", from = { mapID = 200, x = 0.5, y = 0.9 }, to = { mapID = 300, x = 0.1, y = 0.1 }, oneWay = true } }
+    ns.Journey:Go({ name = "Bow", target = ns.Travel.Point(300, 0.5, 0.5, "Hermit"), seconds = 600 })
+    -- the reload: the module starts over with only what was saved
+    ns.Journey.goal = nil
+    ns.Waypoints:Clear("reload", true)
+    ns.Modules:SetEnabled("Journey", false)
+    ns.Modules:SetEnabled("Journey", true)
+    game:advance(3)
+    T.ok(ns.Journey.goal, "goal back")
+    T.eq(ns.Journey.goal.name, "Bow")
+    T.eq(ns.Waypoints.current.mapID, 200, "arrow at the dock again")
+    ns.Journey:Stop("done")
+    T.eq(ns.Journey:Settings().goal, nil)
+  end)
+
   T.it("XP estimate grows with level and is cut for low quests", function()
     local _, ns = session()
     T.ok(ns.Journey.XP(13, 13) > ns.Journey.XP(10, 13))
