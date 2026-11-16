@@ -97,7 +97,7 @@ function M:Go(entry)
   self.said = {}
   -- kept per character so a /reload, logout or loading screen doesn't end it
   local t = entry.target
-  self:Settings().goal = { name = entry.name, sub = entry.sub, seconds = entry.seconds,
+  self:Settings().goal = { name = entry.name, sub = entry.sub, seconds = entry.seconds, npcID = entry.npcID, t = time(),
     target = { mapID = t.mapID, x = t.x, y = t.y, label = t.label } }
   self:Info("journey to %s (%s), about %s", tostring(entry.name), zone(entry.target.mapID), ns.Travel.Minutes(entry.seconds))
   return self:Step("start")
@@ -242,8 +242,20 @@ function M:OnEnable()
   if not self.goal and type(saved) == "table" and type(saved.target) == "table" and saved.target.mapID then
     local t = saved.target
     local p = ns.Travel.Point(t.mapID, t.x, t.y, t.label)
+    -- a rare goal that was tamed or killed meanwhile is done, not resumed
+    -- (journeys saved before 2026-11-15 21:30 carry no npcID: found by name)
+    local npcID = saved.npcID
+    if not npcID then
+      for _, e in ipairs(ns.Data:All("rare")) do if e.name == saved.name then npcID = e.npcID end end
+    end
+    local last = npcID and ns.Sightings and ns.Sightings.Last and ns.Sightings:Last(npcID)
+    if last and (last.state == "tamed" or last.state == "dead") and (not saved.t or (last.t or 0) >= saved.t) then
+      self:Info("journey to %s not resumed: it was %s", tostring(saved.name), last.state)
+      self:Settings().goal = nil
+      p = nil
+    end
     if p then
-      self.goal = { name = saved.name, sub = saved.sub, seconds = saved.seconds, target = p }
+      self.goal = { name = saved.name, sub = saved.sub, seconds = saved.seconds, npcID = saved.npcID, target = p }
       self.said = {}
       self:Info("journey to %s carries on after the reload", tostring(saved.name))
       ns.Throttle("journey", 2, function() if M.goal then M:Step("resumed") end end)
@@ -252,6 +264,15 @@ function M:OnEnable()
   local function again(why) return function(mod) if mod.goal then ns.Throttle("journey", 2, function() mod:Step(why) end) end end end
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
     if mod.goal and why == "arrived" and w and w.opts and w.opts.journey then mod:Step("arrived") end
+  end)
+  -- a journey to a rare ends when it is tamed or killed (Gary, 2026-11-15:
+  -- after taming The Rake the guide kept sending him back to Mulgore)
+  self:On("OTR_SIGHTING_ADDED", function(mod, _, npcID, sight)
+    local g = mod.goal
+    if g and g.npcID and g.npcID == npcID and type(sight) == "table" and (sight.state == "tamed" or sight.state == "dead") then
+      say(mod, string.format("%s %s: journey done", tostring(g.name), sight.state == "tamed" and "tamed" or "killed"))
+      mod:Stop(sight.state)
+    end
   end)
   self:On("ZONE_CHANGED_NEW_AREA", again("zone"))
   self:On("PLAYER_CONTROL_GAINED", again("landed"))
