@@ -17,8 +17,10 @@
 -- bosses are left out; capital cities get no label.
 -- On a zone map the zone is cut into a GRID x GRID grid and every part with
 -- enough creatures gets its own small range where they spawn ("5-7"), so
--- the areas inside a zone show too (Gary asked the same day). Labels are our own font strings on the map canvas, under Blizzard's
--- pins; nothing of Blizzard's is changed. Data only.
+-- the areas inside a zone show too (Gary asked the same day). Labels are our own font strings on the map canvas,
+-- drawn above Blizzard's pins (the art of an explored area is a pin and hid
+-- the numbers; Gary, 2026-11-16: "once an area is discovered, the numbers go
+-- away"); nothing of Blizzard's is changed. Data only.
 
 local _, ns = ...
 local C = ns.Compat
@@ -30,6 +32,7 @@ local M = ns:NewModule("ZoneLevels", {
 })
 ns.ZoneLevels = M
 
+M.LEVEL = 1000        -- frame levels above the map canvas: over explored-area art and pins
 M.SEEN = 8            -- creatures seen in a zone before their levels win over the pack
 M.WINDOW = 12         -- levels: the busiest window of this width is the zone's
 M.GRID = 4            -- zone map: areas per side
@@ -228,7 +231,7 @@ local function label(self, canvas, i)
     self.labels[i] = f
   end
   f:SetParent(canvas)
-  f:SetFrameLevel((canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 1)
+  f:SetFrameLevel((canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + M.LEVEL)
   return f
 end
 

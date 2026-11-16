@@ -210,7 +210,8 @@ local function buildMethods(game)
   m.IsForbidden = function() return false end
   m.SetAlpha = function(self, a) self.__alpha = a end
   m.GetAlpha = function(self) return self.__alpha or 1 end
-  m.GetFrameLevel = function() return 1 end
+  m.GetFrameLevel = function(self) return self.__level or 1 end
+  m.SetFrameLevel = function(self, l) self.__level = l end
   m.GetChildren = function() return end
   m.EnableMouse = noop
   -- tooltip-ish
