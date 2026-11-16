@@ -46,8 +46,11 @@ ns.Data:Register("rare", "seed", {
   -- Forever-only cat: npcID (its Wowhead link), spawns, speed and look from
   -- conquestcapped.com/guides/wow-forever/wow-forever-ghostfang/ (read 2026-11-15).
   -- It waits at one of four points in the eastern hills, no patrol.
-  { npcID = 276111, name = "Ghostfang", mapID = 1426, verified = false, confidence = "community",
-    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 2.0 },
+  -- Gary tamed it on Khreos 2026-11-15: the stable list reads creatureID
+  -- 276111, Cat, level 10, and the pet attacks every 1.71 s (PetStatus).
+  { npcID = 276111, name = "Ghostfang", mapID = 1426, verified = true, confidence = "verified",
+    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.71 },
+    verifiedOn = { date = "2026-11-15", note = "Gary tamed it on Khreos; stable creatureID 276111, pet speed 1.71 s" },
     spawns = { { x = 0.745, y = 0.632 }, { x = 0.795, y = 0.430 }, { x = 0.808, y = 0.463 }, { x = 0.817, y = 0.555 } },
     notes = "White coat, blue-violet back (unique skin); no fast-attack ability; respawn about 30 min (beta)",
     source = "conquestcapped.com Forever guide, read 2026-11-15" },

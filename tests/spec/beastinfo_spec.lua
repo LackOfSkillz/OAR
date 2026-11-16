@@ -48,6 +48,21 @@ T.describe("beast info", function()
     T.eq(M:Lines("mouseover")[1], "Tamed from: npc 99999")
   end)
 
+  T.it("a hunter pet's placeholder id gives no tamed-from line; your own pet is not logged", function()
+    local game, ns, M = session()
+    ns.Data:Register("rare", "spec", { { npcID = M.HUNTER_PET_ID, name = "Wrong", mapID = 1412, verified = false } })
+    game.units.mouseover = { guid = "Pet-0-5250-0-777-" .. M.HUNTER_PET_ID .. "-0102030407", name = "Ice Ember", level = 12,
+      family = "Wolf", attackSpeed = 1.1, controlled = true }
+    local lines = M:Lines("mouseover")
+    for _, l in ipairs(lines) do
+      T.ok(not l:find("Tamed from", 1, true), "no guess")
+      T.ok(not l:find("Rare:", 1, true), "not a rare")
+    end
+    T.eq(#ns.db.global.petsSeen, 1)
+    T.eq(ns.db.global.petsSeen[1].npcID, nil)
+    T.eq(ns.db.global.petsSeen[1].from, "unknown (hunter pet)")
+  end)
+
   T.it("other classes get no tame text; non-beasts get nothing", function()
     local game, ns, M = session({ class = "PRIEST" })
     game.units.mouseover = beast(7201, 12)
