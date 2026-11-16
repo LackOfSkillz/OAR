@@ -61,6 +61,7 @@ Data\Herbs.lua
 Data\Transports.lua
 Data\Money.lua
 Data\Dungeons.lua
+Data\Talents.lua
 Data\Rares.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
@@ -81,6 +82,7 @@ Modules\AuctionHelper.lua
 Modules\AHBuy.lua
 Modules\TrainShop.lua
 Modules\GearShop.lua
+Modules\Talents.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua

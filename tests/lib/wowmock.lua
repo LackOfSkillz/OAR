@@ -639,6 +639,44 @@ function M.new(opts)
     game.tooltipHooks[#game.tooltipHooks + 1] = { kind = kind, fn = fn }
   end }
   base.IsShiftKeyDown = function() return game.shift or false end
+  -- talents (Classic API): game.talents = { { name = "Beast Mastery", talents = { { name, tier, column, rank, max, req = { tier, column } } } } }
+  -- game.unspent = free points (nil: the client can't say)
+  base.GetNumTalentTabs = function() return game.talents and #game.talents or 0 end
+  base.GetTalentTabInfo = function(t) local tab = game.talents and game.talents[t] if tab then return tab.name, nil, 0, "bg" end end
+  base.GetNumTalents = function(t) local tab = game.talents and game.talents[t] return tab and #tab.talents or 0 end
+  base.GetTalentInfo = function(t, i)
+    local e = game.talents and game.talents[t] and game.talents[t].talents[i]
+    if e then return e.name, nil, e.tier, e.column, e.rank or 0, e.max end
+  end
+  base.GetTalentPrereqs = function(t, i)
+    local e = game.talents and game.talents[t] and game.talents[t].talents[i]
+    if e and e.req then return e.req[1], e.req[2], true end
+  end
+  base.UnitCharacterPoints = function() return game.unspent end
+  -- modern talents: game.traits = { { treeID, unspent, nodes = { { id, name, rank, max, open } } } }
+  local function trNode(id)
+    for _, tr in ipairs(game.traits or {}) do for _, n in ipairs(tr.nodes) do if n.id == id then return n end end end
+  end
+  base.C_ClassTalents = { GetActiveConfigID = function() if game.traits then return 7 end end }
+  base.C_Traits = {
+    GetConfigInfo = function() local ids = {} for i, tr in ipairs(game.traits or {}) do ids[i] = tr.treeID end return { treeIDs = ids } end,
+    GetTreeCurrencyInfo = function(_, treeID)
+      for _, tr in ipairs(game.traits or {}) do if tr.treeID == treeID then return { { quantity = tr.unspent or 0 } } end end
+      return {}
+    end,
+    GetTreeNodes = function(treeID)
+      local out = {}
+      for _, tr in ipairs(game.traits or {}) do if tr.treeID == treeID then for i, n in ipairs(tr.nodes) do out[i] = n.id end end end
+      return out
+    end,
+    GetNodeInfo = function(_, id)
+      local n = trNode(id)
+      if n then return { ID = id, currentRank = n.rank or 0, maxRanks = n.max, entryIDs = { id * 10 }, isVisible = true,
+        canPurchaseRank = n.open, isAvailable = n.open, posX = 0, posY = 0 } end
+    end,
+    GetEntryInfo = function(_, entryID) return { definitionID = entryID * 10 } end,
+    GetDefinitionInfo = function(defID) local n = trNode(defID / 100) return n and { overrideName = n.name } end,
+  }
   -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
   local function u(unit) return game.units and game.units[unit] end
   base.UnitHealth = function(unit) return u(unit) and u(unit).hp end

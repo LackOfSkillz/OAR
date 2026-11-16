@@ -125,3 +125,7 @@ Pack: `Data/Money.lua` (Forever gold guides, cited per entry, all unverified).
 ## Addon messages (Phase 8)
 
 Prefix `Outrider`. Body = `v<protocol>|<type>|<payload>` where payload is `ns.Serialize.Base64Encode(ns.Serialize.Encode(table))` (base64 so no byte can break the channel), split when over 240 bytes into pieces `~<id>~<i>/<n>~<piece>` (id: 3 base-36 characters, new for every message, so two messages from one sender never mix). Receiver limits: at most 32 pieces (7,680 bytes) per message, 4 half-received messages per sender and 32 in all, dropped after 30 seconds; duplicate, out-of-range or resized pieces are ignored. Senders pace pieces 8 per second. Builds before 2026-11-14 evening sent `<piece>#i/n`; receivers still accept that under the same limits. Types: `RARE` (npcID, mapID, x, y, layer, t, state), `HELLO` (version, build), `LOC` (opt-in position: mapID, x, y, zone). Receivers ignore unknown types and newer protocol versions they can't read.
+
+## talentbuild (Data/Talents.lua)
+`{ id, class, name, source, verified, order = { { "Talent name", points }, ... }, rank?, note?, fromLevel?, toLevel?, respec? }`
+One talent per point from level 10, copied in the guide's order. A build may cover part of the way (`fromLevel` / `toLevel`); `respec` is the text shown at its last level. Names are matched against the client's tree, and any the client lacks are logged.

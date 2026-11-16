@@ -43,6 +43,13 @@ Probe.APIS = {
   { "GetPlayerFacing", "P3" }, { "WorldMapFrame.AddDataProvider", "P3" }, { "MapCanvasDataProviderMixin", "P3" },
   { "MapCanvasPinMixin", "P3" }, { "C_Minimap.GetViewRadius", "P3" }, { "C_QuestLog.GetInfo", "P3" },
   { "GetQuestLogTitle", "P3", "Classic quest API" }, { "C_TaxiMap.GetAllTaxiNodes", "P3" }, { "GetTaxiMapID", "P3" }, { "C_Map.GetMapChildrenInfo", "P3" }, { "C_Map.GetMapRectOnMap", "P3", "zone levels" }, { "UnitOnTaxi", "P3" },
+  -- talents (Forever may use the modern Traits system, not the Classic API)
+  { "C_ClassTalents.GetActiveConfigID", "P6", "talents" }, { "C_Traits.GetConfigInfo", "P6", "talents" },
+  { "C_Traits.GetTreeNodes", "P6", "talents" }, { "C_Traits.GetNodeInfo", "P6", "talents" },
+  { "C_Traits.GetEntryInfo", "P6", "talents" }, { "C_Traits.GetDefinitionInfo", "P6", "talents" },
+  { "C_Traits.GetTreeCurrencyInfo", "P6", "talents" }, { "GetNumTalentTabs", "P6", "Classic talents" },
+  { "GetTalentInfo", "P6", "Classic talents" }, { "UnitCharacterPoints", "P6", "Classic talents" },
+
   -- macros
   { "CreateMacro", "P4" }, { "EditMacro", "P4" }, { "GetNumMacros", "P4" }, { "GetMacroIndexByName", "P4" },
   { "PickupSpell", "P4" }, { "PlaceAction", "P4" }, { "GetActionInfo", "P4" },

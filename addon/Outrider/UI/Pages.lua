@@ -299,6 +299,35 @@ local function classRows(cls)
     r({ "note", function() local m = mod("PetStatus") return m and m.enabled and m:Activity() or "" end })
     r({ "note", function() local m = mod("Ammo") return m and m.enabled and m:Activity() or "" end })
   end
+  -- talent advisor (Modules/Talents.lua)
+  local Tal = ns.Talents
+  if Tal then
+    r({ "header", "Talents" })
+    r({ "note", function()
+      local b = Tal:Build()
+      if not b then return "No levelling build for your class yet." end
+      return string.format("%s. %s\n|cff888888%s, from %s; not yet checked in game.|r", Tal:Summary(), b.note or "", b.name, b.source)
+    end })
+    r({ "note", "The plan, from your next point: gold = spend now, grey = later. In the talent window the gold rings show where." })
+    r({ "list", 8, function(row, st)
+      local tag = st.next and "|cffffd100now|r" or (st.locked and "|cffff6060row not open|r") or (st.missing and "|cffff6060not on this client|r") or ("level " .. st.level)
+      row.text:SetText(string.format("%d. %s  %s", st.level, Tal.StepText(st), tag))
+    end, nil, function()
+      local out = {}
+      for _, st in ipairs((Tal:Current()).steps) do if not st.done then out[#out + 1] = st end end
+      return out
+    end })
+    local builds = Tal.Builds(cls)
+    if #builds > 1 then
+      local btns = {}
+      for _, bd in ipairs(builds) do btns[#btns + 1] = { bd.name, function() ns.Slash:Run("talents build " .. bd.id) end } end
+      r({ "buttons", btns })
+    end
+    r({ "check", "Gold rings in the talent window", function() return set("Talents").highlight end,
+      function(on) ns.Slash:Run("talents " .. onoff(on)) end })
+    r({ "check", "Tell me in chat when a point is ready", function() return set("Talents").notify end,
+      function(on) set("Talents").notify = on end })
+  end
   r({ "header", "Your class macros" })
   r({ "note", "Ready-made macros for your class only, in the Macros page: click one to see what it does, then Install." })
   r({ "buttons", { { "Open Macros", function() ns.Hub.frame.tabBar:Select("macros") end } } })

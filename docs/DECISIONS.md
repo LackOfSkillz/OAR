@@ -107,3 +107,6 @@ exported by `tools/export_shared.lua` from a copy of his SavedVariables (NPCs me
 spawn logs, rare profiles, prices, pet diets, travel links, catches; never characters, bags, gold, sessions or
 logs). Modules/SharedData merges it once per export into the new account, never overwriting, lists only into
 empty ones. The installer never runs on Gary's PC (WoW folder is written only by deploy.ps1).
+
+## D-talents (2026-11-16): the talent advisor highlights, never learns
+Gary asked for "the best" talent recommendation. Other Forever addons (zTalentPlanner, Forever Talent Manager) can spend points automatically on level-up. Outrider does not (rule 1, D18). It reads the talents, follows a cited levelling build (wowhandbook.com), rings the next points in the talent window, adds the plan to talent tooltips, says once per level when a point is ready, reports points spent off the plan, and gives the mage's reset at 40. Gary spends each point himself. Default builds: hunter Beast Mastery, priest Shadow, mage Arcane to 39 then Frost. The research is summarised in the P6 talent notes in this file's history.
