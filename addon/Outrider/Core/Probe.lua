@@ -21,6 +21,23 @@ Probe.APIS = {
   { "C_AssistedCombat.GetNextCastSpell", "P4", "Blizzard one-button rotation" },
   { "C_AssistedCombat.IsAvailable", "P4" }, { "C_AssistedCombat.GetActionSpell", "P4" },
   { "C_AssistedCombat.GetRotationSpells", "P4" },
+  -- Official ways to see a fight without the combat log (Gary, 2026-11-16).
+  -- Presence only; names to check, nothing is called. Blizzard's damage meter
+  -- (its frame is registered in Edit Mode on this client):
+  { "C_DamageMeter.IsDamageMeterAvailable", "P4", "damage meter" },
+  { "C_DamageMeter.GetAvailableCombatSessions", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionFromType", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionFromID", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionSourceFromType", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionSourceFromID", "P4", "damage meter" },
+  { "C_EncounterTimeline.GetEventList", "P4", "boss timeline" }, { "C_CooldownViewer.GetCooldownViewerCategorySet", "P4", "cooldown manager" },
+  { "C_Spell.GetSpellCooldown", "P4" }, { "C_Spell.GetSpellCharges", "P4" }, { "C_UnitAuras.GetPlayerAuraBySpellID", "P4" },
+  -- stats, threat and XP (pet and player)
+  { "UnitDamage", "P4" }, { "UnitAttackSpeed", "P4" }, { "UnitRangedDamage", "P4" }, { "UnitAttackPower", "P4" },
+  { "UnitRangedAttackPower", "P4" }, { "GetCritChance", "P4" }, { "GetRangedCritChance", "P4" }, { "GetHitModifier", "P4" },
+  { "UnitArmor", "P4" }, { "UnitStat", "P4" }, { "GetDodgeChance", "P4" },
+  { "UnitThreatSituation", "P4", "who the mob is hitting" }, { "UnitDetailedThreatSituation", "P4", "threat %" },
+  { "UnitXP", "P4" }, { "UnitXPMax", "P4" }, { "GetXPExhaustion", "P4", "rested XP" },
   { "UnitGUID", "P2" }, { "UnitClassification", "P2" }, { "UnitCreatureFamily", "P2" },
   { "UnitCreatureType", "P2" }, { "C_NamePlate.GetNamePlates", "P2" }, { "C_NamePlate.GetNamePlateForUnit", "P2" },
   { "C_VignetteInfo.GetVignettes", "P2", "expected absent/empty for rares" },
@@ -84,6 +101,10 @@ Probe.EVENTS = {
   "MERCHANT_SHOW", "GOSSIP_SHOW", "TRAINER_SHOW", "TAXIMAP_OPENED", "LOOT_OPENED", "QUEST_COMPLETE",
   "BAG_UPDATE_DELAYED", "CHAT_MSG_ADDON", "EDIT_MODE_LAYOUTS_UPDATED", "ADDON_ACTION_BLOCKED",
   "ADDON_ACTION_FORBIDDEN",
+  -- official fight events (checked with IsEventValid, never registered)
+  "UNIT_COMBAT", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_THREAT_LIST_UPDATE", "PLAYER_XP_UPDATE",
+  "DAMAGE_METER_COMBAT_SESSION_UPDATED", "DAMAGE_METER_CURRENT_SESSION_UPDATED", "DAMAGE_METER_RESET",
+  "ENCOUNTER_TIMELINE_EVENT_ADDED", "COOLDOWN_VIEWER_DATA_LOADED",
 }
 -- Never tested by registering: on Forever even trying makes Blizzard block
 -- Outrider and offer to disable it (seen 2026-11-11). See ns.Events.FORBIDDEN.
