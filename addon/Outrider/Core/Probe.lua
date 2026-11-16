@@ -291,24 +291,30 @@ function Probe:DamageMeter(why)
     Probe.Shape(enum.DamageMeterType), Probe.Shape(enum.DamageMeterSessionType))
   try("IsDamageMeterAvailable()", dm.IsDamageMeterAvailable)
   local sessions = try("GetAvailableCombatSessions()", dm.GetAvailableCombatSessions)
-  local meterTypes = type(enum.DamageMeterType) == "table" and enum.DamageMeterType or { Damage = 0 }
-  local sessionTypes = type(enum.DamageMeterSessionType) == "table" and enum.DamageMeterSessionType or { Current = 1 }
-  local guid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "player"))
-  local petGuid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "pet"))
-  local n = 0
-  for sName, s in pairs(sessionTypes) do
-    for mName, m in pairs(meterTypes) do
-      n = n + 1
-      if n > 8 then break end
-      try(string.format("GetCombatSessionFromType(%s, %s)", sName, mName), dm.GetCombatSessionFromType, s, m)
-      if guid then try(string.format("GetCombatSessionSourceFromType(%s, %s, player)", sName, mName), dm.GetCombatSessionSourceFromType, s, m, guid) end
-      if petGuid then try(string.format("GetCombatSessionSourceFromType(%s, %s, pet)", sName, mName), dm.GetCombatSessionSourceFromType, s, m, petGuid) end
+  -- Measured 2026-11-16: the *FromType calls came back empty; sessions are
+  -- read by ID (GetAvailableCombatSessions lists the last fights, sessionID
+  -- grows). So: the newest session, damage done and taken, and the player's
+  -- own breakdown (does it include the pet's attacks?).
+  local meterTypes = type(enum.DamageMeterType) == "table" and enum.DamageMeterType or {}
+  local newest
+  if type(sessions) == "table" then
+    for _, se in pairs(sessions) do
+      local id = type(se) == "table" and ns.Compat.Readable(se.sessionID)
+      if type(id) == "number" and (not newest or id > newest) then newest = id end
     end
   end
-  if type(sessions) == "table" and type(sessions[1]) == "table" then
-    local id = ns.Compat.Readable(sessions[1].sessionID)
-    if id then try("GetCombatSessionFromID(first, Damage)", dm.GetCombatSessionFromID, id, meterTypes.Damage or 0) end
+  if not newest then return end
+  local guid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "player"))
+  local petGuid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "pet"))
+  for _, mName in ipairs({ "DamageDone", "DamageTaken", "EnemyDamageTaken" }) do
+    local m = meterTypes[mName]
+    if m then
+      try(string.format("GetCombatSessionFromID(newest %d, %s)", newest, mName), dm.GetCombatSessionFromID, newest, m)
+    end
   end
+  local dmg = meterTypes.DamageDone or 0
+  if guid then try("GetCombatSessionSourceFromID(newest, DamageDone, player)", dm.GetCombatSessionSourceFromID, newest, dmg, guid) end
+  if petGuid then try("GetCombatSessionSourceFromID(newest, DamageDone, pet)", dm.GetCombatSessionSourceFromID, newest, dmg, petGuid) end
 end
 
 function Probe:Summary()
