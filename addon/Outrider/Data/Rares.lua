@@ -30,8 +30,12 @@ ns.Data:Register("rare", "seed", {
   -- Forever spawns from conquestcapped.com/guides/wow-forever/wow-forever-the-rake/
   -- (read 2026-11-15; a Forever guide, so the redrawn map): main 51.5, 27.5
   -- west of Red Rocks, north about 49, 16; it wanders a little around each.
-  { npcID = 5807, name = "The Rake", mapID = 1412, verified = false, confidence = "community",
-    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.2, abilities = { "Faster Attack" } },
+  -- Torrant has one (stable slot 2, creatureID 5807, Cat, read 2026-11-15
+  -- 19:16); as his pet at level 12 it attacks every 1.17 s (PetStatus).
+  -- The spawn points are still the guide's, not captured.
+  { npcID = 5807, name = "The Rake", mapID = 1412, verified = true, confidence = "verified",
+    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.17, abilities = { "Faster Attack" } },
+    verifiedOn = { date = "2026-11-15", note = "Torrant's tamed pet: stable creatureID 5807, pet speed 1.17 s" },
     spawns = { { x = 0.515, y = 0.275 }, { x = 0.49, y = 0.16 } },
     notes = "Wanders around each spot: circle the hills west of Red Rocks",
     source = "conquestcapped.com Forever guide (spawns, family, speed), read 2026-11-15; npcID: " .. WDB },

@@ -126,7 +126,7 @@ T.describe("rare seed pack (P2-02)", function()
       if e.mapID == 1412 then T.ok(e.source:find("Forever", 1, true), "Mulgore spawns only from a Forever source") end
     end
     T.eq(ns.Data:Get("rare", 259388).name, "Mystmane")
-    T.eq(ns.Data:Get("rare", 5807).verified, false)
+    T.eq(ns.Data:Get("rare", 5807).verified, true)   -- Torrant tamed it (stable creatureID 5807)
     T.eq(#ns.Errors.list, 0)
   end)
 
