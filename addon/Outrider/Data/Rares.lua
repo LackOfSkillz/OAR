@@ -51,10 +51,12 @@ ns.Data:Register("rare", "seed", {
   -- conquestcapped.com/guides/wow-forever/wow-forever-ghostfang/ (read 2026-11-15).
   -- It waits at one of four points in the eastern hills, no patrol.
   -- Gary tamed it on Khreos 2026-11-15: the stable list reads creatureID
-  -- 276111, Cat, level 10, and the pet attacks every 1.71 s (PetStatus).
+  -- 276111, Cat, level 10. Right after the tame the pet read 1.71 s and
+  -- 12.3-15.8 damage (unhappy); fed, at 19:42 it read 1.96 s and 16.4-21.1
+  -- (x1.333, the unhappy -25% gone). 1.96 is the settled speed.
   { npcID = 276111, name = "Ghostfang", mapID = 1426, verified = true, confidence = "verified",
-    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.71 },
-    verifiedOn = { date = "2026-11-15", note = "Gary tamed it on Khreos; stable creatureID 276111, pet speed 1.71 s" },
+    level = { 10, 10 }, beast = { family = "Cat", tameable = true, attackSpeed = 1.96 },
+    verifiedOn = { date = "2026-11-15", note = "Gary tamed it on Khreos; stable creatureID 276111, pet speed 1.96 s once settled" },
     spawns = { { x = 0.745, y = 0.632 }, { x = 0.795, y = 0.430 }, { x = 0.808, y = 0.463 }, { x = 0.817, y = 0.555 } },
     notes = "White coat, blue-violet back (unique skin); no fast-attack ability; respawn about 30 min (beta)",
     source = "conquestcapped.com Forever guide, read 2026-11-15" },
