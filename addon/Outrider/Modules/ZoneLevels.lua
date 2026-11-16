@@ -250,8 +250,9 @@ function M:Refresh()
   for i, l in ipairs(self:Labels(mapID)) do
     local f = label(self, canvas, i)
     f.data = l
-    if f.text.SetFontObject then f.text:SetFontObject(l.area and "GameFontNormalSmall" or "GameFontNormal") end
-    f:SetSize(l.area and 60 or 240, l.area and 16 or 34)
+    -- a size up (Gary, 2026-11-16: "slightly bigger, easier to see")
+    if f.text.SetFontObject then f.text:SetFontObject(l.area and "GameFontNormal" or "GameFontNormalLarge") end
+    f:SetSize(l.area and 70 or 260, l.area and 20 or 40)
     f.text:SetText(self:Text(l))
     f.text:SetTextColor(ns.Theme:Color(l.color))
     f:SetScale(1 / scale)
