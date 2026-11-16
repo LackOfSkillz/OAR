@@ -715,7 +715,7 @@ function M.new(opts)
     end,
     GetMapInfo = function(id)
       local m = game.maps and game.maps[id]
-      if m then return { mapID = id, name = m.name, parentMapID = m.parent or 0 } end
+      if m then return { mapID = id, name = m.name, parentMapID = m.parent or 0, mapType = m.mapType } end
       return { mapID = id, name = "Mulgore" }
     end,
     -- game.maps[id] = { name, parent }: every map below id (all descendants)
@@ -727,6 +727,11 @@ function M.new(opts)
       return out
     end,
   }
+  -- game.maps[id].rect = { minX, maxX, minY, maxY } on its parent map
+  base.C_Map.GetMapRectOnMap = function(id, top)
+    local m = game.maps and game.maps[id]
+    if m and m.rect and m.parent == top then return m.rect[1], m.rect[2], m.rect[3], m.rect[4] end
+  end
   base.C_Map.SetUserWaypoint = function(p) game.userWaypoint = p end
   base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end
   -- world yards: 1 map unit = 1000 yards on every test map

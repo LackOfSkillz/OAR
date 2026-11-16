@@ -142,6 +142,7 @@ Modules\POICapture.lua
 Modules\Nearest.lua
 Modules\Trail.lua
 Modules\MapPins.lua
+Modules\ZoneLevels.lua
 Modules\MinimapPins.lua
 Modules\MapTab.lua
 Modules\Coords.lua
