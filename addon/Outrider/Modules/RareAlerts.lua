@@ -46,6 +46,9 @@ function M:Text(info)
   if info.classification == "rareelite" then parts[#parts + 1] = "elite" end
   if info.family then parts[#parts + 1] = info.family end
   parts[#parts + 1] = HOW[info.how] or info.how
+  -- which way to look (Gary, 2026-11-15: lost The Rake among the beasts)
+  local dir = info.how == "nameplate" and info.unit and ns.RarePlates and ns.RarePlates.Direction(info.unit)
+  if dir then parts[#parts + 1] = dir end
   return table.concat(parts, " · ")
 end
 
