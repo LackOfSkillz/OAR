@@ -29,7 +29,7 @@ local LABELS = {
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
-  dungeon = "Dungeon entrance",
+  dungeon = "Dungeon entrance", objective = "Quest objective",
 }
 M.LABELS = LABELS
 
@@ -43,7 +43,7 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
-  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon",
+  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
@@ -59,6 +59,7 @@ local ICON = {
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
   ride = "Interface\\Icons\\INV_Misc_Map_01",
   transport = "Interface\\Icons\\Spell_Arcane_TeleportStormWind",
+  objective = "Interface\\GossipFrame\\ActiveQuestIcon",
   dungeon = "Interface\\Icons\\INV_Misc_Key_14",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
   herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01", fish = "Interface\\Icons\\INV_Misc_Fish_02", pool = "Interface\\Icons\\INV_Misc_Fish_14",
@@ -260,6 +261,10 @@ function M:BuildPins(mapID)
   -- Breadcrumbs: where you walked, and rides you took from here (Trail)
   if ns.Trail and ns.Trail.enabled then
     for _, pin in ipairs(ns.Trail:Pins(mapID, hidden)) do out[#out + 1] = pin end
+  end
+  -- Where your quests' objectives are (QuestObjectives, from the private quest pack)
+  if ns.QuestObjectives then
+    for _, pin in ipairs(ns.QuestObjectives:Pins(mapID, hidden)) do out[#out + 1] = pin end
   end
   -- Herb and ore spawns from the node pack, for what this character can gather
   if ns.NodePack then

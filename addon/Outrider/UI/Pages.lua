@@ -1042,6 +1042,8 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "check", "Keep chat after a reload", function() return ns.Tweaks:Settings().history end, function(on) ns.Tweaks:Settings().history = on  end },
     { "note", "Wowhead link: hover an item, NPC or spell and press the key you bind to Outrider: Wowhead link (Key Bindings, AddOns), or type /ride wowhead." },
     { "header", "Quests" },
+    { "check", "Quest objectives on the map", function() return ns.QuestObjectives:Settings().show end, function(on) ns.QuestObjectives:Settings().show = on ns.MapPins:Invalidate() end },
+    { "check", "Alert when I mouse over a quest object", function() return ns.QuestObjectives:Settings().hoverAlert end, function(on) ns.QuestObjectives:Settings().hoverAlert = on end },
     { "check", "Quest marks on nameplates", function() return ns.QuestExtras:Settings().plates end, function(on) ns.QuestExtras:Settings().plates = on ns.QuestExtras:RefreshAll() end },
     { "header", "Edit Mode layout per situation" },
     { "input", "Situation and layout", "questing Questing", "Set", function(t) ns.Slash:Run("layout " .. t) end },

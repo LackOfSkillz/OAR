@@ -149,3 +149,15 @@ Data/MapOverlays.lua (45 zones, 572 areas, ~20 KB). This is client data for the
 build Gary runs, not community guesses. After a Forever patch that redraws
 zones, fetch the new build's tables and rerun the tool. MapReveal also keeps
 recording every character's explored areas, which covers any map the file misses.
+
+## D-quests: quest objectives pack (2026-11-17)
+
+Gary asked to build every quest's objectives into Outrider from the Questie
+database. Same private route as D10/D13-D15: `tools/import_questie_quests.py`
+reads QuestieDB's Forever data (saved zip) into the git-ignored load-on-demand
+addon `private/Outrider_Data_Quests` (1511 quests with mob, object, item or
+explore objectives and their spawn points; ~775 KB), never released.
+QuestObjectives pins the unfinished objectives of quests in the log on the
+world map and minimap, and alerts when the mouse passes over a quest object
+(saving that spot as seen on Forever). Installing the pack into AddOns
+(`--deploy`) needs Gary's OK for that step.
