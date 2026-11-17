@@ -127,3 +127,13 @@ and professions only from profession links in chat (the game shows nobody's
 professions). Names stay on this PC, 30 days; the advisor snapshot holds counts
 only. Steps aside for CensusPlus. Open: whether the Who window pops open on
 every search on Forever; the log will tell.
+
+## D-people: players & guilds page (2026-11-17, Claude)
+
+Gary asked to pick a counted player and whisper or invite them, and to search
+and catalog guilds. The Players & guilds page lists everyone Census counted
+(filter by name, guild, zone, class, level). Whisper only opens the chat box
+with /w Name (Gary writes and sends); group and guild invites go out on his
+click (guild invite only when his rank can invite). Guilds are cataloged from
+the guild tags Census sees; a guild or zone /who search is one press each.
+"Where" is the zone where the player was last seen, so it can be out of date.

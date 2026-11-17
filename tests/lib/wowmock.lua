@@ -549,6 +549,13 @@ function M.new(opts)
     return "Interface\\Icons\\INV_Misc_QuestionMark", r.name, 1, r.quality or 2, r.bop, r.canNeed ~= false, r.canGreed ~= false
   end
   base.IsInGuild = function() return opts.inGuild or false end
+  -- whispers and invites are recorded: game.tells, game.invites, game.guildInvites
+  base.CanGuildInvite = function() return opts.canGuildInvite or false end
+  base.ChatFrame_SendTell = function(name) game.tells = game.tells or {} game.tells[#game.tells + 1] = name end
+  base.C_PartyInfo = base.C_PartyInfo or {}
+  base.C_PartyInfo.InviteUnit = function(name) game.invites = game.invites or {} game.invites[#game.invites + 1] = name end
+  base.C_GuildInfo = base.C_GuildInfo or {}
+  base.C_GuildInfo.Invite = function(name) game.guildInvites = game.guildInvites or {} game.guildInvites[#game.guildInvites + 1] = name end
   game.chatFilters = {}
   base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
   base.SetItemRef = function() end

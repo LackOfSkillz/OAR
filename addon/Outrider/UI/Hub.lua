@@ -55,6 +55,7 @@ Hub.PLACE = {
   chat        = { "Social", 40, "INV_Misc_Note_02" },
   sharing     = { "Social", 41, "INV_Letter_09" },
   census      = { "Social", 42, "INV_Misc_GroupLooking" },
+  people      = { "Social", 43, "INV_Shirt_GuildTabard_01" },
   settings    = { "Outrider", 50, "Trade_Engineering" },
   modules     = { "Outrider", 51, "INV_Gizmo_01" },
   characters  = { "Outrider", 52, "INV_Misc_Head_Human_01" },

@@ -257,7 +257,14 @@ function M:OnWho()
   end
   local p = self.pending
   self.pending = nil
-  if not (p and self.sweep) then return end
+  if p and p.filter then
+    self.status = nil
+    self.lastSearch = { filter = p.filter, n = num, total = total, t = time() }
+    self:Debug("who answer: %s -> %d shown, %d total", p.filter, num, total)
+    if ns.Hub and ns.Hub.current == "people" then ns.Safe("census:refresh", ns.Hub.Refresh, ns.Hub) end
+    return
+  end
+  if not (p and p.band and self.sweep) then return end
   local s, b = self.sweep, p.band
   local full = num >= M.CAP or total > num
   s.done, s.found = s.done + 1, s.found + counted
@@ -288,6 +295,123 @@ function M:OnWho()
   elseif s.done == s.overview then
     self:Info("census overview done: %d players; %d more searches would add detail", s.found, #s.queue)
   end
+end
+
+-- ------------------------------------------------------------------ people
+-- Players & guilds page (Gary, 2026-11-17): find a player, whisper them,
+-- invite them to your group or guild; a catalog of guilds; /who for a guild
+-- or a zone. Every action is Gary's click; whispers only open the chat box
+-- (he types and sends).
+
+-- One /who for a typed filter (g-"Guild", z-"Zone", a name). One press, one search.
+function M:SearchFor(filter)
+  if type(filter) ~= "string" or filter == "" then return nil, "nothing to search for" end
+  if self.pending and (time() - self.pending.t) < M.WAIT then return nil, "the server is still answering, press again in a moment" end
+  local send = C.Resolve("C_FriendList.SendWho")
+  if type(send) ~= "function" then return nil, "this client has no /who for addons" end
+  local set = C.Resolve("C_FriendList.SetWhoToUi") or rawget(_G, "SetWhoToUI")
+  if type(set) == "function" then pcall(set, true) end
+  if self.pending and self.pending.band and self.sweep then table.insert(self.sweep.queue, 1, self.pending.band) end
+  self.pending = { filter = filter, t = time() }
+  local ok = pcall(send, filter)
+  if not ok then self.pending = nil return nil, "the game refused the search" end
+  self:Debug("who search sent: %s", filter)
+  return filter
+end
+
+local function quoted(kind, text) return kind .. '-"' .. tostring(text):gsub('"', "") .. '"' end
+function M:SearchGuild(guild) return self:SearchFor(quoted("g", guild)) end
+function M:SearchZone(zone)
+  zone = zone or readable(C.Call("GetZoneText"))
+  if not zone or zone == "" then return nil, "no zone known" end
+  return self:SearchFor(quoted("z", zone))
+end
+
+-- The name chat and invites want: "Name" on your realm, "Name-Realm" elsewhere.
+function M.TargetName(full)
+  if type(full) ~= "string" then return nil end
+  local name, realm = full:match("^([^-]+)-(.+)$")
+  if not name then return full end
+  local mine = tostring(C.Call("GetRealmName") or ""):gsub("%s", "")
+  return realm == mine and name or full
+end
+
+-- Players matching words (name, guild, zone, class, race, all must match), highest level first.
+function M:Find(text, limit)
+  local words = {}
+  for w in tostring(text or ""):lower():gmatch("%S+") do words[#words + 1] = w end
+  local out = {}
+  for full, pl in pairs(self:Realm().players) do
+    local hay = (full .. " " .. (pl.g or "") .. " " .. (pl.z or "") .. " " .. M.ClassName(pl.c) .. " " .. (pl.r or "") .. " " .. pl.l):lower()
+    local ok = true
+    for _, w in ipairs(words) do if not hay:find(w, 1, true) then ok = false break end end
+    if ok then out[#out + 1] = { name = full, l = pl.l, c = pl.c, r = pl.r, g = pl.g, z = pl.z, t = pl.t, f = pl.f } end
+  end
+  table.sort(out, function(a, b) if a.l ~= b.l then return a.l > b.l end return a.name < b.name end)
+  for i = (limit or 200) + 1, #out do out[i] = nil end
+  return out
+end
+
+-- Every guild seen: members counted, levels, most common zone and class.
+function M:Guilds(text)
+  local g = {}
+  for _, pl in pairs(self:Realm().players) do
+    if pl.g and pl.g ~= "" then
+      local e = g[pl.g]
+      if not e then e = { name = pl.g, n = 0, sum = 0, max = 0, zones = {}, classes = {}, t = 0 } g[pl.g] = e end
+      e.n, e.sum, e.max = e.n + 1, e.sum + pl.l, math.max(e.max, pl.l)
+      if pl.z then e.zones[pl.z] = (e.zones[pl.z] or 0) + 1 end
+      if pl.c then e.classes[pl.c] = (e.classes[pl.c] or 0) + 1 end
+      e.t = math.max(e.t, pl.t or 0)
+    end
+  end
+  local out, q = {}, tostring(text or ""):lower()
+  for _, e in pairs(g) do
+    if q == "" or e.name:lower():find(q, 1, true) then
+      local function top(t) local best, n = nil, 0 for k, c in pairs(t) do if c > n then best, n = k, c end end return best end
+      e.avg, e.zone, e.class = e.sum / e.n, top(e.zones), top(e.classes)
+      out[#out + 1] = e
+    end
+  end
+  table.sort(out, function(a, b) if a.n ~= b.n then return a.n > b.n end return a.name < b.name end)
+  return out
+end
+
+-- Open the chat box with "/w Name " ready; Gary types and sends.
+function M:Whisper(full)
+  local name = M.TargetName(full)
+  if not name then return false end
+  local tell = C.Resolve("ChatFrameUtil.SendTell") or C.Resolve("ChatFrame_SendTell")
+  if type(tell) == "function" then
+    local ok = pcall(tell, name)
+    if ok then return true end
+  end
+  local open = C.Resolve("ChatFrame_OpenChat") or C.Resolve("ChatFrameUtil.OpenChat")
+  if type(open) == "function" then return (pcall(open, "/w " .. name .. " ")) end
+  return false
+end
+
+function M:Invite(full)
+  local name = M.TargetName(full)
+  local inv = C.Resolve("C_PartyInfo.InviteUnit") or C.Resolve("InviteUnit")
+  if not name or type(inv) ~= "function" then return false, "group invites aren't available" end
+  local ok = pcall(inv, name)
+  self:Info("group invite sent to %s", tostring(name))
+  return ok, ok and nil or "the game refused the invite"
+end
+
+function M.CanGuildInvite()
+  return readable(C.Call("IsInGuild")) and readable(C.Call("CanGuildInvite")) and true or false
+end
+
+function M:GuildInvite(full)
+  local name = M.TargetName(full)
+  if not M.CanGuildInvite() then return false, "you can't invite to a guild (not in one, or your rank can't)" end
+  local inv = C.Resolve("C_GuildInfo.Invite") or C.Resolve("GuildInvite")
+  if not name or type(inv) ~= "function" then return false, "guild invites aren't available" end
+  local ok = pcall(inv, name)
+  self:Info("guild invite sent to %s", tostring(name))
+  return ok, ok and nil or "the game refused the invite"
 end
 
 -- Players counted at levels lo..hi (all sources).
@@ -528,6 +652,84 @@ ns.Hub:AddTab("census", "Census", function(p)
     { "check", "Count players I see", function() return M:Settings().passive end, function(on) M:Settings().passive = on end },
     { "check", "Count professions from chat links", function() return M:Settings().chat end, function(on) M:Settings().chat = on end },
     { "note", "Kept on this PC only, 30 days, never shared." },
+  })
+end)
+
+-- ------------------------------------------------------------------ page: players & guilds
+local function seenText(x)
+  return (x.z and (x.z .. ", ") or "") .. "seen " .. ago(x.t)
+end
+
+ns.Hub:AddTab("people", "Players & guilds", function(p)
+  local UI = ns.UI
+  local function pick() return M.selected and M:Realm().players[M.selected] and M.selected end
+  local function act(fn)
+    return function()
+      local ok, why = fn()
+      M.status = (ok == false or ok == nil) and why or nil
+      p:Refresh()
+    end
+  end
+  UI:FormPage(p, {
+    { "header", "Players & guilds" },
+    { "header", "Find a player", icon = "INV_Misc_GroupLooking" },
+    { "input", "Find", "name, guild, zone, class or level", "Find", function(t) M.filter = t M.selected = nil end, true },
+    { "note", function()
+      local n = #M:Find(M.filter)
+      local head = M.filter and M.filter ~= "" and string.format("%d players match '%s'. Click one to whisper or invite them.", n, M.filter)
+        or string.format("%d players counted, highest level first. Click one to whisper or invite them.", n)
+      if M.status then head = head .. "\n|cffff7f7f" .. M.status .. "|r" end
+      return head
+    end },
+    { "buttons", { { "In my zone", function() M.filter = readable(C.Call("GetZoneText")) or "" M.selected = nil end, 120 },
+      { "Show everyone", function() M.filter = nil M.selected = nil end, 130 } } },
+    { "list", 10, function(row, x)
+      local cc = (rawget(_G, "RAID_CLASS_COLORS") or {})[x.c]
+      local hex = cc and string.format("|cff%02x%02x%02x", cc.r * 255, cc.g * 255, cc.b * 255) or "|cffffffff"
+      row.text:SetText(string.format("%s%-s|r  %d %s%s  |cff888888%s|r", hex, x.name:match("^[^-]+") or x.name, x.l,
+        M.ClassName(x.c), x.g and ("  <" .. x.g .. ">") or "", seenText(x)))
+    end, function(x) M.selected = x.name p:Refresh() end, function() return M:Find(M.filter) end },
+    { "cards", function()
+      local full = pick()
+      if not full then return {} end
+      local x = M:Realm().players[full]
+      local tags = { { "Level " .. x.l, "gold" }, { M.ClassName(x.c), "plain" } }
+      if x.r then tags[#tags + 1] = { x.r, "plain" } end
+      local actions = {
+        { "Whisper", act(function() return M:Whisper(full), "chat isn't available" end), "Opens the chat box with a whisper to them; you type and send." },
+        { "Invite to group", act(function() return M:Invite(full) end), "Sends them a group invite." },
+      }
+      if M.CanGuildInvite() then
+        actions[#actions + 1] = { "Invite to my guild", act(function() return M:GuildInvite(full) end), "Sends them an invite to your guild." }
+      end
+      return { { art = x.c and ("class_" .. x.c:lower()) or nil, pic = "Interface\\Icons\\INV_Misc_QuestionMark",
+        title = full:match("^[^-]+") or full, tags = tags, highlight = true, actions = actions,
+        line = (x.g and ("<" .. x.g .. ">  ") or "") .. seenText({ z = x.z, t = x.t }) } }
+    end },
+    { "header", "Search with /who", icon = "INV_Misc_Spyglass_02" },
+    { "note", function()
+      local l = M.lastSearch
+      local base = "One press, one search: everyone in a guild or a zone right now (your faction, 50 at most). Results join the census."
+      if l then base = base .. string.format("\n|cffffd100Last search %s: %d found%s.|r", l.filter, l.n, l.total > l.n and (" of " .. l.total) or "") end
+      return base
+    end },
+    { "input", "Search a guild", "Guild name", "Search", function(t) local ok, why = M:SearchGuild(t) M.status = not ok and why or nil M.filter = t end, true },
+    { "buttons", { { "Search my zone", act(function() return M:SearchZone() end), 140 } } },
+    { "header", "Guilds", icon = "INV_Shirt_GuildTabard_01" },
+    { "note", function()
+      local g = M:Guilds()
+      return #g == 0 and "No guilds seen yet. Every guild tag from /who and players around you lands here."
+        or string.format("%d guilds seen, most members first. Click one to list its members.", #g)
+    end },
+    { "list", 8, function(row, e)
+      row.text:SetText(string.format("|cffffd100%s|r  %d seen, average level %.0f (top %d)  |cff888888%s%s|r", e.name, e.n, e.avg, e.max,
+        e.class and (M.ClassName(e.class) .. "s most, ") or "", e.zone and ("mostly in " .. e.zone) or ""))
+    end, function(e) M.filter = e.name M.selected = nil M.guildPick = e.name p:Refresh() end, function() return M:Guilds() end },
+    { "buttons", { { "Search this guild", act(function()
+      if not M.guildPick then return nil, "click a guild in the list first" end
+      return M:SearchGuild(M.guildPick)
+    end), 160 } } },
+    { "note", "Whispers open the chat box; you write and send them. Invites go out only when you click." },
   })
 end)
 
