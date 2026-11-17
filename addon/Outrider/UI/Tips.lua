@@ -74,6 +74,7 @@ local controls = {
   ["Camera zooms out further"] = "Lets the camera zoom out further than the game's default.",
   ["Gather addon minimap buttons"] = "Puts your other addons' minimap buttons behind one bag button on the minimap; click it to use them.",
   ["Keep chat after a reload"] = "The last 50 lines of your main chat window come back, greyed, after a /reload or your next login.",
+  ["Reveal unexplored map areas"] = "Shows map areas this character hasn't explored yet, tinted, using what your other characters explored.",
   ["Show the info bar"] = "A thin strip at the top of the screen: gold, bag space, durability, ammo, XP, clock and latency. Shift-drag it to move it.",
   ["Bar: gold"] = "Your gold on the info bar; hover for every character's gold.",
   ["Bar: bag space"] = "Free bag slots on the info bar (red when nearly full).",

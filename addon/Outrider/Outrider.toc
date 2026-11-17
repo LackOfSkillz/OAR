@@ -156,6 +156,7 @@ Modules\POICapture.lua
 Modules\Nearest.lua
 Modules\Trail.lua
 Modules\MapPins.lua
+Modules\MapReveal.lua
 Modules\ZoneLevels.lua
 Modules\MinimapPins.lua
 Modules\MapTab.lua
