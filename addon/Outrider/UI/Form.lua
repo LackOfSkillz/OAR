@@ -45,6 +45,7 @@ function UI:Form(parent, rows)
     entries[#entries + 1] = { f = f, h = h, indent = (indent or 0) + pad, card = card }
   end
   local function measure(e)
+    if e.dynamic then return e.dynamic:LayoutHeight() + (e.dynamic:LayoutHeight() > 0 and 6 or 0) end
     if e.text then
       local txt = e.text.GetText and e.text:GetText()
       if txt == nil or txt == "" then return 0 end
@@ -254,6 +255,19 @@ function UI:Form(parent, rows)
       list:SetWidth(W)
       place(list, r[2] * 22 + 10)
       scroll.items[#scroll.items + 1] = { list = list, getItems = r[5] }
+    elseif kind == "cards" or kind == "tiles" then
+      -- { "cards", getItems } / { "tiles", getItems }: premium blocks (UI/Premium.lua)
+      local f = kind == "cards" and UI:CardList(host) or UI:StatusTiles(host)
+      f:SetWidth(W)
+      f.getItems = r[2]
+      f.Refresh = function(self)
+        local ok, items = pcall(self.getItems)
+        self:SetItems(ok and items or {})
+      end
+      f:Refresh()
+      place(f, 0)
+      entries[#entries].dynamic = f
+      scroll.items[#scroll.items + 1] = f
     elseif kind == "custom" then
       local f = r[2](host)
       place(f, r[3] or 30)

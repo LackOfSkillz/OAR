@@ -128,6 +128,48 @@ professions, then your class.
 | `class_paladin.png` | a heavy war hammer with golden light shining from its head |
 | `class_shaman.png` | a carved wooden totem pole with lightning crackling around it |
 
+## Batch 3 (dungeons and raids, 2026-11-16)
+
+The Dungeons page shows each dungeon as a card with its picture (a key icon until
+the art arrives). One square picture per dungeon, **1024x1024, opaque**: the place
+itself as a small dramatic vignette, centered, on the same dark blue-black
+background as the other pictures, no frame, no text. Add the shared style line.
+A single sheet with every picture labelled underneath (like batch 2) is fine:
+`tools/slice_sheet.py` cuts it up.
+
+| File | Dungeon | Picture |
+|---|---|---|
+| `dungeon_thehallofthanes.png` | The Hall of Thanes | a great dwarven stone hall with carved pillars and a throne lit by braziers |
+| `dungeon_ragefirechasm.png` | Ragefire Chasm | a fiery cave tunnel with rivers of glowing lava and jagged black rock |
+| `dungeon_ruinsoflordaeron.png` | Ruins of Lordaeron | crumbling white-stone castle ruins overgrown with dark vines under a grey sky |
+| `dungeon_wailingcaverns.png` | Wailing Caverns | a lush green cave with twisted roots, glowing pools and mist |
+| `dungeon_thedeadmines.png` | The Deadmines | a dark mine tunnel with wooden supports, mine carts and a pirate ship's mast in the distance |
+| `dungeon_shadowfangkeep.png` | Shadowfang Keep | a gothic castle on a cliff at night with a pale moon and howling wolf silhouette |
+| `dungeon_blackfathomdeeps.png` | Blackfathom Deeps | a sunken temple half under dark water with ancient columns and blue glow |
+| `dungeon_thestockade.png` | The Stockade | a stone prison corridor with iron bars and flickering torches |
+| `dungeon_excavationsitewetlands.png` | Excavation Site: Wetlands | a dig site in a marshy valley with wooden scaffolds and half-buried stone ruins |
+| `dungeon_cityofdalaran.png` | City of Dalaran | a violet-roofed magical city with floating arcane runes and tall spires |
+| `dungeon_gnomeregan.png` | Gnomeregan | a cluttered mechanical underground city with gears, pipes and green toxic haze |
+| `dungeon_razorfenkraul.png` | Razorfen Kraul | a maze of giant thorny brambles under a red sky |
+| `dungeon_scarletmonastery.png` | Scarlet Monastery | a grand red-roofed monastery with crimson banners on a hill |
+| `dungeon_razorfendowns.png` | Razorfen Downs | dark thorn mounds with bone totems and cold blue mist |
+| `dungeon_uldaman.png` | Uldaman | an ancient titan vault door carved into a mountain, golden glyphs glowing |
+| `dungeon_zulfarrak.png` | Zul'Farrak | a sandstone troll temple city in the desert with tall stairs and torches |
+| `dungeon_maraudon.png` | Maraudon | a crystal cavern with purple crystals, waterfalls and glowing moss |
+| `dungeon_thetempleofatalhakkar.png` | The Temple of Atal'Hakkar | a sunken jungle temple in a swamp with a serpent statue and green mist |
+| `dungeon_blackrockdepths.png` | Blackrock Depths | a vast molten dwarven city inside a mountain with forges and lava falls |
+| `dungeon_diremaul.png` | Dire Maul | overgrown elven ruins with tall arches and a glowing blue barrier |
+| `dungeon_blackrockspire.png` | Blackrock Spire | a jagged black volcanic peak with dragon banners and smoke |
+| `dungeon_scholomance.png` | Scholomance | a dark necromantic school building with green lights in the windows on an island |
+| `dungeon_stratholme.png` | Stratholme | a burning plague-ridden city with broken gates and green-tinted smoke |
+| `dungeon_zulgurub.png` | Zul'Gurub | a jungle troll temple with a giant serpent idol and blood-red sky |
+| `dungeon_ruinsofahnqiraj.png` | Ruins of Ahn'Qiraj | desert ruins of insect-shaped stone pillars under a dusty orange sky |
+| `dungeon_onyxiaslair.png` | Onyxia's Lair | a huge volcanic cave with dragon eggs and a scorched floor |
+| `dungeon_moltencore.png` | Molten Core | a cavern of molten rock with lava pools and towering fire elementals' silhouettes |
+| `dungeon_blackwinglair.png` | Blackwing Lair | a dark draconic fortress hall with black dragon banners and red light |
+| `dungeon_templeofahnqiraj.png` | Temple of Ahn'Qiraj | a towering insectoid temple gate with glowing purple runes in the desert |
+| `dungeon_naxxramas.png` | Naxxramas | a dark floating necropolis in a green-black sky with ghostly lights |
+
 ## Delivery
 1. Save each PNG with the exact name above into `C:\Users\Administrator\Dev\OAR\art\incoming\`.
 2. Tell Claude "art is in". Claude runs `python tools/art.py`, deploys, and asks

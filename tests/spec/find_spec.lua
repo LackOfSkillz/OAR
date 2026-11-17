@@ -40,7 +40,9 @@ T.describe("find", function()
     T.ok(ns.MapPins.card:IsShown())
     ns.Find:Run("bow")
     T.eq(ns.Hub.current, "gear")
-    T.contains(ns.Hub.byId.gear.panel.head:GetText(), "matching 'bow'")
+    local said = {}
+    for _, it in ipairs(ns.Hub.byId.gear.panel.form.items) do if it.note then said[#said + 1] = it.note:GetText() or "" end end
+    T.contains(table.concat(said, " "), "matching 'bow'")
     ns.Find:Run("feed")
     T.eq(ns.Hub.current, "feed")
     T.no(ns.Find:Run("zzzz nothing"))

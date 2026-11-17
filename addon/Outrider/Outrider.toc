@@ -37,6 +37,7 @@ UI\SecureButtons.lua
 UI\Toast.lua
 UI\TooltipLines.lua
 UI\Form.lua
+UI\Premium.lua
 UI\Hub.lua
 UI\MinimapButton.lua
 UI\Settings.lua

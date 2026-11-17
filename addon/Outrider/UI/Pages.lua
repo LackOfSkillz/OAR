@@ -481,23 +481,22 @@ local function moneyRows()
   r({ "header", "Best ways to earn at level " .. level })
   r({ "note", "Ranked for your level and professions. Guide numbers are early Forever reports (unverified); after 15 minutes of a kind of earning your own gold per hour replaces them." })
   local ranked = G:Rank(level)
-  for i = 1, math.min(#ranked, 8) do
-    local x = ranked[i]
-    local e = x.entry
-    r({ "note", function()
-      local now = G:Rank(level)
-      for _, y in ipairs(now) do if y.entry.id == e.id then x = y end end
-      return string.format("|cffffd100%d. %s|r  %s\n%s  (%s)", i, e.title, G.RateText(x), e.how or "", e.source)
-    end, 46 })
-    local zones = e.zones or {}
-    if #zones > 0 then
-      local btns = {}
-      for z = 1, math.min(#zones, 3) do
-        btns[#btns + 1] = { "Find " .. zones[z], function() ns.Hub:Search(zones[z]) end }
+  r({ "cards", function()
+    local out = {}
+    for i, x in ipairs(G:Rank(level)) do
+      if i > 8 then break end
+      local e = x.entry
+      local actions = {}
+      for z = 1, math.min(#(e.zones or {}), 2) do
+        local zone = e.zones[z]
+        actions[#actions + 1] = { "Find " .. zone, function() ns.Hub:Search(zone) end, "Finds " .. zone .. " on the Journey page." }
       end
-      r({ "buttons", btns })
+      out[#out + 1] = { art = "kind_gold", pic = "Interface\\Icons\\INV_Misc_Coin_02", title = e.title,
+        tags = { { G.RateText(x), "gold" } }, line = (e.how or "") .. "  |cff888888(" .. tostring(e.source) .. ")|r",
+        actions = actions, highlight = i == 1 }
     end
-  end
+    return out
+  end })
   if #ranked == 0 then r({ "note", "No tips for this level yet." }) end
   if ns.Favor and ns.Favor.enabled then
     r({ "header", "Merchant's Favor and crates" })
@@ -536,57 +535,84 @@ local function dungeonRows()
   end
   D:Warm()
   local level = ns.Compat.Call("UnitLevel", "player") or 1
-  local rank = D:Rank()
-  local function find(name) for _, x in ipairs(D:Rank()) do if x.name == name then return x end end end
-  local nxt = D:NextTier(rank)
   r({ "header", "Dungeons" })
-  r({ "header", "Ready check" })
-  r({ "note", function() return D.ReadyText(D:ReadyCheck()) end, 100 })
+  -- Ready check: a tile per check, green or red (premium look, 2026-11-16)
+  r({ "header", "Ready check", icon = "INV_Misc_Book_08" })
+  r({ "tiles", function()
+    local out = {}
+    for _, c in ipairs(D:ReadyCheck()) do
+      local t = c.text:lower()
+      local icon = t:find("repair") and "Trade_BlackSmithing" or t:find("food") and "INV_Misc_Food_15"
+        or t:find("drink") and "INV_Drink_07" or t:find("bag") and "INV_Misc_Bag_08" or t:find("ammo") and "INV_Ammo_Arrow_02"
+        or "INV_Misc_Note_01"
+      out[#out + 1] = { ok = c.ok, text = c.text, icon = "Interface\\Icons\\" .. icon }
+    end
+    return out
+  end })
   r({ "buttons", { { "Share with my party", function()
     local ok, why = D:ShareReady()
     ns.Print(ok and "ready check sent to your party" or ("not sent: " .. tostring(why or "sharing failed")))
   end, 180 } } })
-  r({ "note", function() return D:PartyText() end, 60 })
-  r({ "header", "Next tier" })
-  r({ "note", function()
-    local n = D:NextTier()
-    if not n then return "No upcoming dungeon with gear for you in the next few levels." end
-    return string.format("|cffffd100%s|r (levels %d-%d): %d upgrades waiting once you're a little higher.\n%s",
-      n.name, n.info.min, n.info.max, n.laterCount, D.UpgradeLine(n.ups, 4, true))
-  end, 44 })
-  if nxt then r({ "buttons", { { "Go to " .. nxt.name, function() D:Go(nxt) end, 260 } } }) end
-  r({ "header", "Ready now (level " .. level .. ")" })
-  local ready = 0
-  for _, x in ipairs(rank) do
-    if x.status == "ready" then
-      ready = ready + 1
-      local name = x.name
-      r({ "note", function()
-        local y = find(name) or x
-        local kind = y.info.raid and (y.info.size .. "-player raid") or "5-player"
-        local head = string.format("|cffffd100%s|r  levels %d-%d, %s%s", y.name, y.info.min, y.info.max, kind, y.info.new and ", new on Forever" or "")
-        if y.count == 0 then return head .. "\nNothing here beats what you wear." end
-        return string.format("%s\n%d upgrades: %s", head, y.count, D.UpgradeLine(y.ups, 3, false))
-      end, 44 })
-      r({ "buttons", { { "Go to the entrance", function() D:Go(x) end, 160 } } })
-    end
-  end
-  if ready == 0 then r({ "note", "No dungeon in your level range yet." }) end
-  local soon = {}
-  for _, x in ipairs(rank) do if x.status == "soon" then soon[#soon + 1] = x end end
-  if #soon > 0 then
-    r({ "header", "Coming up" })
-    r({ "note", function()
-      local lines = {}
-      for _, x in ipairs(D:Rank()) do
-        if x.status == "soon" then
-          lines[#lines + 1] = string.format("%s (%d-%d): %d upgrades later", x.name, x.info.min, x.info.max, x.laterCount)
-        end
+  r({ "note", function() return D:PartyText() end })
+  local function slug(name) return "dungeon_" .. name:lower():gsub("[^%w]", "") end
+  local function chips(ups, later, n)
+    local out = {}
+    for _, u in ipairs(ups) do
+      if (u.later and true or false) == (later and true or false) then
+        out[#out + 1] = { itemID = u.itemID, text = string.format("|cff7fff7f+%d%%|r %s", math.floor(u.pct + 0.5), tostring(u.name)),
+          note = (u.boss and ("Drops from " .. u.boss) or "") .. (u.later and (", usable at " .. u.reqLevel) or "") }
+        if #out >= (n or 3) then break end
       end
-      return table.concat(lines, "\n")
-    end, 18 * #soon + 4 })
+    end
+    return out
   end
-  r({ "note", "Upgrades are scored for your class against what you wear; level ranges from foreverdb.net, loot from QuestieDB (both unverified)." })
+  local function cardFor(x, kind)
+    local tags = { { string.format("Levels %d-%d", x.info.min, x.info.max), "plain" },
+      { x.info.raid and (x.info.size .. "-player raid") or "5-player", "plain" } }
+    if x.info.new then tags[#tags + 1] = { "New on Forever", "gold" } end
+    local line, chipList
+    if kind == "next" then
+      tags[#tags + 1] = { "Next tier", "warn" }
+      line = string.format("%d upgrades waiting once you're a little higher.", x.laterCount)
+      chipList = chips(x.ups, true, 3)
+    elseif x.status == "soon" then
+      tags[#tags + 1] = { "Soon", "warn" }
+      line = string.format("%d upgrades for you once you're closer to level %d.", x.laterCount, x.info.min)
+      chipList = chips(x.ups, true, 3)
+    elseif x.count == 0 then
+      line = "Nothing here beats what you wear."
+      chipList = {}
+    else
+      line = string.format("%d upgrades for you now:", x.count)
+      chipList = chips(x.ups, false, 3)
+    end
+    return { art = slug(x.name), pic = "Interface\\Icons\\INV_Misc_Key_14", title = x.name, tags = tags, line = line,
+      chips = chipList, highlight = kind == "next",
+      actions = { { "Go to the entrance", function() D:Go(x) end, "Sets the arrow to the dungeon's entrance." } } }
+  end
+  r({ "header", "Next tier", icon = "INV_Chest_Plate06" })
+  r({ "cards", function()
+    local n = D:NextTier()
+    return n and { cardFor(n, "next") } or {}
+  end })
+  r({ "note", function() return D:NextTier() and "" or "No upcoming dungeon with gear for you in the next few levels." end })
+  r({ "header", "Ready now (level " .. level .. ")", icon = "INV_Misc_Key_14" })
+  r({ "cards", function()
+    local out = {}
+    for _, x in ipairs(D:Rank()) do if x.status == "ready" then out[#out + 1] = cardFor(x) end end
+    return out
+  end })
+  r({ "note", function()
+    for _, x in ipairs(D:Rank()) do if x.status == "ready" then return "" end end
+    return "No dungeon in your level range yet."
+  end })
+  r({ "header", "Coming up", icon = "INV_Misc_PocketWatch_01" })
+  r({ "cards", function()
+    local out = {}
+    for _, x in ipairs(D:Rank()) do if x.status == "soon" then out[#out + 1] = cardFor(x) end end
+    return out
+  end })
+  r({ "note", "Upgrades are scored for your class against what you wear. Hover an item for its tooltip. Level ranges from foreverdb.net, loot from QuestieDB (both unverified)." })
   return rows
 end
 
