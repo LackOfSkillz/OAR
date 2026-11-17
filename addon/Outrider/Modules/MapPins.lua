@@ -382,6 +382,20 @@ function M.Declutter(pins, px, py)
   return out
 end
 
+-- Frame level for our pins (Gary, 2026-11-17: Zephras Isle map showed none
+-- of 300 built pins). "canvas level + 1" can sit under Blizzard's map art
+-- layers; the map's own pin level manager knows the real order. Our pins go
+-- just under the town/area icons (and so under the player arrow).
+function M:PinLevel(canvas)
+  local map = self.map
+  local mgr = map and map.GetPinFrameLevelsManager and select(2, pcall(map.GetPinFrameLevelsManager, map))
+  if type(mgr) == "table" and mgr.GetValidFrameLevel then
+    local ok, lvl = pcall(mgr.GetValidFrameLevel, mgr, "PIN_FRAME_LEVEL_AREA_POI")
+    if ok and type(lvl) == "number" and lvl > 1 then return lvl - 1, "manager" end
+  end
+  return (canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 1, "canvas"
+end
+
 function M:AcquirePin(canvas)
   local pin = table.remove(self.pool)
   if not pin then
@@ -410,7 +424,7 @@ function M:AcquirePin(canvas)
   end
   pin:SetParent(canvas)
   -- just above the map art, below Blizzard's own pins (player arrow, party, quests)
-  pin:SetFrameLevel((canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 1)
+  pin:SetFrameLevel((self:PinLevel(canvas)))
   self.used[#self.used + 1] = pin
   return pin
 end
@@ -436,7 +450,19 @@ function M:Refresh()
     pin:Show()
   end
   self.shown = #self.used
-  if not self.logged then self.logged = true self:Info("map %d opened: %d pins", mapID, self.shown)
+  if not self.logged then
+    self.logged = true
+    self:Info("map %d opened: %d pins", mapID, self.shown)
+    -- where the pins really are, to check they're visible (one line a session)
+    local lvl, how = self:PinLevel(canvas)
+    local first = self.used[1]
+    local fx, fy = first and first.GetCenter and first:GetCenter()
+    local cl, cb, cw, ch = canvas.GetRect and canvas:GetRect()
+    local max = self.map.IsMaximized and select(2, pcall(self.map.IsMaximized, self.map))
+    self:Info("map pins drawn: level %s (%s, canvas %s), canvas %sx%s at scale %.2f, first pin at %s,%s (canvas %s,%s %sx%s), maximized %s",
+      tostring(lvl), how, tostring(canvas.GetFrameLevel and canvas:GetFrameLevel()), tostring(w), tostring(h), scale,
+      tostring(fx and math.floor(fx)), tostring(fy and math.floor(fy)), tostring(cl and math.floor(cl)), tostring(cb and math.floor(cb)),
+      tostring(cw and math.floor(cw)), tostring(ch and math.floor(ch)), tostring(max))
   else self:Debug("map %d: %d pins", mapID, self.shown) end
 end
 

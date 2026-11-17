@@ -149,7 +149,14 @@ function M:Layer()
   local canvas = self.map:GetCanvas()
   local f = CreateFrame("Frame", nil, canvas)
   f:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, 0)
-  f:SetFrameLevel(canvas.GetFrameLevel and canvas:GetFrameLevel() or 1)
+  -- at Blizzard's own explored-area level, so it sits on the map art but under every pin
+  local lvl = canvas.GetFrameLevel and canvas:GetFrameLevel() or 1
+  local mgr = self.map.GetPinFrameLevelsManager and select(2, pcall(self.map.GetPinFrameLevelsManager, self.map))
+  if type(mgr) == "table" and mgr.GetValidFrameLevel then
+    local ok, l = pcall(mgr.GetValidFrameLevel, mgr, "PIN_FRAME_LEVEL_MAP_EXPLORATION")
+    if ok and type(l) == "number" then lvl = l end
+  end
+  f:SetFrameLevel(lvl)
   self.layer = f
   return f
 end
