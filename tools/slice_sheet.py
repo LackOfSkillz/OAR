@@ -6,6 +6,8 @@ row, measured from the 2026-11-16 sheet); inside each cell the object's bright
 area is found and a square around it is cut, so small misplacements don't matter.
 
     python tools/slice_sheet.py <sheet.png> [--only page_,class_] [--preview out.png]
+    python tools/slice_sheet.py <sheet.png> --grid 5x3 name1,name2,...   (an even grid, as the
+        art packages in docs/ART_PACKAGE_*.md ask GPT for)
 
 Writes art/incoming/<name>.png (existing files are kept unless --force), then run
 python tools/art.py.
@@ -113,7 +115,19 @@ def main():
     w, h, rows = art.read_png(sheet)
     os.makedirs(INCOMING, exist_ok=True)
     tiles = []
-    for name, x0, x1, y0, y1 in cells(w):
+    if "--grid" in args:
+        # --grid COLSxROWS name1,name2,... : an even grid, read left to right,
+        # top to bottom; the bottom 16% of each cell is its label and is skipped
+        cols, nrows = (int(v) for v in args[args.index("--grid") + 1].lower().split("x"))
+        names = args[args.index("--grid") + 2].split(",")
+        cw, ch = w // cols, h // nrows
+        cell_list = []
+        for i, name in enumerate(names):
+            cx, cy = i % cols, i // cols
+            cell_list.append((name, cx * cw + 4, (cx + 1) * cw - 4, cy * ch + 4, cy * ch + int(ch * 0.84)))
+    else:
+        cell_list = cells(w)
+    for name, x0, x1, y0, y1 in cell_list:
         if only and not any(name.startswith(o) for o in only):
             continue
         box = object_box(rows, x0, x1, y0, y1)

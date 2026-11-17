@@ -134,7 +134,7 @@ The Dungeons page shows each dungeon as a card with its picture (a key icon unti
 the art arrives). One square picture per dungeon, **1024x1024, opaque**: the place
 itself as a small dramatic vignette, centered, on the same dark blue-black
 background as the other pictures, no frame, no text. Add the shared style line.
-A single sheet with every picture labelled underneath (like batch 2) is fine:
+Ready-to-paste GPT prompts: docs/ART_PACKAGE_BATCH3.md. A labelled sheet is fine:
 `tools/slice_sheet.py` cuts it up.
 
 | File | Dungeon | Picture |
