@@ -80,6 +80,7 @@ Modules\InfoBar.lua
 Modules\Alts.lua
 Modules\FlightTimes.lua
 Modules\QuestExtras.lua
+Modules\BagExtras.lua
 Modules\BagFood.lua
 Modules\RareMacros.lua
 Modules\Inventory.lua

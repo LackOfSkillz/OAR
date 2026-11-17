@@ -261,6 +261,23 @@ ns.Hub:AddTab("alts", "My characters", function(p)
       end
       return out
     end },
+    { "header", "Find an item on any character", icon = "INV_Misc_Bag_08" },
+    { "input", "Item name", "Linen Cloth", "Search items", function(t) if ns.BagExtras then ns.BagExtras.query = t end end, true },
+    { "cards", function()
+      local B = ns.BagExtras
+      if not (B and B.query and B.query ~= "") then return {} end
+      local out = {}
+      for i, x in ipairs(B:Search(B.query)) do
+        if i > 8 then break end
+        out[#out + 1] = { itemID = x.itemID, title = x.name, tags = { { "x" .. x.total, "gold" } }, line = B.WhereText(x.per) }
+      end
+      return out
+    end },
+    { "note", function()
+      local B = ns.BagExtras
+      if not (B and B.query and B.query ~= "") then return "Searches every character's bags, bank, mail and worn gear (as last seen). /ride where <item> does the same." end
+      return #B:Search(B.query) == 0 and ("Nothing called '" .. B.query .. "' on your characters" .. ((B.unnamed or 0) > 0 and " yet (some names still loading, search again)." or ".")) or ""
+    end },
     { "header", "Dungeon lockouts", icon = "INV_Misc_Key_14" },
     { "tiles", function()
       local lk = M:Lockouts()

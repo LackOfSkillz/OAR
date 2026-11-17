@@ -134,6 +134,8 @@ With the auction house open, Outrider's shopping panel sits beside it. Buying is
 - **Map extras.** Dungeon and raid entrances, portals, boats and zeppelins, and guildmates who share their location show as pins on the world map and minimap (Map page picks which).
 - **Flight times.** Every flight you take is timed. The flight map tooltip then shows how long a flight takes, and the info bar counts down to landing.
 - **Quest marks and quest XP.** Mobs and objects your quests need get a quest mark beside their nameplate with what's left. The info bar's XP shows what the quests in your log are worth. At a turn-in, the best reward for you is named; if none is an upgrade, the one worth most (vendor or auction house).
+- **Bag marks.** On Blizzard's own bag slots: item level on gear, a green arrow on upgrades for you, a gold coin on grey junk (Settings picks which). Outrider steps aside if a bag addon like Bagnon or Baganator is installed.
+- **Find an item on any character.** My characters page, or /ride where <item>: which of your characters has it and where (bags, bank, mail, worn), as last seen.
 - **Feed.** Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.
 - **Look.** A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.
 - **Edit Mode per situation.** Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.
@@ -234,4 +236,5 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride watch` | <name or npcID>  alert for this NPC on this character |
 | `/ride way` | <x> <y> [title] \| clear  waypoint on the current map (map numbers 0-100) |
 | `/ride weights` | show the stat weights used for this character |
+| `/ride where` | where your characters keep an item: /ride where <item name> |
 | `/ride zonelevels` | [on\|off]  level ranges over zones on the world map |
