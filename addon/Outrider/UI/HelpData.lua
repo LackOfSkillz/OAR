@@ -88,6 +88,7 @@ ns.HelpData = {
     { "Skill-up planner", "/ride skillup [profession]: the cheapest recipes per skill point.", page = "professions", cmd = "skillup" },
     { "Crafting page", "A craft queue and the shopping list it needs.", page = "crafting" },
     { "Fishing", "Pick a key (/ride fishkey F): it casts and hooks the bobber. A small HUD shows skill and lure time, and catches are logged per zone." },
+    { "Fishing page", "Your skill, lifetime casts and catches, how many catches to your next point (measured from your own catches), the next milestone (Journeyman, the Expert book, Nat Pagle), the zones for your skill with what you've caught there, one-click fishing gear and back, fishing trainers and supply vendors with an arrow, and the Stranglethorn Fishing Extravaganza countdown. Zone and NPC data from a WoW Forever fishing guide (unverified).", page = "fishing" },
     { "Money page", "The best ways to earn gold at your level and with your professions, and your own earnings per hour.", page = "money" },
     { "Gold ledger", "Where your gold came from and went, per session and character.", page = "money" },
     { "Merchant's Favor", "Waylaid Crates: what each crate needs and your Favor balance. /ride favor.", cmd = "favor" },
