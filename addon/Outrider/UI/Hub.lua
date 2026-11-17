@@ -35,6 +35,7 @@ local ICON = "Interface\\Icons\\"
 Hub.PLACE = {
   home        = { "", 1, "INV_Misc_Book_09" },
   whatnow     = { "", 2, "INV_Misc_Map_01" },
+  help        = { "", 3, "INV_Misc_Book_07" },
   journey     = { "Explore", 10, "INV_Misc_Map_01" },
   map         = { "Explore", 11, "INV_Misc_Map02" },
   waypoints   = { "Explore", 12, "Ability_Tracking" },

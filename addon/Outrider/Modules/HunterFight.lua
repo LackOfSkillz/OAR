@@ -500,7 +500,7 @@ function M:Activity()
 end
 
 local OPTIONS = { concussive = true, wingclip = true, pet = true, auto = true }
-ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change your class's Fight macros (hunter, mage, priest)", function(arg)
+ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change your class's Fight macros (every class)", function(arg)
   if not M:Supported() or not M.enabled then ns.Print("no Fight macros for your class yet") return end
   local key, val = (arg or ""):lower():match("^(%a+)%s+(%a+)$")
   if key and OPTIONS[key] and (val == "on" or val == "off") then

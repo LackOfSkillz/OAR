@@ -153,6 +153,7 @@ Modules\Coords.lua
 Modules\Travel.lua
 Modules\Journey.lua
 Modules\Finder.lua
+UI\HelpData.lua
 UI\Pages.lua
 
 Core\Slash.lua

@@ -4,6 +4,8 @@ One character-aware addon for World of Warcraft Forever instead of ten. It knows
 
 Built by Claude Code on Gary's PC and tested by Gary in game. Every action in the game is a key press or click by the player; Outrider never plays for you.
 
+**What it does:** see the [user guide](docs/USER_GUIDE.md) (also in game: `/ride`, then **Help**).
+
 ## Install (players)
 
 1. Close World of Warcraft.
