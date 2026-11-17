@@ -15,6 +15,51 @@ local function text(parent, size, colorName, layer)
 end
 UI.Text = text
 
+-- ------------------------------------------------------------ tooltips
+-- Every control explains itself on hover (Gary, 2026-11-16: "we need tool
+-- tips for everything"). UI.Tip(frame, title, body) adds one; buttons,
+-- checkboxes and chips look theirs up by label in ns.Tips.controls (UI/Tips.lua)
+-- when they are made, so one table covers every page. Labels with no tip
+-- are recorded in UI.untipped (the tests list them).
+UI.untipped = {}
+function UI.Tip(frame, title, body)
+  if not frame or not frame.HookScript then return frame end
+  frame.tipTitle, frame.tipBody = title, body
+  if frame.tipHooked then return frame end
+  frame.tipHooked = true
+  frame:HookScript("OnEnter", function(self)
+    local tt = rawget(_G, "GameTooltip")
+    if not (tt and self.tipTitle) then return end
+    tt:SetOwner(self, "ANCHOR_RIGHT")
+    tt:AddLine(self.tipTitle, 1, 0.82, 0)
+    if self.tipBody and self.tipBody ~= "" then tt:AddLine(self.tipBody, 0.92, 0.92, 0.92, true) end
+    tt:Show()
+  end)
+  frame:HookScript("OnLeave", function() local tt = rawget(_G, "GameTooltip") if tt then tt:Hide() end end)
+  return frame
+end
+
+-- The tip for a control label: exact label, then patterns (for labels with
+-- names or numbers in them). Returns title, body or nil.
+function UI.TipFor(label)
+  local T = ns.Tips
+  if not (T and type(label) == "string") then return nil end
+  local plain = label:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+  local body = T.controls[plain]
+  if body then return plain, body end
+  for _, pat in ipairs(T.patterns) do
+    if plain:find(pat[1]) then return plain, pat[2] end
+  end
+  return nil
+end
+
+local function autoTip(frame, label)
+  local title, body = UI.TipFor(label)
+  if title then UI.Tip(frame, title, body)
+  elseif type(label) == "string" and label ~= "" then UI.untipped[label] = true end
+end
+UI.AutoTip = autoTip
+
 -- Title type (fantasy serif): size "page", "card", "brand" or "side".
 function UI.Display(parent, size, colorName)
   local fs = parent:CreateFontString(nil, "OVERLAY")
@@ -115,6 +160,7 @@ function UI:Button(parent, label, width, onClick)
   b:SetScript("OnEnter", function(self) if self.SetBackdropBorderColor then self:SetBackdropBorderColor(Theme:Color("accent")) end end)
   b:SetScript("OnLeave", function(self) if self.SetBackdropBorderColor then self:SetBackdropBorderColor(Theme:Color(self.rest or "strong")) end end)
   b:SetScript("OnClick", function(self, button) if onClick then ns.Safe("button:" .. label, onClick, self, button) end end)
+  autoTip(b, label)
   return b
 end
 
@@ -174,6 +220,7 @@ function UI:Chip(parent, label, onClick, icon)
   b:SetScript("OnLeave", function(self) self:SetOn(self.on) end)
   b:SetScript("OnClick", function(self, button) if onClick then ns.Safe("chip:" .. label, onClick, self, button) end end)
   b:SetOn(false)
+  autoTip(b, label)
   return b
 end
 
@@ -226,6 +273,7 @@ function UI:Check(parent, label, get, set)
     row:Refresh()
   end)
   row:Refresh()
+  autoTip(row, label)
   return row
 end
 

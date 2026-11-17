@@ -1,0 +1,213 @@
+-- UI/Tips.lua  (data only)
+-- Hover text for every page and control (see UI.Tip in UI/Widgets.lua).
+--   pages[tabId]     = what that sidebar page is for
+--   controls[label]  = what a button, checkbox or chip with that label does
+--   patterns         = { lua pattern, text } for labels with names or numbers
+-- tests/spec/tips_spec.lua opens every page for several classes and fails if
+-- any label has no tip, so a new control needs its line here.
+local _, ns = ...
+
+local pages = {
+  home = "Your character at a glance: the next step, errands, your pet or class keys, and the journey you're on.",
+  whatnow = "What to do next with this character, ranked: errands, quests, gear, dungeons, training and gold. Pick a goal to narrow it.",
+  help = "What every part of Outrider does, one topic at a time, with buttons that take you there.",
+  journey = "Search for anything (places, rares, quests, items, NPCs) and the best gear and XP quests for your level; a number guides you there.",
+  map = "Which pins show on the world map and minimap, what Outrider records, and how much it has stored.",
+  waypoints = "Set or clear the arrow, and go to the nearest vendor, flight master, spirit healer and more.",
+  rares = "Every rare Outrider knows, for this zone or all: last seen, respawn window on your layer, and a waypoint.",
+  rarealerts = "How rare alerts reach you (sound, pop-up), which rares, your watch list and recent alerts.",
+  dungeons = "Which dungeons and raids you're ready for and what each holds for this character.",
+  class = "Your class page: the Fight macros, heal bars, talent plan and class tools (pet, taming, ammo for hunters).",
+  gear = "Upgrades for this character: nearby, from quests, from dungeons and from your other characters' bags.",
+  gearsets = "Save what you wear as a set and put a set back on with one command.",
+  professions = "Your professions and recipes, one-press crafting macros, training and the cheapest skill-ups.",
+  crafting = "A craft queue and the shopping list it needs.",
+  macros = "Ready-made macros for your class, explained line by line, with Install and Update.",
+  money = "The best ways to earn gold at your level and with your professions, and your own earnings.",
+  errands = "What to do in town with this character: sell junk, repair, buy ammo, train, collect mail.",
+  forecasts = "When rares are likely to respawn, from the gaps seen, and gold forecasts.",
+  feed = "Every pop-up Outrider showed, newest first, so nothing is lost when one fades.",
+  chat = "Chat highlights, spam filter, the LFG tab, timestamps and spell check.",
+  sharing = "What Outrider shares with other Outrider users in your guild or party. Everything is off until you switch it on.",
+  settings = "Every Outrider option in one place: look, accessibility, alerts, chat, layouts.",
+  modules = "Every Outrider feature, on or off for this character, and why.",
+  characters = "Your characters on this account; copy settings from one to another.",
+  advisor = "Ask your AI advisor about this character and paste back its advice.",
+  overview = "A summary of how Outrider is running: modules, saved data and errors.",
+  tools = "Tools for checking Outrider: errors, the API probe, debug logging, reload.",
+  commands = "Every /ride command with what it needs: click one, fill in, Run.",
+}
+
+local controls = {
+  -- help and navigation
+  ["?"] = "Opens Help on this page.",
+  ["< Previous"] = "The topic above this one in the list.",
+  ["Next >"] = "The topic below this one. Read the whole guide front to back this way.",
+  ["All sections"] = "Back to the overview of every part of Outrider.",
+  ["Open page"] = "Goes straight to the Outrider page this topic is about.",
+  ["Run"] = "Runs it now, as if you typed it in chat. Results show in chat.",
+  ["Open Outrider hub"] = "Opens the Outrider window (same as /ride).",
+  ["Open Macros"] = "Opens the Macros page with your class's ready-made macros.",
+  ["Rares tab"] = "Opens the Rares page.",
+  ["Details"] = "More about this step: why it's suggested and where it is.",
+  ["Go  >"] = "Starts this step: sets the arrow or opens the page it needs.",
+  ["x  Not useful"] = "Hides this suggestion; What now? learns what you don't want.",
+  ["All steps"] = "Opens What now? with every suggested step.",
+  ["Guide me again"] = "Sets the arrow to this journey's next stop again.",
+  ["Stop"] = "Stops the journey and clears its arrow.",
+
+  -- What now? goals
+  ["Level up"] = "Rank the steps that give the most XP for your time.",
+  ["Make gold"] = "Rank the steps that earn the most gold.",
+  ["Better gear"] = "Rank the steps that bring the biggest gear upgrades.",
+  ["Professions"] = "Rank the steps that raise your professions.",
+  ["Explore"] = "Rank places you haven't been and rares to find.",
+  ["A bit of everything"] = "A mix: XP, gold, gear and professions together.",
+
+  -- Journey / Finder kinds
+  ["All"] = "Show every kind of result (or every profession).",
+  ["Zones"] = "Zones and areas, with their level ranges.",
+  ["Travel"] = "Flight paths, boats, zeppelins and portals.",
+  ["Herbs, ore"] = "Herb and ore spawn points.",
+  ["Gear"] = "Gear upgrades for this character and where they come from.",
+  ["Items"] = "Items by name: where they drop or who sells them.",
+  ["Quests"] = "Quests, with their level and what they give.",
+  ["Rares"] = "Rare creatures and where they were seen.",
+  ["Creatures"] = "Creatures to hunt, by name or family.",
+  ["NPCs"] = "Named NPCs Outrider has met.",
+  ["Places"] = "Vendors, trainers, flight masters, inns and other services.",
+  ["Sort: nearest"] = "Click to change the order: nearest first, by level, or by name.",
+  ["Upgrades in this zone"] = "Gear upgrades you can get in the zone you're in.",
+
+  -- map pin kinds (Map page)
+  ["Vendor"] = "Show vendors on the maps.", ["Repair"] = "Show repair vendors on the maps.",
+  ["Trainer"] = "Show class and profession trainers on the maps.", ["Flight master"] = "Show flight masters on the maps.",
+  ["Flight"] = "Waypoint to the nearest flight master.", ["Innkeeper"] = "Show innkeepers on the maps.", ["Inn"] = "Waypoint to the nearest inn.",
+  ["Mailbox"] = "Show mailboxes on the maps.", ["Mail"] = "Waypoint to the nearest mailbox.",
+  ["Bank"] = "Bankers: show them, or waypoint to the nearest.", ["Auction house"] = "Show auctioneers on the maps.",
+  ["Auction"] = "Waypoint to the nearest auction house.", ["Stable master"] = "Show stable masters on the maps.",
+  ["Stable"] = "Waypoint to the nearest stable master.", ["Spirit healer"] = "Spirit healers: show them, or waypoint to the nearest.",
+  ["Guild master"] = "Show guild masters on the maps.", ["Tabard vendor"] = "Show tabard vendors on the maps.",
+  ["Quest giver"] = "Show quest givers on the maps.", ["Ammo vendor"] = "Show ammo vendors on the maps.",
+  ["Ammo"] = "Waypoint to the nearest ammo vendor.", ["Rare"] = "Show rares on the maps (watched ones in gold).",
+  ["Herb"] = "Show herb spots on the maps.", ["Ore"] = "Show ore spots on the maps.", ["Fishing spot"] = "Show fishing spots on the maps.",
+  ["Guildmate"] = "Show guildmates who share their location.", ["Your trail"] = "Show the gold dots where you walked.",
+  ["Ride you took"] = "Show the flights and rides you took.", ["Portal, boat or zeppelin"] = "Show portals, boats and zeppelins.",
+  ["Quest givers on the minimap"] = "Quest givers as dots on the minimap.",
+  ["Grey quests (no XP) on the map"] = "Also show quests too low to give you XP.",
+  ["Herb and ore spots from the database"] = "Herb and ore spawn points from the node pack, not only ones you found.",
+  ["Record NPCs I meet (Discovery)"] = "Outrider remembers NPCs you target or mouse over, to build its own map of WoW Forever.",
+  ["Record places I use (vendors, trainers...)"] = "Opening a vendor, trainer, flight master or mailbox adds it to your map.",
+  ["Clear recorded data"] = "Deletes recorded places and NPCs (asks again before it does).",
+  ["Last 10 NPCs met"] = "Lists the last 10 NPCs Outrider recorded, in chat.",
+  ["Say my coordinates"] = "Prints your map and coordinates in chat.",
+  ["Set arrow"] = "Sets the arrow at the coordinates you typed.",
+  ["Clear arrow"] = "Removes the arrow.",
+  ["Arrow to the spirit healer when you die"] = "When you die, the arrow points to the nearest spirit healer by itself.",
+
+  -- rares
+  ["Sound"] = "Play a sound when a rare alert pops.",
+  ["Pop-up"] = "Show a pop-up with a Target button when a rare is near.",
+  ["Sound with rare alerts"] = "Play a sound when a rare alert pops.",
+  ["Only rares on your watch list"] = "Alert only for rares you're watching, not every rare.",
+  ["Watch"] = "Alert this character when this NPC (name or id) is near.",
+  ["Recent alerts"] = "The latest rare alerts, newest first.",
+  ["Rares and hunter tools"] = "Rare alerts, the nameplate star, pet panel and tame helper.",
+
+  -- class page
+  ["Make or show the macros"] = "Writes your Fight macros (or shows them). Then drag them from the macro window to slots 1 and 2.",
+  ["Open macro window"] = "Opens Blizzard's macro window so you can drag the macros to your bar.",
+  ["Rewrite when you learn a spell"] = "Outrider keeps your Fight macros current as you learn spells, change gear or buffs.",
+  ["Concussive Shot in Fight"] = "Adds Concussive Shot after Hunter's Mark (guides save it for when the pet loses aggro).",
+  ["Wing Clip in Strike"] = "Wing Clip once per pull in your melee key, so you can step back and shoot.",
+  ["Send the pet in"] = "Every Fight press also sends your pet at your target.",
+  ["Make macro"] = "Writes a tame macro for the beast you typed: press to send the pet, Shift to dismiss, again to tame.",
+  ["Show the pet panel"] = "The small panel with your pet's health, XP, focus and the Feed button.",
+  ["Show the heal bars in a group"] = "Click-to-heal bars for your group appear when you join one.",
+  ["Keep my own bar when players are assigned"] = "With players assigned, keep your own bar too.",
+  ["Gold rings in the talent window"] = "Rings the talents to spend your next points on, in the talent window.",
+  ["Tell me in chat when a point is ready"] = "One chat line per level when talent points are waiting.",
+  ["Arcane (levelling 10-39)"] = "Follow the Arcane levelling build to 39 (then Frost from 40).",
+  ["Frost (levelling 40-60)"] = "Follow the Frost build after the reset at 40.",
+
+  -- gear, macros
+  ["Compare"] = "Compares the item you shift-clicked into the box with what you wear.",
+  ["Show my stat weights"] = "Prints how much each stat is worth for this character.",
+  ["Gear advisor"] = "Upgrade scores on item tooltips and gear suggestions.",
+  ["Install"] = "Creates this macro in your macro window (Update when it changed).",
+  ["Pick up"] = "Puts the macro on your cursor: drop it on an action bar slot.",
+  ["Save"] = "Saves what you wear now under the name you typed.",
+  ["Delete"] = "Deletes the gear set you typed.",
+
+  -- town, money, professions
+  ["Professions, prices and gold"] = "Profession tools, auction prices, the gold ledger and money guide.",
+  ["Clear queue"] = "Empties the craft queue.",
+  ["Set"] = "Applies what you typed in the box beside it.",
+  ["Add"] = "Adds the word you typed.",
+  ["Remove"] = "Removes the name or word you typed.",
+
+  -- chat
+  ["Chat helpers and spell check"] = "Highlights, spam filter, LFG tab, timestamps and spell check in chat.",
+  ["Hide repeated spam"] = "Hides the same message repeated in public channels.",
+  ["LFG and Trade in their own tab"] = "Moves LookingForGroup and Trade lines to their own chat tab.",
+  ["Time stamps"] = "Adds the time to each chat line.",
+  ["Copy the last 100 chat lines"] = "Opens the last 100 lines of chat as text you can copy.",
+
+  -- sharing
+  ["Say hello to other Outrider users"] = "Lets guild and party Outrider users see you have Outrider and which version.",
+  ["Rares: guild"] = "Share rare sightings with your guild and see theirs.",
+  ["Rares: party"] = "Share rare sightings with your party and see theirs.",
+  ["Herb and ore spots: guild"] = "Share herb, ore and fishing spots you find with your guild.",
+  ["My location: party"] = "Your map position to your party while you move.",
+  ["Share my gear card and see others' (guild and party)"] = "Lets guild and party Outrider users see what gear you need, so they can send it.",
+
+  -- settings, setup, accessibility
+  ["Interface look (Clean dark skins)"] = "A clean dark look for Blizzard windows, tooltips and bars. Cosmetic only.",
+  ["Maps, pins and waypoints"] = "Map pins, minimap pins, zone levels, breadcrumbs and the arrow.",
+  ["Class color accent (after /reload)"] = "Use your class colour for Outrider's highlights. Takes effect after /reload.",
+  ["Class color accent (after reload)"] = "Use your class colour for Outrider's highlights. Takes effect after /reload.",
+  ["Colorblind colors"] = "Blue and orange instead of red and green.",
+  ["Colorblind-safe colors (blue / orange)"] = "Blue and orange instead of red and green.",
+  ["High contrast"] = "Stronger borders and brighter text.",
+  ["Larger text"] = "Bigger fonts in every Outrider window.",
+  ["Larger windows"] = "Scales Outrider's windows up.",
+  ["No fading"] = "Pop-ups appear and go without fading or sliding.",
+  ["Reduced motion"] = "Pop-ups appear and go without fading or sliding.",
+  ["Minimap button"] = "Show the Outrider button on the minimap.",
+  ["Show minimap button"] = "Show the Outrider button on the minimap.",
+  ["First-run setup"] = "Opens the short setup: sounds, fonts and colours.",
+  ["Done"] = "Saves your choices and closes this.",
+  ["Show layouts"] = "Lists your Edit Mode layouts and which situation uses each.",
+  ["Turn off"] = "Stops switching Edit Mode layouts by situation.",
+  ["Copy from a character"] = "Copies another of your characters' Outrider settings to this one.",
+  ["Copy"] = "Copies this character's settings to the one you're on.",
+  ["Export"] = "Shows this character's settings as text you can copy.",
+  ["Import"] = "Paste settings text from Export to apply it here.",
+  ["Reset this character"] = "Wipes this character's Outrider settings (asks first).",
+
+  -- tools, advisor
+  ["Errors"] = "Shows Outrider's recent errors in chat.",
+  ["Clear errors"] = "Forgets the errors shown so far.",
+  ["Run probe"] = "Records which game functions exist on this client (then /reload).",
+  ["Debug logging"] = "Writes more detail to Outrider's log, for fixing problems.",
+  ["Reload UI"] = "Reloads the interface (/reload).",
+  ["Reload now"] = "Reloads the interface now so the change takes effect.",
+  ["Ask"] = "Shows a code describing this character: copy it (Ctrl+C) and give it to your advisor.",
+  ["Ask (copy snapshot)"] = "Shows a code describing this character: copy it (Ctrl+C) and give it to your advisor.",
+  ["Paste advice"] = "Paste the advice code you got back (Ctrl+V); it shows on the Advisor page.",
+  ["Useful"] = "Tell the advisor this advice helped.",
+  ["Wrong data"] = "Tell the advisor this advice was based on something wrong.",
+}
+
+ns.Tips = {
+  pages = pages,
+  controls = controls,
+  patterns = {
+    { "^Open ", "Goes straight to that Outrider page." },
+    { "^Sort:", "Click to change the order: nearest first, by level, or by name." },
+    { "^Run /ride ", "Runs the command now, as if you typed it in chat." },
+    { "^Search next", "The auction house only answers one search per click right now: click for the next one." },
+    { "levelling", "Follow this levelling talent build." },
+    { "%(levelling", "Follow this levelling talent build." },
+  },
+}

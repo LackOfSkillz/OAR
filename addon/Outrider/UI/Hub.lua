@@ -204,7 +204,9 @@ end
 function Hub:AddTabButton(t)
   local bar = self.frame.tabBar
   if not self:Visible(t) then return end
-  bar:Add(t.id, t.title, t.icon)
+  local btn = bar:Add(t.id, t.title, t.icon)
+  local tip = ns.Tips and ns.Tips.pages[t.id]
+  if btn and tip then UI.Tip(btn, t.title, tip) elseif btn then UI.untipped["page:" .. t.id] = true end
   local ids, groups = {}, {}
   for _, o in ipairs(self.tabs) do
     if bar.buttons[o.id] then ids[#ids + 1] = o.id groups[o.id] = o.group end
@@ -335,6 +337,13 @@ function Hub:Panel(t)
     p.hubTitle = UI.Display(p, "page", "text")
     p.hubTitle:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 14)
     p.hubTitle:SetText(t.title or "")
+    -- "?" beside the title: Help for this page
+    if t.id ~= "help" then
+      p.helpBtn = UI:Button(p, "?", 24, function() if ns.HelpPage then ns.HelpPage.Open(t.id) end end)
+      p.helpBtn:SetHeight(22)
+      p.helpBtn:SetPoint("LEFT", p.hubTitle, "RIGHT", 10, 2)
+      UI.Tip(p.helpBtn, "Help for this page", "Opens Help on what this page does and how to use it.")
+    end
     p.hubRule = p:CreateTexture(nil, "ARTWORK")
     p.hubRule:SetHeight(1)
     p.hubRule:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 6)
