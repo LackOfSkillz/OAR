@@ -76,6 +76,7 @@ Modules\HunterFight.lua
 Modules\ClassFight.lua
 Modules\HealPanel.lua
 Modules\Census.lua
+Modules\InfoBar.lua
 Modules\BagFood.lua
 Modules\RareMacros.lua
 Modules\Inventory.lua

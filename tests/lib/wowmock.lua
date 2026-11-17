@@ -550,6 +550,13 @@ function M.new(opts)
   end
   base.IsInGuild = function() return opts.inGuild or false end
   -- whispers and invites are recorded: game.tells, game.invites, game.guildInvites
+  -- XP and connection: game.xp, game.xpMax, game.rested, game.latency, game.fps
+  base.UnitXP = function(unit) if unit == "player" then return game.xp or 0 end end
+  base.UnitXPMax = function(unit) if unit == "player" then return game.xpMax or 1000 end end
+  base.GetXPExhaustion = function() return game.rested end
+  base.GetNetStats = function() return 0, 0, game.latency or 40, game.latency or 40 end
+  base.GetFramerate = function() return game.fps or 60 end
+  base.ToggleAllBags = function() game.bagsToggled = (game.bagsToggled or 0) + 1 end
   base.CanGuildInvite = function() return opts.canGuildInvite or false end
   base.ChatFrame_SendTell = function(name) game.tells = game.tells or {} game.tells[#game.tells + 1] = name end
   base.C_PartyInfo = base.C_PartyInfo or {}
