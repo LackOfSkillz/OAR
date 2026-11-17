@@ -15,7 +15,7 @@
 local _, ns = ...
 local UI, Theme = ns.UI, ns.Theme
 
-local ROW = { header = 28, note = 18, check = 24, buttons = 30, input = 32, slider = 44 }
+local ROW = { header = 28, note = 20, check = 30, buttons = 36, input = 34, slider = 44 }
 
 function UI:Form(parent, rows)
   local scroll = CreateFrame("ScrollFrame", nil, parent)
@@ -35,42 +35,86 @@ function UI:Form(parent, rows)
     scroll:HookScript("OnSizeChanged", function(self, w) if type(w) == "number" and w > 200 then c:SetWidth(w - 8) end end)
   end
   scroll.content, scroll.items = c, {}
-  local y = 0
-  -- Expedition look (2026-11-15): every section after a heading sits in a
-  -- card. Rows are created on the current card (host) so they draw above it;
-  -- all are anchored to the content frame.
-  local host, pad, cardTop, card = c, 0, nil, nil
+  -- Layout engine (2026-11-16): rows are recorded in order and placed by
+  -- Layout(), which measures text each time, so a live note that grows to
+  -- three lines pushes the rows below it down instead of running over them.
+  local entries = {}
+  local host, pad, card = c, 0, nil
   local W = 600
   local function place(f, h, indent)
-    f:SetPoint("TOPLEFT", c, "TOPLEFT", (indent or 0) + pad, -y)
-    y = y + h
+    entries[#entries + 1] = { f = f, h = h, indent = (indent or 0) + pad, card = card }
+  end
+  local function measure(e)
+    if e.text then
+      local txt = e.text.GetText and e.text:GetText()
+      if txt == nil or txt == "" then return 0 end
+      local sh = e.text.GetStringHeight and e.text:GetStringHeight()
+      return math.max(e.h, (type(sh) == "number" and sh or 0) + 8)
+    end
+    return e.h
+  end
+  function scroll:Layout()
+    local y, open = 0, nil
+    for _, e in ipairs(entries) do
+      if e.cardOpen then
+        e.cardOpen:ClearAllPoints()
+        e.cardOpen:SetPoint("TOPLEFT", c, "TOPLEFT", 0, -y)
+        e.cardOpen:SetPoint("RIGHT", c, "RIGHT", -4, 0)
+        open = { card = e.cardOpen, top = y }
+        y = y + 14
+      elseif e.cardClose then
+        if open then
+          y = y + 10
+          open.card:SetHeight(y - open.top)
+          y = y + 12
+          open = nil
+        end
+      else
+        local h = measure(e)
+        e.f:ClearAllPoints()
+        e.f:SetPoint("TOPLEFT", c, "TOPLEFT", e.indent, -y)
+        y = y + h
+      end
+    end
+    c.height = y + 10
+    c:SetHeight(c.height)
   end
   local function closeCard()
     if not card then return end
-    y = y + 8
-    card:SetHeight(y - cardTop)
-    y = y + 10
+    entries[#entries + 1] = { cardClose = true }
     card, host, pad, W = nil, c, 0, 600
   end
-  local function openCard(title)
+  -- A card: picture tile, title in the display font, a hairline.
+  local function openCard(title, icon)
     closeCard()
-    card = UI:Card(c)
-    card:SetPoint("TOPLEFT", c, "TOPLEFT", 0, -y)
-    card:SetPoint("RIGHT", c, "RIGHT", -4, 0)
-    cardTop, host, pad, W = y, card, 14, 572
+    card = UI:Card(c, true)
+    entries[#entries + 1] = { cardOpen = card }
+    host, pad, W = card, 18, 560
     scroll.cards = scroll.cards or {}
     scroll.cards[#scroll.cards + 1] = card
-    y = y + 10
     if not title then return end
-    local t = UI.Display(card, "side", "goldText")
+    local head = CreateFrame("Frame", nil, card)
+    head:SetSize(W, 40)
+    head.tile = CreateFrame("Frame", nil, head, Theme:BackdropTemplate())
+    head.tile:SetSize(34, 34)
+    head.tile:SetPoint("LEFT", 0, 0)
+    Theme:ApplyPanel(head.tile, "bg", "gold")
+    head.pic = head.tile:CreateTexture(nil, "ARTWORK")
+    head.pic:SetPoint("TOPLEFT", 2, -2)
+    head.pic:SetPoint("BOTTOMRIGHT", -2, 2)
+    UI.SectionPicture(head.pic, title, icon, parent)
+    local t = UI.Display(head, "card", "goldText")
+    t:SetPoint("LEFT", head.tile, "RIGHT", 12, 0)
     t:SetText(title)
+    head.title = t
     card.title = t
-    local rule = card:CreateTexture(nil, "ARTWORK")
+    local rule = head:CreateTexture(nil, "ARTWORK")
     rule:SetHeight(1)
-    rule:SetPoint("TOPLEFT", c, "TOPLEFT", pad, -(y + 22))
-    rule:SetPoint("RIGHT", card, "RIGHT", -pad, 0)
-    rule:SetColorTexture(Theme:Color("border"))
-    place(t, ROW.header + 4)
+    rule:SetPoint("BOTTOMLEFT", head.tile, "BOTTOMRIGHT", 12, -2)
+    rule:SetPoint("RIGHT", card, "RIGHT", -18, 0)
+    local r, g, b = Theme:Color("gold")
+    rule:SetColorTexture(r, g, b, 0.35)
+    place(head, 48)
   end
   local titled = false
   for _, r in ipairs(rows) do
@@ -83,27 +127,30 @@ function UI:Form(parent, rows)
       -- open a card with a gold title and a hairline
       if not titled then
         titled = true
-        if parent.hubTitle then
-          parent.hubTitle:SetText(r[2])
+        local same = parent.hubTitle and tostring(parent.hubTitle:GetText() or ""):lower() == tostring(r[2]):lower()
+        if parent.hubTitle and not same then
+          openCard(r[2], r.icon)
+        elseif parent.hubTitle then
+          card = card -- the hero already says it
         else
           local t = UI.Display(c, "page", "text")
           t:SetText(r[2])
           place(t, 42)
         end
       else
-        openCard(r[2])
+        openCard(r[2], r.icon)
       end
     elseif kind == "note" then
-      local t = UI.Text(host, "small", "muted")
+      local t = UI.Text(host, "normal", "body")
       t:SetWidth(W)
       t:SetJustifyH("LEFT")
+      if t.SetSpacing then t:SetSpacing(2) end
       local src = r[2]
       t:SetText(type(src) == "function" and "" or src)
       if type(src) == "function" then scroll.items[#scroll.items + 1] = { note = t, fn = src } end
-      -- a long note takes the lines it needs instead of running into the next row
-      local h = type(src) == "string" and t.GetStringHeight and t:GetStringHeight() or nil
-      if type(h) ~= "number" then h = nil end
-      place(t, r[3] or math.max(ROW.note, (h or 0) + 6))
+      -- measured by Layout: a long note takes the lines it needs
+      place(t, r[3] or ROW.note)
+      entries[#entries].text = t
     elseif kind == "check" then
       local chk = UI:Check(host, r[2], r[3], r[4])
       if r[5] then chk.note:SetText(r[5]) end
@@ -114,8 +161,10 @@ function UI:Form(parent, rows)
       row:SetSize(W, 26)
       local prev
       for _, b in ipairs(r[2]) do
-        local btn = UI:Button(row, b[1], b[3] or math.max(90, #b[1] * 7 + 20), b[2])
-        if prev then btn:SetPoint("LEFT", prev, "RIGHT", 6, 0) else btn:SetPoint("LEFT", 0, 0) end
+        local btn = UI:Button(row, b[1], b[3] or math.max(110, #b[1] * 7 + 28), b[2])
+        btn:SetHeight(26)
+        if not prev and not r.plain then UI.SetPrimary(btn, true) end
+        if prev then btn:SetPoint("LEFT", prev, "RIGHT", 8, 0) else btn:SetPoint("LEFT", 0, 0) end
         prev = btn
       end
       place(row, ROW.buttons)
@@ -212,8 +261,7 @@ function UI:Form(parent, rows)
     end
   end
   closeCard()
-  c.height = y + 10
-  c:SetHeight(c.height)
+  scroll:Layout()
   function scroll:Refresh()
     for _, it in ipairs(self.items) do
       if it.Refresh then ns.Safe("form:refresh", it.Refresh, it)
@@ -228,8 +276,30 @@ function UI:Form(parent, rows)
         it.list:SetItems(ok and items or {})
       end
     end
+    self:Layout()
   end
   return scroll
+end
+
+-- A section's picture: the row's icon, a known one for its title, else the
+-- page's own picture.
+function UI.SectionPicture(tex, title, icon, page)
+  local I = "Interface\\Icons\\"
+  local secs = ns.Tips and ns.Tips.sections or {}
+  local known = icon or secs[title]
+  if not known and type(title) == "string" then
+    for k, v in pairs(secs) do if title:find(k, 1, true) == 1 then known = v break end end
+  end
+  if known then
+    tex:SetTexture(known:find("\\", 1, true) and known or (I .. known))
+    tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  elseif page and page.hubPic and page.hubPic.GetTexture then
+    tex:SetTexture(page.hubPic:GetTexture())
+    tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  else
+    tex:SetTexture(I .. "INV_Misc_Book_09")
+    tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  end
 end
 
 -- A page that is just a form: p.Refresh re-reads it.

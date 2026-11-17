@@ -310,7 +310,16 @@ end
 
 -- Pages that draw their own heading (Expedition layouts) skip the title strip.
 Hub.OWN_HEADING = { home = true, whatnow = true }
-Hub.TITLE_H = 52
+Hub.TITLE_H = 80
+
+-- The page's picture: custom art page_<id> (or class_<CLASS> for the class
+-- page) when Gary's art is in, else the sidebar icon.
+function Hub.SetPagePicture(tex, t)
+  local name = t.id == "class" and ("class_" .. tostring(ns.PlayerClass and ns.PlayerClass() or "")):lower() or ("page_" .. t.id)
+  local place = Hub.PLACE[t.id]
+  local fb = t.icon or (place and place[3] and (ICON .. place[3])) or (ICON .. "INV_Misc_Book_09")
+  if ns.Art then ns.Art:Set(tex, name, fb) else tex:SetTexture(fb) end
+end
 
 function Hub:Panel(t)
   if t.panel then return t.panel end
@@ -334,14 +343,30 @@ function Hub:Panel(t)
       ns.Art:Set(p.scene, "header")
       if p.scene.SetAlpha then p.scene:SetAlpha(0.45) end
     end
+    -- hero (2026-11-16, Gary: "every page a custom premium feel", like What
+    -- now?): the page's picture in a gold frame, the title, what the page is
+    -- for, and Help on the right.
+    p.hubTile = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
+    p.hubTile:SetSize(52, 52)
+    p.hubTile:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 12)
+    Theme:ApplyPanel(p.hubTile, "bg", "gold")
+    p.hubPic = p.hubTile:CreateTexture(nil, "ARTWORK")
+    p.hubPic:SetPoint("TOPLEFT", 2, -2)
+    p.hubPic:SetPoint("BOTTOMRIGHT", -2, 2)
+    Hub.SetPagePicture(p.hubPic, t)
     p.hubTitle = UI.Display(p, "page", "text")
-    p.hubTitle:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 14)
+    p.hubTitle:SetPoint("TOPLEFT", p.hubTile, "TOPRIGHT", 14, 0)
     p.hubTitle:SetText(t.title or "")
-    -- "?" beside the title: Help for this page
+    p.hubSub = UI.Text(p, "normal", "muted")
+    p.hubSub:SetPoint("TOPLEFT", p.hubTitle, "BOTTOMLEFT", 0, -6)
+    p.hubSub:SetPoint("RIGHT", p, "RIGHT", -60, 0)
+    p.hubSub:SetJustifyH("LEFT")
+    if p.hubSub.SetWordWrap then p.hubSub:SetWordWrap(false) end
+    p.hubSub:SetText(ns.Tips and ns.Tips.pages[t.id] or "")
     if t.id ~= "help" then
-      p.helpBtn = UI:Button(p, "?", 24, function() if ns.HelpPage then ns.HelpPage.Open(t.id) end end)
-      p.helpBtn:SetHeight(22)
-      p.helpBtn:SetPoint("LEFT", p.hubTitle, "RIGHT", 10, 2)
+      p.helpBtn = UI:Button(p, "?", 30, function() if ns.HelpPage then ns.HelpPage.Open(t.id) end end)
+      p.helpBtn:SetHeight(26)
+      p.helpBtn:SetPoint("BOTTOMRIGHT", p, "TOPRIGHT", 0, 16)
       UI.Tip(p.helpBtn, "Help for this page", "Opens Help on what this page does and how to use it.")
     end
     p.hubRule = p:CreateTexture(nil, "ARTWORK")

@@ -72,6 +72,62 @@ border (Outrider draws the frame).
 
 Add the shared style line at the end of each.
 
+## Batch 2 (a picture for every page, 2026-11-16)
+
+Gary: "every page a custom premium feel". Each page's title now sits beside a
+picture in a gold frame (like What now?), and its section cards reuse it until
+section art exists. One square picture per page, shown at 52x52, made the same
+way as the step pictures: **1024x1024, opaque**, a single object centered,
+three-quarter view, on a dark vignette background (deep blue-black, lighter in
+the middle), filling about 75% of the canvas, no frame or border. Add the shared
+style line at the end of each prompt.
+
+Until a picture arrives the page shows the game icon it has now, so they can come
+in any order. Start with the pages you use most: help, map, rares, gear, money,
+professions, then your class.
+
+| File | Object |
+|---|---|
+| `page_help.png` | an open leather-bound tome with glowing golden runes and a quill resting on it |
+| `page_journey.png` | a brass explorer's compass lying on a weathered map with a red route line |
+| `page_map.png` | a rolled-out parchment map of a coastline with small gold pins stuck in it |
+| `page_waypoints.png` | a tall wooden signpost at a crossroads with three arrow boards, a lantern hanging from it |
+| `page_rares.png` | a spyglass resting on a rock, a faint silver star glinting in the distance |
+| `page_rarealerts.png` | a small brass bell with a glowing gold star above it, sound rings around the bell |
+| `page_dungeons.png` | a heavy iron dungeon key with an ornate bow, a faint blue glow behind it |
+| `page_gear.png` | a steel helmet and a round shield leaning together, gold trim catching the light |
+| `page_gearsets.png` | a wooden armor stand holding a full set of leather armor with shoulder pads |
+| `page_professions.png` | a crafter's workbench with a hammer, tongs, a glass flask and a spool of thread |
+| `page_crafting.png` | a glowing anvil with a half-forged glowing blade on it and sparks flying |
+| `page_macros.png` | a parchment card with a glowing gold rune symbol, a feather quill beside it |
+| `page_money.png` | a tall stack of gold coins next to an open treasure chest spilling coins |
+| `page_errands.png` | a merchant's leather satchel with a rolled shopping list and a small hammer |
+| `page_forecasts.png` | a brass hourglass with glowing gold sand and a small star chart behind it |
+| `page_feed.png` | a stack of sealed letters with red wax seals and a raven feather |
+| `page_chat.png` | two speech scrolls crossing each other with a glowing quill |
+| `page_sharing.png` | a carrier pigeon in flight holding a small rolled message tied with gold string |
+| `page_settings.png` | a set of brass gears and cogs interlocking, one large gear in front |
+| `page_modules.png` | a wooden toolbox opened, filled with small glowing magical gadgets |
+| `page_characters.png` | three small carved wooden figurines of adventurers standing on a table |
+| `page_advisor.png` | a glowing crystal ball on a bronze stand with soft blue mist inside |
+| `page_overview.png` | a brass spyglass and a small brass telescope crossed over an open logbook |
+| `page_tools.png` | a leather tool roll with a wrench, a screwdriver and a small magnifying glass |
+| `page_commands.png` | a stone tablet carved with glowing gold symbols in neat rows |
+
+### Class page (one per class; the Class page shows the one for the character you're on)
+
+| File | Object |
+|---|---|
+| `class_hunter.png` | a longbow with a quiver of feathered arrows and a wolf paw print |
+| `class_warrior.png` | a battle axe crossed with a sword over a dented round shield |
+| `class_rogue.png` | two curved daggers crossed over a dark hooded cloak |
+| `class_mage.png` | a glowing arcane staff with a floating blue crystal at its tip |
+| `class_priest.png` | a golden holy symbol of a radiant sun on a white cloth |
+| `class_warlock.png` | a dark grimoire with a glowing green fel flame above it |
+| `class_druid.png` | a carved wooden staff wrapped in green vines with a bear claw charm |
+| `class_paladin.png` | a heavy war hammer with golden light shining from its head |
+| `class_shaman.png` | a carved wooden totem pole with lightning crackling around it |
+
 ## Delivery
 1. Save each PNG with the exact name above into `C:\Users\Administrator\Dev\OAR\art\incoming\`.
 2. Tell Claude "art is in". Claude runs `python tools/art.py`, deploys, and asks

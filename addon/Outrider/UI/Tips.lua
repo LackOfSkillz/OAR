@@ -199,7 +199,28 @@ local controls = {
   ["Wrong data"] = "Tell the advisor this advice was based on something wrong.",
 }
 
+-- Section pictures on page cards (game icons until custom art arrives); a
+-- key also matches titles that start with it ("Best ways to earn at level 19").
+local sections = {
+  ["Auction house"] = "INV_Misc_Coin_02", ["Best ways to earn at level"] = "INV_Misc_Coin_01", ["Chat"] = "INV_Misc_Note_02",
+  ["Coming up"] = "INV_Misc_PocketWatch_01", ["Crafting for profit"] = "Trade_BlackSmithing", ["Dungeons"] = "INV_Misc_Key_14",
+  ["Edit Mode layout per situation"] = "INV_Gizmo_01", ["Fight macros"] = "Ability_Warrior_OffensiveStance", ["Fishing"] = "Trade_Fishing",
+  ["Gear for alts, family and other Outrider users"] = "INV_Misc_Bag_10", ["Gear sets"] = "INV_Shoulder_02", ["Heal bars"] = "Spell_Holy_FlashHeal",
+  ["Herb and ore map"] = "INV_Ore_Copper_01", ["Herbalism"] = "INV_Misc_Flower_02", ["Highlighted words"] = "INV_Misc_Note_01",
+  ["How gear is scored"] = "INV_Misc_Gem_01", ["How you're told"] = "INV_Misc_Spyglass_02", ["Look"] = "INV_Misc_Gem_Pearl_04",
+  ["Make what you can"] = "Trade_Alchemy", ["Map and minimap pins"] = "INV_Misc_Map02", ["Merchant's Favor and crates"] = "INV_Crate_01",
+  ["Money"] = "INV_Misc_Coin_02", ["Nearest place"] = "Ability_Tracking", ["Next tier"] = "INV_Chest_Plate06",
+  ["Pet and ammo"] = "Ability_Hunter_BeastTaming", ["Professions"] = "Trade_Engineering", ["Ready check"] = "INV_Misc_Book_08",
+  ["Ready now"] = "INV_Misc_Key_14", ["Recently met"] = "INV_Misc_Head_Human_01",
+  ["Share with your guild or party (all off by default)"] = "INV_Letter_09", ["Skill-up planner"] = "INV_Scroll_03",
+  ["Spell check"] = "INV_Inscription_Pigment_Bug01", ["Talents"] = "Ability_Marksmanship", ["Taming"] = "Ability_Hunter_BeastTaming",
+  ["Text"] = "INV_Misc_Book_09", ["Timers"] = "INV_Misc_PocketWatch_02", ["Training button"] = "Trade_Engineering",
+  ["Watch list"] = "Ability_Hunter_SniperShot", ["Waypoint"] = "Ability_Tracking", ["Your class macros"] = "INV_Misc_Note_01",
+  ["Your own earnings"] = "INV_Misc_Coin_04", ["Your settings"] = "Trade_Engineering",
+}
+
 ns.Tips = {
+  sections = sections,
   pages = pages,
   controls = controls,
   patterns = {

@@ -28,7 +28,7 @@ T.describe("page look", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
-  T.it("a form page's first heading becomes the title; later headings open cards", function()
+  T.it("the hero keeps the page title; a different first heading opens a card", function()
     local _, ns = session()
     ns.Hub:ShowTab("money")
     local p = ns.Hub.byId.money.panel
@@ -42,6 +42,7 @@ T.describe("page look", function()
     local game, ns = session()
     local parent = game.env.CreateFrame("Frame")
     parent.hubTitle = ns.UI.Display(parent, "page", "text")
+    parent.hubTitle:SetText("Page") -- the hero title; a first heading that repeats it is skipped
     local form = ns.UI:Form(parent, { { "header", "Page" }, { "note", "intro" }, { "header", "Section" }, { "note", "x" } })
     T.eq(parent.hubTitle:GetText(), "Page")
     T.eq(#form.cards, 2)
