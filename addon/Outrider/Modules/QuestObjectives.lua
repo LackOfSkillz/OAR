@@ -10,6 +10,14 @@
 -- them), but the moment your mouse passes over one your quest needs (its
 -- name in the tooltip), a pop-up says so and the spot is saved as seen on
 -- Forever (verified), so the next search starts there.
+-- Questie parity (Gary, 2026-11-17: "as full featured as Questie for quest
+-- items and areas"):
+--   * "?" turn-in pins where a finished quest is handed in
+--   * "!" pins on objects that give quests (wanted posters...), filtered like
+--     NPC quest givers (level, faction, class, race, quests done and needed)
+--   * quest lines in mob, object and item tooltips with your progress
+--   * the Quests page: every quest in your log, its progress, and an arrow
+--     to the nearest objective or the turn-in
 -- Community data, unverified; steps aside when Questie is installed.
 
 local _, ns = ...
@@ -116,11 +124,52 @@ local function addPoints(out, mapID, pts, base, cap)
   end
 end
 
+-- "?" pins for finished quests, "!" pins for objects that give quests
+function M:ExtraPins(mapID, hidden, out)
+  local pack = self:Pack()
+  if not pack then return end
+  if not (hidden and hidden.turnin) then
+    for _, q in ipairs(M.Log()) do
+      local e = pack.quests[q.questID]
+      if q.complete and e then
+        local base = { kind = "turnin", name = "Turn in: " .. q.title, title = "Hand in " .. q.title, id = "turnin-" .. q.questID }
+        for _, n in ipairs(e.fin or {}) do
+          local src = pack.npcs[n]
+          local pts = src and src[2] and src[2][mapID]
+          if pts then base.title = "Hand in " .. q.title .. " to " .. src[1] addPoints(out, mapID, pts, base, M.MAX_PINS) end
+        end
+        for _, o in ipairs(e.finObj or {}) do
+          local src = pack.objects[o]
+          local pts = src and src[2] and src[2][mapID]
+          if pts then base.title = "Hand in " .. q.title .. " at " .. src[1] addPoints(out, mapID, pts, base, M.MAX_PINS) end
+        end
+      end
+    end
+  end
+  if not (hidden and hidden.quest_giver) and ns.NPCPack and pack.starters then
+    for oid, list in pairs(pack.starters) do
+      local src = pack.objects[oid]
+      local pts = src and src[2] and src[2][mapID]
+      if pts then
+        local quests = ns.NPCPack:QuestsFor({ quests = list })
+        if #quests > 0 then
+          for i = 1, #pts - 1, 2 do
+            out[#out + 1] = { kind = "quest_giver", id = "objgiver-" .. oid .. "-" .. i, mapID = mapID, x = pts[i], y = pts[i + 1],
+              name = src[1], quests = quests, questColor = ns.NPCPack.DIFF_COLOR and ns.NPCPack.DIFF_COLOR[quests[1].diff] }
+          end
+        end
+      end
+    end
+  end
+end
+
 function M:Pins(mapID, hidden)
-  if not (self.enabled and self:Settings().show) or (hidden and hidden.objective) then return {} end
+  if not (self.enabled and self:Settings().show) then return {} end
   local pack = self:Pack()
   if not pack then return {} end
   local out = {}
+  self:ExtraPins(mapID, hidden, out)
+  if hidden and hidden.objective then return out end
   for _, t in ipairs(self:Targets()) do
     local title = (t.progress or t.name) .. "  (" .. t.quest .. ")"
     local base = { kind = "objective", name = t.name, title = title, id = "obj-" .. t.questID .. "-" .. t.kind .. "-" .. tostring(t.id) }
@@ -205,6 +254,102 @@ function M:OnTooltip(tt)
   if ns.MapPins then ns.MapPins:Invalidate() end
 end
 
+-- ------------------------------------------------------------------ tooltips
+-- lines for a mob (npcID), an object (by name) or an item your quests need
+function M:LinesFor(kind, key)
+  local pack = self:Pack()
+  if not (pack and self:Settings().show) then return {} end
+  local out = {}
+  for _, t in ipairs(self:Targets()) do
+    local hit = false
+    if kind == "npc" then
+      if t.kind == "npc" and t.id == key then hit = true end
+      if t.kind == "item" then
+        local it = pack.items[t.id]
+        for _, n in ipairs(it and it[2] or {}) do if n == key then hit = true end end
+      end
+    elseif kind == "object" then
+      if t.kind == "object" and t.name == key then hit = true end
+      if t.kind == "item" then
+        local it = pack.items[t.id]
+        for _, o in ipairs(it and it[3] or {}) do
+          local src = pack.objects[o]
+          if src and src[1] == key then hit = true end
+        end
+      end
+    elseif kind == "item" then
+      hit = t.kind == "item" and t.id == key
+    end
+    if hit then out[#out + 1] = { t.quest .. ": " .. (t.progress or t.name), "good" } end
+  end
+  return out
+end
+
+ns.TooltipLines.ORDER.quest = ns.TooltipLines.ORDER.quest or 45
+ns.TooltipLines:Add("unit", "quest", M, function(tip)
+  if not tip.GetUnit then return end
+  local _, unit = tip:GetUnit()
+  local npc = unit and C.UnitNpcID(unit)
+  if npc then return M:LinesFor("npc", npc) end
+end)
+ns.TooltipLines:Add("item", "quest", M, function(tip, data)
+  local id = type(data) == "table" and readable(data.id)
+  if not id and tip.GetItem then
+    local _, link = tip:GetItem()
+    id = link and tonumber(tostring(link):match("item:(%d+)"))
+  end
+  if id then return M:LinesFor("item", id) end
+end)
+
+-- ------------------------------------------------------------------ guiding
+-- the nearest place for one quest: the turn-in when it's done, else the
+-- closest spawn of an unfinished objective (this map first)
+function M:Nearest(questID)
+  local pack = self:Pack()
+  if not pack then return nil end
+  local here, px, py = C.PlayerPosition("player")
+  local best, bestD
+  local function consider(mapID, x, y, label)
+    local d = (mapID == here and px) and ((x - px) ^ 2 + (y - py) ^ 2) or (10 + (best and 0 or 0))
+    if not bestD or d < bestD then best, bestD = { mapID = mapID, x = x, y = y, label = label }, d end
+  end
+  local function each(src, label)
+    for mapID, pts in pairs(src and src[2] or {}) do
+      for i = 1, #pts - 1, 2 do consider(mapID, pts[i], pts[i + 1], label) end
+    end
+  end
+  for _, q in ipairs(M.Log()) do
+    if q.questID == questID then
+      local e = pack.quests[questID]
+      if not e then return nil end
+      if q.complete then
+        for _, n in ipairs(e.fin or {}) do each(pack.npcs[n], "Hand in: " .. q.title) end
+        for _, o in ipairs(e.finObj or {}) do each(pack.objects[o], "Hand in: " .. q.title) end
+        return best
+      end
+      for _, t in ipairs(self:Targets()) do
+        if t.questID == questID then
+          if t.kind == "npc" then each(pack.npcs[t.id], t.name)
+          elseif t.kind == "object" then each(pack.objects[t.id], t.name)
+          elseif t.kind == "item" then
+            local it = pack.items[t.id]
+            for _, n in ipairs(it and it[2] or {}) do each(pack.npcs[n], t.name) end
+            for _, o in ipairs(it and it[3] or {}) do each(pack.objects[o], t.name) end
+          elseif t.kind == "explore" then consider(t.explore[2], t.explore[3], t.explore[4], t.name) end
+        end
+      end
+      return best
+    end
+  end
+end
+
+function M:Guide(questID)
+  local spot = self:Nearest(questID)
+  if not (spot and ns.Waypoints) then return false end
+  ns.Waypoints:Set(spot.mapID, spot.x, spot.y, spot.label)
+  return true
+end
+
 -- ------------------------------------------------------------------ module
 function M:OnEnable()
   self:On("QUEST_LOG_UPDATE", function()
@@ -218,6 +363,38 @@ function M:OnEnable()
     tt:HookScript("OnShow", function(self) if M.enabled then ns.Safe("questobjectives:tooltip", M.OnTooltip, M, self) end end)
   end
 end
+
+ns.Hub:AddTab("quests", "Quests", function(p)
+  local UI = ns.UI
+  UI:FormPage(p, {
+    { "header", "Quests" },
+    { "header", "Your quest log", icon = "INV_Misc_Note_01" },
+    { "note", function()
+      if not M:Pack() then return "The quest data pack isn't installed: run python tools/import_questie_quests.py --deploy, then restart the game." end
+      return "Go puts the arrow on the nearest objective (or the turn-in when it's done). Pins on the map show every spot. Community data, unverified."
+    end },
+    { "cards", function()
+      local out = {}
+      local pack = M:Pack()
+      for _, q in ipairs(M.Log()) do
+        local e = pack and pack.quests[q.questID]
+        local tags = { { e and ("Level " .. e[2]) or "", "plain" } }
+        if q.complete then tags[#tags + 1] = { "Ready to hand in", "gold" } end
+        local lines = {}
+        for _, o in ipairs(q.objectives) do lines[#lines + 1] = (o.finished and "|cff7fff7f" or "") .. o.text .. (o.finished and "|r" or "") end
+        local actions = {}
+        if e then
+          actions[1] = { q.complete and "Go hand it in" or "Go to nearest", function() if not M:Guide(q.questID) then ns.Print("no location known for %s", q.title) end end,
+            q.complete and "Sets the arrow on the quest's turn-in." or "Sets the arrow on the nearest spot of an objective you still need." }
+        end
+        out[#out + 1] = { pic = "Interface\\GossipFrame\\" .. (q.complete and "ActiveQuestIcon" or "AvailableQuestIcon"),
+          title = q.title, tags = tags, line = #lines > 0 and table.concat(lines, "; ") or "No objectives listed.", actions = actions, highlight = q.complete }
+      end
+      return out
+    end },
+    { "note", function() return #M.Log() == 0 and "Your quest log is empty. Quest givers (!) show on the map." or "" end },
+  })
+end)
 
 function M:Activity()
   local pack = self:Pack()
