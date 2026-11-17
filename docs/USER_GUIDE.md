@@ -60,7 +60,7 @@ Two macros per character that follow your spellbook for its whole life: drag key
 ## Hunter tools
 
 - **Pet panel.** Pet name, level, XP, health, focus, abilities, attack speed and damage. The Feed button feeds your pet a food it eats (Outrider learns the diet as you feed).
-- **Tame helper.** /ride tamemacro <Beast Name> writes a macro: press to send the pet in, Shift-press to dismiss it, press again to tame. 'solo' tames without a pet.
+- **Tame helper.** /ride tamemacro <Beast Name> writes a macro: press to send the pet in, Shift-press to dismiss it, press again to tame. 'solo' tames without a pet; 'trap' lays a Freezing Trap, pulls the beast onto it, tames, and Wing Clips then tames again if the tame breaks.
 - **Ammo warnings.** One warning when ammo drops under 200 and again under 50. Errands remind you to buy more in town.
 - **Beast tooltips.** Family, level, tameable, and for known rares the last sighting and respawn window. Hold Shift for attack speed and abilities.
 
@@ -236,7 +236,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride spells` | [filter]  list the spells Outrider sees in your spellbook |
 | `/ride status` | character, saved-settings check, modules, errors |
 | `/ride talents` | [build <id>\|on\|off]  your next talent points from the levelling build |
-| `/ride tamemacro` | [solo] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks) |
+| `/ride tamemacro` | [solo\|trap] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks; trap: Freezing Trap first) |
 | `/ride trail` | [clear\|clear here]  breadcrumbs: the paths you walked, on the map |
 | `/ride undercut` | <N%> \| <copper>c  how much under the market to suggest |
 | `/ride unwatch` | <name or npcID>  stop watching |

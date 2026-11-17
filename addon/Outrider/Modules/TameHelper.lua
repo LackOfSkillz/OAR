@@ -56,13 +56,36 @@ M.SOLO = table.concat({
   "/castsequence [combat] reset=combat/shift Tame Beast, Wing Clip",
 }, "\n")
 
+-- Trap (Gary, 2026-11-17, level 20 with Freezing Trap): no pet. One press, one action:
+--   out of combat  1st press: Freezing Trap at your feet
+--                  2nd press: Concussive Shot pulls her onto the trap (frozen)
+--   in combat      Tame Beast; if her stun breaks it: Wing Clip slows her,
+--                  then Tame Beast again (the sequence keeps alternating)
+--   Shift          in combat: a new Freezing Trap, and the sequence starts
+--                  over at Tame Beast
+-- A macro can't ask "did the tame break?"; /stopmacro [channeling] makes a
+-- press do nothing while the tame is going, so pressing is safe either way.
+-- 255-character limit: no #showtooltip (the macro gets the Freezing Trap
+-- icon instead), and [noharm] also stops a press with no target.
+M.TRAP = table.concat({
+  "/stopmacro [channeling]",
+  "/cleartarget",
+  "/targetexact {NAME}",
+  "/stopmacro [noharm][dead]",
+  "/castsequence [nocombat] reset=combat Freezing Trap, Concussive Shot",
+  "/cast [combat,mod] Freezing Trap",
+  "/castsequence [combat] reset=combat/shift Tame Beast, Wing Clip",
+}, "\n")
+
 -- "mystmane" -> "Mystmane", "ghost howl" -> "Ghost Howl" (names are typed by hand).
 function M.Capitalize(name)
   return (name:gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end))
 end
 
-function M:Body(beast, solo)
-  return ((solo and self.SOLO or self.TEMPLATE):gsub("{NAME}", beast))
+-- mode: nil (pet), "solo" (or true), "trap"
+function M:Body(beast, mode)
+  local t = mode == "trap" and self.TRAP or (mode and self.SOLO) or self.TEMPLATE
+  return (t:gsub("{NAME}", beast))
 end
 
 -- ------------------------------------------------------------ name check
@@ -122,7 +145,7 @@ function M:FixTypos()
       local fixed, changed = self:CheckName(target)
       if changed then
         local newName = (name and name:lower() == target:lower()) and fixed:sub(1, 16) or name
-        local ok = pcall(EditMacro, index, newName, nil, self:Body(fixed))
+        local ok = pcall(EditMacro, index, newName, nil, self:Body(fixed, body:find("Freezing Trap", 1, true) and "trap" or body:find("Wing Clip", 1, true) and "solo" or nil))
         self:Info("tame macro %s: %s -> %s (%s)", tostring(name), target, fixed, ok and "fixed" or "EditMacro failed")
         local scan = ns.Modules:Get("RareScan")
         if ok and scan then scan:Watch(target, false) scan:Watch(fixed, true) end
@@ -144,7 +167,8 @@ function M:WriteMacro(beast, macroName, solo)
   local fixed, changed = self:CheckName(beast)
   if changed then ns.Print("no creature called %s; using %s", beast, fixed) end
   beast = fixed
-  macroName = (macroName or beast):sub(1, 16)
+  -- the trap macro is its own macro ("Mystmane Trap"), next to the usual one
+  macroName = (macroName or (solo == "trap" and beast .. " Trap") or beast):sub(1, 16)
   local body = self:Body(beast, solo)
   if #body > 255 then return false, "macro would be over 255 characters" end
   local index = C.Call("GetMacroIndexByName", macroName) or 0
@@ -152,7 +176,7 @@ function M:WriteMacro(beast, macroName, solo)
     -- Keep the existing macro's own name and icon; only the text changes.
     local existing = C.Call("GetMacroInfo", index)
     -- (a macro named after the beast gets the beast's proper capitals)
-    if existing and existing:lower() ~= beast:lower() then macroName = existing end
+    if existing and existing:lower() ~= macroName:lower() then macroName = existing end
     local ok = pcall(EditMacro, index, macroName, nil, body)
     if not ok then return false, "EditMacro failed" end
     self:Info("tame macro updated: %s (index %d, %d chars)", macroName, index, #body)
@@ -161,16 +185,16 @@ function M:WriteMacro(beast, macroName, solo)
   local _, perChar = C.Call("GetNumMacros")
   local maxChar = rawget(_G, "MAX_CHARACTER_MACROS") or 18
   if perChar and perChar >= maxChar then return false, "no free character macro slot" end
-  local ok, newIndex = pcall(CreateMacro, macroName, "INV_MISC_QUESTIONMARK", body, true)
+  local ok, newIndex = pcall(CreateMacro, macroName, solo == "trap" and "Spell_Frost_ChainsOfIce" or "INV_MISC_QUESTIONMARK", body, true)
   if not ok or not newIndex then return false, "CreateMacro failed" end
   self:Info("tame macro created: %s (index %s, %d chars)", macroName, tostring(newIndex), #body)
   return true, "created macro '" .. macroName .. "' (drag it from the macro window to your bar)"
 end
 
-ns.AddCommand("tamemacro", "[solo] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks)", function(arg)
+ns.AddCommand("tamemacro", "[solo|trap] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks; trap: Freezing Trap first)", function(arg)
   if ns.PlayerClass() ~= "HUNTER" then ns.Print("tame macros are for hunters") return end
   arg = arg and strtrim(arg) or ""
-  local solo = arg:lower():match("^solo%s+") ~= nil
+  local solo = arg:lower():match("^(solo)%s+") or arg:lower():match("^(trap)%s+")
   if solo then arg = strtrim((arg:gsub("^%S+%s+", ""))) end
   local ok, msg = M:WriteMacro(arg, nil, solo)
   ns.Print(msg)

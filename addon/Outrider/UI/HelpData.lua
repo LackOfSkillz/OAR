@@ -43,7 +43,7 @@ ns.HelpData = {
 
   { icon = "Ability_Hunter_BeastTaming", "Hunter tools", nil, {
     { "Pet panel", "Pet name, level, XP, health, focus, abilities, attack speed and damage. The Feed button feeds your pet a food it eats (Outrider learns the diet as you feed).", page = "class" },
-    { "Tame helper", "/ride tamemacro <Beast Name> writes a macro: press to send the pet in, Shift-press to dismiss it, press again to tame. 'solo' tames without a pet.", page = "class" },
+    { "Tame helper", "/ride tamemacro <Beast Name> writes a macro: press to send the pet in, Shift-press to dismiss it, press again to tame. 'solo' tames without a pet; 'trap' lays a Freezing Trap, pulls the beast onto it, tames, and Wing Clips then tames again if the tame breaks.", page = "class" },
     { "Ammo warnings", "One warning when ammo drops under 200 and again under 50. Errands remind you to buy more in town." },
     { "Beast tooltips", "Family, level, tameable, and for known rares the last sighting and respawn window. Hold Shift for attack speed and abilities." },
   } },

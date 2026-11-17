@@ -299,6 +299,8 @@ local function classRows(cls, page)
     r({ "header", "Taming" })
     r({ "input", "Tame macro for", "Mystmane", "Make macro", function(t) ns.Slash:Run("tamemacro " .. t) end })
     r({ "note", "Press: send the pet in. Shift-press: dismiss it. Press again: Tame Beast." })
+    r({ "input", "Trap tame macro for", "Mystmane", "Make trap macro", function(t) ns.Slash:Run("tamemacro trap " .. t) end })
+    r({ "note", "No pet out. Press: Freezing Trap. Press: Concussive Shot pulls her onto it. Then press to tame; if it breaks, press for Wing Clip, press to tame again. Shift: a new trap." })
     r({ "header", "Pet and ammo" })
     r({ "check", "Show the pet panel", function() return set("PetStatus").show end,
       function(on) if ns.PetStatus then ns.PetStatus:SetPanel(on) end end })
