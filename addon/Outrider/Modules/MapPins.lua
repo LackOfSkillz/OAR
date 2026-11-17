@@ -166,7 +166,9 @@ ns.Events:On("OTR_POI_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_SIGHTING_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_DATA_CHANGED", M, function() M:Invalidate() end)
 
+local NONE = {}
 function M:PinsFor(mapID)
+  if self:Settings().off then return NONE end
   if ns.LocationShare and ns.LocationShare:Prune() then self:Invalidate() end
   -- also rebuild if places were added or removed without an event
   local n = 0
@@ -320,13 +322,96 @@ function M:BuildPins(mapID)
   return out
 end
 
+-- ------------------------------------------------------------ show / hide
+-- (Gary, 2026-11-17: "be able to hide them or show them in the ui") A
+-- "Pins" button on the world map opens switches per group of pins and one
+-- for all of them; the same settings as the Map page, per character, also
+-- for the minimap.
+M.MENU = {
+  { "Rares", { "rare" } },
+  { "Quests", { "quest_giver", "objective", "turnin" } },
+  { "Vendors and repair", { "vendor", "repair" } },
+  { "Trainers", { "trainer" } },
+  { "Services", { "innkeeper", "bank", "auction", "flight_master", "stable_master", "mailbox", "guild_master", "tabard", "spirit_healer" } },
+  { "Herbs, ore and fish", { "herb", "ore", "fish", "pool" } },
+  { "Travel and dungeons", { "transport", "ride", "dungeon" } },
+  { "Your trail", { "trail" } },
+  { "Guildmates", { "guildmate" } },
+}
+
+function M:AllShown() return not self:Settings().off end
+
+function M:GroupShown(kinds)
+  local hidden = self:Settings().hidden
+  for _, k in ipairs(kinds) do if not hidden[k] then return true end end
+  return false
+end
+
+function M:Changed()
+  self:Invalidate()
+  if self.map and self.map:IsShown() then self:Refresh() end
+  local mini = ns.Modules:Get("MinimapPins")
+  if mini and mini.enabled and mini.Update then mini:Update() end
+  if self.menu and self.menu:IsShown() then self.menu:Sync() end
+end
+
+function M:SetGroup(kinds, on)
+  local hidden = self:Settings().hidden
+  for _, k in ipairs(kinds) do hidden[k] = (not on) or nil end
+  self:Changed()
+end
+
+function M:SetAll(on)
+  self:Settings().off = (not on) or nil
+  self:Changed()
+end
+
+function M:ToggleMenu()
+  if not self.menu then
+    local f = CreateFrame("Frame", "Outrider_MapPinsMenu", self.map, ns.Theme:BackdropTemplate())
+    ns.Theme:ApplyPanel(f, "raised", "border")
+    f:SetFrameStrata("DIALOG")
+    f:SetSize(240, 40 + (#M.MENU + 1) * 26)
+    f:SetPoint("TOPRIGHT", self.button, "BOTTOMRIGHT", 0, -4)
+    local head = ns.UI.Text(f, "normal", "goldText")
+    head:SetPoint("TOPLEFT", 10, -10)
+    head:SetText("Outrider pins")
+    f.rows = {}
+    local all = ns.UI:Check(f, "All Outrider pins", function() return M:AllShown() end, function(on) M:SetAll(on) end)
+    all:SetPoint("TOPLEFT", 6, -30)
+    all:SetWidth(228)
+    f.rows[1] = all
+    for i, g in ipairs(M.MENU) do
+      local kinds = g[2]
+      local row = ns.UI:Check(f, g[1], function() return M:GroupShown(kinds) end, function(on) M:SetGroup(kinds, on) end)
+      row:SetPoint("TOPLEFT", 6, -30 - i * 26)
+      row:SetWidth(228)
+      f.rows[#f.rows + 1] = row
+    end
+    function f:Sync() for _, r in ipairs(self.rows) do r:Refresh() end end
+    f:Hide()
+    self.menu = f
+  end
+  self.menu:SetShown(not self.menu:IsShown())
+  if self.menu:IsShown() then self.menu:Sync() end
+end
+
+function M:MakeButton()
+  if self.button or not self.map then return end
+  local b = ns.UI:Button(self.map, "Pins", 60, function() M:ToggleMenu() end)
+  b:SetFrameStrata("HIGH")
+  local anchor = self.map.ScrollContainer or self.map
+  b:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", -8, -8)
+  self.button = b
+end
+
 function M:OnEnable()
   local map = rawget(_G, "WorldMapFrame")
   if not map or not map.GetCanvas then self:Warn("no world map canvas: pins off") return end
   self.map = map
   if not self.hooked then
     self.hooked = true
-    map:HookScript("OnShow", function() if M.enabled then M:Refresh() end end)
+    map:HookScript("OnShow", function() if M.enabled then M:MakeButton() M:Refresh() end end)
     if type(map.OnMapChanged) == "function" then
       hooksecurefunc(map, "OnMapChanged", function() if M.enabled then M:Refresh() end end)
     end
@@ -338,6 +423,7 @@ end
 
 function M:OnDisable()
   self:ReleaseAll()
+  if self.menu then self.menu:Hide() end
   if self.card then self.card:Hide() end
 end
 
