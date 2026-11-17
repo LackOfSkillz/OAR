@@ -62,7 +62,7 @@ if (Test-Path $sv) {
 $note = @"
 Outrider build $version ($stamp)
 
-The Outrider_Data_NPC, _Gear, _Mobs, _Nodes and _Dungeons folders contain data
+The Outrider_Data_NPC, _Gear, _Mobs, _Nodes, _Dungeons and _Quests folders contain data
 converted from QuestieDB (https://github.com/Questie/Questie), shared under the
 GNU General Public License version 3 (full text in gpl-3.0.md next to this file).
 Upstream licensing notes: https://github.com/Questie/Questie/blob/master/LICENSE.md
@@ -82,7 +82,7 @@ if ($qzip) {
 }
 if (-not $gpl) { Write-Host "GPLv3 text not found in private\questie-source: not packaging." -ForegroundColor Red; exit 1 }
 foreach ($f in $folders) {
-  if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons)$') {
+  if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons|Quests)$') {
     Write-Utf8NoBom (Join-Path $staging "$f\LICENSE-DATA.txt") $note
     Write-Utf8NoBom (Join-Path $staging "$f\gpl-3.0.md") $gpl
     # the generated TOC still carries the private-copy note: say what applies

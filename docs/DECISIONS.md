@@ -155,9 +155,13 @@ recording every character's explored areas, which covers any map the file misses
 Gary asked to build every quest's objectives into Outrider from the Questie
 database. Same private route as D10/D13-D15: `tools/import_questie_quests.py`
 reads QuestieDB's Forever data (saved zip) into the git-ignored load-on-demand
-addon `private/Outrider_Data_Quests` (1511 quests with mob, object, item or
-explore objectives and their spawn points; ~775 KB), never released.
+addon `private/Outrider_Data_Quests` (5232 quests: objectives with spawn
+points, turn-ins, 255 objects that give quests; ~1.1 MB). Gary, 2026-11-17:
+"be sure it gets installed if anyone else downloads and runs Outrider": it
+ships in family/public builds like the other QuestieDB packs (Q3: GPLv3 text
+and attribution note added by tools/family.ps1), so Install-Outrider and
+Update Outrider install it.
 QuestObjectives pins the unfinished objectives of quests in the log on the
 world map and minimap, and alerts when the mouse passes over a quest object
-(saving that spot as seen on Forever). Installing the pack into AddOns
-(`--deploy`) needs Gary's OK for that step.
+(saving that spot as seen on Forever). Installed on Gary's PC with his OK
+(`--deploy`, 2026-11-17).
