@@ -84,6 +84,34 @@ def square(rows, w, h, box, x0, x1, y0, y1, pad=0.16):
     return [r[sx:sx + side] for r in rows[sy:sy + side]], side
 
 
+def picture_box(rows, x0, x1, y0, y1, dark=14, inset=4):
+    """Grid sheets hold full-bleed square paintings on black gutters with a label
+    under each: the painting is the run of rows and columns that are mostly not
+    black (label rows are mostly black with a little white text)."""
+    def filled(vals):
+        return sum(1 for p in vals if lum(p) > dark) / float(len(vals))
+    top_band = rows[y0:y0 + (y1 - y0) // 2]
+    cols = [x for x in range(x0, x1) if filled([r[x] for r in top_band]) > 0.6]
+    if len(cols) < 40:
+        return None
+    px0, px1 = cols[0], cols[-1]
+    rws = [y for y in range(y0, y1) if filled(rows[y][px0:px1]) > 0.6]
+    if len(rws) < 40:
+        return None
+    # the longest unbroken run of rows (a thin border line or a label is shorter)
+    runs, start, prev = [], rws[0], rws[0]
+    for y in rws[1:] + [None]:
+        if y is None or y > prev + 2:
+            runs.append((start, prev))
+            start = y
+        if y is not None:
+            prev = y
+    py0, py1 = max(runs, key=lambda r: r[1] - r[0])
+    side = min(px1 - px0, py1 - py0) - 2 * inset
+    sx, sy = px0 + inset + ((px1 - px0) - 2 * inset - side) // 2, py0 + inset
+    return [r[sx:sx + side] for r in rows[sy:sy + side]], side
+
+
 def write_png(path, rows):
     h, w = len(rows), len(rows[0])
     raw = bytearray()
@@ -117,24 +145,31 @@ def main():
     tiles = []
     if "--grid" in args:
         # --grid COLSxROWS name1,name2,... : an even grid, read left to right,
-        # top to bottom; the bottom 16% of each cell is its label and is skipped
+        # top to bottom; each cell's painting is found by its edges, the label under it left out
         cols, nrows = (int(v) for v in args[args.index("--grid") + 1].lower().split("x"))
         names = args[args.index("--grid") + 2].split(",")
         cw, ch = w // cols, h // nrows
         cell_list = []
         for i, name in enumerate(names):
             cx, cy = i % cols, i // cols
-            cell_list.append((name, cx * cw + 4, (cx + 1) * cw - 4, cy * ch + 4, cy * ch + int(ch * 0.84)))
+            cell_list.append((name, cx * cw + 2, (cx + 1) * cw - 2, cy * ch + 2, (cy + 1) * ch - 2))
     else:
         cell_list = cells(w)
     for name, x0, x1, y0, y1 in cell_list:
         if only and not any(name.startswith(o) for o in only):
             continue
-        box = object_box(rows, x0, x1, y0, y1)
-        if not box:
-            print("%-18s no object found" % name)
-            continue
-        tile, side = square(rows, w, h, box, x0, x1, y0, y1)
+        if "--grid" in args:
+            got = picture_box(rows, x0, x1, y0, y1)
+            if not got:
+                print("%-18s no picture found" % name)
+                continue
+            tile, side = got
+        else:
+            box = object_box(rows, x0, x1, y0, y1)
+            if not box:
+                print("%-18s no object found" % name)
+                continue
+            tile, side = square(rows, w, h, box, x0, x1, y0, y1)
         tiles.append((name, tile))
         out = os.path.join(INCOMING, name + ".png")
         if os.path.exists(out) and not force:
