@@ -21,4 +21,20 @@ T.describe("rare pins", function()
     T.eq(spots, 3, "a pin at each of its 3 spawn spots")
     T.eq(wolf, nil)
   end)
+
+  T.it("a rare you've already seen still shows every spawn spot from the pack", function()
+    local game = mock.new({ mapID = 1412 })
+    game.base.Outrider_DataMobs = { source = "test", maps = { [1412] = {
+      { 703, "Den Test", 12, 13, 4, { 0.52, 0.41, 0.58, 0.29, 0.62, 0.38, 0.59, 0.44 } },
+    } } }
+    rawset(game.env, "Outrider_DataMobs", game.base.Outrider_DataMobs)
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.global.sightings = { [703] = { { mapID = 1412, x = 0.599, y = 0.344, t = 1 } } }
+    local spots = 0
+    for _, p in ipairs(ns.MapPins:BuildPins(1412)) do
+      if p.npcID == 703 then spots = spots + 1 end
+    end
+    T.eq(spots, 5, "the sighting plus all 4 spawn spots")
+  end)
 end)

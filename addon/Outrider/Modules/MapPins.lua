@@ -301,12 +301,17 @@ function M:BuildPins(mapID)
       if (rank == 2 or rank == 4) and pts and pts[1] then
         local label = string.format("%s (%s, level %d)", r[2], rank == 2 and "rare elite" or "rare", r[4])
         local many = #pts > 2
+        -- Every spawn spot, also for a rare already seen (Gary, 2026-11-17:
+        -- Den'dralass's other spots were hidden behind her one sighting).
+        local first = 3
         if not seen[r[1]] then
           addRare(r[1], many and (label .. ", spawn spot 1") or label, pts[1], pts[2])
-          for i = 3, #pts - 1, 2 do
-            out[#out + 1] = { id = "rare-" .. r[1] .. "-" .. ((i + 1) / 2), kind = "rare", mapID = mapID, x = pts[i], y = pts[i + 1],
-              name = label .. ", spawn spot " .. ((i + 1) / 2), npcID = r[1], rare = true }
-          end
+        else
+          first = 1
+        end
+        for i = first, #pts - 1, 2 do
+          out[#out + 1] = { id = "rare-" .. r[1] .. "-" .. ((i + 1) / 2), kind = "rare", mapID = mapID, x = pts[i], y = pts[i + 1],
+            name = label .. ", spawn spot " .. ((i + 1) / 2), npcID = r[1], rare = true }
         end
       end
     end
