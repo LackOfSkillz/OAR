@@ -56,21 +56,29 @@ M.When = when
 
 function M:Activity() return string.format("%d notifications kept, %d new", #self.list, self:Unread()) end
 
+-- The feed as premium cards (2026-11-16): newest first, when, and who.
 ns.Hub:AddTab("feed", "Feed", function(p)
-  p.list = UI:ScrollList(p, {
-    rows = 14, rowHeight = 22,
-    render = function(row, e)
-      local who = e.who ~= ns.db.key and ("  |cff888888" .. (e.who:match("^[^-]+") or e.who) .. "|r") or ""
-      row.text:SetText(string.format("|cff888888%4s|r  %s%s%s", when(e.t), e.title,
-        e.text and ("  |cffbbbbbb" .. e.text:gsub("\n", " ") .. "|r") or "", who))
-    end,
+  UI:FormPage(p, {
+    { "header", "Feed" },
+    { "header", "Latest", icon = "INV_Letter_15" },
+    { "cards", function()
+      local out = {}
+      for i, e in ipairs(M.list) do
+        if i > 20 then break end
+        local tags = { { when(e.t) .. " ago", "plain" } }
+        if e.who and e.who ~= ns.db.key then tags[#tags + 1] = { e.who:match("^[^-]+") or e.who, "gold" } end
+        local t = tostring(e.title or ""):lower()
+        local icon = t:find("rare") and "Ability_Hunter_SniperShot" or t:find("upgrade") and "INV_Chest_Chain"
+          or t:find("ammo") and "INV_Ammo_Arrow_02" or t:find("errand") and "INV_Misc_Bag_08" or "INV_Letter_15"
+        out[#out + 1] = { pic = "Interface\\Icons\\" .. icon, title = e.title, tags = tags,
+          line = e.text and e.text:gsub("\n", " ") or "" }
+      end
+      return out
+    end },
+    { "note", function() return #M.list == 0 and "No notifications yet. Every pop-up Outrider shows lands here." or "" end },
   })
-  p.list:SetPoint("TOPLEFT", 0, 0)
-  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  function p:Refresh()
-    self.list:SetItems(M.list)
-    M:MarkRead()
-  end
+  local refresh = p.Refresh
+  function p:Refresh() refresh(self) M:MarkRead() end
 end, 48)
 
 ns.AddCommand("feed", "show the last 10 notifications", function()

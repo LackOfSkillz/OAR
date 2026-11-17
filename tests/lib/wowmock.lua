@@ -375,7 +375,29 @@ function M.new(opts)
   -- druid forms: game.forms = { spellID, ... } in stance-bar order
   base.GetNumShapeshiftForms = function() return #(game.forms or {}) end
   base.GetShapeshiftFormInfo = function(i) local id = (game.forms or {})[i] if id then return 0, false, true, id end end
-  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
+  base.UnitRace = function(unit)
+    if unit == "player" then return player.race, player.race, opts.raceID end
+    local u = game.units and game.units[unit]
+    if u and u.race then return u.race, u.race:gsub(" ", "") end
+  end
+  -- other players' guild: game.units[unit].guild
+  base.GetGuildInfo = function(unit)
+    if unit == "player" then return player.guild end
+    local u = game.units and game.units[unit]
+    return u and u.guild
+  end
+  -- /who: game.whoResults = { {fullName, fullGuildName, level, raceStr, classStr, area, filename} },
+  -- game.whoTotal (defaults to #whoResults); game.whoSent lists the filters asked for
+  base.C_FriendList = base.C_FriendList or {}
+  base.C_FriendList.SendWho = function(filter, origin) game.whoSent = game.whoSent or {} game.whoSent[#game.whoSent + 1] = filter end
+  base.C_FriendList.GetNumWhoResults = function() local r = game.whoResults or {} return #r, game.whoTotal or #r end
+  base.C_FriendList.GetWhoInfo = function(i) return (game.whoResults or {})[i] end
+  -- guild roster: game.guildRoster = { {name, rank, rankIndex, level, classDisplayName, zone, note, officernote, online, status, class} }
+  base.GetNumGuildMembers = function() local n = #(game.guildRoster or {}) return n, n, n end
+  base.GetGuildRosterInfo = function(i) local g = (game.guildRoster or {})[i] if g then return unpack(g, 1, 11) end end
+  base.GetClassInfo = function(id)
+    for file, cid in pairs(CLASS_ID) do if cid == id then return file:sub(1, 1) .. file:sub(2):lower(), file, cid end end
+  end
   base.UnitLevel = function(unit)
     if unit == "player" then return player.level end
     return game.units and game.units[unit] and game.units[unit].level
@@ -383,8 +405,21 @@ function M.new(opts)
   base.UnitIsPlayer = function(unit) return unit == "player" or (game.units and game.units[unit] and game.units[unit].player) or false end
   base.UnitCreatureType = function(unit) return game.units and game.units[unit] and game.units[unit].creatureType end
   base.UnitIsDead = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
-  base.IsInInstance = function() return opts.inInstance and true or false, opts.inInstance and "party" or "none" end
-  base.UnitFactionGroup = function(unit) if unit == "player" then return player.faction end end
+  -- game.instance = { name, map, kind } puts you inside one (else opts.inInstance)
+  base.IsInInstance = function()
+    if game.instance then return true, game.instance.kind or "party" end
+    return opts.inInstance and true or false, opts.inInstance and "party" or "none"
+  end
+  base.GetInstanceInfo = function()
+    local i = game.instance
+    if i then return i.name, i.kind or "party", 1, "Normal", 5, 0, false, i.map end
+    return "World", "none", 0, "", 0, 0, false, 0
+  end
+  base.UnitFactionGroup = function(unit)
+    if unit == "player" then return player.faction end
+    local u = game.units and game.units[unit]
+    return u and u.faction
+  end
   base.UnitExists = function(unit) return unit == "player" or (game.units and game.units[unit] ~= nil) end
   base.UnitGUID = function(unit)
     if unit == "player" then return "Player-1-00000001" end
@@ -500,7 +535,7 @@ function M.new(opts)
   base.GetInboxHeaderInfo = function(i)
     local m = game.inbox[i]
     local n = 0 for _ in pairs(m.items or {}) do n = n + 1 end
-    return nil, nil, "Sender", "Subject", m.money or 0, m.cod or 0, 30, n
+    return nil, nil, "Sender", "Subject", m.money or 0, m.cod or 0, m.days or 30, n
   end
   base.GetInboxItemLink = function(i, a) local id = game.inbox[i].items and game.inbox[i].items[a] return id and ("|Hitem:" .. id .. "::|h[x]|h") end
   base.TakeInboxMoney = function(i) game.money = (game.money or player.money) + game.inbox[i].money game.inbox[i].money = 0 end
@@ -523,6 +558,22 @@ function M.new(opts)
     return "Interface\\Icons\\INV_Misc_QuestionMark", r.name, 1, r.quality or 2, r.bop, r.canNeed ~= false, r.canGreed ~= false
   end
   base.IsInGuild = function() return opts.inGuild or false end
+  -- whispers and invites are recorded: game.tells, game.invites, game.guildInvites
+  -- XP and connection: game.xp, game.xpMax, game.rested, game.latency, game.fps
+  -- quest log XP: game.questXP[questID] = xp
+  base.GetQuestLogRewardXP = function(id) return game.questXP and game.questXP[id] or 0 end
+  base.UnitXP = function(unit) if unit == "player" then return game.xp or 0 end end
+  base.UnitXPMax = function(unit) if unit == "player" then return game.xpMax or 1000 end end
+  base.GetXPExhaustion = function() return game.rested end
+  base.GetNetStats = function() return 0, 0, game.latency or 40, game.latency or 40 end
+  base.GetFramerate = function() return game.fps or 60 end
+  base.ToggleAllBags = function() game.bagsToggled = (game.bagsToggled or 0) + 1 end
+  base.CanGuildInvite = function() return opts.canGuildInvite or false end
+  base.ChatFrame_SendTell = function(name) game.tells = game.tells or {} game.tells[#game.tells + 1] = name end
+  base.C_PartyInfo = base.C_PartyInfo or {}
+  base.C_PartyInfo.InviteUnit = function(name) game.invites = game.invites or {} game.invites[#game.invites + 1] = name end
+  base.C_GuildInfo = base.C_GuildInfo or {}
+  base.C_GuildInfo.Invite = function(name) game.guildInvites = game.guildInvites or {} game.guildInvites[#game.guildInvites + 1] = name end
   game.chatFilters = {}
   base.ChatFrame_AddMessageEventFilter = function(ev, fn) game.chatFilters[ev] = game.chatFilters[ev] or {} table.insert(game.chatFilters[ev], fn) end
   base.SetItemRef = function() end
@@ -559,6 +610,8 @@ function M.new(opts)
     if not d then return nil end
     local lines = { { leftText = d.name } }
     if d.title then lines[2] = { leftText = d.title } else lines[2] = { leftText = "Level 20" } end
+    -- quest objective lines: game.units[unit].objectives = { " - Wolves slain: 3/8" }
+    for _, o in ipairs(d.objectives or {}) do lines[#lines + 1] = { leftText = o, type = 8 } end
     return { lines = lines }
   end,
   -- item tooltips: game.itemTips[itemID] = { "line", ... }

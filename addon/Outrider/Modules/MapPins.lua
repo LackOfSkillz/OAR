@@ -29,6 +29,7 @@ local LABELS = {
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
+  dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in",
 }
 M.LABELS = LABELS
 
@@ -42,12 +43,12 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
-  trail = "trail", ride = "ride", transport = "ride",
+  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
   quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 }, guild = { 0.25, 1.00, 0.25 },
-  trail = { 0.95, 0.78, 0.35 }, ride = { 0.55, 0.75, 1.00 },
+  trail = { 0.95, 0.78, 0.35 }, ride = { 0.55, 0.75, 1.00 }, dungeon = { 0.85, 0.40, 1.00 },
 }
 M.GROUP_LABEL = { merchant = "Merchants", trainer = "Trainers", service = "Services", rare = "Rares", quest = "Quest givers", gather = "Herbs, ore & fish" }
 local ICON = {
@@ -58,6 +59,9 @@ local ICON = {
   rare = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
   ride = "Interface\\Icons\\INV_Misc_Map_01",
   transport = "Interface\\Icons\\Spell_Arcane_TeleportStormWind",
+  objective = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8",
+  turnin = "Interface\\GossipFrame\\ActiveQuestIcon",
+  dungeon = "Interface\\Icons\\INV_Misc_Key_14",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
   herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01", fish = "Interface\\Icons\\INV_Misc_Fish_02", pool = "Interface\\Icons\\INV_Misc_Fish_14",
 }
@@ -245,9 +249,23 @@ function M:BuildPins(mapID)
       end
     end
   end
+  -- Dungeon and raid entrances (gap analysis 2026-11-17), from the dungeon pack
+  if not hidden.dungeon and ns.DungeonGuide then
+    local ok, byName = pcall(ns.DungeonGuide.ByName, ns.DungeonGuide)
+    for name, e in pairs(ok and byName or {}) do
+      if e.map == mapID and e.x and e.y then
+        out[#out + 1] = { id = "dungeon-" .. name, kind = "dungeon", mapID = mapID, x = e.x, y = e.y, name = name,
+          title = "Dungeon entrance (community data, unverified)" }
+      end
+    end
+  end
   -- Breadcrumbs: where you walked, and rides you took from here (Trail)
   if ns.Trail and ns.Trail.enabled then
     for _, pin in ipairs(ns.Trail:Pins(mapID, hidden)) do out[#out + 1] = pin end
+  end
+  -- Where your quests' objectives are (QuestObjectives, from the private quest pack)
+  if ns.QuestObjectives then
+    for _, pin in ipairs(ns.QuestObjectives:Pins(mapID, hidden)) do out[#out + 1] = pin end
   end
   -- Herb and ore spawns from the node pack, for what this character can gather
   if ns.NodePack then

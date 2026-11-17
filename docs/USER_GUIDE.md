@@ -39,7 +39,7 @@ Two macros per character that follow your spellbook for its whole life: drag key
 
 - **Make them.** Class page > Fight macros > Make or show the macros (or /ride fight). Then open the macro window, Character tab, and drag them to your bar.
 - **How a press works.** WoW Forever tries one spell per press. Each macro is ordered: buffs before the pull (only while missing), once-per-pull spells, spells on cooldown, then the always-usable filler. Spam it.
-- **Hunter.** Fight (ranged): Aspect of the Hawk, Hunter's Mark, Auto Shot, Serpent Sting, Arcane Shot, pet sent in. Back to Hawk in a fight when Arcane Shot is cooling down. Strike (melee): Aspect of the Monkey, Wing Clip once, Raptor Strike, Mongoose Bite. Pet: Revive, Call or Mend Pet.
+- **Hunter.** Fight (ranged): Aspect of the Hawk, Hunter's Mark, Auto Shot, Serpent Sting, Arcane Shot, pet sent in. Back to Hawk in a fight when Arcane Shot is cooling down. Strike (melee): Aspect of the Monkey, Wing Clip once, Raptor Strike, Immolation Trap (at your feet, when ready), Mongoose Bite. Pet: Revive, Call or Mend Pet.
 - **Warrior.** Fight: Charge, Battle Shout, Rend once, Mortal Strike / Bloodthirst / Shield Slam, Heroic Strike. Strike: Overpower, Revenge, Execute, Thunder Clap, Cleave - press it when one lights up.
 - **Rogue.** Fight: Cheap Shot from Stealth, then builder, builder, Slice and Dice, three builders, Eviscerate, round and round. Strike: Stealth out of combat; Kick, then Adrenaline Rush, Blade Flurry, Evasion.
 - **Mage.** Fight: Arcane Intellect and armor while missing, Frostbolt (Fireball before it). Strike (close): Frost Nova, Fire Blast, Arcane Explosion.
@@ -111,7 +111,7 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 - **Gold ledger.** Where your gold came from and went, per session and character.
 - **Merchant's Favor.** Waylaid Crates: what each crate needs and your Favor balance. /ride favor.
 - **Errands.** Entering a town, one pop-up with what to do there: sell junk, repair, buy ammo, train. Errands page lists them.
-- **Vendor and mailbox.** Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click).
+- **Vendor and mailbox.** Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click) that says what's waiting in total. Send to: your characters on this realm and the last people you mailed, one click fills the To: box. At login, one line warns about mail with gold or items expiring within 3 days on any of your characters.
 
 ## Auction house
 
@@ -126,6 +126,23 @@ With the auction house open, Outrider's shopping panel sits beside it. Buying is
 
 - **What now?.** Next steps for this character right now: errands, quests, gear, dungeons, training, gold. /ride now [level|gold|gear|professions|explore].
 - **Find bar.** One search box for everything (key binding Outrider: Find, or /ride find).
+- **Census.** Who's playing on your realm: most common level, class, race and profession, and the highest level seen. Players you see are counted as you play; Search the next group (or its key binding) sends one /who search a press, top level first: 13 presses cover every level, more presses add detail where 50+ players share a level. Professions come only from links in chat. Kept 30 days, on this PC only. /ride census.
+- **Players & guilds.** Find any player Outrider has counted (name, guild, zone, class or level) and click to whisper them (opens the chat box, you send), invite them to your group, or to your guild if your rank can. A catalog of every guild seen with members, levels and where they play. Search a guild or your zone with one /who per press.
+- **Info bar.** A thin strip at the top of the screen: gold (hover for every character's), free bag slots, durability (warns on your worst item), ammo, XP with rested XP and what your quest log is worth, clock, latency and frame rate. Click gold, bags, durability or XP to open the matching page. Shift-drag to move; Settings picks the parts. /ride bar on|off|reset.
+- **My characters.** Every character at a glance: level, gold, rested XP (it keeps growing offline, faster in an inn), free bag slots, durability, ammo, professions, where and when last seen. Updated whenever you play them.
+- **Dungeon lockouts and runs.** Classic allows 5 new instances an hour and 30 a day per account. My characters counts the ones you enter and says when the next slot frees (an estimate). Every run is timed with the XP, kills and gold it gave. /ride runs.
+- **Map extras.** Dungeon and raid entrances, portals, boats and zeppelins, and guildmates who share their location show as pins on the world map and minimap (Map page picks which).
+- **Reveal the map.** Areas of the world map this character hasn't explored show tinted, for every zone: Outrider carries the game's own list of map areas for WoW Forever, and also records what each of your characters explored. Settings > Map.
+- **Flight times.** Every flight you take is timed. The flight map tooltip then shows how long a flight takes, and the info bar counts down to landing.
+- **Quest objectives on the map.** For every quest in your log, pins on the world map and minimap show where its mobs, objects, items and places are, from the quest database (community data, unverified). Finished objectives drop off. Mouse over an object a quest needs and a pop-up says so; the spot is saved as seen on Forever. Settings > Quests.
+- **Quests page and turn-ins.** The Quests page lists every quest in your log with its progress; Go puts the arrow on the nearest objective, or on the turn-in once it's done. Finished quests get a ? pin where you hand them in, objects that give quests (wanted posters) get a ! pin, and mob, object and item tooltips say which of your quests needs them.
+- **Quest marks and quest XP.** Mobs and objects your quests need get a quest mark beside their nameplate with what's left. The info bar's XP shows what the quests in your log are worth. At a turn-in, the best reward for you is named; if none is an upgrade, the one worth most (vendor or auction house).
+- **Bag marks.** On Blizzard's own bag slots: item level on gear, a green arrow on upgrades for you, a gold coin on grey junk (Settings picks which). Outrider steps aside if a bag addon like Bagnon or Baganator is installed.
+- **Find an item on any character.** My characters page, or /ride where <item>: which of your characters has it and where (bags, bank, mail, worn), as last seen.
+- **Small switches.** Settings > Small switches, all off until you pick them: hide the big zone names, red error text or the talking head; zoom the camera out further; gather other addons' minimap buttons behind one button; keep the last 50 chat lines after a reload.
+- **Wowhead link.** Hover an item, NPC or spell and press your Outrider: Wowhead link key (or /ride wowhead): a box with its WoW Forever Wowhead address to copy (Ctrl+C).
+- **At the trainer.** Open any trainer once (class or profession): the Professions page lists what you can learn now, what comes next (at what skill or level) and the cost.
+- **Skill-up chance and cooldowns.** Professions page: each recipe's chance to give a point from its colour (estimates), craft cooldowns like transmutes on every character (one line at login when one is ready), your most profitable crafts, and auctions of yours someone undercut.
 - **Feed.** Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.
 - **Look.** A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.
 - **Edit Mode per situation.** Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.
@@ -166,6 +183,8 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 |---|---|
 | `/ride access` | font\|scale <n> \| colorblind\|contrast\|motion on\|off  (applies after /reload) |
 | `/ride ask` | [reload]  snapshot for your advisor: shows a code to copy (or 'reload' to save it to disk) |
+| `/ride bar` | the info bar: /ride bar on\|off\|reset (Shift-drag it to move) |
+| `/ride census` | who's playing: most common level, class, race, profession (/ride census who searches the next group, reset clears) |
 | `/ride chars` | list characters Outrider knows on this account |
 | `/ride chat` | word add\|remove <text> \| spam on\|off \| lfgtab on\|off \| time on\|off  chat options |
 | `/ride coords` | print map id and your coordinates |
@@ -205,6 +224,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride probe` | record which game APIs exist (then /reload) |
 | `/ride questpins` | grey on\|off  show quests too low to give XP |
 | `/ride reset` | char\|all confirm  wipe settings (needs the word confirm) |
+| `/ride runs` | dungeon lockouts this hour and today, and your last runs |
 | `/ride score` | <item link>  compare an item with what you wear |
 | `/ride selftest` | error\|combat\|button\|toast\|widgets  checks for the test pipeline |
 | `/ride setup` | open the first-run setup (features and accessibility) |
@@ -223,4 +243,6 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride watch` | <name or npcID>  alert for this NPC on this character |
 | `/ride way` | <x> <y> [title] \| clear  waypoint on the current map (map numbers 0-100) |
 | `/ride weights` | show the stat weights used for this character |
+| `/ride where` | where your characters keep an item: /ride where <item name> |
+| `/ride wowhead` | the Wowhead address of what you're hovering (item, NPC, spell), to copy |
 | `/ride zonelevels` | [on\|off]  level ranges over zones on the world map |

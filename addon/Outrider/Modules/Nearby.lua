@@ -252,35 +252,44 @@ function M:Activity()
   return "upgrades from quests, vendors and drops in this zone (Gear tab)"
 end
 
-ns.Hub:AddTab("gear", "Gear", function(p)
-  p.head = UI.Text(p, "small", "muted")
-  p.head:SetPoint("TOPLEFT", 0, 0)
-  p.head:SetText("Upgrades near you, best first. Click one for a waypoint. Sources are unverified community data.")
-  p.list = UI:ScrollList(p, {
-    rows = 13, rowHeight = 22,
-    render = function(row, c) row.text:SetText(M.Describe(c)) end,
-    onClick = function(c)
-      local w = c.where
-      if w and w.mapID and w.x then ns.Waypoints:Set(w.mapID, w.x, w.y, tostring(c.name)) end
-    end,
-  })
-  p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
-  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  function p:Refresh()
-    local list, f = M:Candidates(), M.filter
-    if f and f ~= "" then
-      local keep = {}
-      for _, c in ipairs(list) do
-        if tostring(c.name):lower():find(f, 1, true) or M.SlotWord(c.itemID):find(f, 1, true) then keep[#keep + 1] = c end
-      end
-      list = keep
-      self.head:SetText("Upgrades matching '" .. f .. "'. Click one for a waypoint.")
-      M.filter = nil
-    else
-      self.head:SetText("Upgrades near you, best first. Click one for a waypoint. Sources are unverified community data.")
+-- Gear page as premium cards (2026-11-16): the item's own icon and tooltip,
+-- how much better it is, where it comes from, and a waypoint button.
+function M:CardItems()
+  local list, f = self:Candidates(), self.filter
+  if f and f ~= "" then
+    local keep = {}
+    for _, c in ipairs(list) do
+      if tostring(c.name):lower():find(f, 1, true) or M.SlotWord(c.itemID):find(f, 1, true) then keep[#keep + 1] = c end
     end
-    self.list:SetItems(list)
+    list = keep
   end
+  local out = {}
+  for i, c in ipairs(list) do
+    if i > 15 then break end
+    local w = c.where or {}
+    local src = M.Describe(c):gsub("^%+%d+%%%s+", ""):gsub("^" .. tostring(c.name):gsub("%p", "%%%0") .. "%s*", "")
+    local tags = { { string.format("+%d%%", math.floor(c.pct + 0.5)), "gold" } }
+    local slot = M.SlotWord(c.itemID)
+    if slot and slot ~= "" then tags[#tags + 1] = { slot:gsub("^%l", string.upper), "plain" } end
+    local actions = {}
+    if w.mapID and w.x then
+      actions[1] = { "Set waypoint", function() ns.Waypoints:Set(w.mapID, w.x, w.y, tostring(c.name)) end, "Sets the arrow to where you get it." }
+    end
+    out[#out + 1] = { itemID = c.itemID, title = tostring(c.name), tags = tags, line = src, actions = actions, highlight = i == 1 }
+  end
+  return out
+end
+
+ns.Hub:AddTab("gear", "Gear", function(p)
+  UI:FormPage(p, {
+    { "header", "Gear" },
+    { "header", "Upgrades near you", icon = "INV_Chest_Chain" },
+    { "note", function() return M.filter and M.filter ~= "" and ("Upgrades matching '" .. M.filter .. "'.") or "Best first. Hover the picture for the item; sources are unverified community data." end },
+    { "cards", function() return M:CardItems() end },
+    { "note", function() return #M:Candidates() == 0 and "No upgrades found here yet (item data may still be loading)." or "" end },
+  })
+  local refresh = p.Refresh
+  function p:Refresh() refresh(self) M.filter = nil end
 end, 44)
 
 ns.AddCommand("nearby", "upgrades you can get in this zone", function()

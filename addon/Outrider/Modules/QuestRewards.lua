@@ -21,7 +21,7 @@ ns.QuestRewards = M
 function M:Best()
   local n = C.Call("GetNumQuestChoices") or 0
   if n < 2 then return nil end
-  local bestUp, bestUpPct, bestVal, bestValCopper
+  local bestUp, bestUpPct, bestVal, bestValCopper, bestOnAH
   for i = 1, n do
     local link = C.Call("GetQuestItemLink", "choice", i)
     if link then
@@ -29,14 +29,19 @@ function M:Best()
       if r and not r.why and r.pct > 0.5 and (not bestUpPct or r.pct > bestUpPct) then bestUp, bestUpPct = i, r.pct end
       local info = C.ItemInfo(link)
       local v = info and info.sellPrice or 0
-      if not bestValCopper or v > bestValCopper then bestVal, bestValCopper = i, v end
+      -- worth more on the auction house? (gap analysis 2026-11-17)
+      local id = tonumber(tostring(link):match("item:(%d+)"))
+      local ah = id and ns.Prices and ns.Prices.Get and (ns.Prices:Get(id))
+      local onAH = type(ah) == "number" and ah > v
+      if onAH then v = ah end
+      if not bestValCopper or v > bestValCopper then bestVal, bestValCopper, bestOnAH = i, v, onAH end
     end
   end
   if bestUp then
     return bestUp, string.format("+%d%% upgrade", math.floor(bestUpPct + 0.5)), C.Call("GetQuestItemLink", "choice", bestUp)
   end
   if bestVal then
-    return bestVal, "sells for " .. ns.Prices.Money(bestValCopper), C.Call("GetQuestItemLink", "choice", bestVal)
+    return bestVal, "sells for " .. ns.Prices.Money(bestValCopper) .. (bestOnAH and " on the auction house" or ""), C.Call("GetQuestItemLink", "choice", bestVal)
   end
 end
 

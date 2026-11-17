@@ -116,3 +116,52 @@ Gary asked for HealBot-style bars (click a member's bar to heal them) plus assig
 
 ## D-classfight: Fight macros for every class (2026-11-16)
 Gary: "exactly the same thing for every single class". Modules/ClassFight.lua adds warrior, rogue, warlock, druid, paladin and shaman to the Fight/Strike/Heal builder, and self-buff lines (only while the buff is missing) for mage and priest too. Orders from the WoW Forever levelling guides (Warcraft Tavern per class, Method for shaman, read 2026-11-16). Forever names are tried first (Bane of Agony, Holy Strike, Primal Bite, Shank). Rules from the hunter's measurements: once-per-pull castsequences, cooldowns, filler last; reactive strikes (Overpower, Revenge, Execute) on key 2 so a refused press never blocks key 1. Druid forms use [form:N] numbers read from the stance bar, rewritten when forms change. All unverified until each class's fight log is read.
+
+## D-census: who's playing (2026-11-17, Claude)
+
+Gary asked for the most common level, class, race and profession on the realm.
+Census counts players from /who results (one search per press of Gary's, the
+server returns at most 50 a search, full ones split by level then class), from
+players seen around him (mouseover, target, nameplates, group, guild roster)
+and professions only from profession links in chat (the game shows nobody's
+professions). Names stay on this PC, 30 days; the advisor snapshot holds counts
+only. Steps aside for CensusPlus. Open: whether the Who window pops open on
+every search on Forever; the log will tell.
+
+## D-people: players & guilds page (2026-11-17, Claude)
+
+Gary asked to pick a counted player and whisper or invite them, and to search
+and catalog guilds. The Players & guilds page lists everyone Census counted
+(filter by name, guild, zone, class, level). Whisper only opens the chat box
+with /w Name (Gary writes and sends); group and guild invites go out on his
+click (guild invite only when his rank can invite). Guilds are cataloged from
+the guild tags Census sees; a guild or zone /who search is one press each.
+"Where" is the zone where the player was last seen, so it can be out of date.
+
+## D-mapreveal: full map data from the client's tables (2026-11-17, Gary OK'd the fetch)
+
+Revealing unexplored map areas needs the game's full list of map overlays,
+which the client only gives per character for areas already explored. Gary
+said yes to fetching the game's own WorldMapOverlay, WorldMapOverlayTile and
+UiMapXMapArt tables from wago.tools for the exact Forever build
+(1.60.1.70938). tools/import_map_overlays.py turns them into
+Data/MapOverlays.lua (45 zones, 572 areas, ~20 KB). This is client data for the
+build Gary runs, not community guesses. After a Forever patch that redraws
+zones, fetch the new build's tables and rerun the tool. MapReveal also keeps
+recording every character's explored areas, which covers any map the file misses.
+
+## D-quests: quest objectives pack (2026-11-17)
+
+Gary asked to build every quest's objectives into Outrider from the Questie
+database. Same private route as D10/D13-D15: `tools/import_questie_quests.py`
+reads QuestieDB's Forever data (saved zip) into the git-ignored load-on-demand
+addon `private/Outrider_Data_Quests` (5232 quests: objectives with spawn
+points, turn-ins, 255 objects that give quests; ~1.1 MB). Gary, 2026-11-17:
+"be sure it gets installed if anyone else downloads and runs Outrider": it
+ships in family/public builds like the other QuestieDB packs (Q3: GPLv3 text
+and attribution note added by tools/family.ps1), so Install-Outrider and
+Update Outrider install it.
+QuestObjectives pins the unfinished objectives of quests in the log on the
+world map and minimap, and alerts when the mouse passes over a quest object
+(saving that spot as seen on Forever). Installed on Gary's PC with his OK
+(`--deploy`, 2026-11-17).

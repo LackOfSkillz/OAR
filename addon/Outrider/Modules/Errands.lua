@@ -98,18 +98,24 @@ function M:Activity()
   return n == 0 and "nothing to do in town" or (n .. " errands for the next town")
 end
 
+-- Errands as premium cards (2026-11-16): a picture per kind and a Go button.
+M.KIND_ICON = { repair = "Trade_BlackSmithing", vendor = "INV_Misc_Bag_08", ammo = "INV_Ammo_Arrow_02",
+  trainer = "INV_Misc_Book_09", auction = "INV_Misc_Coin_02", mail = "INV_Letter_15", bank = "INV_Misc_Bag_10" }
 ns.Hub:AddTab("errands", "Errands", function(p)
-  p.head = UI.Text(p, "small", "muted")
-  p.head:SetPoint("TOPLEFT", 0, 0)
-  p.head:SetText("Things to do in town. Click one for a waypoint to the nearest NPC.")
-  p.list = UI:ScrollList(p, {
-    rows = 10, rowHeight = 24,
-    render = function(row, e) row.text:SetText(e.text) end,
-    onClick = function(e) M:Go(e) end,
+  UI:FormPage(p, {
+    { "header", "Errands" },
+    { "header", "Things to do in town", icon = "INV_Misc_Bag_08" },
+    { "cards", function()
+      local out = {}
+      for i, e in ipairs(M:List()) do
+        out[#out + 1] = { pic = "Interface\\Icons\\" .. (M.KIND_ICON[e.kind] or "INV_Misc_Note_01"), title = e.text,
+          line = "Go sets the arrow to the nearest NPC for it.", highlight = i == 1,
+          actions = { { "Go  >", function() M:Go(e) end, "Sets the arrow to the nearest NPC for this errand." } } }
+      end
+      return out
+    end },
+    { "note", function() return #M:List() == 0 and "Nothing to do in town. Outrider tells you when you arrive somewhere with errands." or "" end },
   })
-  p.list:SetPoint("TOPLEFT", p.head, "BOTTOMLEFT", 0, -8)
-  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  function p:Refresh() self.list:SetItems(M:List()) end
 end, 47)
 
 ns.AddCommand("errands", "what to do in town for this character", function()

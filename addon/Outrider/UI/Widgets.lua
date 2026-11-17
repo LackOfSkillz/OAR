@@ -251,23 +251,34 @@ end
 
 -- Checkbox row: get() returns bool, set(bool) saves it.
 function UI:Check(parent, label, get, set)
+  -- a switch (2026-11-16 premium look): a pill with a knob, gold when on
   local row = CreateFrame("Button", nil, parent)
-  row:SetSize(300, 22)
+  row:SetSize(420, 26)
   local box = CreateFrame("Frame", nil, row, Theme:BackdropTemplate())
   row.box = box
-  box:SetSize(14, 14)
+  box:SetSize(34, 18)
   box:SetPoint("LEFT", 2, 0)
-  Theme:ApplyPanel(box, "raised")
+  Theme:ApplyPanel(box, "bg", "strong")
   local mark = box:CreateTexture(nil, "OVERLAY")
-  mark:SetPoint("TOPLEFT", 3, -3)
-  mark:SetPoint("BOTTOMRIGHT", -3, 3)
-  mark:SetColorTexture(Theme:Color("accent"))
+  mark:SetSize(12, 12)
+  local hover = row:CreateTexture(nil, "HIGHLIGHT")
+  hover:SetAllPoints()
+  local hr, hg, hb = Theme:Color("gold")
+  hover:SetColorTexture(hr, hg, hb, 0.06)
   row.label = text(row, "normal", "text")
-  row.label:SetPoint("LEFT", box, "RIGHT", 8, 0)
+  row.label:SetPoint("LEFT", box, "RIGHT", 10, 0)
   row.label:SetText(label)
   row.note = text(row, "small", "muted")
   row.note:SetPoint("LEFT", row.label, "RIGHT", 8, 0)
-  function row:Refresh() mark:SetShown(get() and true or false) end
+  function row:Refresh()
+    local on = get() and true or false
+    row.on = on
+    mark:ClearAllPoints()
+    mark:SetPoint(on and "RIGHT" or "LEFT", on and -3 or 3, 0)
+    mark:SetColorTexture(Theme:Color(on and "onGold" or "muted"))
+    Theme:ApplyPanel(box, on and "gold" or "bg", on and "gold" or "strong")
+    row.label:SetTextColor(Theme:Color(on and "text" or "body"))
+  end
   row:SetScript("OnClick", function()
     ns.Safe("check:" .. label, set, not get())
     row:Refresh()
