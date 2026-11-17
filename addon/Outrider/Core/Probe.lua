@@ -92,6 +92,8 @@ Probe.APIS = {
   -- social / sync
   { "C_ChatInfo.RegisterAddonMessagePrefix", "P8" }, { "C_ChatInfo.SendAddonMessage", "P8" },
   { "C_FriendList.GetNumFriends", "P8" }, { "C_FriendList.GetFriendInfoByIndex", "P8" },
+  { "C_FriendList.SendWho", "P8" }, { "C_FriendList.GetNumWhoResults", "P8" }, { "C_FriendList.GetWhoInfo", "P8" },
+  { "GetPlayerInfoByGUID", "P8" }, { "GetGuildRosterInfo", "P8" }, { "GetClassInfo", "P8" },
   { "C_BattleNet.GetFriendAccountInfo", "P8" }, { "BNGetNumFriends", "P8" }, { "IsInGuild", "P8" },
   { "IsTrialAccount", "P8" }, { "IsVeteranTrialAccount", "P8" }, { "GetGuildRosterInfo", "P8" },
 }

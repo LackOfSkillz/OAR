@@ -234,3 +234,56 @@ function UI:StatusTiles(parent)
   end
   return box
 end
+
+-- ------------------------------------------------------------------ bars
+-- A ranked bar chart: items { label, fill (0..1), text, color = {r,g,b} }.
+local BAR_H, BAR_GAP, LABEL_W, VALUE_W = 20, 4, 140, 110
+
+function UI:BarList(parent)
+  local box = CreateFrame("Frame", nil, parent)
+  box:SetSize(560, 10)
+  box.rows, box.items = {}, {}
+  function box:SetItems(items)
+    self.items = items or {}
+    local w = (self:GetWidth() or 560)
+    if w < 300 then w = 560 end
+    local track = w - LABEL_W - VALUE_W - 16
+    for i, it in ipairs(self.items) do
+      local r = self.rows[i]
+      if not r then
+        r = CreateFrame("Frame", nil, self)
+        r.label = UI.Text(r, "normal", "text")
+        r.label:SetPoint("LEFT", 0, 0)
+        r.label:SetWidth(LABEL_W)
+        r.label:SetJustifyH("LEFT")
+        r.track = r:CreateTexture(nil, "BACKGROUND")
+        r.track:SetPoint("LEFT", LABEL_W + 8, 0)
+        r.track:SetHeight(BAR_H - 6)
+        r.track:SetColorTexture(Theme:Color("bg"))
+        r.fill = r:CreateTexture(nil, "ARTWORK")
+        r.fill:SetPoint("LEFT", r.track, "LEFT", 0, 0)
+        r.fill:SetHeight(BAR_H - 6)
+        r.value = UI.Text(r, "small", "body")
+        r.value:SetPoint("LEFT", r.track, "RIGHT", 8, 0)
+        self.rows[i] = r
+      end
+      r:SetSize(w, BAR_H)
+      r:ClearAllPoints()
+      r:SetPoint("TOPLEFT", 0, -(i - 1) * (BAR_H + BAR_GAP))
+      r.track:SetWidth(track)
+      r.fill:SetWidth(math.max(2, track * math.min(1, math.max(0, tonumber(it.fill) or 0))))
+      if it.color then r.fill:SetColorTexture(it.color[1], it.color[2], it.color[3], 0.9)
+      else r.fill:SetColorTexture(Theme:Color("gold")) end
+      r.label:SetText(it.label or "")
+      r.value:SetText(it.text or "")
+      r:Show()
+    end
+    for i = #self.items + 1, #self.rows do self.rows[i]:Hide() end
+    self:SetHeight(math.max(1, self:LayoutHeight()))
+  end
+  function box:LayoutHeight()
+    local n = #self.items
+    return n > 0 and (n * (BAR_H + BAR_GAP) + 4) or 0
+  end
+  return box
+end

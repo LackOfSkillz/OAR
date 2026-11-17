@@ -116,3 +116,14 @@ Gary asked for HealBot-style bars (click a member's bar to heal them) plus assig
 
 ## D-classfight: Fight macros for every class (2026-11-16)
 Gary: "exactly the same thing for every single class". Modules/ClassFight.lua adds warrior, rogue, warlock, druid, paladin and shaman to the Fight/Strike/Heal builder, and self-buff lines (only while the buff is missing) for mage and priest too. Orders from the WoW Forever levelling guides (Warcraft Tavern per class, Method for shaman, read 2026-11-16). Forever names are tried first (Bane of Agony, Holy Strike, Primal Bite, Shank). Rules from the hunter's measurements: once-per-pull castsequences, cooldowns, filler last; reactive strikes (Overpower, Revenge, Execute) on key 2 so a refused press never blocks key 1. Druid forms use [form:N] numbers read from the stance bar, rewritten when forms change. All unverified until each class's fight log is read.
+
+## D-census: who's playing (2026-11-17, Claude)
+
+Gary asked for the most common level, class, race and profession on the realm.
+Census counts players from /who results (one search per press of Gary's, the
+server returns at most 50 a search, full ones split by level then class), from
+players seen around him (mouseover, target, nameplates, group, guild roster)
+and professions only from profession links in chat (the game shows nobody's
+professions). Names stay on this PC, 30 days; the advisor snapshot holds counts
+only. Steps aside for CensusPlus. Open: whether the Who window pops open on
+every search on Forever; the log will tell.

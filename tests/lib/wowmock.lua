@@ -375,7 +375,29 @@ function M.new(opts)
   -- druid forms: game.forms = { spellID, ... } in stance-bar order
   base.GetNumShapeshiftForms = function() return #(game.forms or {}) end
   base.GetShapeshiftFormInfo = function(i) local id = (game.forms or {})[i] if id then return 0, false, true, id end end
-  base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
+  base.UnitRace = function(unit)
+    if unit == "player" then return player.race, player.race, opts.raceID end
+    local u = game.units and game.units[unit]
+    if u and u.race then return u.race, u.race:gsub(" ", "") end
+  end
+  -- other players' guild: game.units[unit].guild
+  base.GetGuildInfo = function(unit)
+    if unit == "player" then return player.guild end
+    local u = game.units and game.units[unit]
+    return u and u.guild
+  end
+  -- /who: game.whoResults = { {fullName, fullGuildName, level, raceStr, classStr, area, filename} },
+  -- game.whoTotal (defaults to #whoResults); game.whoSent lists the filters asked for
+  base.C_FriendList = base.C_FriendList or {}
+  base.C_FriendList.SendWho = function(filter, origin) game.whoSent = game.whoSent or {} game.whoSent[#game.whoSent + 1] = filter end
+  base.C_FriendList.GetNumWhoResults = function() local r = game.whoResults or {} return #r, game.whoTotal or #r end
+  base.C_FriendList.GetWhoInfo = function(i) return (game.whoResults or {})[i] end
+  -- guild roster: game.guildRoster = { {name, rank, rankIndex, level, classDisplayName, zone, note, officernote, online, status, class} }
+  base.GetNumGuildMembers = function() local n = #(game.guildRoster or {}) return n, n, n end
+  base.GetGuildRosterInfo = function(i) local g = (game.guildRoster or {})[i] if g then return unpack(g, 1, 11) end end
+  base.GetClassInfo = function(id)
+    for file, cid in pairs(CLASS_ID) do if cid == id then return file:sub(1, 1) .. file:sub(2):lower(), file, cid end end
+  end
   base.UnitLevel = function(unit)
     if unit == "player" then return player.level end
     return game.units and game.units[unit] and game.units[unit].level
@@ -384,7 +406,11 @@ function M.new(opts)
   base.UnitCreatureType = function(unit) return game.units and game.units[unit] and game.units[unit].creatureType end
   base.UnitIsDead = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
   base.IsInInstance = function() return opts.inInstance and true or false, opts.inInstance and "party" or "none" end
-  base.UnitFactionGroup = function(unit) if unit == "player" then return player.faction end end
+  base.UnitFactionGroup = function(unit)
+    if unit == "player" then return player.faction end
+    local u = game.units and game.units[unit]
+    return u and u.faction
+  end
   base.UnitExists = function(unit) return unit == "player" or (game.units and game.units[unit] ~= nil) end
   base.UnitGUID = function(unit)
     if unit == "player" then return "Player-1-00000001" end

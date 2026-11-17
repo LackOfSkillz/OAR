@@ -255,9 +255,9 @@ function UI:Form(parent, rows)
       list:SetWidth(W)
       place(list, r[2] * 22 + 10)
       scroll.items[#scroll.items + 1] = { list = list, getItems = r[5] }
-    elseif kind == "cards" or kind == "tiles" then
-      -- { "cards", getItems } / { "tiles", getItems }: premium blocks (UI/Premium.lua)
-      local f = kind == "cards" and UI:CardList(host) or UI:StatusTiles(host)
+    elseif kind == "cards" or kind == "tiles" or kind == "bars" then
+      -- { "cards", getItems } / { "tiles", getItems } / { "bars", getItems }: premium blocks (UI/Premium.lua)
+      local f = kind == "cards" and UI:CardList(host) or kind == "bars" and UI:BarList(host) or UI:StatusTiles(host)
       f:SetWidth(W)
       f.getItems = r[2]
       f.Refresh = function(self)
