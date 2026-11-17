@@ -177,6 +177,23 @@ Sources are at the bottom.
 | Anything that acts for you | Leatrix and others | Hard rule 1 (advice only, D18) |
 | Mythic+, world quests, Raider.IO scores | MDT, WQT, Raider.IO | Retail-only content |
 
+## Built on 2026-11-17 (Gary: "build the top eight")
+
+| # | What | Where in game |
+|---|---|---|
+| 1 | Info bar: gold (all characters on hover), bag space, durability (worst item), ammo, XP with rested and quest XP, clock, latency, a landing countdown on flights | top of the screen; Settings > Info bar; /ride bar |
+| 2 | Alt overview, dungeon lockouts (5 an hour, 30 a day), run stats | My characters page; /ride runs |
+| 3 | Dungeon entrance pins, flight times (timed as you fly) | world map and minimap; flight map tooltip |
+| 4 | Quest marks with what's left beside quest mobs' nameplates, quest log XP, reward value incl. auction house | nameplates; info bar; quest turn-in |
+| 5 | Mailbox: totals on Collect, Send to your alts and recent names, expiring-mail warning | mailbox; login line; My characters |
+| 6 | Bag slots: item level, upgrade arrow, junk coin; find an item on any character | Blizzard's bags; My characters; /ride where |
+| 7 | Small switches: hide zone names, error text, talking head; camera zoom; gather minimap buttons; keep chat after a reload; Wowhead link | Settings > Small switches; key binding; /ride wowhead |
+| 8 | Trainer list (learn now, next, cost), skill-up chance, craft cooldowns, profitable crafts, undercut auctions | Professions page |
+
+Not covered by these eight and still open: a full bag window replacement, reveal
+unexplored map, dungeon interior maps, unlearned recipes from drops and vendors
+(needs a recipe data source), and everything marked Later above.
+
 ## What we'd build first
 
 Biggest daily payoff for the least work:
