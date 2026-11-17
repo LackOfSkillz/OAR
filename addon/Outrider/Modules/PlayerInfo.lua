@@ -352,10 +352,137 @@ function M:OnSystem(_, msg)
   end
 end
 
+-- ------------------------------------------------------------------ rares and elites
+-- (Gary, 2026-11-17: "can we do something similar for rare and elite
+-- critters?") The same kind of rough estimate for a fight with a rare,
+-- rare elite, elite or boss creature, labelled as one:
+--   level gap      0.5 per level (capped at 8); "??" or a world boss is ~1%
+--   health         1.6 x log(your side's health / its health), when readable
+--   elite          -0.9 (elites hit harder than their health says)
+--   your side      your pet counts as half of you; group members count fully
+--   your record    fights you won or lost against this creature pull it
+--                  toward what happened (win: it died while you fought it;
+--                  loss: you died while it was your target)
+M.MOB_W = { level = 0.5, levelCap = 8, health = 1.6, elite = 0.9 }
+M.TOUGH = { elite = "elite", rareelite = "rare elite", rare = "rare", worldboss = "boss" }
+
+-- Pure: a = you { level, hp, pet (0..1), group (>=1) }, b = it { level, hp, class };
+-- record = { w, l } or nil. Returns percent you win (1..99) and reasons.
+function M.MobOdds(a, b, record)
+  local W, score, why = M.MOB_W, 0, {}
+  if b.level == -1 or b.class == "worldboss" then return 1, { "far too strong (boss)" } end
+  if type(a.level) == "number" and type(b.level) == "number" then
+    local d = math.max(-W.levelCap, math.min(W.levelCap, a.level - b.level))
+    score = score + d * W.level
+    if d ~= 0 then why[#why + 1] = string.format("%+d level%s", d, math.abs(d) == 1 and "" or "s") end
+  end
+  local side = (a.group or 1) + (a.pet or 0)
+  if side > 1 then why[#why + 1] = (a.group or 1) > 1 and string.format("%d in your group", a.group) or "your pet helps" end
+  if type(a.hp) == "number" and type(b.hp) == "number" and a.hp > 0 and b.hp > 0 then
+    local r = math.log(a.hp * side / b.hp)
+    score = score + r * W.health
+    why[#why + 1] = string.format("it has %.1fx your health", b.hp / a.hp)
+  else
+    score = score + math.log(side) * W.health
+  end
+  if b.class == "elite" or b.class == "rareelite" then
+    score = score - W.elite
+    why[#why + 1] = "elite"
+  end
+  local p = 1 / (1 + math.exp(-score))
+  if record and (record.w or 0) + (record.l or 0) > 0 then
+    local games = (record.w or 0) + (record.l or 0)
+    p = (p * 3 + (record.w or 0)) / (3 + games)
+    why[#why + 1] = string.format("your record %d-%d", record.w or 0, record.l or 0)
+  end
+  return math.max(1, math.min(99, math.floor(p * 100 + 0.5))), why
+end
+
+function M:MobRecord(npcID)
+  local g = ns.db.global
+  g.mobFights = type(g.mobFights) == "table" and g.mobFights or {}
+  return g.mobFights, npcID and g.mobFights[npcID]
+end
+
+function M:MobLines(unit)
+  if not readable(C.Call("UnitExists", unit)) or readable(C.Call("UnitIsPlayer", unit)) then return {} end
+  local class = readable(C.Call("UnitClassification", unit))
+  if not M.TOUGH[class] then return {} end
+  if readable(C.Call("UnitIsDead", unit)) then return {} end
+  if readable(C.Call("UnitPlayerControlled", unit)) then return {} end
+  local npcID = C.UnitNpcID(unit)
+  local prof = npcID and ns.db.global.rareProfiles and ns.db.global.rareProfiles[npcID]
+  local hp = readable(C.Call("UnitHealthMax", unit))
+  if not (type(hp) == "number" and hp > 0) then hp = prof and prof.hpMax end
+  local level = readable(C.Call("UnitLevel", unit))
+  local lines, parts = {}, {}
+  if hp then parts[#parts + 1] = big(hp) .. " health" end
+  local speed = readable(C.Call("UnitAttackSpeed", unit))
+  if not (type(speed) == "number" and speed > 0) then speed = prof and prof.attackSpeed end
+  if speed then parts[#parts + 1] = string.format("hits every %.1fs", speed) end
+  local label = M.TOUGH[class]
+  if #parts > 0 then lines[#lines + 1] = { label:sub(1, 1):upper() .. label:sub(2) .. ": " .. table.concat(parts, " · "), "text" } end
+  local group = 1
+  if readable(C.Call("IsInGroup")) then group = math.max(1, math.min(5, tonumber(readable(C.Call("GetNumGroupMembers"))) or 1)) end
+  local pet = (readable(C.Call("UnitExists", "pet")) and not readable(C.Call("UnitIsDead", "pet"))) and 0.5 or 0
+  local _, rec = self:MobRecord(npcID)
+  local pct, why = M.MobOdds({ level = readable(C.Call("UnitLevel", "player")), hp = readable(C.Call("UnitHealthMax", "player")), pet = pet, group = group },
+    { level = level, hp = hp, class = class }, rec)
+  local color = pct >= 60 and "good" or pct <= 40 and "bad" or "warn"
+  lines[#lines + 1] = { string.format("Fight odds (rough): you win %d%%%s", pct, #why > 0 and (" · " .. table.concat(why, ", ")) or ""), color }
+  return lines
+end
+
+-- Track fights with tough creatures for the record.
+function M:OnTarget()
+  local unit = "target"
+  local class = readable(C.Call("UnitClassification", unit))
+  if not M.TOUGH[class] or readable(C.Call("UnitIsPlayer", unit)) then return end
+  local guid = readable(C.Call("UnitGUID", unit))
+  local npcID = C.UnitNpcID(unit)
+  if guid and npcID then self.fight = { guid = guid, npcID = npcID, name = readable(C.Call("UnitName", unit)) } end
+end
+
+function M:EndFight(won)
+  local f = self.fight
+  if not f or not f.fought then return end
+  self.fight = nil
+  local all, rec = self:MobRecord(f.npcID)
+  rec = rec or { w = 0, l = 0 }
+  if won then rec.w = rec.w + 1 else rec.l = rec.l + 1 end
+  all[f.npcID] = rec
+  self:Info("fight with %s: %s (%d-%d)", tostring(f.name), won and "won" or "lost", rec.w, rec.l)
+end
+
 function M:OnEnable()
   self:On("INSPECT_READY", function(mod, _, guid) mod:OnInspect(guid) end)
   self:On("CHAT_MSG_SYSTEM", self.OnSystem)
+  self:On("PLAYER_TARGET_CHANGED", function(mod) mod:OnTarget() end)
+  self:On("PLAYER_REGEN_DISABLED", function(mod)
+    if mod.fight and readable(C.Call("UnitGUID", "target")) == mod.fight.guid then mod.fight.fought = true end
+  end)
+  self:On("PLAYER_REGEN_ENABLED", function(mod)
+    local f = mod.fight
+    if f and f.fought and readable(C.Call("UnitGUID", "target")) == f.guid and readable(C.Call("UnitIsDead", "target")) then
+      mod:EndFight(true)
+    elseif f then
+      f.fought = nil
+    end
+  end)
+  self:On("PLAYER_DEAD", function(mod)
+    if mod.fight and mod.fight.fought then mod:EndFight(false) end
+  end)
 end
+
+ns.TooltipLines:Add("unit", "elite", M, function(tip)
+  if M:Settings().odds == false then return nil end
+  local unit = "mouseover"
+  if tip and tip.GetUnit then
+    local ok, _, u = pcall(tip.GetUnit, tip)
+    if ok and readable(u) then unit = u end
+  end
+  return M:MobLines(unit)
+end)
 
 function M:Activity()
   local n = 0

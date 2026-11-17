@@ -115,4 +115,26 @@ T.describe("player tooltips", function()
     T.eq(r.l, 2)
     T.contains(text(M:Lines("mouseover")), "your duels 1-2")
   end)
+
+  T.it("rares and elites: health, speed and rough fight odds, with your record", function()
+    local game, ns, M = start()
+    game.units.mouseover = { name = "Mystmane", guid = "Creature-0-1-2-3-259388-AB", classification = "rare", level = 13, hpMax = 900, attackSpeed = 2.0 }
+    game.units.target = game.units.mouseover
+    local s = text(M:MobLines("mouseover"))
+    T.contains(s, "Rare: 900 health · hits every 2.0s")
+    T.contains(s, "Fight odds (rough): you win")
+    local solo = M.MobOdds({ level = 20, hp = 800 }, { level = 20, hp = 800, class = "elite" })
+    local group = M.MobOdds({ level = 20, hp = 800, group = 3 }, { level = 20, hp = 800, class = "elite" })
+    T.ok(solo < 50 and group > 65, solo .. " solo, " .. group .. " with 3")
+    T.eq((M.MobOdds({ level = 20 }, { level = -1, class = "elite" })), 1)
+    T.eq(#M:MobLines("player"), 0)
+    game:fire("PLAYER_TARGET_CHANGED")
+    game:setCombat(true)
+    game.units.target.dead = true
+    game:setCombat(false)
+    local rec = ns.db.global.mobFights[259388]
+    T.ok(rec, "the win was recorded")
+    T.eq(rec.w, 1)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
