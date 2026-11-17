@@ -30,6 +30,7 @@ Core\Probe.lua
 UI\Theme.lua
 Art\Manifest.lua
 UI\Art.lua
+UI\Tips.lua
 UI\Widgets.lua
 UI\WidgetsExtra.lua
 UI\SecureButtons.lua
@@ -154,6 +155,7 @@ Modules\Travel.lua
 Modules\Journey.lua
 Modules\Finder.lua
 UI\HelpData.lua
+UI\HelpPage.lua
 UI\Pages.lua
 
 Core\Slash.lua

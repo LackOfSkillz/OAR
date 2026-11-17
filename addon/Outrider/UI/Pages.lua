@@ -999,18 +999,6 @@ end)
 
 -- ---------------------------------------------------------- All commands
 -- Every /ride command with its help line: pick one, add what it needs, Run.
--- -------------------------------------------------------------- Help
--- The user guide (UI/HelpData.lua; the same text is docs/USER_GUIDE.md).
-ns.Hub:AddTab("help", "Help", function(p)
-  local rows = { { "note", "What every part of Outrider does. Type in the search box at the top to jump to a page." } }
-  for _, sec in ipairs(ns.HelpData or {}) do
-    rows[#rows + 1] = { "header", sec[1] }
-    if sec[2] then rows[#rows + 1] = { "note", sec[2] } end
-    for _, t in ipairs(sec[3]) do rows[#rows + 1] = { "note", "|cffffd100" .. t[1] .. "|r  " .. t[2] } end
-  end
-  UI:FormPage(p, rows)
-end)
-
 ns.Hub:AddTab("commands", "All commands", function(p)
   local head = UI.Text(p, "small", "muted")
   head:SetPoint("TOPLEFT", 0, 0)

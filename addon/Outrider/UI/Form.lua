@@ -139,6 +139,11 @@ function UI:Form(parent, rows)
       local btn = UI:Button(row, r[4] or "Go", 90, run)
       btn:SetPoint("LEFT", box, "RIGHT", 6, 0)
       box:SetScript("OnEnterPressed", run)
+      -- the box and the button explain the row: "<label>: e.g. <example>"
+      local _, what = UI.TipFor(r[4] or "Go")
+      local tip = (what and (what .. " ") or "") .. "Type here, e.g. " .. tostring(r[3] or "") .. ", then press Enter."
+      UI.Tip(box, r[2], tip)
+      UI.Tip(btn, r[2], tip)
       row.box, row.button = box, btn
       place(row, ROW.input)
     elseif kind == "key" then
@@ -192,6 +197,7 @@ function UI:Form(parent, rows)
     elseif kind == "slider" then
       local s = UI:Slider(host, r[2], r[3], r[4], r[5], r[6], r[7], r[8])
       s:SetWidth(320)
+      UI.Tip(s, r[2], "Drag to change it, from " .. tostring(r[3]) .. " to " .. tostring(r[4]) .. ".")
       place(s, ROW.slider)
       scroll.items[#scroll.items + 1] = { slider = s, get = r[6] }
     elseif kind == "list" then
