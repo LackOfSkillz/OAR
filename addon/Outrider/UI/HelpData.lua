@@ -92,7 +92,7 @@ ns.HelpData = {
     { "Gold ledger", "Where your gold came from and went, per session and character.", page = "money" },
     { "Merchant's Favor", "Waylaid Crates: what each crate needs and your Favor balance. /ride favor.", cmd = "favor" },
     { "Errands", "Entering a town, one pop-up with what to do there: sell junk, repair, buy ammo, train. Errands page lists them.", page = "errands", cmd = "errands" },
-    { "Vendor and mailbox", "Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click)." },
+    { "Vendor and mailbox", "Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click) that says what's waiting in total. Send to: your characters on this realm and the last people you mailed, one click fills the To: box. At login, one line warns about mail with gold or items expiring within 3 days on any of your characters." },
   } },
 
   { icon = "INV_Misc_Coin_02", "Auction house", "With the auction house open, Outrider's shopping panel sits beside it. Buying is always your click.", {

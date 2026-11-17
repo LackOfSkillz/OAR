@@ -250,6 +250,11 @@ ns.Hub:AddTab("alts", "My characters", function(p)
         for name, s in pairs(a.profs or {}) do pl[#pl + 1] = string.format("%s %d/%d", name, s[1] or 0, s[2] or 0) end
         table.sort(pl)
         if #pl > 0 then bits[#bits + 1] = table.concat(pl, ", ") end
+        local mail = ns.Mailbox and ns.Mailbox.expiry and ns.Mailbox.expiry[x.key]
+        if mail then
+          local d = (mail.at - time()) / 86400
+          bits[#bits + 1] = string.format("%s%d mail, expires in %d days|r", d <= 3 and "|cffff5050" or "", mail.n, math.max(0, math.floor(d)))
+        end
         bits[#bits + 1] = (a.zone and (a.zone .. ", ") or "") .. (x.current and "playing now" or ("seen " .. ago(a.t)))
         out[#out + 1] = { art = a.class and ("class_" .. a.class:lower()) or nil, pic = "Interface\\Icons\\INV_Misc_QuestionMark",
           title = x.key:match("^[^-]+") or x.key, tags = tags, line = table.concat(bits, "  |  "), highlight = x.current }

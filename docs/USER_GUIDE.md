@@ -111,7 +111,7 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 - **Gold ledger.** Where your gold came from and went, per session and character.
 - **Merchant's Favor.** Waylaid Crates: what each crate needs and your Favor balance. /ride favor.
 - **Errands.** Entering a town, one pop-up with what to do there: sell junk, repair, buy ammo, train. Errands page lists them.
-- **Vendor and mailbox.** Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click).
+- **Vendor and mailbox.** Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click) that says what's waiting in total. Send to: your characters on this realm and the last people you mailed, one click fills the To: box. At login, one line warns about mail with gold or items expiring within 3 days on any of your characters.
 
 ## Auction house
 
