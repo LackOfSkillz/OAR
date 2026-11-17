@@ -67,3 +67,42 @@ T.describe("training shopping", function()
     T.contains(ns.TrainShop.frame.button.label:GetText(), "Search next")
   end)
 end)
+
+T.describe("training shopping by profession", function()
+  local function both()
+    local game, ns = session()
+    ns.db.char.professions.Cooking = { skill = 63, max = 75, line = 185, recipes = {} }
+    for k = 1, 10 do
+      ns.db.char.professions.Cooking.recipes[100 + k] = { name = "Snack " .. k, diff = 0, reagents = { [2318] = 1 } }
+    end
+    ns.db.char.professions.Alchemy.line = 171
+    local have = ns.Crafter.Have
+    ns.Crafter.Have = function(id) if id == 2318 then return 99 end return have(id) end
+    return game, ns
+  end
+
+  T.it("All gives each profession a share: ten free Cooking recipes don't hide Alchemy", function()
+    local game, ns = both()
+    run(game, ns)
+    local text = table.concat(ns.TrainShop:Lines(), "|")
+    T.contains(text, "Alchemy: Elixir of Minor Defense")
+    T.contains(text, "Cooking: Snack")
+  end)
+
+  T.it("choosing Alchemy searches only Alchemy and lists only Alchemy; chips are this character's professions", function()
+    local game, ns = both()
+    game:fire("AUCTION_HOUSE_SHOW")
+    ns.TrainShop:Choose("Alchemy")
+    local guard = 0
+    while ns.TrainShop.queue and guard < 20 do guard = guard + 1 game:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED") end
+    local text = table.concat(ns.TrainShop:Lines(), "|")
+    T.contains(text, "Alchemy:")
+    T.ok(not text:find("Cooking", 1, true))
+    local labels = {}
+    for _, c in ipairs(ns.TrainShop.frame.chips) do if c:IsShown() then labels[#labels + 1] = c.label:GetText() .. (c.on and "*" or "") end end
+    T.eq(table.concat(labels, ","), "All,Alchemy*,Cooking")
+    ns.TrainShop:Choose(nil)
+    T.eq(ns.TrainShop:Chosen(), nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

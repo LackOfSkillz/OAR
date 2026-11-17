@@ -13,7 +13,8 @@
 -- changes. Each is an ordinary macro: every press does what a hand-written
 -- macro would do (hard rule 1). Outrider never casts anything.
 --   Fight  - ranged: Hunter's Mark, Concussive Shot, Auto Shot (once), Serpent Sting, then Arcane Shot
---   Strike - melee:  Raptor Strike, Wing Clip, Mongoose Bite
+--   Strike - melee:  Aspect of the Monkey (once), Wing Clip, Raptor Strike, Mongoose Bite
+--   (Fight puts Hawk back: before the pull, and in a fight when nothing else is ready)
 --
 -- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
 --   * one spell attempt per press: a line that casts, or is refused for a real
@@ -37,7 +38,8 @@ local M = ns:NewModule("HunterFight", {
   title = "Fight macros for your class",
   phase = "P4",
   order = 64,
-  classes = { HUNTER = true, MAGE = true, PRIEST = true },
+  classes = { HUNTER = true, MAGE = true, PRIEST = true, WARRIOR = true, ROGUE = true, WARLOCK = true,
+    DRUID = true, PALADIN = true, SHAMAN = true }, -- the six others: Modules/ClassFight.lua
   defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", healName = "Heal",
     concussive = false, wingclip = true, pet = true }, -- Concussive off: guides keep it for when the pet loses aggro
 })
@@ -49,17 +51,30 @@ M.KINDS = { "ranged", "melee", "pet" } -- the hunter's; see M:Kinds()
 M.CLASS_KINDS = { HUNTER = { "ranged", "melee", "pet" }, MAGE = { "ranged", "melee" }, PRIEST = { "ranged", "heal" } }
 M.SUFFIX = { ranged = "fight", melee = "strike", pet = "pet", heal = "heal" }
 
--- Is Aspect of the Hawk on the player? (buff names; secret or unreadable = assume off)
-function M.HawkOn()
+-- Is this buff on the player? (buff names; secret or unreadable = assume off)
+function M.AuraOn(name)
   local get = C.Resolve("C_UnitAuras.GetAuraDataByIndex")
   if type(get) ~= "function" then return false end
   for i = 1, 40 do
     local ok, a = pcall(get, "player", i, "HELPFUL")
     if not ok or type(a) ~= "table" then break end
-    if C.Readable(a.name) == "Aspect of the Hawk" then return true end
+    if C.Readable(a.name) == name then return true end
   end
   return false
 end
+function M.HawkOn() return M.AuraOn("Aspect of the Hawk") end
+
+-- Buffs the macros depend on (a macro can't see buffs, so the macro is
+-- rewritten out of combat when one goes on or off). M.WATCH[class] = names;
+-- Modules/ClassFight.lua fills the other classes.
+M.WATCH = { HUNTER = { "Aspect of the Hawk", "Aspect of the Monkey" } }
+function M.WatchState()
+  local out = {}
+  for _, n in ipairs(M.WATCH[ns.PlayerClass()] or {}) do out[#out + 1] = n .. (M.AuraOn(n) and " on" or " off") end
+  if M.WatchExtra then out[#out + 1] = M.WatchExtra() end
+  return table.concat(out, ", ")
+end
+function M.MonkeyOn() return M.AuraOn("Aspect of the Monkey") end
 
 function M:Kinds() return M.CLASS_KINDS[ns.PlayerClass()] or {} end
 function M:Supported() return M.CLASS_KINDS[ns.PlayerClass()] ~= nil end
@@ -92,6 +107,7 @@ end
 -- The lines in press order, each with a keep rank (lower = kept when the
 -- macro has to shrink under 255 characters) and why it is there.
 local CASTER = {}
+M.CASTER = CASTER -- Modules/ClassFight.lua adds the other classes
 
 -- Mage: one ranged nuke key and one close key.
 function CASTER.MAGE(kind, add)
@@ -148,6 +164,13 @@ function M:Lines(kind)
   if s.pet then add(9, "/petattack [pet,harm]", "sends the pet at your target every press, so it pulls aggro off you") end
   if kind == "melee" then
     add(1, "/startattack", "keeps swinging")
+    -- Gary, 2026-11-16: Strike means melee, so switch to Monkey (Fight
+    -- switches back to Hawk). Once per fight: a macro can't see buffs and
+    -- "!" on an aspect that is already up still spends the press. Left out
+    -- only when Monkey is already up and nothing (no Hawk) will replace it.
+    if known("Aspect of the Monkey") and not (M.MonkeyOn() and not known("Aspect of the Hawk")) then
+      add(3, "/castsequence reset=combat !Aspect of the Monkey,null", "first press in melee: Monkey on (once per fight)")
+    end
     if s.wingclip and known("Wing Clip") then
       add(5, "/castsequence reset=combat/target Wing Clip,null", "slows once per pull so you can step back and shoot")
     end
@@ -182,6 +205,12 @@ function M:Lines(kind)
       (table.concat(seq, ", then "):gsub("!", "")) .. ": once each per pull (and per new target)")
   end
   if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
+  -- Back to Hawk after Strike put Monkey up (Gary, 2026-11-16). Last line,
+  -- so it is only reached when Arcane Shot is cooling down: a press that
+  -- would do nothing else. Hawk already up = that press does nothing.
+  if known("Aspect of the Hawk") and known("Aspect of the Monkey") then
+    add(7, "/cast [combat] !Aspect of the Hawk", "in a fight, back to Hawk when Arcane Shot is cooling down")
+  end
   return L
 end
 
@@ -204,12 +233,14 @@ function M:Body(kind)
   return body, dropped
 end
 
-local EXPLAIN = {
+local EXPLAIN = {}
+M.EXPLAIN = EXPLAIN
+for k, v in pairs({
   MAGE = { ranged = "Ranged key: spam it. Frostbolt (or Fireball before you learn it).",
     melee = "Close key: when it reaches you. Frost Nova, Fire Blast, then Arcane Explosion." },
   PRIEST = { ranged = "Damage key: spam it. Shadow Word: Pain once, Mind Blast on cooldown, Smite between.",
     heal = "Heal key: heals who you point at, your friendly target, or you." },
-}
+}) do EXPLAIN[k] = v end
 
 -- Lines that cast something (targeting lines alone don't make a macro worth writing).
 function M.Spells(lines)
@@ -434,18 +465,21 @@ function M:OnEnable()
   end)
   self:On("SPELLS_CHANGED", function(mod) if mod:Settings().auto then later("spells") end end)
   self:On("PLAYER_LEVEL_UP", function(mod) if mod:Settings().auto then later("level") end end)
-  -- Hawk on or off changes Fight: rewrite when it flips (out of combat)
+  -- Hawk or Monkey on or off changes Fight and Strike: rewrite when one flips (out of combat)
   self:On("UNIT_AURA", function(mod, _, unit)
-    if unit ~= "player" or not mod:Settings().auto or ns.PlayerClass() ~= "HUNTER" then return end
-    local on = M.HawkOn()
-    if on ~= mod.hawkWas then
-      mod.hawkWas = on
-      later(on and "hawk on" or "hawk off")
+    if unit ~= "player" or not mod:Settings().auto then return end
+    local on = M.WatchState()
+    if on == "" then return end
+    if on ~= mod.aspectWas then
+      mod.aspectWas = on
+      later(on)
     end
   end)
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod, _, slot)
-    if slot == 18 and mod:Settings().auto then later("ranged weapon") end
+    if (slot == 18 or slot == 16) and mod:Settings().auto then later(slot == 18 and "ranged weapon" or "main hand") end
   end)
+  -- druid forms: the macro names forms by their number on the stance bar
+  self:On("UPDATE_SHAPESHIFT_FORMS", function(mod) if mod:Settings().auto and ns.PlayerClass() == "DRUID" then later("forms") end end)
   self:On("PLAYER_REGEN_DISABLED", self.OnCombatStart)
   self:On("UNIT_SPELLCAST_SUCCEEDED", self.OnCast)
   self:On("PLAYER_REGEN_ENABLED", self.OnCombatEnd)
@@ -466,7 +500,7 @@ function M:Activity()
 end
 
 local OPTIONS = { concussive = true, wingclip = true, pet = true, auto = true }
-ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change your class's Fight macros (hunter, mage, priest)", function(arg)
+ns.AddCommand("fight", "[concussive|wingclip|pet|auto on|off]  make, show or change your class's Fight macros (every class)", function(arg)
   if not M:Supported() or not M.enabled then ns.Print("no Fight macros for your class yet") return end
   local key, val = (arg or ""):lower():match("^(%a+)%s+(%a+)$")
   if key and OPTIONS[key] and (val == "on" or val == "off") then

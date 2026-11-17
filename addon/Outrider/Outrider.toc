@@ -61,6 +61,7 @@ Data\Herbs.lua
 Data\Transports.lua
 Data\Money.lua
 Data\Dungeons.lua
+Data\Talents.lua
 Data\Rares.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
@@ -70,6 +71,8 @@ Modules\Spellbook.lua
 Modules\MacroLibrary.lua
 Modules\RankCheck.lua
 Modules\HunterFight.lua
+Modules\ClassFight.lua
+Modules\HealPanel.lua
 Modules\BagFood.lua
 Modules\RareMacros.lua
 Modules\Inventory.lua
@@ -81,6 +84,7 @@ Modules\AuctionHelper.lua
 Modules\AHBuy.lua
 Modules\TrainShop.lua
 Modules\GearShop.lua
+Modules\Talents.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
@@ -149,6 +153,7 @@ Modules\Coords.lua
 Modules\Travel.lua
 Modules\Journey.lua
 Modules\Finder.lua
+UI\HelpData.lua
 UI\Pages.lua
 
 Core\Slash.lua

@@ -261,4 +261,16 @@ T.describe("hunter fight macro", function()
     game:advance(3)
     T.contains(macro(game, "Fight").body, "!Aspect of the Hawk")
   end)
+
+  T.it("Strike puts Monkey up once per fight; Fight puts Hawk back when nothing else is ready", function()
+    local game = session(sp("Auto Shot", "Hunter's Mark", "Arcane Shot", "Aspect of the Hawk", "Aspect of the Monkey",
+      "Raptor Strike", "Wing Clip"), BOW)
+    local strike = macro(game, "Strike").body
+    T.contains(strike, "/castsequence reset=combat !Aspect of the Monkey,null")
+    T.ok(strike:find("Monkey", 1, true) < strike:find("Wing Clip", 1, true), "Monkey first")
+    local fight = macro(game, "Fight").body
+    T.contains(fight, "/cast [nocombat] !Aspect of the Hawk")
+    T.ok(fight:find("/cast [combat] !Aspect of the Hawk", 1, true) > fight:find("Arcane Shot", 1, true), "last line")
+    T.ok(#strike <= 255 and #fight <= 255)
+  end)
 end)

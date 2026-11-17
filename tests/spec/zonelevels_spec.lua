@@ -86,6 +86,7 @@ T.describe("zone levels", function()
     game.mapShownID = 10
     Z:Refresh()
     T.eq(#Z.used, 3)
+    T.ok(Z.used[1]:GetFrameLevel() >= 1000, "above the explored-area art and pins")
     game:slash("zonelevels off")
     T.eq(#Z.used, 0)
     game:slash("zonelevels on")

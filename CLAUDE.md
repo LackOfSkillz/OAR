@@ -59,6 +59,7 @@ All from the repo root. On Windows prefix each with `powershell -NoProfile -Exec
 | `tools/package.ps1` | Release zip in `dist\` |
 | `python tools/lua.py <script.lua> [args]` | Lua 5.1 without installing Lua (needs `pip install lupa`) |
 | `python tools/build_tasks.py` | Rebuild TASKS.md after editing phase files (keeps statuses and notes) |
+| `python tools/lua.py tools/build_guide.lua` | Rebuild docs/USER_GUIDE.md from UI/HelpData.lua (the in-game Help tab); do it whenever a feature or command changes |
 
 Optional: `tools/claude-settings.example.json` pre-approves the commands above. Copy it to `.claude/settings.json` only if Gary wants fewer permission prompts.
 

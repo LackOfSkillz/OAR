@@ -32,6 +32,15 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", self.OnEnteringWorld)
   self:On("PLAYER_REGEN_DISABLED", self.OnCombatStart)
   self:On("PLAYER_TARGET_CHANGED", self.OnTarget)
+  -- After each of the first 3 fights: what Blizzard's damage meter returns
+  -- (2026-11-16, before building a damage readout on it).
+  self.meterFights = 0
+  self:On("PLAYER_REGEN_ENABLED", function(mod)
+    if mod.meterFights >= MAX_COMBATS then return end
+    mod.meterFights = mod.meterFights + 1
+    local n = mod.meterFights
+    ns.Timer.After(1, function() ns.Probe:DamageMeter("after fight " .. n) end, "autocheck:meter")
+  end)
   self:On("PLAYER_LOGOUT", self.OnLogout)
   self:On("OTR_TESTBUTTON_CLICKED", self.OnTestClick)
   local g = ns.db.global

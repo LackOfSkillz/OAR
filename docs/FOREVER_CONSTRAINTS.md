@@ -42,3 +42,6 @@ From Rankedboost's WoW Forever class macro pages, gathered for the P4-08 macro p
 - Shaman: Fire Nova Totem removed (Fire Nova spell at 12); Totemic Call and Totemic Recall added; imbues last 60 min.
 - Paladin: Judgement no longer consumes the Seal; Divine Shield shares a cooldown with Divine Protection; Holy Strike at 6.
 - General (Kami-Labs): a spell alone on an action bar does not move to a newly trained rank (RankCheck covers this).
+
+## Talents (research 2026-11-16, not yet probed)
+warcraft.wiki.gg lists Forever 1.60.1 under the modern talent functions (C_ClassTalents, C_Traits), and not under the Classic ones (GetTalentInfo, GetNumTalentTabs). The Talents module tries the modern functions first and falls back to the Classic ones, logging which it used and the whole tree at login. Probe entries were added under P6.

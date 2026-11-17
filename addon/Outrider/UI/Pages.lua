@@ -269,9 +269,15 @@ local KEY_NOTE = {
   HUNTER = "Fight (ranged), Strike (melee) and Pet (care) follow your spellbook and ranged weapon.",
   MAGE = "Fight (Frostbolt) and Strike (close: Frost Nova, Fire Blast, Arcane Explosion) follow your spellbook.",
   PRIEST = "Fight (Shadow Word: Pain once, Mind Blast, Smite) and Heal follow your spellbook.",
+  WARRIOR = "Fight on key 1 (Charge, Shout, Rend, big strike, Heroic Strike); Strike on key 2 (Overpower, Execute, Thunder Clap).",
+  ROGUE = "Fight on key 1 (Cheap Shot, builders, Slice and Dice, Eviscerate); Strike on key 2 (Stealth, Kick, cooldowns).",
+  WARLOCK = "Fight on key 1 (demon, curse, dots once, Drain Life or wand); Strike on key 2 (Life Tap, Shift: Fear).",
+  DRUID = "Fight on key 1 follows your form (caster, Bear, Cat); Heal on key 2 (Swipe, Tiger's Fury or a heal).",
+  PALADIN = "Fight on key 1 (Blessing, Aura, Seal and Judgement, Holy Strike); Heal on key 2 (Holy Light).",
+  SHAMAN = "Fight on key 1 (imbue, Shield, bolt, totem, shocks, Stormstrike); Heal on key 2 (Healing Wave).",
 }
 
-local function classRows(cls)
+local function classRows(cls, page)
   local rows = {}
   local function r(t) rows[#rows + 1] = t end
   local F = function() return set("HunterFight") end
@@ -299,6 +305,54 @@ local function classRows(cls)
     r({ "note", function() local m = mod("PetStatus") return m and m.enabled and m:Activity() or "" end })
     r({ "note", function() local m = mod("Ammo") return m and m.enabled and m:Activity() or "" end })
   end
+  -- click-to-heal bars (Modules/HealPanel.lua)
+  local HP = ns.HealPanel
+  if HP and HP.spec.classes[cls or ""] then
+    r({ "header", "Heal bars" })
+    r({ "note", function() return HP:Summary() end })
+    r({ "check", "Show the heal bars in a group", function() return set("HealPanel").show ~= "off" end,
+      function(on) ns.Slash:Run("heal " .. (on and "group" or "off")) end })
+    if cls ~= "HUNTER" then
+      r({ "check", "Keep my own bar when players are assigned", function() return set("HealPanel").withSelf end,
+        function(on) ns.Slash:Run("heal self " .. onoff(on)) end })
+      r({ "note", "Assigned to you: click a name (out of combat). With anyone assigned, only they get bars." })
+      r({ "list", 6, function(row, name)
+        row.text:SetText((HP:IsAssigned(name) and "|cffffd100[assigned]|r " or "[ ] ") .. name)
+      end, function(name)
+        HP:Assign(name, not HP:IsAssigned(name))
+        if page and page.Refresh then page:Refresh() end
+      end, function() return HP:Members() end })
+    end
+  end
+  -- talent advisor (Modules/Talents.lua)
+  local Tal = ns.Talents
+  if Tal then
+    r({ "header", "Talents" })
+    r({ "note", function()
+      local b = Tal:Build()
+      if not b then return "No levelling build for your class yet." end
+      return string.format("%s. %s\n|cff888888%s, from %s; not yet checked in game.|r", Tal:Summary(), b.note or "", b.name, b.source)
+    end })
+    r({ "note", "The plan, from your next point: gold = spend now, grey = later. In the talent window the gold rings show where." })
+    r({ "list", 8, function(row, st)
+      local tag = st.next and "|cffffd100now|r" or (st.locked and "|cffff6060row not open|r") or (st.missing and "|cffff6060not on this client|r") or ("level " .. st.level)
+      row.text:SetText(string.format("%d. %s  %s", st.level, Tal.StepText(st), tag))
+    end, nil, function()
+      local out = {}
+      for _, st in ipairs((Tal:Current()).steps) do if not st.done then out[#out + 1] = st end end
+      return out
+    end })
+    local builds = Tal.Builds(cls)
+    if #builds > 1 then
+      local btns = {}
+      for _, bd in ipairs(builds) do btns[#btns + 1] = { bd.name, function() ns.Slash:Run("talents build " .. bd.id) end } end
+      r({ "buttons", btns })
+    end
+    r({ "check", "Gold rings in the talent window", function() return set("Talents").highlight end,
+      function(on) ns.Slash:Run("talents " .. onoff(on)) end })
+    r({ "check", "Tell me in chat when a point is ready", function() return set("Talents").notify end,
+      function(on) set("Talents").notify = on end })
+  end
   r({ "header", "Your class macros" })
   r({ "note", "Ready-made macros for your class only, in the Macros page: click one to see what it does, then Install." })
   r({ "buttons", { { "Open Macros", function() ns.Hub.frame.tabBar:Select("macros") end } } })
@@ -311,7 +365,7 @@ end
 do
   local cls = ns.PlayerClass and ns.PlayerClass() or nil
   ns.Hub:AddTab("class", CLASS_NAME[cls or ""] or "Class", function(p)
-    UI:FormPage(p, classRows(ns.PlayerClass()))
+    UI:FormPage(p, classRows(ns.PlayerClass(), p))
   end, nil, { icon = cls and (CLASS_ICON .. (CLASS_NAME[cls] or "")) or nil })
 end
 
@@ -945,6 +999,18 @@ end)
 
 -- ---------------------------------------------------------- All commands
 -- Every /ride command with its help line: pick one, add what it needs, Run.
+-- -------------------------------------------------------------- Help
+-- The user guide (UI/HelpData.lua; the same text is docs/USER_GUIDE.md).
+ns.Hub:AddTab("help", "Help", function(p)
+  local rows = { { "note", "What every part of Outrider does. Type in the search box at the top to jump to a page." } }
+  for _, sec in ipairs(ns.HelpData or {}) do
+    rows[#rows + 1] = { "header", sec[1] }
+    if sec[2] then rows[#rows + 1] = { "note", sec[2] } end
+    for _, t in ipairs(sec[3]) do rows[#rows + 1] = { "note", "|cffffd100" .. t[1] .. "|r  " .. t[2] } end
+  end
+  UI:FormPage(p, rows)
+end)
+
 ns.Hub:AddTab("commands", "All commands", function(p)
   local head = UI.Text(p, "small", "muted")
   head:SetPoint("TOPLEFT", 0, 0)

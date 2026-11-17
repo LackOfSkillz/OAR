@@ -210,7 +210,8 @@ local function buildMethods(game)
   m.IsForbidden = function() return false end
   m.SetAlpha = function(self, a) self.__alpha = a end
   m.GetAlpha = function(self) return self.__alpha or 1 end
-  m.GetFrameLevel = function() return 1 end
+  m.GetFrameLevel = function(self) return self.__level or 1 end
+  m.SetFrameLevel = function(self, l) self.__level = l end
   m.GetChildren = function() return end
   m.EnableMouse = noop
   -- tooltip-ish
@@ -370,7 +371,10 @@ function M.new(opts)
     end,
   }
   -- temporary weapon enchant (a fishing lure): game.lureMs = milliseconds left, nil = none
-  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return false end
+  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return game.mhEnchant or false end
+  -- druid forms: game.forms = { spellID, ... } in stance-bar order
+  base.GetNumShapeshiftForms = function() return #(game.forms or {}) end
+  base.GetShapeshiftFormInfo = function(i) local id = (game.forms or {})[i] if id then return 0, false, true, id end end
   base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
   base.UnitLevel = function(unit)
     if unit == "player" then return player.level end
@@ -540,8 +544,15 @@ function M.new(opts)
   end }
   base.IsResting = function() return game.resting or false end
   base.GetInventoryItemDurability = function(slot) local d = game.durability and game.durability[slot] if d then return d[1], d[2] end end
-  base.IsInGroup = function() return opts.inGroup or false end
-  base.IsInRaid = function() return opts.inRaid or false end
+  base.IsInGroup = function() if game.inGroup ~= nil then return game.inGroup end return opts.inGroup or false end
+  base.IsInRaid = function() if game.inRaid ~= nil then return game.inRaid end return opts.inRaid or false end
+  base.GetNumGroupMembers = function()
+    local n = 0
+    for k in pairs(game.units or {}) do if tostring(k):match("^party%d") or tostring(k):match("^raid%d") then n = n + 1 end end
+    return n > 0 and n + 1 or 0
+  end
+  base.UnitInRange = function(unit) local d = game.units and game.units[unit] if d then return d.inRange ~= false, true end end
+  base.UnitIsDeadOrGhost = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
@@ -639,6 +650,44 @@ function M.new(opts)
     game.tooltipHooks[#game.tooltipHooks + 1] = { kind = kind, fn = fn }
   end }
   base.IsShiftKeyDown = function() return game.shift or false end
+  -- talents (Classic API): game.talents = { { name = "Beast Mastery", talents = { { name, tier, column, rank, max, req = { tier, column } } } } }
+  -- game.unspent = free points (nil: the client can't say)
+  base.GetNumTalentTabs = function() return game.talents and #game.talents or 0 end
+  base.GetTalentTabInfo = function(t) local tab = game.talents and game.talents[t] if tab then return tab.name, nil, 0, "bg" end end
+  base.GetNumTalents = function(t) local tab = game.talents and game.talents[t] return tab and #tab.talents or 0 end
+  base.GetTalentInfo = function(t, i)
+    local e = game.talents and game.talents[t] and game.talents[t].talents[i]
+    if e then return e.name, nil, e.tier, e.column, e.rank or 0, e.max end
+  end
+  base.GetTalentPrereqs = function(t, i)
+    local e = game.talents and game.talents[t] and game.talents[t].talents[i]
+    if e and e.req then return e.req[1], e.req[2], true end
+  end
+  base.UnitCharacterPoints = function() return game.unspent end
+  -- modern talents: game.traits = { { treeID, unspent, nodes = { { id, name, rank, max, open } } } }
+  local function trNode(id)
+    for _, tr in ipairs(game.traits or {}) do for _, n in ipairs(tr.nodes) do if n.id == id then return n end end end
+  end
+  base.C_ClassTalents = { GetActiveConfigID = function() if game.traits then return 7 end end }
+  base.C_Traits = {
+    GetConfigInfo = function() local ids = {} for i, tr in ipairs(game.traits or {}) do ids[i] = tr.treeID end return { treeIDs = ids } end,
+    GetTreeCurrencyInfo = function(_, treeID)
+      for _, tr in ipairs(game.traits or {}) do if tr.treeID == treeID then return { { quantity = tr.unspent or 0 } } end end
+      return {}
+    end,
+    GetTreeNodes = function(treeID)
+      local out = {}
+      for _, tr in ipairs(game.traits or {}) do if tr.treeID == treeID then for i, n in ipairs(tr.nodes) do out[i] = n.id end end end
+      return out
+    end,
+    GetNodeInfo = function(_, id)
+      local n = trNode(id)
+      if n then return { ID = id, currentRank = n.rank or 0, maxRanks = n.max, entryIDs = { id * 10 }, isVisible = true,
+        canPurchaseRank = n.open, isAvailable = n.open, posX = 0, posY = 0 } end
+    end,
+    GetEntryInfo = function(_, entryID) return { definitionID = entryID * 10 } end,
+    GetDefinitionInfo = function(defID) local n = trNode(defID / 100) return n and { overrideName = n.name } end,
+  }
   -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
   local function u(unit) return game.units and game.units[unit] end
   base.UnitHealth = function(unit) return u(unit) and u(unit).hp end

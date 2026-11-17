@@ -26,11 +26,12 @@ Data.SCHEMAS = {
   link   = { id = "string", kind = "string", source = "string", verified = "boolean", from = "table", to = "table" },
   dungeon = { name = "string", min = "number", max = "number", source = "string", verified = "boolean" },
   money  = { id = "string", title = "string", minLevel = "number", maxLevel = "number", source = "string", verified = "boolean" },
+  talentbuild = { id = "string", class = "string", name = "string", source = "string", verified = "boolean", order = "table" },
 }
 
 Data.CONFIDENCE = { verified = true, community = true, inferred = true, unknown = true }
 
-Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id", dungeon = "name" }
+Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id", dungeon = "name", talentbuild = "id" }
 
 function Data:Validate(kind, entry)
   local schema = self.SCHEMAS[kind]

@@ -15,6 +15,11 @@
 --      recipes for sale that this character doesn't know yet, with the skill
 --      they need (read from the item's tooltip).
 -- Read only: buying is Gary's own click in Blizzard's auction window.
+-- Pick a profession (Gary, 2026-11-16: "I should be able to select which
+-- training I want to do"): chips for this character's crafting professions
+-- only, plus All. One profession searches only its own ingredients and
+-- recipes; All gives every profession a share of the list, so a long Cooking
+-- list no longer pushes Alchemy off the panel.
 
 local _, ns = ...
 local C = ns.Compat
@@ -23,7 +28,7 @@ local M = ns:NewModule("TrainShop", {
   title = "Training shopping at the auction house",
   phase = "P5",
   order = 77,
-  defaults = {},
+  defaults = { prof = nil },
 })
 ns.TrainShop = M
 
@@ -33,18 +38,39 @@ M.CRAFTS = { [0] = 10, [1] = 8, [2] = 4 } -- how many to plan per recipe before 
 M.RECIPE_SUB = { Leatherworking = 1, Tailoring = 2, Engineering = 3, Blacksmithing = 4, Cooking = 5,
   Alchemy = 6, ["First Aid"] = 7, Enchanting = 8, Fishing = 9 }
 M.RECIPE_CLASS = 9
+M.SHOW = 8 -- recipe lines on the panel
 M.WAIT = 4 -- seconds to wait for an answer before switching to one search per click
 
 local function have(id) return ns.Crafter and ns.Crafter.Have(id) or 0 end
 local function itemName(id) local i = C.ItemInfo(id) return i and i.name or nil end
 
+-- This character's crafting professions (gathering ones have no recipes).
+function M:Professions()
+  local T = ns.ProfTrainer
+  return T and T:Professions() or {}
+end
+
+-- The chosen profession, or nil for All (a choice this character lacks = All).
+function M:Chosen()
+  local want = self:Settings().prof
+  for _, p in ipairs(self:Professions()) do if p == want then return p end end
+  return nil
+end
+
+function M:Choose(prof)
+  self:Settings().prof = prof
+  self.prices, self.recipesForSale, self.queue = nil, nil, nil
+  self:Info("training shopping: %s", prof or "all professions")
+  if self.open then self:Start() else self:Refresh() end
+end
+
 -- { {prof, recipe, diff, reagents} } for every skill-giving recipe
 function M:Recipes()
   local out = {}
-  local T = ns.ProfTrainer
-  for _, prof in ipairs(T and T:Professions() or {}) do
-    local p = ns.db.char.professions[prof]
-    for id, r in pairs(p.recipes or {}) do
+  local chosen = self:Chosen()
+  for _, prof in ipairs(self:Professions()) do
+    local p = (not chosen or prof == chosen) and ns.db.char.professions[prof]
+    for id, r in pairs(p and p.recipes or {}) do
       local diff = type(r) == "table" and tonumber(r.diff)
       if diff and M.CHANCE[diff] and r.name ~= "Basic Campfire" and type(r.reagents) == "table" and next(r.reagents) then
         out[#out + 1] = { prof = prof, id = id, name = r.name, diff = diff, reagents = r.reagents }
@@ -75,8 +101,10 @@ function M:Queue()
   end
   table.sort(q, function(a, b) return a.text < b.text end)
   local owned = ns.Crafter and ns.Crafter:Owned() or {}
-  local profs = {}
-  for prof in pairs(owned) do if M.RECIPE_SUB[prof] then profs[#profs + 1] = prof end end
+  local profs, chosen = {}, self:Chosen()
+  for prof in pairs(owned) do
+    if M.RECIPE_SUB[prof] and (not chosen or prof == chosen) then profs[#profs + 1] = prof end
+  end
   table.sort(profs)
   for _, prof in ipairs(profs) do q[#q + 1] = { kind = "recipes", prof = prof, text = prof .. " recipes" } end
   return q
@@ -238,11 +266,21 @@ end
 function M:Lines()
   local lines, actions = {}, {}
   local money = ns.Prices.Money
-  for i, x in ipairs(self:Rank()) do
-    if i > 8 then break end
+  -- All: a fair share of the 8 lines per profession (best of each first).
+  local ranked, picked = self:Rank(), {}
+  local profs = {}
+  for _, x in ipairs(ranked) do profs[x.recipe.prof] = true end
+  local n = 0
+  for _ in pairs(profs) do n = n + 1 end
+  local share, used = math.max(1, math.ceil(M.SHOW / math.max(1, n))), {}
+  for _, x in ipairs(ranked) do
+    local p = x.recipe.prof
+    if #picked < M.SHOW and (used[p] or 0) < share then picked[#picked + 1] = x used[p] = (used[p] or 0) + 1 end
+  end
+  for _, x in ipairs(picked) do
     local parts = {}
     for _, b in ipairs(x.buy) do
-      parts[#parts + 1] = string.format("%d %s%s", b.n, itemName(b.itemID) or "?", b.cost and "" or " (not on AH)")
+      parts[#parts + 1] = string.format("%d %s%s", b.n, itemName(b.itemID) or "?", b.cost and "" or " (not on the AH: a vendor may sell it)")
     end
     local head = string.format("%s: %s, about +%d", x.recipe.prof, tostring(x.recipe.name), math.floor(x.points))
     if #parts == 0 then
@@ -300,8 +338,10 @@ function M:Build()
   end)
   f.button:SetPoint("TOPRIGHT", -8, -2)
   if host then f.button:Hide() end
+  -- profession chips: All + this character's crafting professions
+  f.chips = {}
   f.text = UI.Text(f, "small", "text")
-  f.text:SetPoint("TOPLEFT", 8, -6)
+  f.text:SetPoint("TOPLEFT", 8, -32)
   f.text:SetWidth(452)
   f.text:SetJustifyH("LEFT")
   f.text:SetJustifyV("TOP")
@@ -326,12 +366,36 @@ function M:Build()
   return f
 end
 
+-- Chips for All and each crafting profession, the chosen one lit.
+function M:Chips(f)
+  local list = { false }
+  for _, p in ipairs(self:Professions()) do list[#list + 1] = p end
+  local chosen = self:Chosen()
+  local x = 8
+  for i, p in ipairs(list) do
+    local c = f.chips[i]
+    if not c then
+      c = UI:Chip(f, p or "All", function(btn) M:Choose(btn.prof or nil) end)
+      f.chips[i] = c
+    end
+    c.prof = p or nil
+    c.label:SetText(p or "All")
+    c:ClearAllPoints()
+    c:SetPoint("TOPLEFT", x, -4)
+    x = x + (c:GetWidth() or 60) + 4
+    c:SetOn((p or nil) == chosen)
+    c:Show()
+  end
+  for i = #list + 1, #f.chips do f.chips[i]:Hide() end
+end
+
 function M:Refresh()
   if not self.open then return end
   local f = self:Build()
+  self:Chips(f)
   if self.queue then
     for _, row in ipairs(f.rows) do row:Hide() end
-    f:SetHeight(40)
+    f:SetHeight(66)
     local e = self.queue[self.pos]
     local label = self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching..."
     f.button.label:SetText(label)
@@ -340,7 +404,7 @@ function M:Refresh()
     f.text:SetText(string.format("Searching the auction house: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
   else
     for _, row in ipairs(f.rows) do row:Hide() end
-    f:SetHeight(50)
+    f:SetHeight(76)
     f.button.label:SetText(self.prices and "Search again" or "Find training materials")
     local host = ns.GearShop and ns.GearShop.frame
     if host and host.training then host.training.label:SetText("Training") end
@@ -348,7 +412,7 @@ function M:Refresh()
       local lines, actions = self:Lines()
       f.text:SetText(#lines > 0 and "Cheapest skill first. Buy queues it; the bar above the auction window confirms each purchase."
         or "Nothing found that trains your professions.")
-      local y = -26
+      local y = -52
       for i, row in ipairs(f.rows) do
         local line = lines[i]
         if line then

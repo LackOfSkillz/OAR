@@ -21,6 +21,24 @@ Probe.APIS = {
   { "C_AssistedCombat.GetNextCastSpell", "P4", "Blizzard one-button rotation" },
   { "C_AssistedCombat.IsAvailable", "P4" }, { "C_AssistedCombat.GetActionSpell", "P4" },
   { "C_AssistedCombat.GetRotationSpells", "P4" },
+  -- Official ways to see a fight without the combat log (Gary, 2026-11-16).
+  -- Presence only; names to check, nothing is called. Blizzard's damage meter
+  -- (its frame is registered in Edit Mode on this client):
+  { "C_DamageMeter.IsDamageMeterAvailable", "P4", "damage meter" },
+  { "C_DamageMeter.GetAvailableCombatSessions", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionFromType", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionFromID", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionSourceFromType", "P4", "damage meter" },
+  { "C_DamageMeter.GetCombatSessionSourceFromID", "P4", "damage meter" },
+  { "C_EncounterTimeline.GetEventList", "P4", "boss timeline" }, { "C_CooldownViewer.GetCooldownViewerCategorySet", "P4", "cooldown manager" },
+  { "C_Spell.GetSpellCooldown", "P4" }, { "C_Spell.GetSpellCharges", "P4" }, { "C_UnitAuras.GetPlayerAuraBySpellID", "P4" },
+  -- stats, threat and XP (pet and player)
+  { "UnitDamage", "P4" }, { "UnitAttackSpeed", "P4" }, { "UnitRangedDamage", "P4" }, { "UnitAttackPower", "P4" },
+  { "UnitRangedAttackPower", "P4" }, { "GetCritChance", "P4" }, { "GetRangedCritChance", "P4" }, { "GetHitModifier", "P4" },
+  { "UnitArmor", "P4" }, { "UnitStat", "P4" }, { "GetDodgeChance", "P4" },
+  { "UnitThreatSituation", "P4", "who the mob is hitting" }, { "UnitDetailedThreatSituation", "P4", "threat %" },
+  { "UnitInRange", "P4", "heal bars" }, { "UnitIsDeadOrGhost", "P4", "heal bars" }, { "GetNumGroupMembers", "P4", "heal bars" },
+  { "UnitXP", "P4" }, { "UnitXPMax", "P4" }, { "GetXPExhaustion", "P4", "rested XP" },
   { "UnitGUID", "P2" }, { "UnitClassification", "P2" }, { "UnitCreatureFamily", "P2" },
   { "UnitCreatureType", "P2" }, { "C_NamePlate.GetNamePlates", "P2" }, { "C_NamePlate.GetNamePlateForUnit", "P2" },
   { "C_VignetteInfo.GetVignettes", "P2", "expected absent/empty for rares" },
@@ -43,6 +61,13 @@ Probe.APIS = {
   { "GetPlayerFacing", "P3" }, { "WorldMapFrame.AddDataProvider", "P3" }, { "MapCanvasDataProviderMixin", "P3" },
   { "MapCanvasPinMixin", "P3" }, { "C_Minimap.GetViewRadius", "P3" }, { "C_QuestLog.GetInfo", "P3" },
   { "GetQuestLogTitle", "P3", "Classic quest API" }, { "C_TaxiMap.GetAllTaxiNodes", "P3" }, { "GetTaxiMapID", "P3" }, { "C_Map.GetMapChildrenInfo", "P3" }, { "C_Map.GetMapRectOnMap", "P3", "zone levels" }, { "UnitOnTaxi", "P3" },
+  -- talents (Forever may use the modern Traits system, not the Classic API)
+  { "C_ClassTalents.GetActiveConfigID", "P6", "talents" }, { "C_Traits.GetConfigInfo", "P6", "talents" },
+  { "C_Traits.GetTreeNodes", "P6", "talents" }, { "C_Traits.GetNodeInfo", "P6", "talents" },
+  { "C_Traits.GetEntryInfo", "P6", "talents" }, { "C_Traits.GetDefinitionInfo", "P6", "talents" },
+  { "C_Traits.GetTreeCurrencyInfo", "P6", "talents" }, { "GetNumTalentTabs", "P6", "Classic talents" },
+  { "GetTalentInfo", "P6", "Classic talents" }, { "UnitCharacterPoints", "P6", "Classic talents" },
+
   -- macros
   { "CreateMacro", "P4" }, { "EditMacro", "P4" }, { "GetNumMacros", "P4" }, { "GetMacroIndexByName", "P4" },
   { "PickupSpell", "P4" }, { "PlaceAction", "P4" }, { "GetActionInfo", "P4" },
@@ -77,6 +102,10 @@ Probe.EVENTS = {
   "MERCHANT_SHOW", "GOSSIP_SHOW", "TRAINER_SHOW", "TAXIMAP_OPENED", "LOOT_OPENED", "QUEST_COMPLETE",
   "BAG_UPDATE_DELAYED", "CHAT_MSG_ADDON", "EDIT_MODE_LAYOUTS_UPDATED", "ADDON_ACTION_BLOCKED",
   "ADDON_ACTION_FORBIDDEN",
+  -- official fight events (checked with IsEventValid, never registered)
+  "UNIT_COMBAT", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_THREAT_LIST_UPDATE", "PLAYER_XP_UPDATE",
+  "DAMAGE_METER_COMBAT_SESSION_UPDATED", "DAMAGE_METER_CURRENT_SESSION_UPDATED", "DAMAGE_METER_RESET",
+  "ENCOUNTER_TIMELINE_EVENT_ADDED", "COOLDOWN_VIEWER_DATA_LOADED",
 }
 -- Never tested by registering: on Forever even trying makes Blizzard block
 -- Outrider and offer to disable it (seen 2026-11-11). See ns.Events.FORBIDDEN.
@@ -217,6 +246,76 @@ function Probe:Units()
   local mapID, x, y = ns.Compat.PlayerPosition()
   res.position = { mapID = mapID, x = x, y = y }
   return res
+end
+
+-- The shape of a value for the log: types and keys, never a secret value
+-- (a secret is written as "secret" and never touched further, hard rule 4).
+function Probe.Shape(v, depth, budget)
+  budget = budget or { n = 0 }
+  budget.n = budget.n + 1
+  if budget.n > 200 then return "..." end
+  if ns.Compat.IsSecret(v) then return "secret" end
+  local t = type(v)
+  if t == "string" then return string.format("%q", #v > 40 and v:sub(1, 40) .. "..." or v) end
+  if t == "number" or t == "boolean" or t == "nil" then return tostring(v) end
+  if t ~= "table" then return t end
+  if (depth or 0) >= 3 then return "{...}" end
+  local keys = {}
+  for k in pairs(v) do keys[#keys + 1] = k end
+  table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+  local parts = {}
+  for i, k in ipairs(keys) do
+    if i > 12 then parts[#parts + 1] = string.format("+%d more", #keys - 12) break end
+    parts[#parts + 1] = tostring(k) .. "=" .. Probe.Shape(v[k], (depth or 0) + 1, budget)
+  end
+  return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+-- Blizzard's damage meter (the official way to see a fight on this client;
+-- the combat log is blocked). Call shapes aren't documented for Forever, so
+-- this logs what each call returns, or the error it gives, after a fight.
+-- Read only; nothing here changes the meter.
+function Probe:DamageMeter(why)
+  local dm = rawget(_G, "C_DamageMeter")
+  if type(dm) ~= "table" then ns.Log:Info("probe", "damage meter (%s): no C_DamageMeter", tostring(why)) return end
+  local enum = rawget(_G, "Enum") or {}
+  local function try(label, fn, ...)
+    if type(fn) ~= "function" then ns.Log:Info("probe", "dm %s: missing", label) return end
+    local res = { pcall(fn, ...) }
+    if not res[1] then ns.Log:Info("probe", "dm %s: error %s", label, tostring(res[2])) return end
+    local out = {}
+    for i = 2, math.max(2, #res) do out[#out + 1] = Probe.Shape(res[i]) end
+    ns.Log:Info("probe", "dm %s -> %s", label, table.concat(out, " | "))
+    return res[2]
+  end
+  ns.Log:Info("probe", "damage meter (%s): Enum.DamageMeterType=%s Enum.DamageMeterSessionType=%s", tostring(why),
+    Probe.Shape(enum.DamageMeterType), Probe.Shape(enum.DamageMeterSessionType))
+  try("IsDamageMeterAvailable()", dm.IsDamageMeterAvailable)
+  local sessions = try("GetAvailableCombatSessions()", dm.GetAvailableCombatSessions)
+  -- Measured 2026-11-16: the *FromType calls came back empty; sessions are
+  -- read by ID (GetAvailableCombatSessions lists the last fights, sessionID
+  -- grows). So: the newest session, damage done and taken, and the player's
+  -- own breakdown (does it include the pet's attacks?).
+  local meterTypes = type(enum.DamageMeterType) == "table" and enum.DamageMeterType or {}
+  local newest
+  if type(sessions) == "table" then
+    for _, se in pairs(sessions) do
+      local id = type(se) == "table" and ns.Compat.Readable(se.sessionID)
+      if type(id) == "number" and (not newest or id > newest) then newest = id end
+    end
+  end
+  if not newest then return end
+  local guid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "player"))
+  local petGuid = ns.Compat.Readable(ns.Compat.Call("UnitGUID", "pet"))
+  for _, mName in ipairs({ "DamageDone", "DamageTaken", "EnemyDamageTaken" }) do
+    local m = meterTypes[mName]
+    if m then
+      try(string.format("GetCombatSessionFromID(newest %d, %s)", newest, mName), dm.GetCombatSessionFromID, newest, m)
+    end
+  end
+  local dmg = meterTypes.DamageDone or 0
+  if guid then try("GetCombatSessionSourceFromID(newest, DamageDone, player)", dm.GetCombatSessionSourceFromID, newest, dmg, guid) end
+  if petGuid then try("GetCombatSessionSourceFromID(newest, DamageDone, pet)", dm.GetCombatSessionSourceFromID, newest, dmg, petGuid) end
 end
 
 function Probe:Summary()
