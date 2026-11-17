@@ -19,7 +19,7 @@ local M = ns:NewModule("PlayerInfo", {
   title = "Player tooltips",
   phase = "P7",
   order = 39,
-  defaults = { inspect = true },
+  defaults = { inspect = true, odds = true },
   yieldsTo = { "TipTac", "TinyTooltip" },
 })
 ns.PlayerInfo = M
@@ -112,6 +112,10 @@ function M:Lines(unit)
     for _, l in ipairs(self:InspectLines(info)) do lines[#lines + 1] = l end
   elseif guid and self:Settings().inspect then
     if self:Ask(unit, guid) then lines[#lines + 1] = { "Looking at their gear...", "muted" } end
+  end
+  if self:Settings().odds ~= false then
+    local ok, line = pcall(self.OddsLine, self, unit, info and time() - info.t < M.KEEP and info or nil)
+    if ok and line then lines[#lines + 1] = line end
   end
   return lines
 end
@@ -228,8 +232,129 @@ ns.TooltipLines:Add("unit", "player", M, function(tip, data)
   return M:Lines(unit)
 end)
 
+-- ------------------------------------------------------------------ PvP odds
+-- (Gary, 2026-11-17: "if me and that player did have a PvP round, what would
+-- be the likelihood of the outcome") A rough estimate, labelled as one. It
+-- adds up what Outrider can measure, as a logistic score:
+--   level gap      0.45 per level (capped at 8); a "??" skull level is ~2%
+--   health         2 x log(your max health / theirs)
+--   item level     0.12 per point of average item level (once inspected)
+--   class matchup  +/-0.35 from common Classic PvP wisdom (MATCHUP, unverified)
+--   your duels     past duel results with them pull it toward what happened
+-- Nothing here is game data; the weights are a starting guess that Gary's
+-- own duel record can correct later.
+M.MATCHUP = {
+  WARLOCK = { WARRIOR = 1, ROGUE = 1, PALADIN = 1, HUNTER = 1 },
+  MAGE = { WARRIOR = 1, HUNTER = 1, PALADIN = 1 },
+  ROGUE = { MAGE = 1, PRIEST = 1, DRUID = 1 },
+  PRIEST = { WARRIOR = 1, ROGUE = 1 },
+  HUNTER = { WARRIOR = 1, PALADIN = 1, SHAMAN = 1 },
+  DRUID = { WARRIOR = 1, SHAMAN = 1 },
+  SHAMAN = { ROGUE = 1, WARRIOR = 1 },
+  PALADIN = { WARRIOR = 1, ROGUE = 1 },
+}
+M.W = { level = 0.45, levelCap = 8, health = 2, ilvl = 0.12, class = 0.35 }
+
+function M.Matchup(mine, theirs)
+  if not mine or not theirs or mine == theirs then return 0 end
+  if M.MATCHUP[mine] and M.MATCHUP[mine][theirs] then return 1 end
+  if M.MATCHUP[theirs] and M.MATCHUP[theirs][mine] then return -1 end
+  return 0
+end
+
+-- Pure: a = you, b = them: { level, hp, ilvl, class }; record = { w, l } or nil.
+-- Returns percent you win (1..99) and a short list of reasons.
+function M.Odds(a, b, record)
+  local W, score, why = M.W, 0, {}
+  if b.level == -1 then return 2, { "they're far above you (??)" } end
+  if type(a.level) == "number" and type(b.level) == "number" then
+    local d = math.max(-W.levelCap, math.min(W.levelCap, a.level - b.level))
+    score = score + d * W.level
+    if d ~= 0 then why[#why + 1] = string.format("%+d level%s", d, math.abs(d) == 1 and "" or "s") end
+  end
+  if type(a.hp) == "number" and type(b.hp) == "number" and a.hp > 0 and b.hp > 0 then
+    local r = math.log(a.hp / b.hp)
+    score = score + r * W.health
+    if math.abs(r) > 0.1 then why[#why + 1] = r > 0 and "more health" or "less health" end
+  end
+  if a.ilvl and b.ilvl then
+    local d = a.ilvl - b.ilvl
+    score = score + d * W.ilvl
+    why[#why + 1] = math.abs(d) < 2 and "gear about even" or (d > 0 and "better gear" or "worse gear")
+  end
+  local m = M.Matchup(a.class, b.class)
+  if m ~= 0 then
+    score = score + m * W.class
+    why[#why + 1] = m > 0 and "good class matchup" or "hard class matchup"
+  end
+  local p = 1 / (1 + math.exp(-score))
+  if record and (record.w or 0) + (record.l or 0) > 0 then
+    local games = (record.w or 0) + (record.l or 0)
+    p = (p * 3 + (record.w or 0)) / (3 + games)
+    why[#why + 1] = string.format("your duels %d-%d", record.w or 0, record.l or 0)
+  end
+  return math.max(1, math.min(99, math.floor(p * 100 + 0.5))), why
+end
+
+function M:Me()
+  local now = time()
+  if not self.me or now - self.me.t > 60 then
+    local _, class = C.Call("UnitClass", "player")
+    local info = self:Read("player", "me")
+    self.cache.me = nil
+    self.me = { t = now, class = readable(class), ilvl = info.ilvl }
+  end
+  self.me.level = readable(C.Call("UnitLevel", "player"))
+  self.me.hp = readable(C.Call("UnitHealthMax", "player"))
+  return self.me
+end
+
+function M:OddsLine(unit, info)
+  local _, class = C.Call("UnitClass", unit)
+  local them = { level = readable(C.Call("UnitLevel", unit)), hp = readable(C.Call("UnitHealthMax", unit)),
+    class = readable(class), ilvl = info and info.ilvl }
+  local me = self:Me()
+  local full = self:FullName(unit)
+  local rec = full and ns.db.global.duels and ns.db.global.duels[full]
+  local pct, why = M.Odds({ level = me.level, hp = me.hp, class = me.class, ilvl = them.ilvl and me.ilvl }, them, rec)
+  local color = pct >= 60 and "good" or pct <= 40 and "bad" or "warn"
+  return { string.format("PvP odds (rough): you win %d%%%s", pct, #why > 0 and (" · " .. table.concat(why, ", ")) or ""), color }
+end
+
+-- Duel results from the system message ("X has defeated Y in a duel").
+local function pattern(fmt)
+  if type(fmt) ~= "string" then return nil end
+  fmt = fmt:gsub("%%%d%$s", "%%s"):gsub("([%(%)%.%[%]%*%+%-%?%^%$])", "%%%1"):gsub("%%s", "(.+)")
+  return "^" .. fmt .. "$"
+end
+M.DuelPattern = pattern
+
+function M:OnSystem(_, msg)
+  msg = readable(msg)
+  if type(msg) ~= "string" or not msg:find("duel", 1, true) then return end
+  local me = readable(C.Call("UnitName", "player"))
+  for _, key in ipairs({ "DUEL_WINNER_KNOCKOUT", "DUEL_WINNER_RETREAT" }) do
+    local pat = pattern(rawget(_G, key))
+    local winner, loser
+    if pat then winner, loser = msg:match(pat) end
+    if winner and loser and (winner == me or loser == me) then
+      local other = winner == me and loser or winner
+      local full = ns.Census and ns.Census.FullName(other) or other
+      local g = ns.db.global
+      g.duels = type(g.duels) == "table" and g.duels or {}
+      local r = g.duels[full] or { w = 0, l = 0 }
+      if winner == me then r.w = r.w + 1 else r.l = r.l + 1 end
+      r.t = time()
+      g.duels[full] = r
+      self:Info("duel with %s: %s (%d-%d)", full, winner == me and "won" or "lost", r.w, r.l)
+      return
+    end
+  end
+end
+
 function M:OnEnable()
   self:On("INSPECT_READY", function(mod, _, guid) mod:OnInspect(guid) end)
+  self:On("CHAT_MSG_SYSTEM", self.OnSystem)
 end
 
 function M:Activity()
