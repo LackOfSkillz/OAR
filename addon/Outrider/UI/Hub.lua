@@ -204,7 +204,9 @@ end
 function Hub:AddTabButton(t)
   local bar = self.frame.tabBar
   if not self:Visible(t) then return end
-  local btn = bar:Add(t.id, t.title, t.icon)
+  -- the page's custom picture when Gary's art is in (sidebar icons match the page header)
+  local art = ns.Art and ns.Art:Path(t.id == "class" and ("class_" .. tostring(ns.PlayerClass and ns.PlayerClass() or "")):lower() or ("page_" .. t.id))
+  local btn = bar:Add(t.id, t.title, art or t.icon)
   local tip = ns.Tips and ns.Tips.pages[t.id]
   if btn and tip then UI.Tip(btn, t.title, tip) elseif btn then UI.untipped["page:" .. t.id] = true end
   local ids, groups = {}, {}
