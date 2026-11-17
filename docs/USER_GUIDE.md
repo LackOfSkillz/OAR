@@ -136,6 +136,8 @@ With the auction house open, Outrider's shopping panel sits beside it. Buying is
 - **Quest marks and quest XP.** Mobs and objects your quests need get a quest mark beside their nameplate with what's left. The info bar's XP shows what the quests in your log are worth. At a turn-in, the best reward for you is named; if none is an upgrade, the one worth most (vendor or auction house).
 - **Bag marks.** On Blizzard's own bag slots: item level on gear, a green arrow on upgrades for you, a gold coin on grey junk (Settings picks which). Outrider steps aside if a bag addon like Bagnon or Baganator is installed.
 - **Find an item on any character.** My characters page, or /ride where <item>: which of your characters has it and where (bags, bank, mail, worn), as last seen.
+- **Small switches.** Settings > Small switches, all off until you pick them: hide the big zone names, red error text or the talking head; zoom the camera out further; gather other addons' minimap buttons behind one button; keep the last 50 chat lines after a reload.
+- **Wowhead link.** Hover an item, NPC or spell and press your Outrider: Wowhead link key (or /ride wowhead): a box with its WoW Forever Wowhead address to copy (Ctrl+C).
 - **Feed.** Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.
 - **Look.** A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.
 - **Edit Mode per situation.** Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.
@@ -237,4 +239,5 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride way` | <x> <y> [title] \| clear  waypoint on the current map (map numbers 0-100) |
 | `/ride weights` | show the stat weights used for this character |
 | `/ride where` | where your characters keep an item: /ride where <item name> |
+| `/ride wowhead` | the Wowhead address of what you're hovering (item, NPC, spell), to copy |
 | `/ride zonelevels` | [on\|off]  level ranges over zones on the world map |

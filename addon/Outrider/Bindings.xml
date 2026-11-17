@@ -11,4 +11,7 @@
   <Binding name="OUTRIDER_CENSUS" header="OUTRIDER" category="ADDONS">
     if Outrider and Outrider.Census then Outrider.Census:Press() end
   </Binding>
+  <Binding name="OUTRIDER_WOWHEAD" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.Tweaks then Outrider.Tweaks:ShowWowhead() end
+  </Binding>
 </Bindings>
