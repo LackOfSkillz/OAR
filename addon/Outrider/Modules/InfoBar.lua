@@ -12,12 +12,12 @@ local M = ns:NewModule("InfoBar", {
   title = "Info bar",
   phase = "P7",
   order = 48,
-  defaults = { shown = true, point = nil, gold = true, bags = true, dura = true, ammo = true, xp = true, clock = true, net = true },
+  defaults = { shown = true, point = nil, flight = true, gold = true, bags = true, dura = true, ammo = true, xp = true, clock = true, net = true },
   yieldsTo = { "Titan", "ChocolateBar", "Bazooka" },
 })
 ns.InfoBar = M
 
-M.ORDER = { "gold", "bags", "dura", "ammo", "xp", "clock", "net" }
+M.ORDER = { "flight", "gold", "bags", "dura", "ammo", "xp", "clock", "net" }
 
 local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
@@ -90,6 +90,12 @@ end
 function M:Text(id)
   local s = self:Settings()
   if s[id] == false then return nil end
+  if id == "flight" then
+    local F = ns.FlightTimes
+    if not (F and F.flight) then return nil end
+    local left, to = F:Remaining()
+    return left and string.format("|cff7fbfffLanding in %s|r", F.Clock(left)) or string.format("|cff7fbfffFlying to %s|r", tostring(to or "?"))
+  end
   if id == "gold" then return M.GoldText(C.Call("GetMoney")) end
   if id == "bags" then
     local free, total = M.Bags()
@@ -129,7 +135,15 @@ end
 -- strip shows the lower of overall and (worst + 30)
 
 function M:Tip(id, tt)
-  if id == "gold" then
+  if id == "flight" then
+    local F = ns.FlightTimes
+    tt:AddLine("Flight", 1, 0.82, 0)
+    if F and F.flight then
+      tt:AddLine(string.format("%s to %s", F.flight.from, F.flight.to), 1, 1, 1, true)
+      local left = F:Remaining()
+      tt:AddLine(left and ("Landing in " .. F.Clock(left)) or "First time on this flight: Outrider times it now.", 0.6, 0.6, 0.6, true)
+    end
+  elseif id == "gold" then
     tt:AddLine("Gold", 1, 0.82, 0)
     local total, n = 0, 0
     for key, inv in pairs(ns.db.global.inventory or {}) do
@@ -282,7 +296,7 @@ end
 
 function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Apply() end)
-  for _, e in ipairs({ "PLAYER_MONEY", "BAG_UPDATE_DELAYED", "UPDATE_INVENTORY_DURABILITY", "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "QUEST_LOG_UPDATE" }) do
+  for _, e in ipairs({ "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED", "PLAYER_MONEY", "BAG_UPDATE_DELAYED", "UPDATE_INVENTORY_DURABILITY", "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "QUEST_LOG_UPDATE" }) do
     self:On(e, function(mod) if mod.frame and mod.frame:IsShown() then mod:Update() end end)
   end
   if C.Call("IsLoggedIn") then self:Apply() end

@@ -118,6 +118,7 @@ local controls = {
   ["Herb"] = "Show herb spots on the maps.", ["Ore"] = "Show ore spots on the maps.", ["Fishing spot"] = "Show fishing spots on the maps.",
   ["Guildmate"] = "Show guildmates who share their location.", ["Your trail"] = "Show the gold dots where you walked.",
   ["Ride you took"] = "Show the flights and rides you took.", ["Portal, boat or zeppelin"] = "Show portals, boats and zeppelins.",
+  ["Dungeon entrance"] = "Show dungeon and raid entrances (community data, unverified).",
   ["Quest givers on the minimap"] = "Quest givers as dots on the minimap.",
   ["Grey quests (no XP) on the map"] = "Also show quests too low to give you XP.",
   ["Herb and ore spots from the database"] = "Herb and ore spawn points from the node pack, not only ones you found.",
