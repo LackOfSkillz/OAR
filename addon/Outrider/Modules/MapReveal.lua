@@ -3,9 +3,12 @@
 -- official data only. The client tells each character which map areas it has
 -- explored, with the exact textures (C_MapExplorationInfo.GetExploredMapTextures).
 -- Outrider records those for every zone, from every character on the account
--- (and later from shared data), and on the world map draws the areas this
--- character hasn't explored yet, tinted so they stand out. Areas none of your
--- characters has explored stay dark: we never ship or invent map data.
+-- and on the world map draws the areas this character hasn't explored yet,
+-- tinted so they stand out. Gary OK'd fetching the game's full overlay list
+-- (2026-11-17): Data/MapOverlays.lua holds every explorable area of every
+-- Forever zone from the client's own tables for build 1.60.1.70938 (via
+-- wago.tools, tools/import_map_overlays.py), so the whole map shows; the
+-- recorded areas still cover any map the data file misses.
 -- Drawing mirrors Blizzard's own exploration overlay (tiles from
 -- C_Map.GetMapArtLayers), on our own frame on the map canvas, under the pins.
 -- Steps aside for Leatrix Maps / Mapster, which reveal from their own data.
@@ -31,7 +34,16 @@ function M:OnInitialize()
 end
 
 -- ------------------------------------------------------------------ recording
-function M.Key(t) return table.concat(t.ids or {}, ",") .. "@" .. tostring(t.x) .. ":" .. tostring(t.y) end
+-- an area is the same area when it sits at the same place with the same size
+function M.Key(t) return string.format("%s:%s:%s:%s", tostring(t.x), tostring(t.y), tostring(t.w), tostring(t.h)) end
+
+-- every area of mapID from the data file, as { w, h, x, y, ids }
+function M.Known(mapID)
+  local pack = ns.MapOverlays and ns.MapOverlays.maps and ns.MapOverlays.maps[mapID]
+  local out = {}
+  for _, e in ipairs(pack or {}) do out[#out + 1] = { w = e[1], h = e[2], x = e[3], y = e[4], ids = e[5] } end
+  return out
+end
 
 -- the explored overlays this character has on mapID, as plain tables
 function M.Explored(mapID)
@@ -90,12 +102,13 @@ end
 
 -- areas known from any character that this character hasn't explored
 function M:Missing(mapID)
-  local slot = self.store[mapID]
-  if not slot then return {} end
+  local all = {}
+  for k, e in pairs(self.store[mapID] or {}) do all[M.Key(e)] = e end
+  for _, e in ipairs(M.Known(mapID)) do all[M.Key(e)] = all[M.Key(e)] or e end
   local mine = {}
   for _, e in ipairs(M.Explored(mapID)) do mine[M.Key(e)] = true end
   local out = {}
-  for k, e in pairs(slot) do if not mine[k] then out[#out + 1] = e end end
+  for k, e in pairs(all) do if not mine[k] then out[#out + 1] = e end end
   table.sort(out, function(a, b) return M.Key(a) < M.Key(b) end)
   return out
 end
@@ -203,5 +216,9 @@ function M:Activity()
     maps = maps + 1
     for _ in pairs(slot) do areas = areas + 1 end
   end
-  return string.format("%d explored areas known on %d maps (from all your characters)", areas, maps)
+  local pack = ns.MapOverlays and ns.MapOverlays.maps
+  local n = 0
+  for _ in pairs(pack or {}) do n = n + 1 end
+  return string.format("full map data for %d zones (build %s); %d areas recorded from your characters",
+    n, ns.MapOverlays and ns.MapOverlays.build or "?", areas)
 end

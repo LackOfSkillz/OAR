@@ -137,3 +137,15 @@ with /w Name (Gary writes and sends); group and guild invites go out on his
 click (guild invite only when his rank can invite). Guilds are cataloged from
 the guild tags Census sees; a guild or zone /who search is one press each.
 "Where" is the zone where the player was last seen, so it can be out of date.
+
+## D-mapreveal: full map data from the client's tables (2026-11-17, Gary OK'd the fetch)
+
+Revealing unexplored map areas needs the game's full list of map overlays,
+which the client only gives per character for areas already explored. Gary
+said yes to fetching the game's own WorldMapOverlay, WorldMapOverlayTile and
+UiMapXMapArt tables from wago.tools for the exact Forever build
+(1.60.1.70938). tools/import_map_overlays.py turns them into
+Data/MapOverlays.lua (45 zones, 572 areas, ~20 KB). This is client data for the
+build Gary runs, not community guesses. After a Forever patch that redraws
+zones, fetch the new build's tables and rerun the tool. MapReveal also keeps
+recording every character's explored areas, which covers any map the file misses.

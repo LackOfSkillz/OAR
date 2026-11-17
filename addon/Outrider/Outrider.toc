@@ -61,6 +61,7 @@ Data\Macros_Paladin.lua
 Data\StatWeights.lua
 Data\Herbs.lua
 Data\Transports.lua
+Data\MapOverlays.lua
 Data\Money.lua
 Data\Dungeons.lua
 Data\Talents.lua

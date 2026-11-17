@@ -19,12 +19,13 @@ local B = { textureWidth = 128, textureHeight = 128, offsetX = 600, offsetY = 30
 
 T.describe("map reveal", function()
   T.it("records explored areas and shows what another character explored", function()
-    local game, ns, M = start({ [1412] = { A, B } })
-    T.eq(M:Record(1412), 0) -- already recorded at login
-    T.eq(#M:Missing(1412), 0)
+    local game, ns, M = start({ [99901] = { A, B } })
+    T.eq(M:Record(99901), 2)
+    T.eq(M:Record(99901), 0) -- nothing new the second time
+    T.eq(#M:Missing(99901), 0)
     -- now a character that only explored A
-    game.explored = { [1412] = { A } }
-    local missing = M:Missing(1412)
+    game.explored = { [99901] = { A } }
+    local missing = M:Missing(99901)
     T.eq(#missing, 1)
     T.eq(missing[1].ids[1], 21)
   end)
@@ -44,9 +45,10 @@ T.describe("map reveal", function()
   end)
 
   T.it("draws the missing areas on the world map, and nothing when switched off", function()
-    local game, ns, M = start({ [1412] = { A, B } })
-    game.explored = { [1412] = { A } }
-    game.mapShownID = 1412
+    local game, ns, M = start({ [99901] = { A, B } })
+    M:Record(99901) -- another character explored A and B
+    game.explored = { [99901] = { A } }
+    game.mapShownID = 99901
     M.map = M.map or game.env.WorldMapFrame
     if not (M.map and M.map.GetCanvas) then return end -- no world map in this mock
     M:Refresh()
@@ -55,5 +57,27 @@ T.describe("map reveal", function()
     M:Refresh()
     T.eq(#M.used, 0)
     T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
+T.describe("map reveal data", function()
+  T.it("the game's own map areas for every Forever zone are loaded, with tiles", function()
+    local game = mock.new({ class = "HUNTER", level = 20 })
+    local ns = game:loadAddon()
+    game:login()
+    local d = ns.MapOverlays
+    T.ok(d and d.build)
+    local zones, areas = 0, 0
+    for _, list in pairs(d.maps) do
+      zones = zones + 1
+      for _, e in ipairs(list) do
+        areas = areas + 1
+        T.ok(e[1] > 0 and e[2] > 0 and #e[5] >= 1, "each area has a size and tiles")
+      end
+    end
+    T.ok(zones >= 40)
+    T.ok(areas >= 500)
+    -- a character that explored nothing sees every area of Mulgore as unexplored
+    T.eq(#ns.MapReveal:Missing(1412), #d.maps[1412])
   end)
 end)
