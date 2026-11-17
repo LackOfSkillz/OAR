@@ -39,7 +39,7 @@ Two macros per character that follow your spellbook for its whole life: drag key
 
 - **Make them.** Class page > Fight macros > Make or show the macros (or /ride fight). Then open the macro window, Character tab, and drag them to your bar.
 - **How a press works.** WoW Forever tries one spell per press. Each macro is ordered: buffs before the pull (only while missing), once-per-pull spells, spells on cooldown, then the always-usable filler. Spam it.
-- **Hunter.** Fight (ranged): Aspect of the Hawk, Hunter's Mark, Auto Shot, Serpent Sting, Arcane Shot, pet sent in. Back to Hawk in a fight when Arcane Shot is cooling down. Strike (melee): Aspect of the Monkey, Wing Clip once, Raptor Strike, Mongoose Bite. Pet: Revive, Call or Mend Pet.
+- **Hunter.** Fight (ranged): Aspect of the Hawk, Hunter's Mark, Auto Shot, Serpent Sting, Arcane Shot, pet sent in. Back to Hawk in a fight when Arcane Shot is cooling down. Strike (melee): Aspect of the Monkey, Wing Clip once, Raptor Strike, Immolation Trap (at your feet, when ready), Mongoose Bite. Pet: Revive, Call or Mend Pet.
 - **Warrior.** Fight: Charge, Battle Shout, Rend once, Mortal Strike / Bloodthirst / Shield Slam, Heroic Strike. Strike: Overpower, Revenge, Execute, Thunder Clap, Cleave - press it when one lights up.
 - **Rogue.** Fight: Cheap Shot from Stealth, then builder, builder, Slice and Dice, three builders, Eviscerate, round and round. Strike: Stealth out of combat; Kick, then Adrenaline Rush, Blade Flurry, Evasion.
 - **Mage.** Fight: Arcane Intellect and armor while missing, Frostbolt (Fireball before it). Strike (close): Frost Nova, Fire Blast, Arcane Explosion.

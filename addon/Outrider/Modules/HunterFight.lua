@@ -13,7 +13,7 @@
 -- changes. Each is an ordinary macro: every press does what a hand-written
 -- macro would do (hard rule 1). Outrider never casts anything.
 --   Fight  - ranged: Hunter's Mark, Concussive Shot, Auto Shot (once), Serpent Sting, then Arcane Shot
---   Strike - melee:  Aspect of the Monkey (once), Wing Clip, Raptor Strike, Mongoose Bite
+--   Strike - melee:  Aspect of the Monkey (once), Wing Clip, Raptor Strike, Immolation Trap, Mongoose Bite
 --   (Fight puts Hawk back: before the pull, and in a fight when nothing else is ready)
 --
 -- What Forever allows (measured 2026-11-12, 12 fights, see FOREVER_CONSTRAINTS):
@@ -175,6 +175,12 @@ function M:Lines(kind)
       add(5, "/castsequence reset=combat/target Wing Clip,null", "slows once per pull so you can step back and shoot")
     end
     if known("Raptor Strike") then add(2, "/cast Raptor Strike", "whenever it is off cooldown") end
+    -- Gary, 2026-11-17: Immolation Trap. On Forever traps can be set in
+    -- combat (Icy Veins, Mobalytics Forever hunter guides); it lands at your
+    -- feet, so it belongs in the melee key where the mob stands on it. The
+    -- Survival guide puts it between Raptor Strike and Mongoose Bite. On
+    -- cooldown the press falls through to the next line.
+    if known("Immolation Trap") then add(4, "/cast Immolation Trap", "at your feet while the mob is on you, every time it's ready") end
     if known("Mongoose Bite") then add(4, "/cast Mongoose Bite", "only after the target dodges") end
     return L
   end
