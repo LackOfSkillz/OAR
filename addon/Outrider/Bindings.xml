@@ -8,4 +8,7 @@
   <Binding name="OUTRIDER_PASTE" header="OUTRIDER" category="ADDONS">
     if Outrider and Outrider.Advisor then Outrider.Advisor:OpenPaste() end
   </Binding>
+  <Binding name="OUTRIDER_CENSUS" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.Census then Outrider.Census:Press() end
+  </Binding>
 </Bindings>

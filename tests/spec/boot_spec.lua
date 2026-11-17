@@ -4,7 +4,7 @@ local T, mock = ...
 local ALLOWED_GLOBALS = {
   Outrider = true, Outrider_DB = true, Outrider_Log = true, Outrider_Snapshots = true, Outrider_Advice = true,
   SLASH_OUTRIDER1 = true, SLASH_OUTRIDER2 = true,
-  BINDING_HEADER_OUTRIDER = true, BINDING_NAME_OUTRIDER_FIND = true, BINDING_NAME_OUTRIDER_ASK = true, BINDING_NAME_OUTRIDER_PASTE = true, -- key binding labels (Bindings.xml)
+  BINDING_HEADER_OUTRIDER = true, BINDING_NAME_OUTRIDER_FIND = true, BINDING_NAME_OUTRIDER_ASK = true, BINDING_NAME_OUTRIDER_PASTE = true, BINDING_NAME_OUTRIDER_CENSUS = true, -- key binding labels (Bindings.xml)
 }
 
 T.describe("boot", function()

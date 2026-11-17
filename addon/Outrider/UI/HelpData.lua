@@ -105,7 +105,7 @@ ns.HelpData = {
   { icon = "INV_Misc_Note_02", "Interface and chat", nil, {
     { "What now?", "Next steps for this character right now: errands, quests, gear, dungeons, training, gold. /ride now [level|gold|gear|professions|explore].", page = "whatnow" },
     { "Find bar", "One search box for everything (key binding Outrider: Find, or /ride find).", cmd = "find" },
-    { "Census", "Who's playing on your realm: most common level, class, race and profession, and the highest level seen. Players you see are counted as you play; Search the next group sends one /who search a press (50 players a search) to count everyone. Professions come only from links in chat. Kept 30 days, on this PC only. /ride census.", page = "census", cmd = "census" },
+    { "Census", "Who's playing on your realm: most common level, class, race and profession, and the highest level seen. Players you see are counted as you play; Search the next group (or its key binding) sends one /who search a press, top level first: 13 presses cover every level, more presses add detail where 50+ players share a level. Professions come only from links in chat. Kept 30 days, on this PC only. /ride census.", page = "census", cmd = "census" },
     { "Feed", "Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.", page = "feed", cmd = "feed" },
     { "Look", "A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.", page = "settings" },
     { "Edit Mode per situation", "Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.", page = "settings", cmd = "layout" },

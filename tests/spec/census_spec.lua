@@ -42,50 +42,59 @@ T.describe("census", function()
     T.eq(M:Stats().total, 0)
   end)
 
-  T.it("one press sends one /who search; full results split, the count finishes", function()
+  T.it("starts at the top level; 13 presses cover every level before any detail", function()
     local game, ns, M = start()
+    local bands = M.Bands(60)
+    T.eq(bands[1].lo, 60)
+    T.eq(bands[#bands].lo, 1)
+    T.eq(#bands, 13)
     game.now = 1000
-    local sent = M:SearchNext()
-    T.eq(sent, "1-10")
-    T.eq(#game.whoSent, 1)
-    -- a second press before the answer waits
+    T.eq(M:SearchNext(), "60")
+    -- a press before the answer waits; after 3 s with no answer it resends
     local again, why = M:SearchNext()
     T.eq(again, nil)
-    T.contains(why, "waiting")
-    -- 1-10 comes back full: 50 shown of 80
-    local res = {}
-    for i = 1, 50 do res[i] = who("Low" .. i, 1 + (i % 10), i % 2 == 0 and "WARRIOR" or "HUNTER", i % 3 == 0 and "Troll" or "Orc") end
-    game.whoResults, game.whoTotal = res, 80
+    T.contains(why, "moment")
+    game.now = game.now + 4
+    T.eq(M:SearchNext(), "60")
+    game.whoResults = { who("Top", 60, "MAGE", "Undead") }
     game:fire("WHO_LIST_UPDATE")
-    T.eq(M:Stats().total, 50)
-    T.eq(M.sweep.queue[1].lo, 1)
-    T.eq(M.sweep.queue[1].hi, 5)
-    T.eq(M.sweep.queue[2].lo, 6)
+    T.eq(M.sweep.done, 1)
+    -- the next band comes back full: its halves wait behind the overview
+    game.now = game.now + 1
+    T.eq(M:SearchNext(), "55-59")
+    local res = {}
+    for i = 1, 50 do res[i] = who("Mid" .. i, 55 + (i % 5), "ROGUE") end
+    game.whoResults, game.whoTotal = res, 50
+    game:fire("WHO_LIST_UPDATE")
+    T.eq(M.sweep.queue[1].lo, 50)
+    T.ok(M.sweep.queue[#M.sweep.queue].detail)
     -- nothing goes out on its own: only presses send
+    local sent = #game.whoSent
     game:advance(30)
-    T.eq(#game.whoSent, 1)
-    -- press through the rest with small answers
-    game.whoResults, game.whoTotal = { who("Mid", 25, "MAGE", "Undead") }, nil
+    T.eq(#game.whoSent, sent)
+    -- press through everything
+    game.whoResults, game.whoTotal = { who("Low", 3, "WARRIOR", "Orc") }, nil
     local guard = 0
-    while M:Left() > 0 and guard < 40 do
-      game.now = game.now + 10
+    while M:Left() > 0 and guard < 60 do
+      game.now = game.now + 1
       T.ok(M:SearchNext())
       game:fire("WHO_LIST_UPDATE")
       guard = guard + 1
     end
     T.eq(M:Left(), 0)
     T.ok(M:Realm().lastSweep)
+    T.ok(#M:BandRows() >= 13)
     T.contains(game:chatText(), "census done")
     T.eq(#ns.Errors.list, 0)
   end)
 
-  T.it("a single full level splits by class", function()
+  T.it("a single full level splits by class at the end", function()
     local game, ns, M = start()
     game.now = 1000
-    M.sweep = { queue = { { lo = 60, hi = 60 } }, done = 0, capped = 0, found = 0 }
+    M.sweep = { queue = { { lo = 4, hi = 4 } }, done = 0, capped = 0, found = 0, overview = 1 }
     M:SearchNext()
     local res = {}
-    for i = 1, 50 do res[i] = who("Max" .. i, 60, "ROGUE") end
+    for i = 1, 50 do res[i] = who("Four" .. i, 4, "ROGUE") end
     game.whoResults, game.whoTotal = res, 50
     game:fire("WHO_LIST_UPDATE")
     T.ok(M:Left() >= 8)
@@ -118,11 +127,16 @@ T.describe("census", function()
     T.eq(tostring(text):find("New", 1, true), nil)
   end)
 
-  T.it("the page and command work", function()
+  T.it("the page, key press and command work", function()
     local game, ns, M = start()
     M:Add("Grom-Realm", { l = 34, c = "WARRIOR", r = "Orc" }, "seen")
     ns.Hub:Toggle()
     ns.Hub:ShowTab("census")
+    game.now = 1000
+    T.ok(M:Press())
+    local _, why = M:Press()
+    T.ok(why)
+    T.eq(M.status, why)
     game:slash("census")
     T.contains(game:chatText(), "most common level 34")
     game:slash("census reset")

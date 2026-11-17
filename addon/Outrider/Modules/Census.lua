@@ -26,7 +26,7 @@ ns.Census = M
 
 M.KEEP_DAYS = 30
 M.CAP = 50 -- most players one /who search returns
-M.WAIT = 5 -- seconds before another search goes out
+M.WAIT = 3 -- seconds to wait for an answer before a press sends the search again
 M.PROF = { -- names as profession links show them
   Alchemy = true, Blacksmithing = true, Enchanting = true, Engineering = true, Herbalism = true,
   Leatherworking = true, Mining = true, Skinning = true, Tailoring = true, Cooking = true,
@@ -174,11 +174,27 @@ function M:Classes()
   return out
 end
 
--- A new count: one search per 10 levels; full ones split later.
+-- A new count (Gary, 2026-11-17: "it's giving me a lot of the low level
+-- players"). Top level first, in bands that get narrower as levels get
+-- busier, so the first ~13 presses cover every level once. Bands that come
+-- back full (50+) are split, but those refinements wait at the END of the
+-- queue: the overview always finishes first, extra presses only add detail.
+function M.Bands(top)
+  top = top or M.MaxLevel()
+  local q = { { lo = top, hi = top } }
+  local hi = top - 1
+  while hi >= 1 do
+    local lo = math.max(1, hi - 4)
+    if hi <= 9 then lo = hi >= 6 and 6 or 1 end
+    q[#q + 1] = { lo = lo, hi = hi }
+    hi = lo - 1
+  end
+  return q
+end
+
 function M:NewSweep()
-  local q, top = {}, M.MaxLevel()
-  for lo = 1, top, 10 do q[#q + 1] = { lo = lo, hi = math.min(top, lo + 9) } end
-  self.sweep = { queue = q, done = 0, capped = 0, found = 0, started = time() }
+  self.sweep = { queue = M.Bands(), done = 0, capped = 0, found = 0, started = time(), overview = #M.Bands() }
+  self.pending = nil
   return self.sweep
 end
 
@@ -186,25 +202,43 @@ function M:Left()
   return self.sweep and #self.sweep.queue or 0
 end
 
+-- Results always to the Who list (WHO_LIST_UPDATE); with it off, small
+-- answers print in chat and never reach us (4 of Gary's 18 searches).
+local function toList()
+  local set = C.Resolve("C_FriendList.SetWhoToUi") or rawget(_G, "SetWhoToUI")
+  if type(set) == "function" then pcall(set, true) end
+end
+
 -- One press = one /who search. Returns what was sent, or nil and why.
 function M:SearchNext()
   if not self.sweep or #self.sweep.queue == 0 then self:NewSweep() end
-  if self.pending and (time() - self.pending.t) < M.WAIT then return nil, "waiting for the last search" end
-  local b = table.remove(self.sweep.queue, 1)
+  local s = self.sweep
+  if self.pending then
+    if (time() - self.pending.t) < M.WAIT then return nil, "the server is still answering, press again in a moment" end
+    -- no answer came (the server ignores searches sent too fast): ask again
+    self.lost = (self.lost or 0) + 1
+    table.insert(s.queue, 1, self.pending.band)
+    self:Debug("no answer for %s, sending it again", bandFilter(self.pending.band))
+    self.pending = nil
+  end
+  local b = table.remove(s.queue, 1)
   local send = C.Resolve("C_FriendList.SendWho")
-  if type(send) ~= "function" then return nil, "this client has no /who for addons" end
+  if type(send) ~= "function" then table.insert(s.queue, 1, b) return nil, "this client has no /who for addons" end
+  toList()
   self.pending = { band = b, t = time() }
   local ok, err = pcall(send, bandFilter(b))
   if not ok then
-    table.insert(self.sweep.queue, 1, b)
+    table.insert(s.queue, 1, b)
     self.pending = nil
     self:Warn("who search failed: %s", tostring(err))
     return nil, "the game refused the search"
   end
-  self:Debug("who search sent: %s (%d left)", bandFilter(b), #self.sweep.queue)
+  self:Debug("who search sent: %s (%d left)", bandFilter(b), #s.queue)
   return bandFilter(b)
 end
 
+-- What each band answered: r.bands[filter] = { n, total, full, t } (the
+-- level chart says "50+" for full ones).
 function M:OnWho()
   local num, total = C.Call("C_FriendList.GetNumWhoResults")
   num, total = readable(num) or 0, readable(total) or 0
@@ -225,25 +259,73 @@ function M:OnWho()
   self.pending = nil
   if not (p and self.sweep) then return end
   local s, b = self.sweep, p.band
+  local full = num >= M.CAP or total > num
   s.done, s.found = s.done + 1, s.found + counted
-  if num >= M.CAP or total > num then
-    -- full: split it so the next presses see everyone
+  local r = self:Realm()
+  r.bands = r.bands or {}
+  r.bands[bandFilter(b)] = { lo = b.lo, hi = b.hi, class = b.class, n = num, total = total, full = full, t = time() }
+  self:Debug("who answer: %s -> %d shown, %d total%s (%.1fs)", bandFilter(b), num, total, full and ", full" or "", time() - p.t)
+  if full then
+    -- split it, after everything not yet looked at
     if b.lo < b.hi then
       local mid = math.floor((b.lo + b.hi) / 2)
-      table.insert(s.queue, 1, { lo = mid + 1, hi = b.hi, class = b.class })
-      table.insert(s.queue, 1, { lo = b.lo, hi = mid, class = b.class })
+      s.queue[#s.queue + 1] = { lo = mid + 1, hi = b.hi, class = b.class, detail = true }
+      s.queue[#s.queue + 1] = { lo = b.lo, hi = mid, class = b.class, detail = true }
     elseif not b.class then
-      for i, cls in ipairs(self:Classes()) do table.insert(s.queue, i, { lo = b.lo, hi = b.hi, class = cls }) end
+      for _, cls in ipairs(self:Classes()) do s.queue[#s.queue + 1] = { lo = b.lo, hi = b.hi, class = cls, detail = true } end
     else
       s.capped = s.capped + 1 -- one level and one class still over 50: some go uncounted
     end
   end
   if #s.queue == 0 then
-    local r = self:Realm()
     r.lastSweep = { t = time(), searches = s.done, found = s.found, capped = s.capped }
-    self:Info("census count done: %d searches, %d players, %d full", s.done, s.found, s.capped)
+    self:Info("census count done: %d searches, %d players, %d full, %d resent", s.done, s.found, s.capped, self.lost or 0)
     ns.Print("census done: %d players counted in %d searches", s.found, s.done)
   end
+  self.status = nil
+  if ns.Hub and ns.Hub.current == "census" then ns.Safe("census:refresh", ns.Hub.Refresh, ns.Hub) end
+  if #s.queue == 0 then
+  elseif s.done == s.overview then
+    self:Info("census overview done: %d players; %d more searches would add detail", s.found, #s.queue)
+  end
+end
+
+-- Players counted at levels lo..hi (all sources).
+function M:CountLevels(lo, hi)
+  local n = 0
+  for _, p in pairs(self:Realm().players) do if p.l >= lo and p.l <= hi then n = n + 1 end end
+  return n
+end
+
+-- A press of the button or the key binding: one search, the page shows how
+-- it went (no chat lines, rule 6).
+function M:Press()
+  local sent, why = self:SearchNext()
+  self.status = not sent and why or nil
+  if ns.Hub and ns.Hub.current == "census" then ns.Safe("census:refresh", ns.Hub.Refresh, ns.Hub) end
+  return sent, why
+end
+
+-- Where the count is, in words, for the page.
+function M:Progress()
+  local s = self.sweep
+  if not s then return nil end
+  local left = #s.queue
+  if left == 0 then return string.format("Count finished: %d players in %d searches.", s.found, s.done) end
+  local nxt = s.queue[1]
+  local stage = nxt.detail and "Every level is covered; the rest adds detail to the busiest levels" or
+    string.format("Overview: %d of %d level groups searched", math.min(s.done, s.overview), s.overview)
+  return string.format("%s. %d players so far, %d searches to go. Next: level %s.", stage, s.found, left, bandFilter(nxt):gsub(' c%-"', " ("):gsub('"$', ")"))
+end
+
+-- Level groups as /who saw them, highest first; full ones are "50+".
+function M:BandRows()
+  local r, out = self:Realm(), {}
+  for _, b in ipairs(M.Bands()) do
+    local got = r.bands and r.bands[bandFilter(b)]
+    if got then out[#out + 1] = { b = b, n = got.n, full = got.full } end
+  end
+  return out
 end
 
 -- ------------------------------------------------------------------ stats
@@ -390,18 +472,18 @@ ns.Hub:AddTab("census", "Census", function(p)
     end },
     { "header", "Count everyone with /who", icon = "INV_Misc_Spyglass_02" },
     { "note", function()
+      local head = "Each press sends one /who search; Blizzard shows at most 50 players a search and wants a press for each. "
+        .. "The count starts at the top level and works down, so the first 13 presses cover every level; after that, presses add detail to the busiest levels. "
+        .. "Tip: bind a key to Outrider: Census search (Key Bindings, AddOns) and tap it. Only your faction shows in /who."
+      local prog = M:Progress()
+      if prog then head = head .. "\n|cffffd100" .. prog .. "|r" end
+      if M.status then head = head .. "\n|cffff7f7f" .. M.status .. "|r" end
       local last = M:Realm().lastSweep
-      local left = M:Left()
-      local head = "Each press sends one /who search (Blizzard allows 50 players a search). Full searches split into smaller ones, so a whole count takes a few dozen presses. Only your faction shows in /who."
-      if M.sweep and left > 0 then head = head .. string.format("\nThis count: %d searches done, %d players, %d to go.", M.sweep.done, M.sweep.found, left) end
       if last then head = head .. string.format("\nLast full count %s: %d players in %d searches.", ago(last.t), last.found, last.searches) end
       return head
     end },
-    { "buttons", { { "Search the next group", function()
-      local sent, why = M:SearchNext()
-      if not sent then ns.Print("census: %s", tostring(why)) end
-      p:Refresh()
-    end, 190 }, { "Start a new count", function() M:NewSweep() p:Refresh() end, 150 } } },
+    { "buttons", { { "Search the next group", function() M:Press() end, 190 },
+      { "Start a new count", function() M:NewSweep() M.status = nil p:Refresh() end, 150 } } },
     { "header", "Highest level seen", icon = "Achievement_General" },
     { "cards", function()
       local out = {}
@@ -416,7 +498,22 @@ ns.Hub:AddTab("census", "Census", function(p)
       return out
     end },
     { "header", "Levels", icon = "Spell_Holy_SurgeOfLight" },
-    { "bars", function() return bars(st().bands) end },
+    { "note", function()
+      return #M:BandRows() > 0 and "From /who, highest first. 50+ means more players than one search shows; detail presses count them." or ""
+    end },
+    { "bars", function()
+      local rows = M:BandRows()
+      if #rows == 0 then return bars(st().bands) end
+      local max = 1
+      for _, x in ipairs(rows) do if x.n > max then max = x.n end end
+      local out = {}
+      for _, x in ipairs(rows) do
+        local seen = M:CountLevels(x.b.lo, x.b.hi)
+        out[#out + 1] = { label = "Level " .. (x.b.lo == x.b.hi and x.b.lo or (x.b.lo .. "-" .. x.b.hi)), fill = math.max(x.n, seen) / math.max(max, seen),
+          text = x.full and (math.max(seen, x.n) .. "+") or tostring(x.n) }
+      end
+      return out
+    end },
     { "header", "Classes", icon = "INV_Sword_04" },
     { "bars", function() return bars(st().classes, M.ClassName, classColor) end },
     { "header", "Races", icon = "INV_Misc_Head_Human_01" },
@@ -437,7 +534,7 @@ end)
 ns.AddCommand("census", "who's playing: most common level, class, race, profession (/ride census who searches the next group, reset clears)", function(arg)
   arg = tostring(arg or ""):lower()
   if arg == "who" then
-    local sent, why = M:SearchNext()
+    local sent, why = M:Press()
     ns.Print(sent and ("census search: " .. sent .. " (" .. M:Left() .. " to go)") or ("census: " .. tostring(why)))
   elseif arg == "reset" then
     M.store[M.RealmKey()] = nil
@@ -447,3 +544,5 @@ ns.AddCommand("census", "who's playing: most common level, class, race, professi
     ns.Print("census: %s", M:Summary())
   end
 end)
+
+_G.BINDING_NAME_OUTRIDER_CENSUS = "Census search (one /who per press)"
