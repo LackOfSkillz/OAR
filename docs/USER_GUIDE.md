@@ -129,6 +129,8 @@ With the auction house open, Outrider's shopping panel sits beside it. Buying is
 - **Census.** Who's playing on your realm: most common level, class, race and profession, and the highest level seen. Players you see are counted as you play; Search the next group (or its key binding) sends one /who search a press, top level first: 13 presses cover every level, more presses add detail where 50+ players share a level. Professions come only from links in chat. Kept 30 days, on this PC only. /ride census.
 - **Players & guilds.** Find any player Outrider has counted (name, guild, zone, class or level) and click to whisper them (opens the chat box, you send), invite them to your group, or to your guild if your rank can. A catalog of every guild seen with members, levels and where they play. Search a guild or your zone with one /who per press.
 - **Info bar.** A thin strip at the top of the screen: gold (hover for every character's), free bag slots, durability (warns on your worst item), ammo, XP with rested XP and what your quest log is worth, clock, latency and frame rate. Click gold, bags, durability or XP to open the matching page. Shift-drag to move; Settings picks the parts. /ride bar on|off|reset.
+- **My characters.** Every character at a glance: level, gold, rested XP (it keeps growing offline, faster in an inn), free bag slots, durability, ammo, professions, where and when last seen. Updated whenever you play them.
+- **Dungeon lockouts and runs.** Classic allows 5 new instances an hour and 30 a day per account. My characters counts the ones you enter and says when the next slot frees (an estimate). Every run is timed with the XP, kills and gold it gave. /ride runs.
 - **Feed.** Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.
 - **Look.** A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.
 - **Edit Mode per situation.** Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.
@@ -210,6 +212,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride probe` | record which game APIs exist (then /reload) |
 | `/ride questpins` | grey on\|off  show quests too low to give XP |
 | `/ride reset` | char\|all confirm  wipe settings (needs the word confirm) |
+| `/ride runs` | dungeon lockouts this hour and today, and your last runs |
 | `/ride score` | <item link>  compare an item with what you wear |
 | `/ride selftest` | error\|combat\|button\|toast\|widgets  checks for the test pipeline |
 | `/ride setup` | open the first-run setup (features and accessibility) |

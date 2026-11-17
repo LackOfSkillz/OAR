@@ -405,7 +405,16 @@ function M.new(opts)
   base.UnitIsPlayer = function(unit) return unit == "player" or (game.units and game.units[unit] and game.units[unit].player) or false end
   base.UnitCreatureType = function(unit) return game.units and game.units[unit] and game.units[unit].creatureType end
   base.UnitIsDead = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
-  base.IsInInstance = function() return opts.inInstance and true or false, opts.inInstance and "party" or "none" end
+  -- game.instance = { name, map, kind } puts you inside one (else opts.inInstance)
+  base.IsInInstance = function()
+    if game.instance then return true, game.instance.kind or "party" end
+    return opts.inInstance and true or false, opts.inInstance and "party" or "none"
+  end
+  base.GetInstanceInfo = function()
+    local i = game.instance
+    if i then return i.name, i.kind or "party", 1, "Normal", 5, 0, false, i.map end
+    return "World", "none", 0, "", 0, 0, false, 0
+  end
   base.UnitFactionGroup = function(unit)
     if unit == "player" then return player.faction end
     local u = game.units and game.units[unit]

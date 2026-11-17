@@ -29,6 +29,7 @@ local pages = {
   feed = "Every pop-up Outrider showed, newest first, so nothing is lost when one fades.",
   chat = "Chat highlights, spam filter, the LFG tab, timestamps and spell check.",
   people = "Find a player Outrider has counted and whisper or invite them; every guild seen; /who for a guild or your zone.",
+  alts = "Every character at a glance (gold, rested XP, bags, durability, professions), dungeon lockouts this hour and today, and your recent runs.",
   census = "Who's playing on your realm: the most common level, class, race and profession, and the highest level seen.",
   sharing = "What Outrider shares with other Outrider users in your guild or party. Everything is off until you switch it on.",
   settings = "Every Outrider option in one place: look, accessibility, alerts, chat, layouts.",
