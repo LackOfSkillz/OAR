@@ -63,6 +63,7 @@ local controls = {
   ["Search"] = "Sends one /who search for that guild: its members online now (your faction).",
   ["Search my zone"] = "Sends one /who search for everyone in your zone right now.",
   ["Search this guild"] = "Sends one /who search for the guild you clicked in the list.",
+  ["Quest marks on nameplates"] = "A quest mark beside the nameplate of mobs and objects your quests need, with what's left (Wolves slain: 3/8).",
   ["Show the info bar"] = "A thin strip at the top of the screen: gold, bag space, durability, ammo, XP, clock and latency. Shift-drag it to move it.",
   ["Bar: gold"] = "Your gold on the info bar; hover for every character's gold.",
   ["Bar: bag space"] = "Free bag slots on the info bar (red when nearly full).",

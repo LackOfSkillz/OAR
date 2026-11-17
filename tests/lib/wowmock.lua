@@ -560,6 +560,8 @@ function M.new(opts)
   base.IsInGuild = function() return opts.inGuild or false end
   -- whispers and invites are recorded: game.tells, game.invites, game.guildInvites
   -- XP and connection: game.xp, game.xpMax, game.rested, game.latency, game.fps
+  -- quest log XP: game.questXP[questID] = xp
+  base.GetQuestLogRewardXP = function(id) return game.questXP and game.questXP[id] or 0 end
   base.UnitXP = function(unit) if unit == "player" then return game.xp or 0 end end
   base.UnitXPMax = function(unit) if unit == "player" then return game.xpMax or 1000 end end
   base.GetXPExhaustion = function() return game.rested end
@@ -608,6 +610,8 @@ function M.new(opts)
     if not d then return nil end
     local lines = { { leftText = d.name } }
     if d.title then lines[2] = { leftText = d.title } else lines[2] = { leftText = "Level 20" } end
+    -- quest objective lines: game.units[unit].objectives = { " - Wolves slain: 3/8" }
+    for _, o in ipairs(d.objectives or {}) do lines[#lines + 1] = { leftText = o, type = 8 } end
     return { lines = lines }
   end,
   -- item tooltips: game.itemTips[itemID] = { "line", ... }

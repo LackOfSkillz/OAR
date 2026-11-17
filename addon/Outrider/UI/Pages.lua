@@ -1021,6 +1021,8 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "check", "Bar: clock", function() return ns.InfoBar:Settings().clock ~= false end, function(on) ns.InfoBar:Settings().clock = on ns.InfoBar:Apply() end },
     { "check", "Bar: latency and frame rate", function() return ns.InfoBar:Settings().net ~= false end, function(on) ns.InfoBar:Settings().net = on ns.InfoBar:Apply() end },
     { "buttons", { { "Put the bar back at the top", Run("bar reset"), 210 } } },
+    { "header", "Quests" },
+    { "check", "Quest marks on nameplates", function() return ns.QuestExtras:Settings().plates end, function(on) ns.QuestExtras:Settings().plates = on ns.QuestExtras:RefreshAll() end },
     { "header", "Edit Mode layout per situation" },
     { "input", "Situation and layout", "questing Questing", "Set", function(t) ns.Slash:Run("layout " .. t) end },
     { "buttons", { { "Show layouts", Run("layout") }, { "Turn off", Run("layout off") } } },

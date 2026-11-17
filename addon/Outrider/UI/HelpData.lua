@@ -112,6 +112,7 @@ ns.HelpData = {
     { "Dungeon lockouts and runs", "Classic allows 5 new instances an hour and 30 a day per account. My characters counts the ones you enter and says when the next slot frees (an estimate). Every run is timed with the XP, kills and gold it gave. /ride runs.", page = "alts", cmd = "runs" },
     { "Map extras", "Dungeon and raid entrances, portals, boats and zeppelins, and guildmates who share their location show as pins on the world map and minimap (Map page picks which).", page = "map" },
     { "Flight times", "Every flight you take is timed. The flight map tooltip then shows how long a flight takes, and the info bar counts down to landing.", page = "settings" },
+    { "Quest marks and quest XP", "Mobs and objects your quests need get a quest mark beside their nameplate with what's left. The info bar's XP shows what the quests in your log are worth. At a turn-in, the best reward for you is named; if none is an upgrade, the one worth most (vendor or auction house).", page = "settings" },
     { "Feed", "Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.", page = "feed", cmd = "feed" },
     { "Look", "A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.", page = "settings" },
     { "Edit Mode per situation", "Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.", page = "settings", cmd = "layout" },
