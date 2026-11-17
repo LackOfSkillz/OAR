@@ -117,6 +117,8 @@ ns.HelpData = {
     { "Find an item on any character", "My characters page, or /ride where <item>: which of your characters has it and where (bags, bank, mail, worn), as last seen.", page = "alts", cmd = "where" },
     { "Small switches", "Settings > Small switches, all off until you pick them: hide the big zone names, red error text or the talking head; zoom the camera out further; gather other addons' minimap buttons behind one button; keep the last 50 chat lines after a reload.", page = "settings" },
     { "Wowhead link", "Hover an item, NPC or spell and press your Outrider: Wowhead link key (or /ride wowhead): a box with its WoW Forever Wowhead address to copy (Ctrl+C).", cmd = "wowhead" },
+    { "At the trainer", "Open any trainer once (class or profession): the Professions page lists what you can learn now, what comes next (at what skill or level) and the cost.", page = "professions" },
+    { "Skill-up chance and cooldowns", "Professions page: each recipe's chance to give a point from its colour (estimates), craft cooldowns like transmutes on every character (one line at login when one is ready), your most profitable crafts, and auctions of yours someone undercut.", page = "professions" },
     { "Feed", "Every pop-up is kept here, newest first, so nothing is lost when one fades. /ride feed.", page = "feed", cmd = "feed" },
     { "Look", "A clean dark skin for Blizzard windows, flat tooltips with a Target line, flat health bars. Cosmetic only; Edit Mode still decides positions.", page = "settings" },
     { "Edit Mode per situation", "Assign an Edit Mode layout to a situation (city, fishing, group...) and Outrider switches to it out of combat. /ride layout.", page = "settings", cmd = "layout" },

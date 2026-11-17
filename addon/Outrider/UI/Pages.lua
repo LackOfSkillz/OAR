@@ -458,6 +458,11 @@ local function profRows()
   r({ "header", "Auction house" })
   r({ "input", "Undercut by", "2% or 50c", "Set", function(t) ns.Slash:Run("undercut " .. t) end })
   r({ "note", function() local s = set("AuctionHelper") return "Now: " .. (s.undercutCopper and (s.undercutCopper .. " copper") or ((s.undercutPct or 2) .. "%")) end })
+  -- trainer list, skill-up chance, craft cooldowns, profitable crafts, undercuts (gap analysis 2026-11-17)
+  if ns.ProfExtras then
+    local ok, extra = pcall(ns.ProfExtras.PageRows, ns.ProfExtras)
+    for _, row in ipairs(ok and extra or {}) do r(row) end
+  end
   return rows
 end
 
