@@ -269,6 +269,12 @@ local KEY_NOTE = {
   HUNTER = "Fight (ranged), Strike (melee) and Pet (care) follow your spellbook and ranged weapon.",
   MAGE = "Fight (Frostbolt) and Strike (close: Frost Nova, Fire Blast, Arcane Explosion) follow your spellbook.",
   PRIEST = "Fight (Shadow Word: Pain once, Mind Blast, Smite) and Heal follow your spellbook.",
+  WARRIOR = "Fight on key 1 (Charge, Shout, Rend, big strike, Heroic Strike); Strike on key 2 (Overpower, Execute, Thunder Clap).",
+  ROGUE = "Fight on key 1 (Cheap Shot, builders, Slice and Dice, Eviscerate); Strike on key 2 (Stealth, Kick, cooldowns).",
+  WARLOCK = "Fight on key 1 (demon, curse, dots once, Drain Life or wand); Strike on key 2 (Life Tap, Shift: Fear).",
+  DRUID = "Fight on key 1 follows your form (caster, Bear, Cat); Heal on key 2 (Swipe, Tiger's Fury or a heal).",
+  PALADIN = "Fight on key 1 (Blessing, Aura, Seal and Judgement, Holy Strike); Heal on key 2 (Holy Light).",
+  SHAMAN = "Fight on key 1 (imbue, Shield, bolt, totem, shocks, Stormstrike); Heal on key 2 (Healing Wave).",
 }
 
 local function classRows(cls, page)

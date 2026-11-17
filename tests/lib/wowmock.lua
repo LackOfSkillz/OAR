@@ -371,7 +371,10 @@ function M.new(opts)
     end,
   }
   -- temporary weapon enchant (a fishing lure): game.lureMs = milliseconds left, nil = none
-  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return false end
+  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return game.mhEnchant or false end
+  -- druid forms: game.forms = { spellID, ... } in stance-bar order
+  base.GetNumShapeshiftForms = function() return #(game.forms or {}) end
+  base.GetShapeshiftFormInfo = function(i) local id = (game.forms or {})[i] if id then return 0, false, true, id end end
   base.UnitRace = function(unit) if unit == "player" then return player.race, player.race, opts.raceID end end
   base.UnitLevel = function(unit)
     if unit == "player" then return player.level end

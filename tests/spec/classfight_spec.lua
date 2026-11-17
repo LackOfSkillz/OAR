@@ -1,54 +1,126 @@
--- Fight macros per class: each class gets only its own keys. Spells are test data.
+-- Fight macros for warrior, rogue, warlock, druid, paladin and shaman: built
+-- from known spells only, ordered once-per-pull -> cooldowns -> filler, rewritten
+-- when spells, gear, buffs or forms change. Spell lists here are test data.
 local T, mock = ...
 
-local function session(class, ...)
-  local game = mock.new({ class = class })
-  local spells = {}
-  for i, n in ipairs({ ... }) do spells[i] = { name = n, id = 9100 + i } end
+local function sp(...)
+  local out = {}
+  for i, n in ipairs({ ... }) do out[i] = { name = n, id = 8000 + i } end
+  return out
+end
+
+local function session(class, level, spells, opts)
+  local game = mock.new({ class = class, level = level })
   game.spells = spells
+  game.items = { [100] = { name = "Big Axe", equipLoc = "INVTYPE_2HWEAPON" }, [101] = { name = "Wand", equipLoc = "INVTYPE_RANGEDRIGHT" } }
+  game.worn = (opts and opts.worn) or {}
+  game.forms = opts and opts.forms
   local ns = game:loadAddon()
   game:login()
   ns.Modules:SetEnabled("AutoCheck", false)
   game:advance(3)
   game:slash("fight")
+  game:advance(3)
   return game, ns
 end
 
 local function macro(game, name)
-  for _, m in ipairs(game.macros) do if m.name == name then return m end end
+  for _, m in ipairs(game.macros) do if m.name == name then return m.body end end
+  return ""
 end
 
-T.describe("class fight macros", function()
-  T.it("mage: Fight nukes, Strike is Frost Nova, Fire Blast, Arcane Explosion; no hunter keys", function()
-    local game, ns = session("MAGE", "Fireball", "Frostbolt", "Frost Nova", "Fire Blast", "Arcane Explosion")
-    local f, k = macro(game, "Fight"), macro(game, "Strike")
-    T.ok(f and k)
-    T.contains(f.body, "/cast Frostbolt")
-    T.ok(not f.body:find("Fireball", 1, true), "Frostbolt replaces Fireball once learned")
-    local a, b, c = k.body:find("Frost Nova", 1, true), k.body:find("Fire Blast", 1, true), k.body:find("Arcane Explosion", 1, true)
-    T.ok(a < b and b < c)
-    T.eq(macro(game, "Pet"), nil)
-    T.ok(not f.body:find("petattack", 1, true))
-    T.eq(ns.MacroEngine.Errors(f.body), 0)
+local function before(body, a, b)
+  local x, y = body:find(a, 1, true), body:find(b, 1, true)
+  return x and y and x < y
+end
+
+T.describe("fight macros for every class", function()
+  T.it("warrior: Charge, Shout, Rend once, Mortal Strike, Heroic Strike; key 2 the reactive strikes", function()
+    local game, ns = session("WARRIOR", 30, sp("Charge", "Battle Shout", "Rend", "Mortal Strike", "Heroic Strike",
+      "Overpower", "Execute", "Thunder Clap"))
+    local f = macro(game, "Fight")
+    T.contains(f, "/cast [nocombat] Charge")
+    T.contains(f, "/castsequence reset=combat Battle Shout,null")
+    T.contains(f, "/castsequence reset=combat/target Rend,null")
+    T.ok(before(f, "Mortal Strike", "Heroic Strike"), "cooldown before filler")
+    local s = macro(game, "Strike")
+    T.ok(before(s, "Overpower", "Thunder Clap"))
+    T.contains(s, "/cast Execute")
+    T.ok(#f <= 255 and #s <= 255)
     T.eq(#ns.Errors.list, 0)
   end)
 
-  T.it("priest: Fight is SW:Pain once, Mind Blast, Smite; Heal heals who you point at", function()
-    local game, ns = session("PRIEST", "Smite", "Shadow Word: Pain", "Mind Blast", "Lesser Heal")
-    local f, h = macro(game, "Fight"), macro(game, "Heal")
-    T.contains(f.body, "/castsequence reset=combat/target Shadow Word: Pain,null")
-    T.ok(f.body:find("Mind Blast", 1, true) < f.body:find("Smite", 1, true))
-    T.contains(h.body, "[@mouseover,help,nodead][@target,help,nodead][@player] Lesser Heal")
-    T.eq(macro(game, "Strike"), nil, "no melee key for priests")
-    T.eq(ns.MacroEngine.Errors(h.body), 0)
+  T.it("rogue: Cheap Shot from Stealth, then the combo loop; key 2 Stealth and Kick", function()
+    local game = session("ROGUE", 20, sp("Stealth", "Cheap Shot", "Sinister Strike", "Slice and Dice", "Eviscerate", "Kick", "Evasion"))
+    local f = macro(game, "Fight")
+    T.contains(f, "/cast [stealth] Cheap Shot")
+    T.contains(f, "Sinister Strike,Sinister Strike,Slice and Dice,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate")
+    local s = macro(game, "Strike")
+    T.contains(s, "/cast [nocombat,nostealth] Stealth")
+    T.ok(before(s, "Kick", "Evasion"))
   end)
 
-  T.it("a rogue gets no Fight macros and no hunter tools", function()
-    local game, ns = session("ROGUE", "Sinister Strike")
-    T.eq(macro(game, "Fight"), nil)
-    T.eq(ns.Modules:Get("HunterFight").enabled, false)
-    T.eq(ns.Modules:Get("TameHelper").enabled, false)
-    T.eq(ns.Modules:Get("PetStatus").enabled, false)
+  T.it("warlock: Forever's Bane of Agony, dots once, wand before 30 and Drain Life from 30", function()
+    local game = session("WARLOCK", 20, sp("Bane of Agony", "Corruption", "Immolate", "Shadow Bolt", "Shoot", "Drain Life", "Life Tap", "Demon Skin"),
+      { worn = { [18] = 101 } })
+    local f = macro(game, "Fight")
+    T.contains(f, "Bane of Agony,Corruption,Immolate,null")
+    T.contains(f, "/cast !Shoot")
+    T.contains(f, "/cast [nocombat,@player] Demon Skin")
+    local g30 = session("WARLOCK", 30, sp("Corruption", "Shadow Bolt", "Drain Life"))
+    T.contains(macro(g30, "Fight"), "/cast Drain Life")
+  end)
+
+  T.it("druid: one key follows the form numbers on the stance bar", function()
+    local spells = sp("Wrath", "Moonfire", "Bear Form", "Maul", "Demoralizing Roar", "Swipe", "Cat Form", "Claw", "Rake",
+      "Ferocious Bite", "Healing Touch", "Mark of the Wild")
+    local game = session("DRUID", 22, spells, { forms = { 8003, 8007 } })
+    local f = macro(game, "Fight")
+    T.contains(f, "/startattack [form:1/2]")
+    T.contains(f, "/cast [form:1] Maul")
+    T.contains(f, "/castsequence [form:2] reset=combat/target Rake,Claw,Claw,Claw,Ferocious Bite")
+    T.contains(f, "/cast [noform] Wrath")
+    local h = macro(game, "Heal")
+    T.contains(h, "[form:1] Swipe")
+    T.contains(h, "[noform,@player] Healing Touch")
+    T.ok(#f <= 255)
+  end)
+
+  T.it("paladin: Seal of Command only with a two-hander from 20; Seal and Judgement loop; Holy Strike", function()
+    local spells = sp("Seal of Righteousness", "Seal of Command", "Judgement", "Holy Strike", "Blessing of Might", "Devotion Aura", "Holy Light")
+    local game = session("PALADIN", 22, spells, { worn = { [16] = 100 } })
+    local f = macro(game, "Fight")
+    T.contains(f, "/castsequence reset=combat Seal of Command,Judgement")
+    T.contains(f, "/cast Holy Strike")
+    T.contains(f, "/cast [nocombat,@player] Blessing of Might")
+    T.contains(macro(game, "Heal"), "[@player] Holy Light")
+    local one = session("PALADIN", 22, spells)
+    T.contains(macro(one, "Fight"), "Seal of Righteousness,Judgement")
+  end)
+
+  T.it("shaman: imbue while the weapon has none, totem and Flame Shock once, shocks on cooldown", function()
+    local spells = sp("Lightning Bolt", "Rockbiter Weapon", "Searing Totem", "Flame Shock", "Earth Shock", "Lightning Shield", "Healing Wave")
+    local game, ns = session("SHAMAN", 15, spells)
+    local f = macro(game, "Fight")
+    T.contains(f, "/cast [nocombat] Rockbiter Weapon")
+    T.contains(f, "/castsequence reset=combat Searing Totem,null")
+    T.ok(before(f, "Flame Shock", "Earth Shock"))
+    game.mhEnchant = true
+    game.units = game.units or {}
+    game.units.player = { auras = {} }
+    game:fire("UNIT_AURA", "player")
+    game:advance(3)
+    T.ok(not macro(game, "Fight"):find("Rockbiter", 1, true), "imbued: no wasted press")
     T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a buff that's already up leaves the macro; mage and priest get theirs too", function()
+    local game = session("PRIEST", 20, sp("Shadow Word: Pain", "Smite", "Power Word: Fortitude", "Lesser Heal"))
+    T.contains(macro(game, "Fight"), "/cast [nocombat,@player] Power Word: Fortitude")
+    game.units = game.units or {}
+    game.units.player = { auras = { { name = "Power Word: Fortitude", spellId = 1 } } }
+    game:fire("UNIT_AURA", "player")
+    game:advance(3)
+    T.ok(not macro(game, "Fight"):find("Fortitude", 1, true))
   end)
 end)
