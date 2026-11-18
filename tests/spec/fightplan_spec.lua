@@ -83,6 +83,23 @@ T.describe("fight plans", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("keeps modifier-only abilities gated when an untrained alternative is removed", function()
+    local game, ns, FP = hunter(20, HUNTER20, {})
+    local line = FP.KnownLine("/cast [mod:shift] Freezing Trap; [mod:ctrl] Untrained Trap")
+    T.eq(line, "/cast [mod:shift] Freezing Trap")
+  end)
+
+  T.it("does not guess an unknown Skyborne faction or talent specialization", function()
+    local game, ns, FP = hunter(20, HUNTER20, {})
+    local original = ns.Talents.Read
+    ns.Talents.Read = function()
+      return { tabs = { { spent = "unreadable" }, { spent = 15 }, { spent = 0 } } }
+    end
+    T.eq(FP:Spec(), "levelling")
+    ns.Talents.Read = original
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("scores a hand-written macro: a channel with no guard is flagged, a full rotation scores high", function()
     local game = mock.new({ class = "WARLOCK", level = 30 })
     game.spells = sp({ "Shadow Bolt", "Corruption", "Immolate", "Drain Life", "Life Tap", "Demon Skin", "Bane of Agony", "Fear" })

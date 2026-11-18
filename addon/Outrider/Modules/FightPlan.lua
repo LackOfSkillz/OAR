@@ -60,7 +60,10 @@ function M:Spec()
   if not (T and T.tabs) then return "levelling" end
   local best, bestN, total = nil, -1, 0
   for i, tab in ipairs(T.tabs) do
-    local n = tonumber(tab.spent) or 0
+    -- Secret/unreadable talent points cannot establish a specialization.
+    local raw = tab and C.Readable(tab.spent)
+    if type(raw) ~= "number" or raw < 0 or raw ~= raw then return "levelling" end
+    local n = raw
     total = total + n
     if n > bestN then best, bestN = i, n end
   end
@@ -72,6 +75,7 @@ function M:Mode()
   local s = self:Settings()
   if s.mode == "pve" or s.mode == "pvp" then return s.mode end
   local _, kind = C.Call("IsInInstance")
+  kind = C.Readable(kind)
   if kind == "pvp" or kind == "arena" then return "pvp" end
   return "pve"
 end
@@ -83,7 +87,9 @@ function M.Race()
   if file == "Scourge" then return "Undead" end
   if file == "Skyborne" then
     local fac = C.Readable(C.Call("UnitFactionGroup", "player"))
-    return fac == "Alliance" and "SkyborneAlliance" or "SkyborneHorde"
+    if fac == "Alliance" then return "SkyborneAlliance" end
+    if fac == "Horde" then return "SkyborneHorde" end
+    return nil -- unknown faction must never select the wrong racial macro
   end
   return file
 end
@@ -207,8 +213,8 @@ function M.KnownLine(l)
     if spell ~= "" and known(spell) then keep[#keep + 1] = c end
   end
   if #keep == 0 then return nil end
-  -- a single kept choice that only had a modifier condition stands alone
-  if #keep == 1 then keep[1] = keep[1]:gsub("^%[mod:[%a]+%]%s*", "") end
+  -- Preserve the modifier even if only that clause is known; stripping it
+  -- would turn a Shift-only panic action into an unmodified key press.
   return verb .. " " .. table.concat(keep, "; ")
 end
 
