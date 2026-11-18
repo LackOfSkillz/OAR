@@ -1,30 +1,32 @@
-# Intelligence 2.0 development branch status
+# Intelligence 2.0 — development status (November 18, 2026)
 
-**Branch:** `ai/intelligence-2.0`  
-**Based on:** `p1-foundation` at `ec828d423b188e5a76c20f3d657d7b2ad467a000`  
-**Created:** 2026-11-18  
-**Release status:** DEVELOPMENT ONLY — do not merge.
+**Branch:** `ai/intelligence-2.0`; **release state:** DEVELOPMENT, not approved for deployment or merge.
 
-## Implemented in this branch (pending full review)
+## Source implemented, acceptance still in progress
 
-| Area | Files | Scope |
-|---|---|---|
-| Universal roles | `addon/Outrider/Intelligence/Profiles.lua` | Registry for nine Classic classes plus UNKNOWN; six universal goals; explicit role override; no inferred talent/ability assumptions |
-| Typed evidence | `Intelligence/Evidence.lua` | Bounded, local-only registry, sanitization, category TTL, invalidation and source provenance |
-| WhatNow adaptation | `Intelligence/Opportunity.lua` | Source-bound opportunity cards with score, validation, class/role eligibility, max-three ranking |
-| Opt-in Coach | `Intelligence/Radar.lua` | Player-requested offline radar; at most three cards, Why?, Go (existing permissible actions), Later and persisted feedback; off by default |
-| Vendor floor math | `Intelligence/Economy.lua` | Read-only current lot eligibility and stack buyout vs NPC unit-price calculation; strictly no automated purchase |
-| Automated tests | `tests/spec/intelligence2_spec.lua`, `tests/spec/intelligence_economy_spec.lua` | Unit coverage of class/role registry, evidence lifecycle, safe candidates, feedback and vendor-margin negative cases |
-| CI | `.github/workflows/outrider-tests.yml` | Enabled tests for `ai/**` branch pushes |
+- **Class profiles:** nine original WoW classes plus UNKNOWN, six universal goals, per-character manual role override (`/ride role`). Verified in mocks, not yet every live role/Forever race.
+- **Evidence/Opportunity:** bounded read-only local evidence, class/role eligibility, TTL checks, source-bound candidate IDs; excludes secret values from actionable decisions.
+- **Offline Radar:** opt-in `/ride radar` UI, up to 1+2 suggestions, source explanation, explicit feedback, mute, reset, 30/45/60-minute preference and event coalescing. No model required, no gameplay automation.
+- **Economy:** verified-stack vendor floor and conservative eligibility; resale/crafting are hypotheses, confirmed outcomes separately recorded; opt-in Deal Desk reads player-issued AH searches without purchasing or scanning.
+- **Companion v3:** player copy/paste OTR1 transport remains; additive Python v3 typed contexts and validator, v3 Lua AdviceLoader, offline deterministic fallback or explicitly configured model. Legacy v1/v2 remain supported.
+- **Provider hardening:** non-loopback TLS/auth gate (documented explicit development override), local circuit breaker; Anthropic server-side model fallback disabled.
+- **UI baseline:** newer `p1-foundation` Advisor/UI improvements merged into this branch at `91387a2`.
+- **Policy:** [risk and ownership register](I2_BASELINE_POLICY_REGISTER.md) preserves D18, privacy, no secret-value computation, user-controlled actions and I2-09 block.
 
-## Not completed / cannot be certified by mock tests
+## CI and review evidence
 
-The complete I2-00..I2-08 backlog is **not implemented** by this first engineering slice. A number of tasks remain: full event-driven refresh/coalescing, 9×6 plus role fixtures, task-specific v3 model context and migrations, complete deal desk UI and player-selected AH integration, model-provider benchmarks, privacy and performance tests, in-game UI visual checks, live addon compatibility, licensing and owner acceptance.
+The original command-smoke failure was fixed in `a4344a9`; [run 44404920384](https://github.com/LackOfSkillz/OAR/actions/runs/44404920384) passed. A later integrated run with Deal Desk reached **741 passed, 1 failed, 0 syntax errors**; the failed test used a host `time()` instead of the mock clock and was corrected at `530e583`. **The newest combined code must pass its own CI** before any mock-green claims.
 
-**I2-09 remains BLOCKED** by D18; no external live transport, addon-state side channel, screen capture or input automation has been added. Any review must preserve no-gameplay-automation and no-secret-combat-value processing.
+See the [77-task backlog](OUTRIDER_INTELLIGENCE_2_0_IMPLEMENTATION_BACKLOG.md) for statuses. `[~]` means partial; it is not a claim of completion. The project is not 77/77 complete.
 
-## Test/merge policy
+## Remaining engineering and acceptance blockers
 
-Only mark checklist items `[x]` when a specific implementation and committed automated evidence exist, and only mark live gates complete after actual Forever client verification by the owner. The existing `main` branch is untouched. Never interpret created files alone as satisfying the full release contract.
+- Genuine specialization/talent evidence, role-appropriate gear and consumable coaching with nine-class live checks.
+- Source-pack version/provenance, event-specific invalidation, full v3 Lua snapshot/export UX and strict privacy previews.
+- Comprehensive native Coach HUD UX/performance verification, no-taint combat checks and SaveVariables migrations.
+- AH scan/commodity coverage, player-review UX, source currency/lot age and confirmation accuracy on real Forever auctions.
+- Real local/cloud model trials, provider cost/latency benchmarks, provider consent tests, real OTR1 copy/paste round trip.
+- Real memory/CPU timings, source/third-party compatibility, independent security/GPL review and 25-question side-by-side evaluation.
+- User-approved nine-class beta, release packaging and signoff. I2-09 remains blocked by D18.
 
-To continue: inspect the latest AI-branch CI run, fix any failures, then execute I2-00 and I2-01 gates, followed by a fuller I2-02 event-driven Coach. Rebase/reconcile new `p1-foundation` changes before opening the final review PR.
+`main` remains untouched. Do not mark tasks or release gates complete without their distinct source, CI and live evidence.
