@@ -33,9 +33,18 @@ M.ALIASES = {
 function M:OnEnable()
   self:On("PLAYER_DEAD", self.OnDead)
   self:On("PLAYER_ALIVE", self.OnAlive)
-  self:On("PLAYER_ALIVE", function(mod) if C.Call("UnitIsGhost", "player") then mod:RecordGhostSpawn() end end)
+  self:On("PLAYER_ALIVE", function(mod)
+    if C.Readable(C.Call("UnitIsGhost", "player")) == true then
+      mod:ConfirmDeath()
+      mod:RecordGhostSpawn()
+    end
+  end)
   self:On("PLAYER_UNGHOST", self.OnResurrected)
-  self:On("PLAYER_UNGHOST", function(mod) mod:FinishDeathLog() end)
+  self:On("PLAYER_UNGHOST", function(mod)
+    if mod.deathLog and mod.deathLog.confirmed then mod:FinishDeathLog()
+    else mod.deathLog = nil end
+    mod.pendingDeath = nil
+  end)
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
     if w == mod.corpseWP and why == "arrived" then mod.corpseArrived = true end
   end)
@@ -62,7 +71,8 @@ function M:PredictedGraveyard(mapID, subzone)
 end
 
 function M:RecordGhostSpawn()
-  if not self.deathLog or self.deathLog.spawn then return false end
+  if not self.deathLog or not self.deathLog.confirmed or self.deathLog.spawn
+    or C.Readable(C.Call("UnitIsGhost", "player")) ~= true then return false end
   local mapID, x, y = C.PlayerPosition("player")
   if not (mapID and type(x) == "number" and type(y) == "number") then return false end
   local log = self.deathLog
@@ -95,6 +105,7 @@ function M:FinishDeathLog()
 end
 
 function M:OnDisable()
+  self.pendingDeath = nil
   self:StopCorpsePolling()
   self.dead = nil
 end
@@ -146,7 +157,10 @@ function M:PollCorpse()
 end
 
 function M:OnAlive()
-  if not self.dead and not C.Call("UnitIsGhost", "player") then return end
+  if C.Readable(C.Call("UnitIsGhost", "player")) == true then
+    self:ConfirmDeath()
+  end
+  if not self.dead and C.Readable(C.Call("UnitIsGhost", "player")) ~= true then return end
   self.dead = true
   if self:TryCorpse() then return end
   if not self.corpseTicker then
@@ -156,6 +170,7 @@ function M:OnAlive()
 end
 
 function M:OnResurrected()
+  self.pendingDeath = nil
   self:StopCorpsePolling()
   local W = ns.Waypoints
   -- Only touch our own corpse waypoint. If the player changed it, leave it.
@@ -216,19 +231,49 @@ function M:Go(kind)
   return true, string.format("%s, %d yards. Waypoint set.", p.name or kind, math.floor(d + 0.5))
 end
 
-function M:OnDead()
+-- NEW-11: record a death only after a real ghost or dead state.
+-- Feign Death may emit death-like events while still alive. A false event
+-- must never contaminate graveyard learning, death history, or corpse routing.
+function M:ActualDeath()
+  local ghost = C.Readable(C.Call("UnitIsGhost", "player"))
+  if ghost == true then return true end
+  local dead = C.Readable(C.Call("UnitIsDeadOrGhost", "player"))
+  if dead == true then return true end
+  dead = C.Readable(C.Call("UnitIsDead", "player"))
+  return dead == true
+end
+
+function M:ConfirmDeath()
+  if not self:ActualDeath() then return false end
+  if self.deathLog and self.deathLog.confirmed then return true end
+  local context = self.pendingDeath or {}
+  self.pendingDeath = nil
   self:StopCorpsePolling()
   self.dead, self.corpseWP, self.corpseArrived, self.corpseAttempts = true, nil, nil, 0
-  local mapID = C.PlayerPosition("player")
-  local subzone = C.Readable(C.Call("GetSubZoneText"))
-  self.deathLog = { t = time(), mapID = mapID, subzone = subzone,
-    predicted = self:PredictedGraveyard(mapID, subzone) }
+  local mapID = context.mapID or C.PlayerPosition("player")
+  local subzone = context.subzone or C.Readable(C.Call("GetSubZoneText"))
+  self.deathLog = { t = context.t or time(), mapID = mapID, subzone = subzone,
+    predicted = self:PredictedGraveyard(mapID, subzone), confirmed = true }
   local W = ns.Waypoints
   local w = W and W.current
   self.savedWaypoint = w and { mapID = w.mapID, x = w.x, y = w.y, title = w.title, opts = w.opts } or nil
-  -- The corpse often becomes addressable only after release. Do not replace
-  -- a player waypoint with an incorrect nearest-graveyard guess.
   self:TryCorpse()
+  return true
+end
+
+function M:OnDead()
+  if self:ConfirmDeath() then return end
+  -- A death event can arrive before the client updates UnitIsDead*. Retain
+  -- only its origin briefly; do not record until a later state confirms it.
+  self.pendingDeath = { t = time(), mapID = C.PlayerPosition("player"),
+    subzone = C.Readable(C.Call("GetSubZoneText")) }
+  ns.Timer.After(0.3, function()
+    if not M.enabled or not M.pendingDeath then return end
+    if not M:ConfirmDeath() then
+      M.pendingDeath = nil
+      M:Info("ignored death-like event: player not dead or a ghost (possible Feign Death)")
+    end
+  end, "nearest:confirm-death")
 end
 
 function M:Activity()
