@@ -33,11 +33,17 @@ T.describe("tooltip lines", function()
     T.eq(TL:Fill("item", tip, { id = 1 }), 0, "a failing provider is contained")
   end)
 
-  T.it("hides the primary tooltip in combat, but Shift allows it", function()
+  T.it("hides the primary tooltip in combat when switched on (off by default), but Shift allows it", function()
     local game = mock.new()
     local ns = game:loadAddon()
     game:login()
     local tip = game.env.GameTooltip
+    game:setCombat(true)
+    tip:Show()
+    T.ok(tip:IsShown(), "off by default: tooltips stay in combat")
+    tip:Hide()
+    game:setCombat(false)
+    ns.Modules:Get("Tooltips"):Settings().hideInCombat = true
     game:setCombat(true)
     tip:Hide()
     tip:Show()

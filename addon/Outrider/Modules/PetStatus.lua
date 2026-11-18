@@ -102,13 +102,14 @@ function M:CheckHunterWarnings(inCombat)
   if warning then active.aspect = warning end
   if growl then active.growl = "Pet Growl autocast is on in a group" end
   for name, msg in pairs(active) do
-    if self.hunterWarned[name] ~= msg then
-      self.hunterWarned[name] = msg
+    if not self.hunterWarned[msg] then
+      self.hunterWarned[msg] = true
       ns.Toast:Show({ title = msg, text = name == "growl" and "Turn off Growl autocast for group tanking." or "Select an appropriate aspect yourself.", color = "warn", duration = 8 })
       self:Info("hunter warning: %s", msg)
     end
   end
-  for name in pairs(self.hunterWarned) do if not active[name] then self.hunterWarned[name] = nil end end
+  -- Kept for the session: at most one toast per kind (hard rule 6), not one
+  -- per pull. /reload starts a new session.
 end
 
 -- ------------------------------------------------------------------ diet
@@ -290,12 +291,14 @@ function M:Build()
   f.hpMax = UI.Text(c, "small", "muted") f.hpMax:SetPoint("LEFT", f.hpVal, "RIGHT", 2, 0)
   f.focusLabel = UI.Text(c, "small", "muted") f.focusLabel:SetPoint("LEFT", f.hpMax, "RIGHT", 10, 0) f.focusLabel:SetText("Focus")
   f.focusVal = UI.Text(c, "small", "text") f.focusVal:SetPoint("LEFT", f.focusLabel, "RIGHT", 4, 0)
-  f.line4 = UI.Text(c, "small", "text") f.line4:SetPoint("TOPLEFT", 0, -50)
-  f.fight = UI.Text(c, "small", "muted") f.fight:SetPoint("TOPLEFT", 0, -66) f.fight:SetWidth(256) f.fight:SetJustifyH("LEFT")
-  f.skills = UI.Text(c, "small", "text") f.skills:SetPoint("TOPLEFT", 0, -96) f.skills:SetWidth(236)
-  f.skills:SetJustifyH("LEFT")
-  f.diet = UI.Text(c, "small", "muted") f.diet:SetPoint("TOPLEFT", 0, -126) f.diet:SetWidth(170)
-  f.diet:SetJustifyH("LEFT")
+  -- Each block sits under the one above, so wrapped text never overlaps
+  -- (Gary, 2026-11-18 screenshot: abilities ran over the damage line and the
+  -- Feed button over the diet). The panel grows to fit; Feed gets its own row.
+  f.fight = UI.Text(c, "small", "muted") f.fight:SetPoint("TOPLEFT", f.line3, "BOTTOMLEFT", 0, -6)
+  f.skills = UI.Text(c, "small", "text") f.skills:SetPoint("TOPLEFT", f.fight, "BOTTOMLEFT", 0, -4)
+  f.line4 = UI.Text(c, "small", "text") f.line4:SetPoint("TOPLEFT", f.skills, "BOTTOMLEFT", 0, -4)
+  f.diet = UI.Text(c, "small", "muted") f.diet:SetPoint("TOPLEFT", f.line4, "BOTTOMLEFT", 0, -4)
+  for _, fs in ipairs({ f.fight, f.skills, f.line4, f.diet }) do fs:SetWidth(M.TEXT_W) fs:SetJustifyH("LEFT") end
   f:HookScript("OnDragStart", function() if M.feed and not C.InCombat() then ns.SecureButtons:SetShown(M.feed, false) end end)
   f:HookScript("OnDragStop", function() M:PlaceFeed() end)
   self.frame = f
@@ -349,6 +352,21 @@ end
 
 -- Show or hide the pet panel (and its Feed button), remembered per character.
 M.OPEN_H, M.HEADER_H = 200, 34 -- folded height fits Feed and the arrow side by side
+M.TEXT_W = 256
+
+-- Open height from the text actually shown: header and content inset (36),
+-- the three fixed lines (46), each wrapped block, and a row for Feed (34).
+function M:FitHeight()
+  local f = self.frame
+  if not f then return M.OPEN_H end
+  local h = 36 + 46
+  for _, fs in ipairs({ f.fight, f.skills, f.line4, f.diet }) do
+    local text = fs.GetText and fs:GetText()
+    local sh = fs.GetStringHeight and tonumber((fs:GetStringHeight())) or 0
+    if text and text ~= "" then h = h + math.max(sh, 12) + 4 end
+  end
+  return math.max(120, math.floor(h + 34 + 0.5))
+end
 
 -- Fold to the header bar or open again. The header's top-left corner stays
 -- put: the panel is pinned by TOPLEFT before its height changes.
@@ -362,7 +380,7 @@ function M:ApplyCollapsed()
     f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", left, top - parentTop)
     s.pos.point, s.pos.x, s.pos.y = "TOPLEFT", math.floor(left + 0.5), math.floor(top - parentTop + 0.5)
   end
-  f:SetHeight(s.collapsed and M.HEADER_H or M.OPEN_H)
+  f:SetHeight(s.collapsed and M.HEADER_H or (self.openH or M.OPEN_H))
   f.content:SetShown(not s.collapsed)
   f.close.arrow:SetTexture(s.collapsed and "Interface\\Buttons\\Arrow-Down-Up" or "Interface\\Buttons\\Arrow-Up-Up")
   if self.feed then
@@ -442,7 +460,9 @@ function M:Refresh(why)
   f.diet:SetText((food and ("Feeds: " .. food .. (self.foodCount and (" (" .. self.foodCount .. ")") or "")) or "No food it eats in your bags")
     .. (#yes > 0 and ("\nEats: " .. table.concat(yes, ", ")) or ""))
   self:CheckUnhappy(d)
-  if not f:IsShown() then f:Show() self:ApplyCollapsed() end
+  self.openH = self:FitHeight()
+  if not f:IsShown() then f:Show() self:ApplyCollapsed()
+  elseif not self:Settings().collapsed and f:GetHeight() ~= self.openH then self:ApplyCollapsed() end
   self:PlaceFeed()
 end
 

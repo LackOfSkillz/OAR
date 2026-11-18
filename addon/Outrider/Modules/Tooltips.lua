@@ -13,7 +13,7 @@ local M = ns:NewModule("Tooltips", {
   title = "Tooltip style and target line",
   phase = "P7",
   order = 102,
-  defaults = { target = true, hideInCombat = true, questLeft = true },
+  defaults = { target = true, hideInCombat = false, questLeft = true },
   yieldsTo = { "TipTac", "ElvUI", "TinyTooltip" },
 })
 ns.Tooltips = M
