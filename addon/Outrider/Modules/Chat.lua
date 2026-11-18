@@ -76,7 +76,8 @@ function M:RememberLine(event, msg, author)
 end
 
 function M:History(name, limit)
-  local entries = name and self.whispers[tostring(name):lower()] or self.archive
+  local entries
+  if name then entries = self.whispers[tostring(name):lower()] else entries = self.archive end
   local out = {}
   for i = #(entries or {}), 1, -1 do
     if #out >= (limit or 40) then break end
