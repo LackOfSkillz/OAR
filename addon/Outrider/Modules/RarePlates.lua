@@ -15,7 +15,7 @@ local M = ns:NewModule("RarePlates", {
   title = "Rare marker on nameplates",
   phase = "P7",
   order = 99,
-  defaults = { scale = 1 },
+  defaults = { scale = 1, threat = true },
   yieldsTo = { "Plater", "TidyPlates_ThreatPlates", "Kui_Nameplates" },
 })
 ns.RarePlates = M
@@ -25,15 +25,19 @@ M.SIZE = 44         -- the star, in pixels before the scale setting
 M.PULSE = 0.6       -- seconds from bright to dim
 M.GOLD, M.SILVER = { 1, 0.82, 0.2 }, { 0.8, 0.85, 0.95 }
 
-function M:OnInitialize() self.pool, self.active = {}, {} end
+function M:OnInitialize() self.pool, self.active, self.threatMarkers = {}, {}, {} end
 
 function M:OnEnable()
   self:On("NAME_PLATE_UNIT_ADDED", self.OnAdded)
+  self:On("UNIT_THREAT_SITUATION_UPDATE", function(mod) mod:RefreshThreat() end)
+  self:On("UNIT_THREAT_LIST_UPDATE", function(mod) mod:RefreshThreat() end)
+  self:On("UNIT_PET", function(mod) mod:RefreshThreat() end)
   self:On("NAME_PLATE_UNIT_REMOVED", self.OnRemoved)
 end
 
 function M:OnDisable()
   for unit in pairs(self.active) do self:OnRemoved(nil, unit) end
+  for unit, m in pairs(self.threatMarkers) do m:Hide() self.threatMarkers[unit] = nil end
 end
 
 local function plateFor(unit)
@@ -77,6 +81,7 @@ end
 
 function M:OnAdded(_, unit)
   if type(unit) ~= "string" then return end
+  self:ThreatFor(unit)
   local scan = ns.Modules:Get("RareScan")
   if not scan then return end
   local npcID, _, _, _, pack, watched = scan:Classify(unit)
@@ -98,6 +103,8 @@ function M:OnAdded(_, unit)
 end
 
 function M:OnRemoved(_, unit)
+  local threat = self.threatMarkers[unit]
+  if threat then threat:Hide() self.threatMarkers[unit] = nil end
   local m = self.active[unit]
   if not m then return end
   if m.pulse then pcall(m.pulse.Stop, m.pulse) end
@@ -105,6 +112,63 @@ function M:OnRemoved(_, unit)
   m:ClearAllPoints()
   self.active[unit] = nil
   self.pool[#self.pool + 1] = m
+end
+
+-- DEEP-17: visual only. Never writes a nameplate's healthbar,
+-- threat colors or protected unit settings. A small independent marker sits
+-- outside the plate and displays player vs pet threat when both are readable.
+M.THREAT_COLORS = {
+  player = { 1, 0.35, 0.25 }, pet = { 0.25, 0.60, 1 },
+  safe = { 0.30, 0.85, 0.35 },
+}
+function M:ThreatStatus(unit)
+  local get = C.Resolve("UnitDetailedThreatSituation")
+  if type(get) ~= "function" then return nil end
+  local function one(who)
+    local ok, tanking, status, pct = pcall(get, who, unit)
+    status, pct = C.Readable(status), C.Readable(pct)
+    if not ok or type(status) ~= "number" or type(pct) ~= "number" then return nil end
+    return { status = status, pct = pct, tanking = C.Readable(tanking) == true }
+  end
+  local player, pet = one("player"), one("pet")
+  if not player and not pet then return nil end
+  local owner = "safe"
+  if player and player.status >= 2 then owner = "player"
+  elseif pet and pet.status >= 2 then owner = "pet"
+  elseif player and pet then owner = player.pct >= pet.pct and "player" or "pet"
+  elseif player then owner = "player"
+  else owner = "pet" end
+  return { owner = owner, player = player, pet = pet }
+end
+
+function M:ThreatFor(unit)
+  if not self:Settings().threat then return end
+  local plate = plateFor(unit)
+  if not plate then return end
+  local info = self:ThreatStatus(unit)
+  local marker = self.threatMarkers[unit]
+  if not info then if marker then marker:Hide() end return end
+  if not marker then
+    marker = CreateFrame("Frame", nil, UIParent)
+    marker:SetSize(80, 14)
+    marker:SetFrameStrata("HIGH")
+    marker.text = ns.UI.Text(marker, "small", "text")
+    marker.text:SetPoint("CENTER")
+    self.threatMarkers[unit] = marker
+  end
+  marker:ClearAllPoints()
+  marker:SetPoint("TOP", plate, "BOTTOM", 0, -2)
+  local color = M.THREAT_COLORS[info.owner]
+  marker.text:SetText(string.format("YOU %s  PET %s",
+    info.player and (math.floor(info.player.pct) .. "%") or "?",
+    info.pet and (math.floor(info.pet.pct) .. "%") or "?"))
+  marker.text:SetTextColor(color[1], color[2], color[3])
+  marker:Show()
+end
+
+function M:RefreshThreat()
+  if not self:Settings().threat then return end
+  for unit in pairs(self.threatMarkers) do self:ThreatFor(unit) end
 end
 
 -- Where a nameplate sits on screen, as a way to turn: "ahead", "ahead,
