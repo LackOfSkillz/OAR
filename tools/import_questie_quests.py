@@ -280,7 +280,7 @@ def main():
         f.write("-- paths[npcID] = { [uiMapID] = {x, y, ...} } walking path of escort and patrol NPCs\n")
         f.write("-- starters[objectID] = { {questID, name, requiredLevel, questLevel, faction, classMask, {preAny}, {preAll}, raceMask} }\n")
         f.write("-- npcs/objects[id] = { name, { [uiMapID] = {x, y, x, y, ...} } }; items[id] = { name, {npc ids}, {object ids} }\\n")
-        f.write("-- itemStarts[itemID] = {quest IDs whose startedBy item list names this item}; itemUses[itemID] = {quest IDs with this item objective}\\n")
+        f.write("-- itemStarts[itemID] = {quest IDs whose startedBy item list names this item}; itemUses[itemID] = {quest IDs with this item objective}\n")
         f.write("Outrider_DataQuests = { source = %s,\n" % s("QuestieDB " + version))
         f.write("quests = {\n")
         for qid, (qn, lvl, objs, explore, fin_npcs, fin_objs) in sorted(quests.items()):
@@ -305,13 +305,13 @@ def main():
         for i, (n, dn, do) in sorted(items.items()):
             if dn or do:
                 f.write("[%d]={%s,{%s},{%s}},\n" % (i, s(n or "?"), ",".join(map(str, dn)), ",".join(map(str, do))))
-        f.write("},\\nitemStarts = {\\n")
+        f.write("},\nitemStarts = {\n")
         for item_id, ids in sorted(item_starts.items()):
-            f.write("[%d]={%s},\\n" % (item_id, ",".join(map(str, sorted(ids)))))
-        f.write("},\\nitemUses = {\\n")
+            f.write("[%d]={%s},\n" % (item_id, ",".join(map(str, sorted(ids)))))
+        f.write("},\nitemUses = {\n")
         for item_id, ids in sorted(item_uses.items()):
-            f.write("[%d]={%s},\\n" % (item_id, ",".join(map(str, sorted(ids)))))
-        f.write("},\\ninfo = {\\n")
+            f.write("[%d]={%s},\n" % (item_id, ",".join(map(str, sorted(ids)))))
+        f.write("},\ninfo = {\n")
         def lst(v):
             return "{" + ",".join(map(str, v)) + "}"
         for qid, e in sorted(info.items()):
