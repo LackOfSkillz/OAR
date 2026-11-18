@@ -690,12 +690,21 @@ ns.Hub:AddTab("people", "Players & guilds", function(p)
     end },
     { "buttons", { { "In my zone", function() M.filter = readable(C.Call("GetZoneText")) or "" M.selected = nil end, 120 },
       { "Show everyone", function() M.filter = nil M.selected = nil end, 130 } } },
-    { "list", 10, function(row, x)
-      local cc = (rawget(_G, "RAID_CLASS_COLORS") or {})[x.c]
-      local hex = cc and string.format("|cff%02x%02x%02x", cc.r * 255, cc.g * 255, cc.b * 255) or "|cffffffff"
-      row.text:SetText(string.format("%s%-s|r  %d %s%s  |cff888888%s|r", hex, x.name:match("^[^-]+") or x.name, x.l,
-        M.ClassName(x.c), x.g and ("  <" .. x.g .. ">") or "", seenText(x)))
-    end, function(x) M.selected = x.name p:Refresh() end, function() return M:Find(M.filter) end },
+    -- a sortable table (2026-11-18 premium rebuild): click a column to sort
+    { "table", 10, {
+      { key = "name", label = "Name", width = 0, sort = function(x) return x.name end,
+        text = function(x)
+          local cc = (rawget(_G, "RAID_CLASS_COLORS") or {})[x.c]
+          local hex = cc and string.format("|cff%02x%02x%02x", cc.r * 255, cc.g * 255, cc.b * 255) or "|cffffffff"
+          return hex .. (x.name:match("^[^-]+") or x.name) .. "|r"
+        end },
+      { key = "l", label = "Lvl", width = 50, align = "RIGHT", sort = function(x) return x.l or 0 end, text = function(x) return x.l end },
+      { key = "c", label = "Class", width = 100, sort = function(x) return M.ClassName(x.c) or "" end, text = function(x) return M.ClassName(x.c) end },
+      { key = "g", label = "Guild", width = 0, sort = function(x) return x.g or "" end, text = function(x) return x.g and ("|cfff1d58e<" .. x.g .. ">|r") or "" end },
+      { key = "z", label = "Zone", width = 0, sort = function(x) return x.z or "" end, text = function(x) return x.z or "" end },
+      { key = "t", label = "Seen", width = 120, align = "RIGHT", sort = function(x) return x.t or 0 end,
+        text = function(x) return "|cff8f96a6" .. ago(x.t) .. "|r" end },
+    }, function() return M:Find(M.filter) end, function(x) M.selected = x.name p:Refresh() end, sortKey = "l", desc = true },
     { "cards", function()
       local full = pick()
       if not full then return {} end
@@ -728,10 +737,19 @@ ns.Hub:AddTab("people", "Players & guilds", function(p)
       return #g == 0 and "No guilds seen yet. Every guild tag from /who and players around you lands here."
         or string.format("%d guilds seen, most members first. Click one to list its members.", #g)
     end },
-    { "list", 8, function(row, e)
-      row.text:SetText(string.format("|cffffd100%s|r  %d seen, average level %.0f (top %d)  |cff888888%s%s|r", e.name, e.n, e.avg, e.max,
-        e.class and (M.ClassName(e.class) .. "s most, ") or "", e.zone and ("mostly in " .. e.zone) or ""))
-    end, function(e) M.filter = e.name M.selected = nil M.guildPick = e.name p:Refresh() end, function() return M:Guilds() end },
+    { "table", 8, {
+      { key = "name", label = "Guild", width = 0, sort = function(e) return e.name end, text = function(e) return "|cfff1d58e" .. e.name .. "|r" end },
+      { key = "n", label = "Seen", width = 60, align = "RIGHT", sort = function(e) return e.n end, text = function(e) return e.n end },
+      { key = "avg", label = "Avg lvl", width = 70, align = "RIGHT", sort = function(e) return e.avg end, text = function(e) return string.format("%.0f", e.avg) end },
+      { key = "max", label = "Top", width = 50, align = "RIGHT", sort = function(e) return e.max end, text = function(e) return e.max end },
+      { key = "class", label = "Most played", width = 110, sort = function(e) return e.class or "" end, text = function(e) return e.class and M.ClassName(e.class) or "" end },
+      { key = "zone", label = "Mostly in", width = 0, sort = function(e) return e.zone or "" end, text = function(e) return "|cff8f96a6" .. (e.zone or "") .. "|r" end },
+    }, function()
+      -- guilds of only level-1 characters are noise (bank alts, name holders)
+      local out = {}
+      for _, e in ipairs(M:Guilds()) do if (e.max or 0) > 1 then out[#out + 1] = e end end
+      return out
+    end, function(e) M.filter = e.name M.selected = nil M.guildPick = e.name p:Refresh() end, sortKey = "n", desc = true },
     { "buttons", { { "Search this guild", act(function()
       if not M.guildPick then return nil, "click a guild in the list first" end
       return M:SearchGuild(M.guildPick)

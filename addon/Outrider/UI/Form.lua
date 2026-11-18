@@ -62,6 +62,7 @@ function UI:Form(parent, rows)
     if math.abs(cur - w) < 1 then return end
     e.f:SetWidth(w)
     if e.dynamic and e.dynamic.items and e.dynamic.SetItems then e.dynamic:SetItems(e.dynamic.items) end
+    if e.table then e.table:SetItems(e.table.raw) end
   end
   local function measure(e)
     if e.dynamic then return e.dynamic:LayoutHeight() + (e.dynamic:LayoutHeight() > 0 and 6 or 0) end
@@ -302,6 +303,20 @@ function UI:Form(parent, rows)
       entries[#entries].dynamic = f
       entries[#entries].stretch = true
       scroll.items[#scroll.items + 1] = f
+    elseif kind == "table" then
+      -- { "table", rows, cols, getItems, onClick, sortKey = , desc = }: a sortable table
+      local tb = UI:Table(host, r[3], { rows = r[2], onClick = r[5], sortKey = r.sortKey, desc = r.desc })
+      tb:SetWidth(W)
+      tb.getItems = r[4]
+      tb.Refresh = function(self)
+        local ok, items = ns.Safe("form:table", self.getItems)
+        self:SetItems(ok and items or {})
+      end
+      tb:Refresh()
+      place(tb, tb:LayoutHeight())
+      entries[#entries].stretch = true
+      entries[#entries].table = tb
+      scroll.items[#scroll.items + 1] = tb
     elseif kind == "custom" then
       local f = r[2](host)
       place(f, r[3] or 30)

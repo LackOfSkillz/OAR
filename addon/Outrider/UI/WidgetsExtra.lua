@@ -312,3 +312,104 @@ function UI:WidgetTest()
   ns.Log:Info("selftest", "widget test window shown")
   return w
 end
+
+-- ------------------------------------------------------------------ table
+-- A sortable table (premium plan S3, 2026-11-18): a header row of column
+-- titles (click one to sort, again to reverse), then a scroll list whose rows
+-- line the cells up under them. cols = { { key, label, width (0 = the rest),
+-- align = "LEFT"|"RIGHT", text = function(item) -> string, sort = function(item)
+-- -> number|string } }.
+function UI:Table(parent, cols, opts)
+  opts = opts or {}
+  local t = CreateFrame("Frame", nil, parent)
+  t:SetSize(600, 10)
+  t.cols, t.sortKey, t.desc, t.raw = cols, opts.sortKey, opts.desc, {}
+  t.head = CreateFrame("Frame", nil, t)
+  t.head:SetPoint("TOPLEFT", 0, 0)
+  t.head:SetPoint("RIGHT", t, "RIGHT", 0, 0)
+  t.head:SetHeight(20)
+  t.headCells = {}
+  local function widths(total)
+    local fixed, flex = 0, 0
+    for _, c in ipairs(cols) do if (c.width or 0) > 0 then fixed = fixed + c.width else flex = flex + 1 end end
+    local rest = math.max(60, (total or 600) - 24 - fixed)
+    local out = {}
+    for i, c in ipairs(cols) do out[i] = (c.width or 0) > 0 and c.width or math.floor(rest / math.max(1, flex)) end
+    return out
+  end
+  t.list = UI:ScrollList(t, {
+    rows = opts.rows or 12, rowHeight = opts.rowHeight or 22,
+    build = function(row)
+      row.text:Hide()
+      row.cells = {}
+      for i, c in ipairs(cols) do
+        local fs = UI.Text(row, "normal", "body")
+        fs:SetJustifyH(c.align or "LEFT")
+        if fs.SetWordWrap then fs:SetWordWrap(false) end
+        row.cells[i] = fs
+      end
+    end,
+    render = function(row, item)
+      local ws, x = widths(t:GetWidth()), 8
+      for i, c in ipairs(cols) do
+        local fs = row.cells[i]
+        fs:ClearAllPoints()
+        fs:SetPoint("LEFT", row, "LEFT", x, 0)
+        fs:SetWidth(ws[i] - 8)
+        local ok, txt = pcall(c.text, item)
+        fs:SetText(ok and tostring(txt or "") or "")
+        x = x + ws[i]
+      end
+    end,
+    onClick = opts.onClick,
+  })
+  t.list:SetPoint("TOPLEFT", t.head, "BOTTOMLEFT", 0, -2)
+  t.list:SetPoint("RIGHT", t, "RIGHT", 0, 0)
+  for i, c in ipairs(cols) do
+    local b = CreateFrame("Button", nil, t.head)
+    b:SetHeight(20)
+    b.text = UI.Text(b, "small", "muted")
+    b.text:SetAllPoints()
+    b.text:SetJustifyH(c.align or "LEFT")
+    b:SetScript("OnClick", function()
+      if not c.sort then return end
+      if t.sortKey == c.key then t.desc = not t.desc else t.sortKey, t.desc = c.key, c.align == "RIGHT" end
+      t:SetItems(t.raw)
+    end)
+    t.headCells[i] = b
+  end
+  function t:Layout()
+    local ws, x = widths(self:GetWidth()), 8
+    for i, c in ipairs(cols) do
+      local b = self.headCells[i]
+      b:ClearAllPoints()
+      b:SetPoint("LEFT", self.head, "LEFT", x, 0)
+      b:SetWidth(ws[i] - 8)
+      local mark = self.sortKey == c.key and (self.desc and "  v" or "  ^") or ""
+      b.text:SetText(string.upper(c.label) .. mark)
+      x = x + ws[i]
+    end
+  end
+  function t:SetItems(items)
+    self.raw = items or {}
+    local list = {}
+    for i, it in ipairs(self.raw) do list[i] = it end
+    local col
+    for _, c in ipairs(cols) do if c.key == self.sortKey then col = c end end
+    if col and col.sort then
+      local desc = self.desc
+      table.sort(list, function(a, b)
+        local va, vb = col.sort(a), col.sort(b)
+        if type(va) ~= type(vb) then va, vb = tostring(va), tostring(vb) end
+        if va == vb then return false end
+        if desc then return va > vb end
+        return va < vb
+      end)
+    end
+    self:Layout()
+    self.list:SetItems(list)
+  end
+  function t:LayoutHeight() return 22 + (opts.rows or 12) * (opts.rowHeight or 22) + 6 end
+  t:SetHeight(t:LayoutHeight())
+  return t
+end
