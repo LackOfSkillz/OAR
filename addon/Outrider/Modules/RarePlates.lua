@@ -25,7 +25,7 @@ M.SIZE = 44         -- the star, in pixels before the scale setting
 M.PULSE = 0.6       -- seconds from bright to dim
 M.GOLD, M.SILVER = { 1, 0.82, 0.2 }, { 0.8, 0.85, 0.95 }
 
-function M:OnInitialize() self.pool, self.active, self.threatMarkers = {}, {}, {} end
+function M:OnInitialize() self.pool, self.active, self.threatMarkers, self.knownUnits = {}, {}, {}, {} end
 
 function M:OnEnable()
   self:On("NAME_PLATE_UNIT_ADDED", self.OnAdded)
@@ -38,6 +38,7 @@ end
 function M:OnDisable()
   for unit in pairs(self.active) do self:OnRemoved(nil, unit) end
   for unit, m in pairs(self.threatMarkers) do m:Hide() self.threatMarkers[unit] = nil end
+  self.knownUnits = {}
 end
 
 local function plateFor(unit)
@@ -81,6 +82,7 @@ end
 
 function M:OnAdded(_, unit)
   if type(unit) ~= "string" then return end
+  self.knownUnits[unit] = true
   self:ThreatFor(unit)
   local scan = ns.Modules:Get("RareScan")
   if not scan then return end
@@ -103,6 +105,7 @@ function M:OnAdded(_, unit)
 end
 
 function M:OnRemoved(_, unit)
+  self.knownUnits[unit] = nil
   local threat = self.threatMarkers[unit]
   if threat then threat:Hide() self.threatMarkers[unit] = nil end
   local m = self.active[unit]
@@ -168,7 +171,7 @@ end
 
 function M:RefreshThreat()
   if not self:Settings().threat then return end
-  for unit in pairs(self.threatMarkers) do self:ThreatFor(unit) end
+  for unit in pairs(self.knownUnits) do self:ThreatFor(unit) end
 end
 
 -- Where a nameplate sits on screen, as a way to turn: "ahead", "ahead,
