@@ -71,8 +71,10 @@ def require_public_target(repo: Path) -> None:
         raise SystemExit("Refusing to write outside the public outrider-releases checkout.")
     if git(repo, "branch", "--show-current") != "main":
         raise SystemExit("Check out outrider-releases/main before export.")
-    if git(repo, "status", "--porcelain"):
-        raise SystemExit("Target checkout has uncommitted changes; review them before exporting.")
+    for line in git(repo, "status", "--porcelain").splitlines():
+        changed = line[3:].replace("\\\\", "/")
+        if changed != "data-packs/" and not changed.startswith("data-packs/"):
+            raise SystemExit("Target checkout has changes outside data-packs; review before exporting.")
 
 
 def clean_header(raw: bytes) -> bytes:
@@ -163,11 +165,22 @@ def main() -> None:
         "| Pack | File | Bytes | SHA-256 |", "|---|---|---:|---|",
     ]
     for name, filename, size, digest in manifest:
-        lines.append(f"| {name} | {filename} | {size} | \`{digest}\` |")
+        lines.append(f"| {name} | {filename} | {size} | {digest} |")
     (destrepo / "data-packs" / "MANIFEST.md").write_text(
         "\n".join(lines) + "\n", encoding="utf-8"
     )
     print("\nReview changes first: git -C", destrepo, "diff --stat")
+    public_readme = destrepo / "data-packs" / "README.md"
+    if public_readme.is_file():
+        lines = public_readme.read_text(encoding="utf-8").splitlines()
+        for name in PACKS:
+            for idx, line in enumerate(lines):
+                if "| " + name + " |" in line and "| **Not yet committed** |" in line:
+                    lines[idx] = line.replace(
+                        "| **Not yet committed** |",
+                        "| **Committed**: [" + name + "](" + name + "/) |"
+                    )
+        public_readme.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
     if args.commit:
         git(destrepo, "add", "--", "data-packs")
         commit = git(destrepo, "commit", "-m",
