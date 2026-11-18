@@ -1,7 +1,7 @@
 # Outrider /loop — verified gap-closure ledger
 
 **Branch:** `p1-foundation` (do not merge to main without passing tests and live validation).  
-**Created:** 2026-11-18. **Latest source code gate:** [658 Lua passed / Python passed](https://github.com/LackOfSkillz/OAR/actions/runs/44297903933) at `19b124ce`.  
+**Created:** 2026-11-18. **Latest source code gate:** [669 Lua passed / Python passed](https://github.com/LackOfSkillz/OAR/actions/runs/44299730077) at `e0f86939`.  
 **Primary plan:** `docs/GAP_ANALYSIS_DEEP_2026-11-18.md` (38 ranked builds) and raw option-by-option checks. The broader GPT roadmap carries 107 named sub-gaps, many overlapping the deep plan.  
 **Important:** The following changes were committed using a GitHub repository connector; there was **no access to the Windows local WoW client**. Windows GitHub Actions now executes the full Lua + companion suite, and the latest source build passed automated CI on 2026-11-18 at commit `dcbb875d` ([run](https://github.com/LackOfSkillz/OAR/actions/runs/44294608991)). Actual Forever gameplay remains unverified. Never mark anything `WORKS` before in-game checks.
 
@@ -41,3 +41,19 @@ Never infer completeness from filename, documentation claims or mock tests alone
 - **#8 Tooltip:** combat tooltip hidden by default, Shift allows it, quest NPC tooltip includes typed objective remaining count. Verify on Forever and with conflicting tooltip addons enabled.
 - **#9 Hunter:** missing aspect and Cheetah/Pack-in-combat warnings, plus Growl autocast with a group. Verify warnings do not spam and never change ability state.
 - **Evidence policy:** all five are **TESTS GREEN / NEEDS GAME**, not `WORKS` or `MATCHES`. A live player must verify purchase and game API behavior before claiming parity.
+
+## Batch 3: ranked gaps #10-14 (2026-11-18)
+
+**Status:** TESTS GREEN / NEEDS GAME for each; GitHub Actions [669 Lua / companion Python green](https://github.com/LackOfSkillz/OAR/actions/runs/44299730077). Do not claim Works, Matches or Surpasses without Forever play-tests.
+
+| Rank | Feature | Source and tests | What shipped | In-game gate |
+|---|---|---|---|---|
+| #10 | Quest tracker scroll/focus | `QuestTracker.lua`, `MapPins.lua`; `questtracker_scroll_spec.lua` | 20-row visible viewport over entire supported quest log, mousewheel scroll, focus/unfocus and quest-pin alpha | Test 40+ rows, last objective, zone fold, focus with world/minimap pins, Questie conflicts |
+| #11 | Chat & whispers | `Chat.lua`; `chat_spec.lua` | 600-line bounded account archive, 100 latest whispers per person / max 30 people, `/ride history [person]`, class-colored author only on resolved GUID | Test true SavedVariables persistence across reload, LFG routing, whispers/secret values, player hyperlink integrity |
+| #12 | Dungeon lockout corrections | `Alts.lua`, `UI/MinimapButton.lua`; `alts_spec.lua` | Exit-time based lockout estimates, instance ID, delete erroneous entry, hover readout | Verify actual instance ID and true reset/exit timing versus client; prevent false claims of authoritative limit |
+| #13 | Map extras | `MapReveal.lua`; `mapreveal_spec.lua` | `/ride mapextras missing|fishing|faire`; missing overlay count & pixel locations, fishing skill bands by zone, dated Faire location | Overlay positions are not names, skill bands are guidance, **Faire schedule is unverified community calendar**; confirm against real event UI |
+| #14 | Mail | `Mailbox.lua`, `wowmock.lua`; `mailbox_spec.lua` | Auction sold/won/expired filters; reserve N bag slots for attachments; Shift-click collect (one user click per thing) | Verify real localized auction subject/sender strings and multi-attachment collection, COD and free-slot protection |
+
+**Current status:** 14 of 38 ranked builds have passing automated CI; 24 remain to implement. No feature has achieved in-game acceptance gates from this remote review.
+
+**Next ranked item:** #15 Settings search box. Then Tier 2 #16 Auto Shot timer and #17 threat overlays, both requiring explicit Forever API probes first.
