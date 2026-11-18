@@ -33,7 +33,7 @@ M.ALIASES = {
 function M:OnEnable()
   self:On("PLAYER_DEAD", self.OnDead)
   self:On("PLAYER_ALIVE", self.OnAlive)
-  self:On("PLAYER_ALIVE", function(mod) mod:RecordGhostSpawn() end)
+  self:On("PLAYER_ALIVE", function(mod) if C.Call("UnitIsGhost", "player") then mod:RecordGhostSpawn() end end)
   self:On("PLAYER_UNGHOST", self.OnResurrected)
   self:On("PLAYER_UNGHOST", function(mod) mod:FinishDeathLog() end)
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
@@ -157,7 +157,6 @@ end
 
 function M:OnResurrected()
   self:StopCorpsePolling()
-  self:RecordGhostSpawn()
   local W = ns.Waypoints
   -- Only touch our own corpse waypoint. If the player changed it, leave it.
   local ownCorpse = self.corpseWP and W and W.current == self.corpseWP
