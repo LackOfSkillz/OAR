@@ -443,34 +443,56 @@ local function textLine(p, size, color, y)
   return fs
 end
 
+-- Premium rebuild (2026-11-18 tour): one health line in plain words, two rows
+-- of stat tiles, detected addons as a short list. Developer detail (build id,
+-- probe numbers) moves into tiles' captions.
 Hub:AddTab("overview", L.overview, function(p)
-  local box = pageCard(p, 196)
-  p.who = textLine(box, "large", "text", 0)
-  p.build = textLine(box, "small", "muted", -22)
-  p.sv = textLine(box, "normal", "text", -50)
-  p.errors = textLine(box, "normal", "text", -72)
-  p.probe = textLine(box, "normal", "text", -94)
-  p.mods = textLine(box, "normal", "text", -116)
-  p.layer = textLine(box, "normal", "text", -138)
-  p.addons = textLine(box, "small", "muted", -164)
+  p.health = UI.Text(p, "large", "good")
+  p.health:SetPoint("TOPLEFT", 2, 0)
+  p.who = UI.Text(p, "small", "muted")
+  p.who:SetPoint("TOPLEFT", p.health, "BOTTOMLEFT", 0, -4)
+  p.row1 = UI:StatStrip(p)
+  p.row1:SetPoint("TOPLEFT", 0, -46)
+  p.row1:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  p.row2 = UI:StatStrip(p)
+  p.row2:SetPoint("TOPLEFT", 0, -122)
+  p.row2:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  p.addons = UI.Text(p, "normal", "body")
+  p.addons:SetPoint("TOPLEFT", 2, -204)
+  p.addons:SetPoint("RIGHT", p, "RIGHT", -8, 0)
+  p.addons:SetJustifyH("LEFT")
+  p.toTools = UI:Button(p, "Open Tools", 120, function() Hub:ShowTab("tools") end)
+  p.toTools:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, 0)
   function p:Refresh()
     local meta = ns.db.char.meta
-    self.who:SetText(string.format("%s  |  %s %s %s", ns.db.key, tostring(meta.race or ""), tostring(meta.class),
-      tostring(meta.level or "?")))
-    self.build:SetText(string.format("v%s  build %s", ns.version, ns.build))
-    local sv, loads = ns.DB:SavedVariablesStatus()
-    self.sv:SetText(string.format("Saved settings read back: %s  (loads %d)", sv, loads))
     local nerr = #ns.Errors.list
-    self.errors:SetText(nerr == 0 and "Errors: none" or (Theme:Hex("bad") .. "Errors: " .. nerr .. "|r  (Tools tab)"))
-    self.probe:SetText(ns.Probe:Summary())
+    local sv, loads = ns.DB:SavedVariablesStatus()
+    local svOK = tostring(sv):lower():find("ok") or tostring(sv):lower():find("yes")
+    self.health:SetTextColor(Theme:Color(nerr == 0 and svOK and "good" or "warn"))
+    self.health:SetText(nerr == 0 and (svOK and "All systems OK" or "Settings not confirmed saved yet")
+      or (nerr == 1 and "1 error needs a look" or (nerr .. " errors need a look")))
+    self.toTools:SetShown(nerr > 0)
+    self.who:SetText(string.format("%s  ·  %s %s, level %s  ·  v%s", ns.db.key, tostring(meta.race or ""), tostring(meta.class or ""),
+      tostring(meta.level or "?"), tostring(ns.version)))
     local on, total = 0, 0
-    for _, s in ipairs(ns.Modules:Status()) do total = total + 1 if s.enabled then on = on + 1 end end
-    self.mods:SetText(string.format("Modules on for this character: %d of %d", on, total))
+    for _, st in ipairs(ns.Modules:Status()) do total = total + 1 if st.enabled then on = on + 1 end end
+    local pr = ns.db.global.probe
+    local present, missing = pr and pr.summary and pr.summary.present or 0, pr and pr.summary and pr.summary.missing or 0
     local id, conf, label = ns.Layers:Current()
-    self.layer:SetText(id and string.format("Layer: %s (%.0f%% sure)", label, conf * 100) or "Layer: not known yet (look at a few mobs)")
+    self.row1:SetItems({
+      { cap = "Errors", value = tostring(nerr), color = nerr > 0 and "bad" or "good", note = nerr > 0 and "see Tools" or "none" },
+      { cap = "Settings saved", value = svOK and "Yes" or tostring(sv), color = svOK and "good" or "warn", note = loads .. " loads" },
+      { cap = "Features on", value = on .. " / " .. total, fill = total > 0 and on / total or nil },
+    })
+    self.row2:SetItems({
+      { cap = "Game functions found", value = present .. " / " .. (present + missing),
+        fill = (present + missing) > 0 and present / (present + missing) or nil },
+      { cap = "Layer", value = id and label or "—", note = id and string.format("%.0f%% sure", conf * 100) or "learning from nearby mobs" },
+      { cap = "Build", value = tostring(ns.build):match("^(%d%d%d%d%d%d%d%d)") or tostring(ns.build), note = tostring(ns.build):match("%-(%x+)$") },
+    })
     local names = {}
-    for _, k in ipairs(ns.Conflicts:Detect()) do names[#names + 1] = k.addon .. " (" .. k.relation .. ")" end
-    self.addons:SetText("Detected addons: " .. (#names > 0 and table.concat(names, ", ") or "none"))
+    for _, k in ipairs(ns.Conflicts:Detect()) do names[#names + 1] = k.addon .. " |cff8f96a6(" .. k.relation .. ")|r" end
+    self.addons:SetText("|cfff1d58eOther addons|r   " .. (#names > 0 and table.concat(names, ",  ") or "none detected"))
   end
 end, 10)
 
@@ -605,51 +627,86 @@ function Hub:ShowCopyMenu()
 end
 
 -- ------------------------------------------------------------- Tools
+-- Premium rebuild (2026-11-18 tour): three labelled groups of actions and the
+-- error log as a table (count, where, short message; full text on hover).
 Hub:AddTab("tools", L.tools, function(p)
-  local box = pageCard(p, 260)
-  local function btn(label, x, y, fn)
-    local b = UI:Button(p, label, 130, fn)
-    b:SetPoint("TOPLEFT", x + 14, y - 12)
+  local function head(text, y)
+    local t = UI.Text(p, "large", "goldText")
+    t:SetPoint("TOPLEFT", 2, y)
+    t:SetText(text)
+    return t
+  end
+  local function btn(label, x, y, fn, w)
+    local b = UI:Button(p, label, w or 130, fn)
+    b:SetPoint("TOPLEFT", x, y)
     return b
   end
-  btn("Export", 0, 0, function()
-    local s, err = ns.Profiles:Export()
-    if s then UI:TextDialog("Export settings (" .. ns.db.key .. ")", s, "copy")
+  head("Your data", 0)
+  btn("Export settings", 0, -24, function()
+    local s2, err = ns.Profiles:Export()
+    if s2 then UI:TextDialog("Export settings (" .. ns.db.key .. ")", s2, "copy")
     else ns.Print("export failed: %s", tostring(err)) end
-  end)
-  btn("Import", 140, 0, function()
+  end, 150)
+  btn("Import settings", 158, -24, function()
     UI:TextDialog("Import settings into " .. ns.db.key, "", "paste", function(text)
       local ok, err = ns.Profiles:Import(text)
       if ok then ns.Print("settings imported. Type /reload to apply everything.") end
       return ok, err
     end)
-  end)
-  p.errorsBtn = btn("Errors", 280, 0, function() ns.Slash:Run("errors") end)
-  btn("Clear errors", 420, 0, function() ns.Slash:Run("errors clear") p:Refresh() end)
-  btn("Run probe", 0, -30, function() ns.Slash:Run("probe") p:Refresh() end)
-  btn("Reload UI", 140, -30, function() ReloadUI() end)
+  end, 150)
+  head("Diagnostics", -64)
+  btn("Run probe", 0, -88, function() ns.Slash:Run("probe") p:Refresh() end)
   p.debug = UI:Check(p, "Debug logging", function() return ns.db.global.debug end,
     function(on) ns.db.global.debug = on and true or false end)
-  p.debug:SetPoint("TOPLEFT", 14, -78)
+  p.debug:SetPoint("TOPLEFT", 150, -88)
+  head("Interface", -128)
+  btn("Reload UI", 0, -152, function() ReloadUI() end)
   p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent ~= false end,
     function(on) ns.db.char.classAccent = on and true or false end)
-  p.accent:SetPoint("TOPLEFT", 14, -102)
-  p.probe = UI.Text(box, "small", "muted")
-  p.probe:SetPoint("TOPLEFT", 14, -134)
-  p.probe:SetWidth(W - SIDE - 68)
-  p.probe:SetJustifyH("LEFT")
-  p.recent = UI.Text(box, "small", "muted")
-  p.recent:SetPoint("TOPLEFT", 14, -156)
-  p.recent:SetWidth(W - SIDE - 68)
-  p.recent:SetJustifyH("LEFT")
+  p.accent:SetPoint("TOPLEFT", 150, -152)
+  p.errHead = head("Errors", -196)
+  p.errorsBtn = btn("Copy report", 0, -196, function() ns.Slash:Run("errors") end, 120)
+  p.errorsBtn:ClearAllPoints()
+  p.errorsBtn:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -192)
+  local clear = btn("Clear errors", 0, -196, function() ns.Slash:Run("errors clear") p:Refresh() end, 120)
+  clear:ClearAllPoints()
+  clear:SetPoint("RIGHT", p.errorsBtn, "LEFT", -8, 0)
+  p.errList = UI:ScrollList(p, {
+    rows = 14, rowHeight = 22,
+    build = function(row)
+      row:SetScript("OnEnter", function(self)
+        if not self.full then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(self.full, 1, 1, 1, true)
+        GameTooltip:Show()
+      end)
+      row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    end,
+    render = function(row, e)
+      local where = tostring(e.where or "?"):gsub("^module:", "")
+      local msg = tostring(e.msg or ""):gsub("^[^:]*%.lua:%d+: ", "")
+      local taint = tostring(e.msg or ""):find("BLOCKED", 1, true) or tostring(e.kind or "") == "taint"
+      row.text:SetText(string.format("%sx%d|r  |cfff1d58e%s|r  %s", Theme:Hex(taint and "warn" or "bad"), e.count or 1, where, msg))
+      row.full = tostring(e.msg or "")
+    end,
+  })
+  p.errList:SetPoint("TOPLEFT", 0, -222)
+  p.errList:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  p.empty = UI.Text(p, "normal", "good")
+  p.empty:SetPoint("TOPLEFT", 4, -228)
+  p.empty:SetText("No errors. Everything Outrider ran this session worked.")
+  p.probe = UI.Text(p, "small", "muted")
+  p.probe:SetPoint("LEFT", p.debug, "RIGHT", 210, 0)
   function p:Refresh()
-    self.errorsBtn.label:SetText("Errors (" .. #ns.Errors.list .. ")")
+    local n = #ns.Errors.list
+    self.errHead:SetText(n > 0 and ("Errors (" .. n .. ")") or "Errors")
     self.debug:Refresh()
     self.accent:Refresh()
     self.probe:SetText(ns.Probe:Summary())
-    local lines = {}
-    for _, e in ipairs(ns.Errors:Recent(5)) do lines[#lines + 1] = string.format("x%d %s: %s", e.count, e.where, e.msg) end
-    self.recent:SetText(#lines > 0 and table.concat(lines, "\n") or "No recent errors.")
+    local list = ns.Errors:Recent(100)
+    self.errList:SetItems(list)
+    self.errList:SetShown(#list > 0)
+    self.empty:SetShown(#list == 0)
   end
 end, 90)
 

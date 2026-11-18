@@ -62,7 +62,7 @@ T.describe("layers", function()
     for _ = 1, 3 do see(game, 4321) end
     game:slash("")
     ns.Hub.frame.tabBar:Select("overview")
-    T.contains(ns.Hub.byId.overview.panel.layer:GetText(), "Layer 321")
+    T.contains(ns.Hub.byId.overview.panel.row2.tiles[2].value:GetText(), "Layer 321")
   end)
 
   T.it("shows the layer on the info bar and records visit history", function()
