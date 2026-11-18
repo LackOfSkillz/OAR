@@ -24,7 +24,7 @@ local M = ns:NewModule("PetStatus", {
   phase = "P2",
   order = 36,
   classes = { HUNTER = true },
-  defaults = { pos = {}, warnUnhappy = true, show = true, collapsed = false },
+  defaults = { pos = {}, warnUnhappy = true, show = true, collapsed = false, warnAspect = true, warnGrowl = true },
 })
 ns.PetStatus = M
 
@@ -36,10 +36,73 @@ function M:OnEnable()
   self:On("UNIT_HEALTH", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
   self:On("UNIT_POWER_UPDATE", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
   self:On("UNIT_AURA", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
-  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Update("login") end)
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Update("login") mod:CheckHunterWarnings(false) end)
   self:On("BAG_UPDATE_DELAYED", function(mod) mod:Update() end)
   self:On("UNIT_SPELLCAST_SUCCEEDED", self.OnCast)
   self:On("UI_ERROR_MESSAGE", self.OnError)
+  self:On("UNIT_AURA", function(mod, _, unit) if unit == "player" then mod:CheckHunterWarnings() end end)
+  self:On("GROUP_ROSTER_UPDATE", self.CheckHunterWarnings)
+  self:On("PET_BAR_UPDATE", self.CheckHunterWarnings)
+  self:On("PLAYER_REGEN_DISABLED", function(mod) mod:CheckHunterWarnings(true) end)
+  self:On("PLAYER_REGEN_ENABLED", function(mod) mod:CheckHunterWarnings(false) end)
+end
+
+-- Read-only checks, never cast or toggle abilities. Unknown data never warns.
+function M:Aspect()
+  local getter = C.Resolve("C_UnitAuras.GetAuraDataByIndex")
+  if type(getter) ~= "function" then return nil end
+  local found = "none"
+  for i = 1, 40 do
+    local ok, aura = pcall(getter, "player", i, "HELPFUL")
+    if not ok or type(aura) ~= "table" then break end
+    local name = C.Readable(aura.name)
+    if type(name) == "string" and name:match("^Aspect of ") then
+      if name == "Aspect of the Cheetah" then return "cheetah" end
+      if name == "Aspect of the Pack" then return "pack" end
+      found = "normal"
+    end
+  end
+  return found
+end
+
+function M:GrowlAutocast()
+  if not C.Has("GetPetActionInfo") then return nil end
+  local count = rawget(_G, "NUM_PET_ACTION_SLOTS") or 10
+  for i = 1, count do
+    local name, _, token, _, allowed, active = C.Call("GetPetActionInfo", i)
+    name, allowed, active = C.Readable(name), C.Readable(allowed), C.Readable(active)
+    if name == "Growl" and not token then
+      return allowed and active and true or false
+    end
+  end
+  return nil
+end
+
+function M:CheckHunterWarnings(inCombat)
+  local settings = self:Settings()
+  self.hunterWarned = self.hunterWarned or {}
+  local warning
+  if inCombat == nil then inCombat = C.InCombat() end
+  if settings.warnAspect then
+    local aspect = self:Aspect()
+    if inCombat and aspect == "none" then warning = "No hunter aspect active"
+    elseif inCombat and (aspect == "cheetah" or aspect == "pack") then
+      warning = "Aspect of the " .. (aspect == "cheetah" and "Cheetah" or "Pack") .. " active in combat"
+    end
+  end
+  local grouped = C.Call("IsInGroup") or C.Call("IsInRaid")
+  local growl = grouped and settings.warnGrowl and self:GrowlAutocast() == true
+  local active = {}
+  if warning then active.aspect = warning end
+  if growl then active.growl = "Pet Growl autocast is on in a group" end
+  for name, msg in pairs(active) do
+    if not self.hunterWarned[name] then
+      self.hunterWarned[name] = true
+      ns.Toast:Show({ title = msg, text = name == "growl" and "Turn off Growl autocast for group tanking." or "Select an appropriate aspect yourself.", color = "warn", duration = 8 })
+      self:Info("hunter warning: %s", msg)
+    end
+  end
+  for name in pairs(self.hunterWarned) do if not active[name] then self.hunterWarned[name] = nil end end
 end
 
 -- ------------------------------------------------------------------ diet
