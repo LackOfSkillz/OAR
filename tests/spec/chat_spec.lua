@@ -56,6 +56,23 @@ T.describe("persistent chat history", function()
   end)
 end)
 
+T.describe("class-aware chat author rendering", function()
+  T.it("only colors known class GUIDs and leaves unknown names unchanged", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    game.base.GetPlayerInfoByGUID = function(id)
+      if id == "Player-100" then return "Hunter", "HUNTER" end
+    end
+    game.env.GetPlayerInfoByGUID = game.base.GetPlayerInfoByGUID
+    local colored = ns.Chat:ColorAuthor("Elora", "Player-100")
+    T.contains(colored, "Elora|r")
+    T.contains(colored, "|cff")
+    T.eq(ns.Chat:ColorAuthor("Elora", "NPC-100"), nil)
+    T.eq(ns.Chat:ColorAuthor("Elora", nil), nil)
+  end)
+end)
+
 T.describe("chat triage", function()
   T.it("opens the LFG tab once and routes Trade and LFG lines there, not the main window", function()
     local game = mock.new()
