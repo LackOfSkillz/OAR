@@ -22,6 +22,53 @@ ns.BagExtras = M
 
 local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
+-- DEEP-23: personal, per-character gear wish list.
+function M:Wishlist()
+  local db = ns.db.char
+  db.gearWishlist = type(db.gearWishlist) == "table" and db.gearWishlist or {}
+  return db.gearWishlist
+end
+
+function M:Wish(id, on)
+  id = tonumber(id)
+  if not id or id < 1 or id ~= math.floor(id) then return false end
+  local wish = self:Wishlist()
+  wish[id] = on == false and nil or { t = time(), name = (C.ItemInfo(id) or {}).name }
+  return true
+end
+
+function M:Wishes()
+  local out = {}
+  for id, entry in pairs(self:Wishlist()) do
+    local count = ns.Inventory and ns.Inventory:Count(id) or 0
+    out[#out + 1] = { id = id, name = entry.name or (C.ItemInfo(id) or {}).name or ("item " .. id),
+      owned = (tonumber(count) or 0) > 0, count = count }
+  end
+  table.sort(out, function(a, b) return a.name < b.name end)
+  return out
+end
+
+ns.AddCommand("wish", "wish add|remove <itemID> | list", function(arg)
+  local action, raw = tostring(arg or ""):match("^(%S+)%s*(.-)%s*$")
+  if action == "list" or not action then
+    for _, row in ipairs(M:Wishes()) do
+      ns.Print("wishlist: %s [%d] %s", row.name, row.id, row.owned and "(owned)" or "(missing)")
+    end
+    return
+  end
+  local id = tonumber(raw:match("item:(%d+)") or raw)
+  if action == "add" and M:Wish(id, true) then ns.Print("wishlist: added item %d", id)
+  elseif action == "remove" and M:Wish(id, false) then ns.Print("wishlist: removed item %d", id)
+  else ns.Print("usage: /ride wish add|remove <itemID> | list") end
+end)
+
+-- A tagged item tooltip, without altering any tooltip owned by other addons.
+ns.TooltipLines:Add("item", "wishlist", M, function(_, data)
+  local id = type(data) == "table" and tonumber(C.Readable(data.id))
+  if not id or not M:Wishlist()[id] then return {} end
+  return { { "Outrider wishlist: " .. ((ns.Inventory and (ns.Inventory:Count(id) or 0) > 0) and "owned" or "wanted"), "goldText" } }
+end)
+
 -- ------------------------------------------------------------------ marks
 -- what a slot should show: { ilvl = n, upgrade = pct, junk = true }
 function M:MarksFor(link, quality)
@@ -67,6 +114,21 @@ end
 
 function M:Decorate(button, bag, slot)
   if not (button and bag and slot) then return end
+  -- Hook rather than replace secure Blizzard bag click behavior.
+  if not button.otrWishHook and button.HookScript then
+    button.otrWishHook = true
+    button:HookScript("OnClick", function(self)
+      if not C.Call("IsAltKeyDown") then return end
+      local bagID = self.GetBagID and self:GetBagID() or bag
+      local slotID = self.GetID and self:GetID() or slot
+      local data = C.Call("C_Container.GetContainerItemInfo", bagID, slotID)
+      local id = type(data) == "table" and C.Readable(data.itemID)
+      if type(id) == "number" then
+        M:Wish(id, true)
+        ns.Print("wishlist added: item %d", id)
+      end
+    end)
+  end
   local info = C.Call("C_Container.GetContainerItemInfo", bag, slot)
   local link = type(info) == "table" and (readable(info.hyperlink) or (info.itemID and ("item:" .. info.itemID))) or nil
   local marks = self:MarksFor(link, type(info) == "table" and readable(info.quality) or nil)
