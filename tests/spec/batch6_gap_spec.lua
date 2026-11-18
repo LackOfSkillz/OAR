@@ -57,6 +57,13 @@ T.describe("40-member healing bindings", function()
     T.eq(H.bars[1]:GetAttribute("ctrl-spell1"), "Renew")
     T.eq(#H:GroupUnits(), 40)
     T.eq(#H:Units(), 40)
+    H:ShowEditor()
+    T.ok(H.editor:IsShown())
+    T.eq(#H.editor.list.items >= 1, true)
+    H.editor.keyIndex = 5 -- ctrl-1
+    H.editor.spellIndex = 1
+    H.editor.apply.__scripts.OnClick(H.editor.apply)
+    T.ok(type(H:Settings().bindings["ctrl-1"]) == "string")
     T.eq(#ns.Errors.list, 0)
   end)
 end)
