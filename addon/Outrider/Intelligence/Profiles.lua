@@ -75,3 +75,20 @@ function P.Allows(token, role, hint)
   if hint.role == nil then return true end
   return role ~= "UNKNOWN" and P.CanPlay(token, role) and hint.role == role
 end
+
+-- Player-selected role, no inferred talent assumptions or live-game actions.
+ns.AddCommand("role", "list|auto|tank|melee|ranged|caster|healer|pet  coaching role", function(arg)
+  local token, roles = P.Resolve(ns.PlayerClass())
+  local wanted = type(arg) == "string" and arg:lower():match("^%s*(.-)%s*$") or ""
+  if wanted == "" or wanted == "list" then
+    ns.Print("Coaching role for %s: %s (available: %s)", token,
+      P.Current().role, #roles > 0 and table.concat(roles, ", ") or "universal advice only")
+    return
+  end
+  if wanted == "auto" or wanted == "unknown" then wanted = "UNKNOWN" end
+  if not P.SetRole(wanted) then
+    ns.Print("That role is unavailable for %s. Use /ride role list.", token)
+    return
+  end
+  ns.Print("Coaching role set to %s (your choice; no spell/talent inference)", wanted)
+end)
