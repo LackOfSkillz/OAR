@@ -174,3 +174,91 @@ Ready-to-paste GPT prompts: docs/ART_PACKAGE_BATCH3.md. A labelled sheet is fine
 1. Save each PNG with the exact name above into `C:\Users\Administrator\Dev\OAR\art\incoming\`.
 2. Tell Claude "art is in". Claude runs `python tools/art.py`, deploys, and asks
    for a full game restart (new files only load on a restart).
+
+## Batch 4 (premium UI, 2026-11-18)
+
+Gary: "make every page look high end premium". This batch is for GPT to make in one go. Drop the PNGs into `art/incoming/` with these exact names, then Claude runs `python tools/art.py`. Anything not delivered keeps its current game art, so the images can arrive in any order.
+
+**Shared style line, at the end of every prompt:**
+> Painted dark-fantasy game art, deep blue-teal shadows with warm gold highlights, soft rim lighting, high detail, no text, no logos, no watermark.
+
+**Rules (same as before):**
+- Original art only: no Blizzard logos, no WoW characters, no lettering.
+- PNG at the size GPT offers; the tool crops and scales.
+
+### 4a. Page pictures (the pages still on game icons)
+**1024x1024, opaque.** Same recipe as Batch 2:
+- one object, centered, in three-quarter view;
+- on a dark vignette background (deep blue-black, lighter in the middle);
+- filling about 75% of the canvas;
+- no frame or border.
+
+Shown at 52x52 beside the page title.
+
+| File | Object |
+|---|---|
+| `page_whatnow.png` | An open leather-bound journal with a brass compass resting on it and a quill, a faint gold glow from the pages |
+| `page_quests.png` | A rolled parchment scroll with a red wax seal and a golden exclamation-shaped charm hanging from its ribbon |
+| `page_fishing.png` | A wooden fishing pole with a red-and-white bobber and a glinting silver fish leaping beside it |
+| `page_census.png` | A brass spyglass lying on a map with a few small carved pawn figures |
+| `page_people.png` | Two crossed guild banners on a short pole, one blue and one gold, fabric slightly waving |
+| `page_alts.png` | Three small framed portraits of different-looking adventurers in silhouette, hung side by side on a dark wall |
+| `page_status.png` | A glowing blue-and-gold crystal orb on an ornate brass stand, faint runes circling it |
+
+### 4b. Section hero banners
+**1536x1024, opaque.** One per sidebar group. Only a 4:1 strip is used (the tool crops it), behind the page title at the top of every page in that group.
+- Keep the **left third calm and dark**: the title sits there.
+- Very dark overall, so gold text reads on top.
+
+| File | Scene |
+|---|---|
+| `header_explore.png` | A winding road through dusky hills toward distant mountains, a lone signpost on the right, a faint gold glow on the horizon |
+| `header_character.png` | An armour stand with a leather hunter's cloak and a longbow beside a weapon rack, lit by a warm lantern on the right, in a dark stone room |
+| `header_town.png` | A cobbled market square at dusk: stalls with awnings, hanging lanterns and a well, warm windows on the right side |
+| `header_social.png` | A long tavern table seen from the side, tankards and candles, guild banners hanging above, the right side warmer and busier |
+| `header_outrider.png` | A brass astrolabe and clockwork gears on a dark workbench, blueprints underneath, soft gold light from the right |
+
+### 4c. Map pin glyphs
+**1024x1024, TRANSPARENT background.** Shown tiny (14–20 px) on the world map and minimap, so they must read at that size.
+- One bold, simple symbol per pin.
+- Gold metal with a dark outline.
+- Filling about 70% of the canvas, centred, no circle behind it (Outrider draws the coloured ring).
+
+**Prompt for every pin:**
+> A single bold [SYMBOL] icon in polished gold metal with a thick dark outline, flat front view, simple readable silhouette for a tiny map marker, centered on a fully transparent background, no circle or frame behind it. Painted dark-fantasy game art, warm gold highlights, no text, no logos, no watermark.
+
+| File | [SYMBOL] |
+|---|---|
+| `pin_vendor.png` | coin pouch with a drawstring |
+| `pin_repair.png` | crossed hammer and anvil |
+| `pin_trainer.png` | open book with a small flame above it |
+| `pin_flight.png` | spread-winged gryphon in flight, side view |
+| `pin_inn.png` | foaming tankard |
+| `pin_mail.png` | sealed envelope |
+| `pin_bank.png` | small iron-banded treasure chest |
+| `pin_auction.png` | auctioneer's gavel |
+| `pin_stable.png` | horseshoe |
+| `pin_spirit.png` | glowing angel wing (pale blue-white instead of gold) |
+| `pin_ammo.png` | bundle of three arrows |
+| `pin_rare.png` | snarling beast skull (silver with a red glow instead of gold) |
+| `pin_questgiver.png` | exclamation mark in the shape of a gold banner pin |
+| `pin_turnin.png` | question mark in the shape of a gold banner pin |
+| `pin_objective.png` | crosshair target with four short ticks |
+| `pin_herb.png` | three-leaf herb sprig (green-gold) |
+| `pin_ore.png` | chunk of ore with a pickaxe (copper-gold) |
+| `pin_fish.png` | leaping fish (silver-blue) |
+| `pin_dungeon.png` | stone archway gate with a portcullis |
+| `pin_note.png` | pushpin through a small parchment note |
+| `pin_cluster.png` | three overlapping small gold coins stacked (used for "+5 more here") |
+
+### 4d. Ornaments and empty states
+
+| File | Ask GPT for | Background | Prompt |
+|---|---|---|---|
+| `ornament_divider.png` | 1536x1024 | transparent | A thin horizontal ornamental divider line in polished gold filigree, a small diamond in the centre, tapering to points at both ends, spanning the full width and very thin (about 6% of the height), centred vertically on a fully transparent background. Painted dark-fantasy game art, warm gold highlights, no text, no logos, no watermark. |
+| `ornament_corner.png` | 1024x1024 | transparent | A single ornate gold filigree corner flourish for the top-left corner of a frame: two thin lines meeting at a right angle with a small leaf scroll, in the top-left quarter of the canvas, the rest fully transparent. Painted dark-fantasy game art, warm gold highlights, no text, no logos, no watermark. |
+| `empty_quiet.png` | 1536x1024 | opaque | A quiet campfire at night beside a bedroll and a sleeping wolf, small in the middle of a very dark scene. Used when a page has nothing to do. Plus the shared style line. |
+| `empty_search.png` | 1536x1024 | opaque | A brass spyglass on a rock pointing at a dark empty horizon with a few stars. Used when a search finds nothing. Plus the shared style line. |
+| `empty_nodata.png` | 1536x1024 | opaque | An open, mostly blank journal with a quill waiting in an inkpot, by candlelight. Used when Outrider hasn't collected data yet. Plus the shared style line. |
+
+**Order if GPT can't do all at once:** 4c (map pins; the map is the most cluttered screen), then 4b (banners), then 4a, then 4d.

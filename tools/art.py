@@ -22,7 +22,7 @@ OUT = os.path.join(ROOT, "addon", "Outrider", "Art")
 
 # name: (width, height). Square art is centre-cropped to a square; the header
 # is cropped to a 4:1 strip a little above the middle (VY) to keep the castle.
-VY = {"header": 0.35}
+VY = {"header": 0.35, "header_explore": 0.35, "header_character": 0.35, "header_town": 0.35, "header_social": 0.35, "header_outrider": 0.35}
 SPECS = {
     "emblem": (128, 128),
     "header": (1024, 256),
@@ -98,6 +98,48 @@ SPECS = {
     "dungeon_blackwinglair": (128, 128),
     "dungeon_templeofahnqiraj": (128, 128),
     "dungeon_naxxramas": (128, 128),
+    # Batch 4 (premium UI, 2026-11-18): the pages still on game icons
+    "page_whatnow": (128, 128),
+    "page_quests": (128, 128),
+    "page_fishing": (128, 128),
+    "page_census": (128, 128),
+    "page_people": (128, 128),
+    "page_alts": (128, 128),
+    "page_status": (128, 128),
+    # one hero banner per sidebar group
+    "header_explore": (1024, 256),
+    "header_character": (1024, 256),
+    "header_town": (1024, 256),
+    "header_social": (1024, 256),
+    "header_outrider": (1024, 256),
+    # world map and minimap pin glyphs (transparent)
+    "pin_vendor": (64, 64),
+    "pin_repair": (64, 64),
+    "pin_trainer": (64, 64),
+    "pin_flight": (64, 64),
+    "pin_inn": (64, 64),
+    "pin_mail": (64, 64),
+    "pin_bank": (64, 64),
+    "pin_auction": (64, 64),
+    "pin_stable": (64, 64),
+    "pin_spirit": (64, 64),
+    "pin_ammo": (64, 64),
+    "pin_rare": (64, 64),
+    "pin_questgiver": (64, 64),
+    "pin_turnin": (64, 64),
+    "pin_objective": (64, 64),
+    "pin_herb": (64, 64),
+    "pin_ore": (64, 64),
+    "pin_fish": (64, 64),
+    "pin_dungeon": (64, 64),
+    "pin_note": (64, 64),
+    "pin_cluster": (64, 64),
+    # ornaments and empty states
+    "ornament_divider": (512, 32),
+    "ornament_corner": (64, 64),
+    "empty_quiet": (256, 128),
+    "empty_search": (256, 128),
+    "empty_nodata": (256, 128),
 }
 
 
