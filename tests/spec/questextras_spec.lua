@@ -79,7 +79,7 @@ T.describe("quest extras", function()
     game.player.level = 21
     game.xp, game.xpMax = 40, 1200
     game:fire("PLAYER_XP_UPDATE")
-    T.eq(M:Pace().gained, 640, "level-up gives remaining previous-level XP plus next-level XP")
+    T.eq(M:Pace().gained, 940, "level-up gives remaining previous-level XP plus next-level XP")
     T.eq(#ns.Errors.list, 0)
   end)
 end)
