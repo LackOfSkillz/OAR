@@ -285,7 +285,7 @@ Outrider knows rares, quests, gear, prices, professions, alts, layers, the party
 
 1. **"Switch to Outrider" importer.** On first run, read the SavedVariables that Questie, TomTom, GatherMate2, Auctionator and RareScanner left behind (read-only, on Gary's PC; it can't read other addons' saved data in game unless they're loaded, so do it in the desktop tools). Bring over waypoints, nodes, price history and rare sightings.
    - Then show a **"you can turn these off" report**: which installed addons Outrider now covers, and how much memory they use.
-   - This is the most direct way to *become* the one addon.
+   - This is the most direct way to *become* the one addon. Gary picked it out as a top differentiator: the biggest obstacle to adoption is giving up the addons people have used for years. Make it a big build of its own, after the five big gaps.
 2. **"This trip" planner.** "I have 40 minutes." Outrider picks:
    - quests to turn in;
    - a rare that's due on your layer;
@@ -319,7 +319,22 @@ Outrider knows rares, quests, gear, prices, professions, alts, layers, the party
 
 ---
 
-## 7. Suggested order
+## 7. Three acceptance levels (Gary, 2026-11-18)
+
+Parity alone isn't the goal. Score every capability at three levels, and keep each level's evidence in the task note:
+
+| Level | Meaning | Evidence |
+|---|---|---|
+| **1. Works** | The feature does its job on Forever with the other addon turned off | Specs green, in-game check passed (log or screenshot), no new errors |
+| **2. Matches** | It does everything the best competing addon does for that capability, option by option (the tables in `GAP_RESEARCH_RAW_2026-11-18.md` are the checklist), or says why a row is CAN'T | Every competitor row marked HAS or CAN'T, checked in game |
+| **3. Surpasses** | It does something the competitor can't, usually by combining modules (rare + pet + gear, quests + route + restock), or it's measurably better (accuracy, fewer clicks, less memory) | One named advantage per capability, with a measurement |
+
+Examples of what "surpasses" means:
+- The graveyard map learns from your own deaths, not only from shared ones.
+- The restock button knows your next zone's food level.
+- The waypoint queue fills itself from quests, rares and nodes.
+
+## 8. Suggested order
 
 1. **Tier 1 items 1–9** as one batch: two or three sessions, one combined in-game check.
 2. **Probe batch** for #16, #17, #25 and pet happiness: one deploy, then Gary fights a few mobs normally. Results decide Tier 2's combat items.
