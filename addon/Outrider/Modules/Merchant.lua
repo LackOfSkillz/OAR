@@ -13,7 +13,7 @@ local M = ns:NewModule("Merchant", {
   title = "Merchant helper (sell junk, repair)",
   phase = "P5",
   order = 74,
-  defaults = { useGuildRepair = true, alwaysSell = {}, sellOnce = {}, neverSell = {} },
+  defaults = { useGuildRepair = true, alwaysSell = {}, sellOnce = {}, neverSell = {}, restock = {}, reserveCopper = 10000 },
 })
 ns.Merchant = M
 
@@ -79,6 +79,79 @@ function M:SellJunk()
   return sold, value
 end
 
+-- A purchase plan is displayed before the only user-initiated buying action.
+-- Targets are item IDs (never fuzzy names) and omit extended-currency items.
+-- BuyMerchantItem(index, units) may purchase bundled stacks: price/stack
+-- are validated and rounded up conservatively before affordability checks.
+M.RESTOCK_ITEMS_PER_CLICK = 3
+M.RESTOCK_MAX_UNITS = 200
+
+function M:BagCount(id)
+  local total = 0
+  for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
+    for slot = 1, C.NumSlots(bag) do
+      local count, itemID = C.ItemCountAt(bag, slot)
+      if itemID == id then total = total + (tonumber(C.Readable(count)) or 0) end
+    end
+  end
+  return total
+end
+
+function M:RestockPlan()
+  local settings = self:Settings()
+  local stock = settings.restock or {}
+  local reserve = math.max(0, tonumber(settings.reserveCopper) or 0)
+  local money = tonumber(C.Readable(C.Call("GetMoney"))) or 0
+  local availableMoney = math.max(0, money - reserve)
+  local plan, total = {}, 0
+  if not C.Has("BuyMerchantItem") then return plan, 0, "buy API unavailable" end
+  local found = {}
+  local merchantItems = tonumber(C.Readable(C.Call("GetMerchantNumItems"))) or 0
+  for i = 1, merchantItems do
+    local id = tonumber(C.Readable(C.Call("GetMerchantItemID", i)))
+    local target = id and tonumber(stock[id])
+    if id and target and target > 0 and not found[id] then
+      found[id] = true
+      local name, _, price, bundle, vendorAvailable, usable, extended = C.Call("GetMerchantItemInfo", i)
+      price, bundle, vendorAvailable = tonumber(C.Readable(price)), tonumber(C.Readable(bundle)), C.Readable(vendorAvailable)
+      if price and price > 0 and bundle and bundle > 0 and usable ~= false and not extended then
+        local owned = self:BagCount(id)
+        local needed = math.max(0, math.floor(target) - owned)
+        local units = math.min(M.RESTOCK_MAX_UNITS, math.ceil(needed / bundle) * bundle)
+        if type(vendorAvailable) == "number" and vendorAvailable >= 0 then
+          units = math.min(units, math.floor(vendorAvailable) * bundle)
+        end
+        local cost = math.ceil(units / bundle) * price
+        if units > 0 and cost > 0 and cost <= availableMoney then
+          plan[#plan + 1] = { index = i, id = id, name = C.Readable(name) or ("item " .. id),
+            units = units, cost = cost, owned = owned, target = target }
+          availableMoney = availableMoney - cost
+          total = total + cost
+          if #plan >= M.RESTOCK_ITEMS_PER_CLICK then break end
+        end
+      end
+    end
+  end
+  return plan, total
+end
+
+function M:Restock()
+  if C.InCombat() or not self.vendorOpen then return 0, 0, "open a vendor out of combat" end
+  local buy = C.Resolve("BuyMerchantItem")
+  if type(buy) ~= "function" then return 0, 0, "purchase API unavailable" end
+  local plan, total, reason = self:RestockPlan()
+  if #plan == 0 then return 0, 0, reason or "no affordable configured restock items here" end
+  local bought, spent = 0, 0
+  -- This method is called exclusively from the visible Restock button.
+  -- No event or background timer can initiate purchases.
+  for _, entry in ipairs(plan) do
+    local ok = pcall(buy, entry.index, entry.units)
+    if ok then bought, spent = bought + 1, spent + entry.cost end
+  end
+  if bought > 0 then self:Info("restock requested %d item types at estimated cost %s", bought, ns.Prices.Money(spent)) end
+  return bought, spent
+end
+
 function M:RepairCost()
   local cost, can = C.Call("GetRepairAllCost")
   return cost or 0, can
@@ -99,7 +172,7 @@ function M:Build()
   local anchor = rawget(_G, "MerchantFrame") or UIParent
   local f = CreateFrame("Frame", "Outrider_MerchantPanel", anchor, ns.Theme:BackdropTemplate())
   ns.Theme:ApplyPanel(f, "panel")
-  f:SetSize(180, 74)
+  f:SetSize(180, 102)
   f:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 6, 0)
   f.title = UI.Text(f, "normal", "accent")
   f.title:SetPoint("TOPLEFT", 8, -6)
@@ -108,6 +181,12 @@ function M:Build()
   f.sell:SetPoint("TOPLEFT", 8, -22)
   f.repair = UI:Button(f, "Repair", 164, function() M:Repair() ns.Timer.After(0.3, function() M:Refresh() end, "merchant:refresh") end)
   f.repair:SetPoint("TOPLEFT", 8, -48)
+  f.restock = UI:Button(f, "Restock", 164, function()
+    local n, cost, why = M:Restock()
+    ns.Print(n > 0 and ("restock: " .. n .. " types, estimated " .. ns.Prices.Money(cost)) or ("restock: " .. tostring(why)))
+    ns.Timer.After(0.3, function() M:Refresh() end, "merchant:restockRefresh")
+  end)
+  f.restock:SetPoint("TOPLEFT", 8, -74)
   f:Hide()
   self.frame = f
   return f
@@ -121,15 +200,17 @@ function M:Refresh()
   f.sell.label:SetText(#junk > 0 and string.format("Sell approved (%d, %s)", #junk, ns.Prices.Money(total)) or "Nothing approved")
   local cost, can = self:RepairCost()
   f.repair.label:SetText((can and cost > 0) and ("Repair (" .. ns.Prices.Money(cost) .. ")") or "Nothing to repair")
+  local plan, restockCost = self:RestockPlan()
+  f.restock.label:SetText(#plan > 0 and ("Restock (" .. #plan .. ", " .. ns.Prices.Money(restockCost) .. ")") or "Nothing to restock")
 end
 
 function M:OnEnable()
-  self:On("MERCHANT_SHOW", function(mod) mod:Build():Show() mod:Refresh() end)
-  self:On("MERCHANT_CLOSED", function(mod) if mod.frame then mod.frame:Hide() end end)
+  self:On("MERCHANT_SHOW", function(mod) mod.vendorOpen = true mod:Build():Show() mod:Refresh() end)
+  self:On("MERCHANT_CLOSED", function(mod) mod.vendorOpen = nil if mod.frame then mod.frame:Hide() end end)
   self:On("BAG_UPDATE_DELAYED", function(mod) mod:Refresh() end)
 end
 
-function M:OnDisable() if self.frame then self.frame:Hide() end end
+function M:OnDisable() self.vendorOpen = nil if self.frame then self.frame:Hide() end end
 
 function M:Activity() return "Sell junk and Repair buttons appear beside vendors" end
 
@@ -166,5 +247,43 @@ ns.AddCommand("sell", "sell always|once|keep|unmark <item ID> | list", function(
     return
   end
   ns.Print("vendor list: %s item %d", action, id)
+  M:Refresh()
+end)
+
+-- Configure desired stock explicitly: no purchasing happens through slash.
+ns.AddCommand("restock", "restock add <itemID> <count> | remove <itemID> | reserve <gold> | list", function(arg)
+  local op, rest = tostring(arg or ""):match("^(%S+)%s*(.-)%s*$")
+  op = op and op:lower() or "list"
+  local settings = M:Settings()
+  settings.restock = settings.restock or {}
+  if op == "list" then
+    local count = 0
+    for id, target in pairs(settings.restock) do
+      count = count + 1
+      ns.Print("restock item %d to %d (in bags: %d)", id, target, M:BagCount(id))
+    end
+    ns.Print("%d targets; gold reserve %s. Buying requires clicking Restock at a vendor.",
+      count, ns.Prices.Money(settings.reserveCopper or 0))
+  elseif op == "reserve" then
+    local gold = tonumber(rest)
+    if not gold or gold < 0 or gold > 100000 then ns.Print("usage: /ride restock reserve <gold>") return end
+    settings.reserveCopper = math.floor(gold * 10000 + 0.5)
+    ns.Print("restock gold reserve: %s", ns.Prices.Money(settings.reserveCopper))
+  elseif op == "add" then
+    local id, qty = rest:match("^(%d+)%s+(%d+)$")
+    id, qty = tonumber(id), tonumber(qty)
+    if not id or not qty or id < 1 or qty < 1 or qty > 10000 then
+      ns.Print("usage: /ride restock add <item ID> <desired bag count>") return
+    end
+    settings.restock[id] = qty
+    ns.Print("restock %d up to %d in bags", id, qty)
+  elseif op == "remove" then
+    local id = tonumber(rest)
+    if not id or id < 1 then ns.Print("usage: /ride restock remove <item ID>") return end
+    settings.restock[id] = nil
+    ns.Print("restock target removed: %d", id)
+  else
+    ns.Print("usage: /ride restock add <id> <target> | remove <id> | reserve <gold> | list")
+  end
   M:Refresh()
 end)
