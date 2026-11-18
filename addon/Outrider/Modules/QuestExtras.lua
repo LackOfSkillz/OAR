@@ -26,24 +26,95 @@ M.SIZE = 18
 
 local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
-function M:OnInitialize() self.pool, self.active = {}, {} end
+function M:OnInitialize()
+  self.pool, self.active = {}, {}
+end
+
+-- XP pace is session-only. Reload/login starts a new sample; it never guesses
+-- XP earned while offline. Two earned-XP events separated by at least 60 s
+-- of observed activity are required before displaying a rate.
+function M:ResetPace()
+  self.pace = {
+    level = tonumber(readable(C.Call("UnitLevel", "player"))),
+    xp = tonumber(readable(C.Call("UnitXP", "player"))),
+    need = tonumber(readable(C.Call("UnitXPMax", "player"))),
+    gained = 0, ratedXP = 0, activeSeconds = 0, lastGain = nil,
+  }
+end
+
+function M:OnXP()
+  if not self.pace then self:ResetPace() return end
+  local p = self.pace
+  local level = tonumber(readable(C.Call("UnitLevel", "player")))
+  local xp = tonumber(readable(C.Call("UnitXP", "player")))
+  local need = tonumber(readable(C.Call("UnitXPMax", "player")))
+  if not (level and xp and need and need > 0) then return end
+  if not (p.xp and p.need and p.level) then
+    p.xp, p.need, p.level = xp, need, level
+    return
+  end
+  local delta = 0
+  if level == p.level then
+    delta = math.max(0, xp - p.xp)
+  elseif level == p.level + 1 then
+    delta = math.max(0, p.need - p.xp) + xp
+  end
+  p.xp, p.need, p.level = xp, need, level
+  if delta <= 0 then return end
+  local now = C.Call("GetTime") or 0
+  if p.lastGain then
+    local elapsed = now - p.lastGain
+    if elapsed >= 1 and elapsed <= 600 then
+      p.activeSeconds = p.activeSeconds + elapsed
+      p.ratedXP = p.ratedXP + delta
+    elseif elapsed > 600 then
+      -- Ignore AFK time and start a fresh active-pace window.
+      p.activeSeconds, p.ratedXP = 0, 0
+    end
+  end
+  p.lastGain = now
+  p.gained = p.gained + delta
+end
+
+function M:Pace()
+  local p = self.pace
+  if not p then return { gained = 0 } end
+  local perHour = p.activeSeconds >= 60 and p.ratedXP > 0 and p.ratedXP * 3600 / p.activeSeconds or nil
+  local xp = tonumber(readable(C.Call("UnitXP", "player")))
+  local need = tonumber(readable(C.Call("UnitXPMax", "player")))
+  return {
+    gained = p.gained, activeSeconds = p.activeSeconds, perHour = perHour,
+    secondsToLevel = perHour and xp and need and need > xp and (need - xp) * 3600 / perHour or nil,
+  }
+end
 
 -- ------------------------------------------------------------------ quest XP
-function M:LogXP()
+function M:QuestXP()
   local n = tonumber(readable(C.Call("C_QuestLog.GetNumQuestLogEntries"))) or 0
   local getInfo = C.Resolve("C_QuestLog.GetInfo")
   local xpOf = C.Resolve("GetQuestLogRewardXP")
-  if type(getInfo) ~= "function" or type(xpOf) ~= "function" then return 0 end
-  local total = 0
-  for i = 1, math.min(n, 50) do
+  if type(getInfo) ~= "function" or type(xpOf) ~= "function" then return 0, 0, {} end
+  local total, ready, items = 0, 0, {}
+  for i = 1, math.min(n, 80) do
     local ok, q = pcall(getInfo, i)
     if ok and type(q) == "table" and not q.isHeader and q.questID then
-      local ok2, xp = pcall(xpOf, q.questID)
-      xp = ok2 and tonumber(readable(xp)) or 0
-      total = total + xp
+      local ok2, val = pcall(xpOf, q.questID)
+      local xp = ok2 and tonumber(readable(val)) or 0
+      if xp >= 0 then
+        total = total + xp
+        local done = readable(q.isComplete) or readable(q.complete)
+        if done == nil then done = readable(C.Call("C_QuestLog.IsComplete", q.questID)) end
+        if done then ready = ready + xp end
+        items[#items + 1] = { id = q.questID, title = readable(q.title) or ("Quest " .. q.questID),
+          xp = xp, ready = done and true or false }
+      end
     end
   end
-  return total
+  return total, ready, items
+end
+
+function M:LogXP()
+  return self:QuestXP()
 end
 
 -- ------------------------------------------------------------------ plates
@@ -136,6 +207,9 @@ function M:RefreshAll()
 end
 
 function M:OnEnable()
+  self:ResetPace()
+  self:On("PLAYER_XP_UPDATE", self.OnXP)
+  self:On("PLAYER_LEVEL_UP", self.OnXP)
   self:On("NAME_PLATE_UNIT_ADDED", function(mod, _, unit) mod:Mark(unit) end)
   self:On("NAME_PLATE_UNIT_REMOVED", function(mod, _, unit) mod:Unmark(unit) end)
   self:On("QUEST_LOG_UPDATE", function(mod) ns.Throttle("questextras:refresh", 1, function() mod:RefreshAll() end) end)
