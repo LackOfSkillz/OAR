@@ -22,7 +22,7 @@ local Advice = { name = "advice", SCHEMA = 1, MAX_ITEMS = 12 }
 -- Schema 2 (Outrider Intelligence, AI02-05): adds answer = { headline,
 -- summary, limits = {..}, sources = {..} } and items may name the WhatNow
 -- candidate they act on (candidateId). Everything in schema 1 still works.
-Advice.SCHEMAS = { [1] = true, [2] = true }
+Advice.SCHEMAS = { [1] = true, [2] = true, [3] = true }
 ns.Advice = Advice
 
 -- Arg kinds: "id" = positive integer below 2^31, "frac" = finite 0..1,
@@ -75,6 +75,69 @@ local function clean(item)
   return { title = title, why = plain(item.why, 400) or "", action = item.action, args = args, confidence = confidence }
 end
 
+-- Schema 3: candidate selection only, NEVER model-authored actions.
+-- Rebuild all actions exclusively from a fresh Outrider snapshot.
+function Advice:CheckV3(a, snap)
+  if not snap.snapshotId or a.answersSnapshotId ~= snap.snapshotId then
+    return {}, "advice is stale"
+  end
+  if a.items ~= nil then return {}, "model-authored items forbidden" end
+  if a.actionRequests ~= nil and
+      (type(a.actionRequests) ~= "table" or next(a.actionRequests) ~= nil) then
+    return {}, "model actions forbidden"
+  end
+  local allowed = {
+    kind=true, schema=true, forCharacter=true, answersSnapshot=true,
+    answersSnapshotId=true, rankedCandidateIds=true, rationaleEvidenceIds=true,
+    headline=true, summary=true, assumptions=true, limitations=true, actionRequests=true,
+  }
+  for k in pairs(a) do if not allowed[k] then return {}, "unknown advice field" end end
+  local cands = Advice.Candidates(snap)
+  if not cands or type(a.rankedCandidateIds) ~= "table" or
+      #a.rankedCandidateIds < 1 or #a.rankedCandidateIds > 3 then
+    return {}, "invalid candidates"
+  end
+  local seen, out = {}, {}
+  for _, id in ipairs(a.rankedCandidateIds) do
+    if type(id) ~= "string" or seen[id] or not cands[id] then
+      return {}, "unknown or duplicate candidate"
+    end
+    seen[id] = true
+    local source = cands[id]
+    local action, args
+    if type(source.target) == "table" then
+      action = "waypoint"
+      args = { mapID = source.target.mapID, x = source.target.x, y = source.target.y }
+    elseif Advice.PANELS[source.panel] then
+      action, args = "open_panel", { panel = source.panel }
+    elseif source.itemID then
+      action, args = "show_item", { itemID = source.itemID }
+    end
+    if action then
+      local item = clean({ title = source.title, why = source.why, confidence = source.label,
+                           action = action, args = args })
+      if not item then return {}, "invalid source candidate" end
+      item.candidateId = id
+      out[#out + 1] = item
+    end
+  end
+  local sources = {}
+  for id in pairs(cands) do sources["local:" .. id] = true end
+  if a.rationaleEvidenceIds ~= nil and type(a.rationaleEvidenceIds) ~= "table" then
+    return {}, "invalid evidence"
+  end
+  local evidenceIds = a.rationaleEvidenceIds or {}
+  if #evidenceIds > 12 then return {}, "too many sources" end
+  for _, id in ipairs(evidenceIds) do
+    if type(id) ~= "string" or not sources[id] then return {}, "unknown evidence" end
+  end
+  local answer = Advice.CleanAnswer({
+    headline = a.headline, summary = a.summary, limits = a.limitations,
+    sources = evidenceIds,
+  }, cands)
+  return out, "ok", answer
+end
+
 -- Clean items and "ok", or {} and the reason, for one advice table.
 function Advice:Check(a)
   if type(a) ~= "table" then return {}, "no advice file" end
@@ -92,9 +155,10 @@ function Advice:Check(a)
     if age < 0 or age > 6 * 3600 then return {}, "advice is stale" end
   end
   -- schema 2 answers name the snapshot they answer; a mismatch is stale
-  if a.schema == 2 and a.answersSnapshotId and snap.snapshotId and a.answersSnapshotId ~= snap.snapshotId then
+  if a.schema >= 2 and a.answersSnapshotId and snap.snapshotId and a.answersSnapshotId ~= snap.snapshotId then
     return {}, "advice is stale"
   end
+  if a.schema == 3 then return self:CheckV3(a, snap) end
   local cands = Advice.Candidates(snap)
   local out = {}
   if type(a.items) == "table" then
