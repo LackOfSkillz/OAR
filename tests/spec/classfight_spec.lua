@@ -18,6 +18,8 @@ local function session(class, level, spells, opts)
   local ns = game:loadAddon()
   game:login()
   ns.Modules:SetEnabled("AutoCheck", false)
+  -- these pin the hand-built fallback orders; the research plans have their own spec
+  ns.Modules:SetEnabled("FightPlan", false)
   game:advance(3)
   game:slash("fight")
   game:advance(3)

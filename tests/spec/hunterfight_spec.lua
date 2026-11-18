@@ -11,6 +11,8 @@ local function session(spells, ranged, opts)
   local ns = game:loadAddon()
   game:login()
   ns.Modules:SetEnabled("AutoCheck", false)
+  -- these pin the hand-built fallback orders; the research plans have their own spec
+  if not (opts and opts.plan) then ns.Modules:SetEnabled("FightPlan", false) end
   game:advance(3)
   if not (opts and opts.noInstall) then game:slash("fight") end -- Gary's one click (or /ride fight)
   return game, ns, ns.HunterFight

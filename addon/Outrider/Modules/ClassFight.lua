@@ -164,6 +164,9 @@ function CASTER.WARLOCK(kind, add)
     if known("Life Tap") then add(2, "/cast Life Tap", "health into mana") end
     return
   end
+  -- a press during Drain Life would restart the channel (research 2026-11-18;
+  -- the guard is proven on Forever by the tame macro)
+  if known("Drain Life") and level() >= 30 then add(1, "/stopmacro [channeling]", "doesn't cut Drain Life short") end
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
   add(8, "/petattack [pet,harm]", "sends the demon in")
   buffLines("WARLOCK", add)
