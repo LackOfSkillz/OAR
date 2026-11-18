@@ -547,7 +547,7 @@ ns.Hub:AddTab("quests", "Quests", function(p)
           title = q.title, tags = tags, line = #lines > 0 and table.concat(lines, "; ") or "No objectives listed.", actions = actions, highlight = q.complete }
       end
       return out
-    end },
+    end, compact = true },
     { "note", function() return #M.Log() == 0 and "Your quest log is empty. Quest givers (!) show on the map." or "" end },
     { "header", "Quest tracker", icon = "INV_Misc_Spyglass_02" },
     { "check", "Show Outrider's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().show end,

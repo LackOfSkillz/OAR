@@ -1119,6 +1119,9 @@ ns.Hub:AddTab("commands", "All commands", function(p)
     -- the usage repeats the name ("bossloot bossloot <boss>"): show it once
     render = function(row, c)
       local usage = tostring(c.usage or ""):gsub("^" .. c.name:gsub("%p", "%%%0") .. "%s*", "")
+      -- "|" starts a colour or link code in game text ("add|remove" showed as
+      -- "addemove"); doubled, it prints as a plain bar
+      usage = usage:gsub("|", "||")
       row.text:SetText(string.format("|cfff1d58e%s|r   |cffc3c8d2%s|r", c.name, usage))
     end,
     onClick = function(c) p.current = c p.label:SetText(c.name) p.box:SetText("") p.box:SetFocus() end,

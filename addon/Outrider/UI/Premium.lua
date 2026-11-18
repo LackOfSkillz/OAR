@@ -63,7 +63,15 @@ local function chip(parent)
   return c
 end
 
+-- Compact cards (premium plan: the quest page's 72 px "!" icons were a third of
+-- each card): a 40 px picture and a shorter card; set list.compact = true.
+local function sizes(list)
+  if list.compact then return 74, 40 end
+  return CARD_H, PIC
+end
+
 local function card(list, i)
+  local CARD_H, PIC = sizes(list)
   local c = UI:Card(list, false)
   c:SetHeight(CARD_H)
   c.frame = CreateFrame("Frame", nil, c, Theme:BackdropTemplate())
@@ -136,6 +144,7 @@ function UI:CardList(parent)
       local c = self.cards[i] or card(self, i)
       self.cards[i] = c
       c:ClearAllPoints()
+      local CARD_H, PIC = sizes(self)
       c:SetPoint("TOPLEFT", 0, -(i - 1) * (CARD_H + GAP))
       c:SetPoint("RIGHT", self, "RIGHT", 0, 0)
       if c.SetEdge then c:SetEdge(it.highlight) end
@@ -199,6 +208,7 @@ function UI:CardList(parent)
   end
   function list:LayoutHeight()
     local n = #self.items
+    local CARD_H = sizes(self)
     return n > 0 and (n * (CARD_H + GAP)) or 0
   end
   return list
@@ -239,11 +249,13 @@ function UI:StatusTiles(parent)
       local col, row = (i - 1) % cols, math.floor((i - 1) / cols)
       t:ClearAllPoints()
       t:SetPoint("TOPLEFT", col * (tw + TILE_GAP), -row * (TILE_H + TILE_GAP))
-      Theme:ApplyPanel(t, it.ok and "raised" or "goldSoft", it.ok and "border" or "bad")
+      -- ok = green OK; warn = amber "!" (worth a look, not an alarm); else red
+      local state = it.ok and "good" or it.warn and "warn" or "bad"
+      Theme:ApplyPanel(t, it.ok and "raised" or "goldSoft", it.ok and "border" or state)
       t.icon:SetTexture(it.icon or (ICON .. (it.ok and "Achievement_General" or "INV_Misc_QuestionMark")))
       t.text:SetText(it.text or "")
       t.mark:SetText(it.ok and "OK" or "!")
-      t.mark:SetTextColor(Theme:Color(it.ok and "good" or "bad"))
+      t.mark:SetTextColor(Theme:Color(state))
       t:Show()
     end
     for i = #self.items + 1, #self.tiles do self.tiles[i]:Hide() end

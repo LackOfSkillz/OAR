@@ -111,7 +111,7 @@ function M:CheckNameplateSetting()
   if v == nil then v = C.Call("GetCVar", "nameplateShowEnemies") end
   if v == "0" then
     self.toldNameplates = true
-    self:Warn("enemy nameplates are off: rares are only seen on target/mouseover")
+    self:Info("enemy nameplates are off: rares are only seen on target/mouseover")
     if ns.Feed then ns.Feed:Add(nil, { title = "Enemy nameplates are off", color = "warn",
       text = "Rares are only noticed when you target or mouse over them. Press V (or Options > Nameplates) to turn them on." }) end
   end

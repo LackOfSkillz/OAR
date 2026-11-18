@@ -63,6 +63,9 @@ local ICON = {
   turnin = "Interface\\GossipFrame\\ActiveQuestIcon",
   dungeon = "Interface\\Icons\\INV_Misc_Key_14",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
+  -- these fell back to the game's "no icon" circle (a dark "..." on the map)
+  qpath = "Interface\\COMMON\\Indicator-Yellow", note = "Interface\\Icons\\INV_Misc_Note_01",
+  guildmate = "Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon",
   herb = "Interface\\Icons\\INV_Misc_Flower_02", ore = "Interface\\Icons\\INV_Ore_Copper_01", fish = "Interface\\Icons\\INV_Misc_Fish_02", pool = "Interface\\Icons\\INV_Misc_Fish_14",
 }
 -- class names that make a trainer a class trainer (else profession)

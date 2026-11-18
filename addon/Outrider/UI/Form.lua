@@ -290,6 +290,7 @@ function UI:Form(parent, rows)
       local f = kind == "cards" and UI:CardList(host) or kind == "bars" and UI:BarList(host)
         or kind == "stats" and UI:StatStrip(host) or UI:StatusTiles(host)
       f:SetWidth(W)
+      if r.compact then f.compact = true end
       f.getItems = r[2]
       f.Refresh = function(self)
         -- a block that errors is recorded (Tools page, tests), never silently blank

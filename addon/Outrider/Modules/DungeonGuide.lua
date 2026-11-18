@@ -250,7 +250,7 @@ M.READY = { durability = 0.6, freeSlots = 6, ammo = 1000 }
 local NO_MANA = { WARRIOR = true, ROGUE = true }
 function M:ReadyCheck()
   local out = {}
-  local function add(ok, text) out[#out + 1] = { ok = ok and true or false, text = text } end
+  local function add(ok, text, soft) out[#out + 1] = { ok = ok and true or false, text = text, warn = (not ok) and soft or nil } end
   local d = ns.Errands and ns.Errands.Durability and ns.Errands.Durability()
   if d then
     add(d >= M.READY.durability, d >= M.READY.durability and string.format("Gear in good repair (%d%%)", math.floor(d * 100))
@@ -277,7 +277,7 @@ function M:ReadyCheck()
   if ns.PlayerClass and ns.PlayerClass() == "HUNTER" then
     local ammo = ns.Modules:Get("Ammo")
     local n = ammo and ammo.Count and ammo:Count()
-    if n then add(n >= M.READY.ammo, string.format("%d ammo%s", n, n >= M.READY.ammo and "" or " (buy more)")) end
+    if n then add(n >= M.READY.ammo, string.format("%d ammo%s", n, n >= M.READY.ammo and "" or " (buy more)"), n >= 100) end
   end
   return out
 end
@@ -297,7 +297,7 @@ M.PARTY_FOR = 900
 function M:ShareReady()
   if not (ns.Comm and C.Call("IsInGroup")) then return false, "not in a group" end
   local checks = {}
-  for _, c in ipairs(self:ReadyCheck()) do checks[#checks + 1] = { ok = c.ok, text = c.text } end
+  for _, c in ipairs(self:ReadyCheck()) do checks[#checks + 1] = { ok = c.ok, text = c.text, warn = c.warn } end
   local ok = ns.Comm:Send("READY", { level = C.Call("UnitLevel", "player"), class = ns.PlayerClass and ns.PlayerClass(),
     checks = checks }, "PARTY")
   self:Info("ready check shared with the party: %s", tostring(ok))
