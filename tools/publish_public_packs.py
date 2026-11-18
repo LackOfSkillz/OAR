@@ -72,7 +72,7 @@ def require_public_target(repo: Path) -> None:
     if git(repo, "branch", "--show-current") != "main":
         raise SystemExit("Check out outrider-releases/main before export.")
     for line in git(repo, "status", "--porcelain").splitlines():
-        changed = line[3:].replace("\\\\", "/")
+        changed = line[3:].replace("\\", "/")
         if changed != "data-packs/" and not changed.startswith("data-packs/"):
             raise SystemExit("Target checkout has changes outside data-packs; review before exporting.")
 
@@ -180,9 +180,21 @@ def main() -> None:
                         "| **Not yet committed** |",
                         "| **Committed**: [" + name + "](" + name + "/) |"
                     )
-        public_readme.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+        public_readme.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    main_readme = destrepo / "README.md"
+    if main_readme.is_file():
+        data = main_readme.read_text(encoding="utf-8")
+        data = data.replace(
+            "The QuestieDB-derived **NPC, Gear, Mobs, Nodes, Dungeons and Quests** data pack files have **not yet been committed as standalone sources**; only build archives are available under Releases.",
+            "The QuestieDB-derived **NPC, Gear, Mobs, Nodes, Dungeons and Quests** source packs are now published in [data-packs](data-packs/), with the original upstream attribution and license; check the per-pack provenance."
+        )
+        data = data.replace(
+            "The remaining six generated QuestieDB packs must be exported from the local build with their source revision, license and attribution intact before their public-source publication can be claimed.",
+            "The six generated QuestieDB packs were exported from locally built sources with per-pack provenance, attribution and GPLv3 terms. Verify provenance before repackaging or redistribution."
+        )
+        main_readme.write_text(data, encoding="utf-8")
     if args.commit:
-        git(destrepo, "add", "--", "data-packs")
+        git(destrepo, "add", "--", "data-packs", "README.md")
         commit = git(destrepo, "commit", "-m",
                      "Publish six generated GPLv3 QuestieDB-derived Outrider data packs")
         print(commit)
