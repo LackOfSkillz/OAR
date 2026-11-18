@@ -82,6 +82,7 @@ Modules\InfoBar.lua
 Modules\Alts.lua
 Modules\FlightTimes.lua
 Modules\QuestExtras.lua
+Modules\FightMeter.lua
 Modules\BagExtras.lua
 Modules\Tweaks.lua
 Modules\ProfExtras.lua
