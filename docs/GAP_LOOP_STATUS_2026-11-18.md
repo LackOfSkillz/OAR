@@ -95,3 +95,18 @@ Never infer completeness from filename, documentation claims or mock tests alone
 | 34 | `BagExtras.lua`: optional separate inventory browser, categories, BoE marks, bag/bank/alt snapshots and search highlighting (`/ride bags`) | Read-only browser instead of full native bag replacement, verify bank/stale inventory presentation and yielding to bag add-ons |
 
 No `main` changes. **Ranks #35–38 remain not started.** "Implementation" is not the same as Works/Matches/Surpasses acceptance.
+
+## Batch 6 — final ranked gaps DEEP-35 through DEEP-38 (2026-11-18)
+
+**Code gate PASS:** [CI run 44330275735](https://github.com/LackOfSkillz/OAR/actions/runs/44330275735), source commit `4f85b778`: **702 Lua passed, 0 failures, 0 syntax errors; Python cloud/companion/intelligence/security suites passed**. Regression tests: `tests/spec/batch6_gap_spec.lua`. No Forever gameplay acceptance performed.
+
+| Rank | Implemented and verified in mocks | Explicit remaining parity gate |
+|---|---|---|
+| #35 Dungeon journal | `Modules/DungeonJournal.lua` added after `DungeonGuide.lua`; linked from Dungeons page; list and boss details, recorded loot, loot wishlist/upgrades, dungeon quests, readiness, entrances; `/ride journal` | Quest pack covers only boss-associated or manually linked quests, not every dungeon quest/chain. Loot/boss pack source may be incomplete. Confirm full data and UI behavior in Forever |
+| #36 Heal panel | `HealPanel.lua` secure-unit frame capacity increased to **40**, 5-column/8-row layout; known-spell Shift/Ctrl/Alt left/right click bindings plus visual selector/editor and `/ride heal bind ...`, `/ride heal editor` | 40-player raid, secure retargeting and combat lock test, spellbook rank/target details; mock test is not real 40-player certification. Competitor click-casting options still need exhaustive parity matrix |
+| #37 Auction engine | `Prices.lua`: median, mean, min/max and coefficient of variation across **daily lows** (not sale prices), shopping lists/target amounts/groups, `/ride market` | Dynamic AH shopping UI and true item-level market distribution/volume missing; 14-day low-only record cannot support TSM-equivalent market forecasts without new sampling |
+| #38 Boss notes/timeline | `Modules/BossTimeline.lua` reads `C_EncounterTimeline.GetEventList` with strict readability checks; user-authored persistent notes; `/ride bossnotes` | Client API present but live event shape, authoritative countdowns and broad boss-mechanic datasets unverified; no full DBM/BigWigs parity |
+
+**Final ranked implementation state:** 38/38 have *some* code and automated passing tests. **0/38 have finished real-game Works/Matches/Surpasses acceptance evidence.** The highest-priority remaining work is not more placeholders: (1) validate client secure/timer behaviors, (2) complete sourced quest/route/dungeon/rare and recipe data, (3) close each raw competitor option row, (4) measure cross-module advantage, (5) verify addon conflicts/taint, persistent settings, memory and CPU in game.
+
+`main` remains untouched. `p1-foundation` is development, **not a release-certified parity build**.
