@@ -51,6 +51,64 @@ function M:ByName()
   return out
 end
 
+-- DEEP-19: a conservative cross-reference between the QuestieDB objective
+-- pack and the dungeon boss NPC IDs already present in the dungeon pack.
+-- This finds boss-specific quests without pretending every dungeon quest
+-- is covered. The user can label additional known quests explicitly.
+function M:QuestLinks()
+  ns.db.global.dungeonQuestLinks = ns.db.global.dungeonQuestLinks or {}
+  return ns.db.global.dungeonQuestLinks
+end
+
+function M:QuestList(dungeon)
+  local d = self:ByName()[dungeon]
+  if not d then return {}, "unknown dungeon" end
+  local questPack = ns.QuestObjectives and ns.QuestObjectives:Pack()
+  if not questPack then return {}, "Questie quest data not installed" end
+  local bosses = {}
+  for _, boss in ipairs(d.bosses) do bosses[boss[1]] = true end
+  local active = {}
+  for _, q in ipairs(ns.QuestObjectives.Log()) do active[q.questID] = q end
+  local links, out = self:QuestLinks(), {}
+  for id, q in pairs(questPack.quests or {}) do
+    local linked = links[id] == dungeon
+    local fromBoss = false
+    for _, objective in ipairs(q[3] or {}) do
+      if objective[1] == "npc" and bosses[objective[2]] then fromBoss = true break end
+    end
+    if linked or fromBoss then
+      local live = active[id]
+      local entry = { id = id, name = q[1], level = q[2],
+        active = live ~= nil, complete = live and live.complete or false,
+        objectives = live and live.objectives or {}, source = linked and "user-linked" or "boss objective",
+        chain = ns.QuestInfo and { ns.QuestInfo:Chain(id) } or nil }
+      out[#out + 1] = entry
+    end
+  end
+  table.sort(out, function(a, b) return (a.level or 0) < (b.level or 0) or
+    (a.level == b.level and tostring(a.name) < tostring(b.name)) end)
+  return out
+end
+
+ns.AddCommand("dungeonquests", "dungeonquests <dungeon name> | link <questID> <dungeon name>", function(arg)
+  arg = tostring(arg or "")
+  local id, name = arg:match("^link%s+(%d+)%s+(.+)$")
+  if id then
+    id = tonumber(id)
+    if not M:ByName()[name] then ns.Print("unknown dungeon: %s", name) return end
+    M:QuestLinks()[id] = name
+    ns.Print("linked quest %d to %s (user-supplied)", id, name)
+    return
+  end
+  local rows, why = M:QuestList(arg)
+  if why then ns.Print("%s", why) return end
+  ns.Print("%s: %d known boss-related or linked quests; incomplete until quest-data coverage is checked", arg, #rows)
+  for i = 1, math.min(#rows, 25) do
+    local q = rows[i]
+    ns.Print("  [%d] %s (%s%s)", q.id, q.name or "?", q.source, q.active and ", in log" or "")
+  end
+end)
+
 -- Upgrades for this character from one dungeon: now = usable today, later = needs a few more levels.
 -- { {itemID, name, boss, pct, slot, reqLevel, later} } best first
 function M:Upgrades(d)
