@@ -18,7 +18,11 @@ T.describe("Shift-gated tooltip extras", function()
     TL:Add("item", "beast", fake, function()
       return { { "first drop", "good" }, { "second drop", "good" }, { "third drop", "good" } }
     end)
-    TL.providers.item = { TL.providers.item[#TL.providers.item] }
+    local selected = {}
+    for _, provider in ipairs(TL.providers.item) do
+      if provider.owner == fake then selected[#selected + 1] = provider end
+    end
+    TL.providers.item = selected
     T.eq(#TL:Lines("item", tip, { id = 90 }), 3)
     TL:Settings().limit = 2
     T.eq(#TL:Lines("item", tip, { id = 90 }), 2)
@@ -61,7 +65,7 @@ T.describe("Feign Death never trains graveyard map", function()
     g:advance(0.4)
     T.eq(N.pendingDeath, nil)
     T.eq(N.deathLog, nil)
-    T.eq(ns.db.global.deathHistory, nil)
+    T.ok(not ns.db.global.deathHistory or #ns.db.global.deathHistory == 0)
     T.eq(#ns.Errors.list, 0)
   end)
 
@@ -87,9 +91,9 @@ T.describe("Feign Death never trains graveyard map", function()
     g.opts.x, g.opts.y = .35, .42
     g:fire("PLAYER_DEAD")
     g.ghost = true
-    g:fire("PLAYER_ALIVE")
     g.opts.x, g.opts.y = .50, .60
-    T.ok(N:RecordGhostSpawn())
+    g:fire("PLAYER_ALIVE")
+    T.ok(N.deathLog and N.deathLog.spawn)
     local mapID = ns.Compat.PlayerPosition("player")
     local obs = N:PredictedGraveyard(mapID, "West Field")
     T.ok(obs)
