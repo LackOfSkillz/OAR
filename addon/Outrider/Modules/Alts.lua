@@ -102,7 +102,7 @@ end
 -- ------------------------------------------------------------------ lockouts
 function M:Prune()
   local cut, keep = time() - 86400, {}
-  for _, e in ipairs(self.inst) do if e.t >= cut then keep[#keep + 1] = e end end
+  for _, e in ipairs(self.inst) do if (e.left or e.t) >= cut then keep[#keep + 1] = e end end
   for i = #self.inst, 1, -1 do self.inst[i] = nil end
   for i, e in ipairs(keep) do self.inst[i] = e end
 end
@@ -113,11 +113,14 @@ function M:Lockouts(now)
   self:Prune()
   local hour, day, oldest = 0, 0, nil
   for _, e in ipairs(self.inst) do
-    if now - e.t < 3600 then
+    -- Lockout expiry is counted from leaving the instance, not entry.
+    -- An active instance uses its entry as an explicitly estimated fallback.
+    local t = e.left or e.t
+    if t and now >= t and now - t < 3600 then
       hour = hour + 1
-      if not oldest or e.t < oldest then oldest = e.t end
+      if not oldest or t < oldest then oldest = t end
     end
-    if now - e.t < 86400 then day = day + 1 end
+    if t and now >= t and now - t < 86400 then day = day + 1 end
   end
   return { hour = hour, day = day, freeAt = (hour >= M.HOUR_LIMIT and oldest) and (oldest + 3600) or nil }
 end
@@ -129,13 +132,13 @@ function M:OnZone()
   if inside and (kind == "party" or kind == "raid") then
     local info = C.Resolve("GetInstanceInfo")
     local _, name, _, _, _, _, _, _, map = pcall(type(info) == "function" and info or error)
-    map = map or name -- C.Call keeps only five values; called directly here
+    map = map or name -- position 8: instanceID; C.Call keeps only five
     name, map = readable(name), readable(map)
     if self.run and self.run.map == map then return end -- a loading screen inside
     local last = self.lastLeft
     local same = last and last.map == map and not self.resetSince and (now - last.t) < M.SAME_RUN
     if not same then
-      self.inst[#self.inst + 1] = { t = now, map = map, name = name, char = ns.db.key }
+      self.inst[#self.inst + 1] = { t = now, map = map, instanceID = map, name = name, char = ns.db.key }
       local lk = self:Lockouts(now)
       self:Info("new instance %s: %d this hour, %d today", tostring(name), lk.hour, lk.day)
       if lk.hour >= M.HOUR_LIMIT - 1 then
@@ -143,7 +146,7 @@ function M:OnZone()
       end
     end
     self.resetSince = nil
-    self.run = { map = map, name = name, start = now, money = tonumber(C.Call("GetMoney")) or 0, xp = 0, kills = 0,
+    self.run = { map = map, instanceID = map, name = name, start = now, entry = not same and self.inst[#self.inst] or nil, money = tonumber(C.Call("GetMoney")) or 0, xp = 0, kills = 0,
       char = ns.db.key, level = tonumber(C.Call("UnitLevel", "player")) or 1, continued = same or nil }
     self.lastXP, self.lastMax = tonumber(readable(C.Call("UnitXP", "player"))), tonumber(readable(C.Call("UnitXPMax", "player")))
   elseif self.run then
@@ -159,10 +162,18 @@ function M:EndRun(now)
   r.gold = (tonumber(C.Call("GetMoney")) or r.money) - r.money
   r.money = nil
   self.lastLeft = { map = r.map, t = r.stop }
+  if r.entry and r.entry.t == r.start then r.entry.left = r.stop end
   if r.stop - r.start < 60 then return end -- a peek inside, not a run
   table.insert(self.runs, 1, r)
   for i = M.KEEP_RUNS + 1, #self.runs do self.runs[i] = nil end
   self:Info("run done: %s %d min, %d xp, %d kills, %d copper", tostring(r.name), math.floor((r.stop - r.start) / 60), r.xp, r.kills, r.gold)
+end
+
+function M:DeleteEntry(index)
+  index = tonumber(index)
+  if not index or index ~= math.floor(index) or index < 1 or index > #self.inst then return false end
+  table.remove(self.inst, index)
+  return true
 end
 
 function M:OnXP()
@@ -305,7 +316,22 @@ ns.Hub:AddTab("alts", "My characters", function(p)
   })
 end)
 
-ns.AddCommand("runs", "dungeon lockouts this hour and today, and your last runs", function()
+ns.AddCommand("runs", "dungeon lockouts; /ride runs list|delete <index>", function(arg)
+  arg = tostring(arg or "")
+  local index = arg:match("^delete%s+(%d+)$")
+  if index then
+    local entry = M.inst[tonumber(index)]
+    if M:DeleteEntry(index) then
+      ns.Print("removed erroneous estimated lockout entry %s (instance %s)", tostring(entry.name), tostring(entry.instanceID or entry.map))
+    else ns.Print("invalid lockout entry index") end
+    return
+  end
+  if arg == "list" then
+    for i, e in ipairs(M.inst) do
+      ns.Print("%d. %s (instance %s), %s", i, tostring(e.name), tostring(e.instanceID or e.map), date("%H:%M", e.left or e.t))
+    end
+    return
+  end
   local lk = M:Lockouts()
   ns.Print("instances: %d/%d this hour, %d/%d today", lk.hour, M.HOUR_LIMIT, lk.day, M.DAY_LIMIT)
   for i, r in ipairs(M.runs) do
