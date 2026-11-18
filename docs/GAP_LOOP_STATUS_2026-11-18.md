@@ -110,3 +110,13 @@ No `main` changes. **Ranks #35–38 remain not started.** "Implementation" is no
 **Final ranked implementation state:** 38/38 have *some* code and automated passing tests. **0/38 have finished real-game Works/Matches/Surpasses acceptance evidence.** The highest-priority remaining work is not more placeholders: (1) validate client secure/timer behaviors, (2) complete sourced quest/route/dungeon/rare and recipe data, (3) close each raw competitor option row, (4) measure cross-module advantage, (5) verify addon conflicts/taint, persistent settings, memory and CPU in game.
 
 `main` remains untouched. `p1-foundation` is development, **not a release-certified parity build**.
+
+## Feature-request batch A: #8, #11, #9 (2026-11-18)
+
+**AUTOMATED PASS, NEEDS GAME:** [710 Lua passed / 0 failed / 0 syntax errors; 68 Python tests green](https://github.com/LackOfSkillz/OAR/actions/runs/44349318495). New test module: `tests/spec/feature_requests_batch1_spec.lua`. Prior corpse-route tests now explicitly simulate a real ghost state.
+
+- **#8** Shift-only tooltip extras are optional with per-provider visibility and line count caps. No secure behavior changes.
+- **#11** Feign Death and false death-like events are vetoed before death history, corpse arrow and graveyard learning. Test genuine WoW Forever Feign Death and resurrection.
+- **#9** Item tooltip reverse quest references are indexed across all known quests, not only active quests. The private, Questie-derived pack is **not** in Git. Regenerate using `python tools/import_questie_quests.py --deploy` from the user's local QuestieDB source, then restart the game.
+
+This is an **additional research-feature batch**, not a change to the existing 38-gap acceptance count. The Works, Matches and Surpasses client/competitor gates remain unfulfilled; do not claim launch-ready parity.
