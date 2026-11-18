@@ -162,6 +162,7 @@ Modules\Trail.lua
 Modules\MapPins.lua
 Modules\MapReveal.lua
 Modules\QuestObjectives.lua
+Modules\PartyQuests.lua
 Modules\ZoneLevels.lua
 Modules\MinimapPins.lua
 Modules\MapTab.lua
