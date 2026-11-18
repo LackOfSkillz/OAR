@@ -112,9 +112,16 @@ function M:RestockPlan()
     local target = id and tonumber(stock[id])
     if id and target and target > 0 and not found[id] then
       found[id] = true
-      local name, _, price, bundle, vendorAvailable, usable, extended = C.Call("GetMerchantItemInfo", i)
+      local getInfo = C.Resolve("GetMerchantItemInfo")
+      local ok, name, _, price, bundle, vendorAvailable, usable, extended = false
+      if type(getInfo) == "function" then
+        ok, name, _, price, bundle, vendorAvailable, usable, extended = pcall(getInfo, i)
+      end
       price, bundle, vendorAvailable = tonumber(C.Readable(price)), tonumber(C.Readable(bundle)), C.Readable(vendorAvailable)
-      if price and price > 0 and bundle and bundle > 0 and usable ~= false and not extended then
+      -- Require full readable merchant info. Five-return generic Compat.Call
+      -- intentionally cannot be used here: it would drop isUsable/extendedCost.
+      if ok and C.Readable(usable) == true and C.Readable(extended) == false
+        and price and price > 0 and bundle and bundle > 0 then
         local owned = self:BagCount(id)
         local needed = math.max(0, math.floor(target) - owned)
         local units = math.min(M.RESTOCK_MAX_UNITS, math.ceil(needed / bundle) * bundle)
