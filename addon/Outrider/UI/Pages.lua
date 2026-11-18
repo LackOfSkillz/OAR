@@ -543,6 +543,10 @@ local function dungeonRows()
   D:Warm()
   local level = ns.Compat.Call("UnitLevel", "player") or 1
   r({ "header", "Dungeons" })
+  r({ "buttons", { { "Open dungeon journal", function()
+    if ns.DungeonJournal then ns.DungeonJournal:Toggle()
+    else ns.Print("Dungeon Journal module is disabled") end
+  end, 210, "Browse bosses, loot, dungeon quests, readiness and entrances." } } })
   -- Ready check: a tile per check, green or red (premium look, 2026-11-16)
   r({ "header", "Ready check", icon = "INV_Misc_Book_08" })
   r({ "tiles", function()
