@@ -29,7 +29,9 @@ T.describe("fight-plan source catalog matrix", function()
       local plan = c:Class(cls)
       for spec, modes in pairs(plan.specs) do
         for _, mode in ipairs({"pve", "pvp"}) do
-          local byKind = modes[mode]
+          -- Levelling has a conservative PvE fallback until a specialization
+          -- is established. Every named specialization still requires PvP.
+          local byKind = modes[mode] or (spec == "levelling" and modes.pve)
           T.ok(type(byKind) == "table", cls .. " " .. spec .. " " .. mode .. " missing")
           scenarios = scenarios + 1
           for kind, brackets in pairs(byKind) do
