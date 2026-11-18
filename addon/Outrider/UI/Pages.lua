@@ -1006,6 +1006,24 @@ ns.Hub:AddTab("settings", "Settings", function(p)
   local confirm = false
   UI:FormPage(p, {
     { "header", "Look" },
+    { "custom", function(host)
+      local row = CreateFrame("Frame", nil, host)
+      row:SetSize(570, 58)
+      local box = UI:SearchBox(row, 300, "Find a setting...")
+      box:SetPoint("TOPLEFT", 0, 0)
+      local result = UI.Text(row, "small", "muted")
+      result:SetPoint("LEFT", box, "RIGHT", 8, 0)
+      local function find()
+        local label, matches = p.form:FindSetting(box:GetText())
+        result:SetText(label and (matches .. " matches: " .. label) or "No setting found")
+      end
+      box:SetScript("OnEnterPressed", find)
+      local btn = UI:Button(row, "Find next", 110, find)
+      btn:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -4)
+      row.searchBox, row.searchResult, row.searchNext = box, result, btn
+      p.settingsSearch = row
+      return row
+    end, 65 },
     { "check", "Class color accent (after reload)", function() return ns.db.char.classAccent ~= false end,
       function(on) ns.db.char.classAccent = on and true or false end },
     { "check", "Minimap button", function() return not ns.db.global.minimap.hide end,
