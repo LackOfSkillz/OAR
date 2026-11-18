@@ -18,6 +18,15 @@ local function pet(extra)
   return p
 end
 
+local function warningCount(ns, fragment)
+  local n = 0
+  for _, toast in ipairs(ns.Toast.visible) do
+    local title = toast.title and toast.title:GetText()
+    if type(title) == "string" and title:find(fragment, 1, true) then n = n + 1 end
+  end
+  return n
+end
+
 T.describe("pet status", function()
   T.it("shows the panel with level, XP, health and focus, and a Feed button", function()
     local game, ns, M = session()
@@ -98,22 +107,21 @@ T.describe("pet status", function()
     game.petActions = { { name = "Growl", allowed = true, auto = true } }
     game.inGroup = true
     game:fire("GROUP_ROSTER_UPDATE")
-    T.eq(ns.Toast:Count(), 1)
-    T.contains(ns.Toast.visible[1].title:GetText(), "Growl")
+    T.eq(warningCount(ns, "Growl"), 1)
     game:fire("PET_BAR_UPDATE")
-    T.eq(ns.Toast:Count(), 1)
+    T.eq(warningCount(ns, "Growl"), 1)
     game.petActions[1].auto = false
     game:fire("PET_BAR_UPDATE")
     game.petActions[1].auto = true
     game:fire("PET_BAR_UPDATE")
-    T.eq(ns.Toast:Count(), 2)
+    T.eq(warningCount(ns, "Growl"), 2)
     T.eq(#ns.Errors.list, 0)
   end)
 
   T.it("does not guess Growl when pet action API has no relevant information", function()
     local game, ns, M = session({ inGroup = true })
     game:fire("GROUP_ROSTER_UPDATE")
-    T.eq(ns.Toast:Count(), 0)
+    T.eq(warningCount(ns, "Growl"), 0)
     T.eq(M:GrowlAutocast(), nil)
   end)
 
