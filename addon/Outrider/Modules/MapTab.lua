@@ -154,6 +154,7 @@ ns.Hub:AddTab("map", "Map", function(p)
     p:Refresh()
   end)
   p.noteAdd:SetPoint("LEFT", p.noteBox, "RIGHT", 6, 0)
+  UI.Tip(p.noteAdd, "Add map note", "Hover a point on the world map, type a note and click to save it.")
   -- legend: group colours
   local lx = 0
   for _, g in ipairs({ "merchant", "trainer", "service", "quest", "rare", "gather" }) do
