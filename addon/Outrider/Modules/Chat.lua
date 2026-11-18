@@ -26,17 +26,64 @@ local M = ns:NewModule("Chat", {
   title = "Chat highlights and spam filter",
   phase = "P7",
   order = 96,
-  defaults = { words = {}, spam = true, highlight = true, urls = true, lfgTab = true },
+  defaults = { words = {}, spam = true, highlight = true, urls = true, lfgTab = true, whisperHistory = true, chatArchive = true, colorNames = true },
 })
 ns.Chat = M
 
-M.EVENTS = { "CHAT_MSG_CHANNEL", "CHAT_MSG_SAY", "CHAT_MSG_YELL", "CHAT_MSG_GUILD", "CHAT_MSG_PARTY",
+M.EVENTS = { "CHAT_MSG_WHISPER_INFORM", "CHAT_MSG_CHANNEL", "CHAT_MSG_SAY", "CHAT_MSG_YELL", "CHAT_MSG_GUILD", "CHAT_MSG_PARTY",
   "CHAT_MSG_PARTY_LEADER", "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER", "CHAT_MSG_WHISPER", "CHAT_MSG_OFFICER" }
 M.SPAM_WINDOW = 60
 local SPAM_EVENTS = { CHAT_MSG_CHANNEL = true, CHAT_MSG_SAY = true, CHAT_MSG_YELL = true }
 local URL = "(https?://[%w%-%._~:/%?#@!%$&%*%+,;=%%]+)"
 
-function M:OnInitialize() self.recent, self.fed, self.decided, self.decidedN, self.subscribed = {}, {}, {}, 0, {} end
+M.ARCHIVE_MAX, M.PER_PERSON_MAX = 600, 100
+function M:OnInitialize()
+  self.recent, self.fed, self.decided, self.decidedN, self.subscribed = {}, {}, {}, 0, {}
+  local g = ns.db.global
+  g.chatArchive = type(g.chatArchive) == "table" and g.chatArchive or {}
+  g.whisperArchive = type(g.whisperArchive) == "table" and g.whisperArchive or {}
+  self.archive, self.whispers = g.chatArchive, g.whisperArchive
+end
+
+-- A bounded and opt-in SavedVariables archive. The text is unmodified chat
+-- content, never used to rewrite Blizzard-owned chat frames on login.
+function M:RememberLine(event, msg, author)
+  if not (type(msg) == "string" and not C.IsSecret(msg)) then return end
+  if not (type(author) == "string" and not C.IsSecret(author)) then author = "?" end
+  local s = self:Settings()
+  local item = { t = time(), event = event, author = author, text = msg }
+  if s.chatArchive then
+    self.archive[#self.archive + 1] = item
+    while #self.archive > M.ARCHIVE_MAX do table.remove(self.archive, 1) end
+  end
+  if s.whisperHistory and (event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM") then
+    local who = author:lower()
+    local by = self.whispers[who] or {}
+    by[#by + 1] = item
+    while #by > M.PER_PERSON_MAX do table.remove(by, 1) end
+    self.whispers[who] = by
+    local count = 0
+    for _ in pairs(self.whispers) do count = count + 1 end
+    if count > 30 then
+      local oldest, when
+      for name, records in pairs(self.whispers) do
+        local t = records[#records] and records[#records].t or 0
+        if not when or t < when then oldest, when = name, t end
+      end
+      if oldest then self.whispers[oldest] = nil end
+    end
+  end
+end
+
+function M:History(name, limit)
+  local entries = name and self.whispers[tostring(name):lower()] or self.archive
+  local out = {}
+  for i = #(entries or {}), 1, -1 do
+    if #out >= (limit or 40) then break end
+    out[#out + 1] = entries[i]
+  end
+  return out
+end
 
 -- Looking-for-group wording: lfg, lfm, lf, lf1m, lf2m...
 function M.IsLFG(lower)
@@ -144,6 +191,7 @@ local function filter(frame, event, ...)
     local ok, hide, text = pcall(M.Process, M, event, msg, author)
     if not ok then hide, text = false, nil end
     d = { hide = hide, text = text, route = M.Routed(event, msg, base) }
+    if type(msg) == "string" and not C.IsSecret(msg) then M:RememberLine(event, msg, author) end
     if lineID then
       M.decided[lineID] = d
       M.decidedN = M.decidedN + 1
@@ -229,6 +277,18 @@ function M:Activity()
   for _ in pairs(self:Keywords()) do n = n + 1 end
   return string.format("%d keywords highlighted; repeated spam %s", n, self:Settings().spam and "hidden" or "shown")
 end
+
+ns.AddCommand("history", "history [player] [count]  show stored chat or whisper messages", function(arg)
+  local who, n = tostring(arg or ""):match("^(%S*)%s*(%d*)$")
+  local max = math.min(100, math.max(1, tonumber(n) or 40))
+  if who == "" or who == "all" then who = nil end
+  local lines = {}
+  for _, entry in ipairs(M:History(who, max)) do
+    lines[#lines + 1] = string.format("%s [%s] %s: %s",
+      date("%m-%d %H:%M", entry.t), tostring(entry.event), tostring(entry.author), tostring(entry.text))
+  end
+  ns.UI:TextDialog(who and ("Whispers: " .. who) or "Chat history", table.concat(lines, "\n"), "copy")
+end)
 
 ns.AddCommand("copychat", "copy the last 100 lines of the main chat window", function()
   local text = M:CopyText(100)
