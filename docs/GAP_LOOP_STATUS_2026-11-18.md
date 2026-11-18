@@ -11,7 +11,11 @@
 | #2 | Layer bar + visited history | TESTS GREEN / NEEDS GAME | `Modules/Layers.lua`, `Modules/InfoBar.lua` | `tests/spec/layers_spec.lua`, `tests/spec/infobar_spec.lua` | Test zone changes, instances, uncertainty, recent-visit timestamp, restart, and text layout in-game |
 | #3 | Corpse arrow | TESTS GREEN / NEEDS GAME | `Modules/Nearest.lua`, `tests/lib/wowmock.lua` | `tests/spec/waypoints_spec.lua` | Verify `C_DeathInfo.GetCorpseMapPosition` returns expected coordinates on Forever; release, ghost navigation, resurrection, old waypoint restore; ensure no regression |
 | #4 | Sell-approved, sell-once and never-sell vendor lists | TESTS GREEN / NEEDS GAME; PARTIAL depth | `Modules/Merchant.lua`, `tests/lib/wowmock.lua` | `tests/spec/merchant_spec.lua`; Windows CI 44294608991 passed | Live vendor checks, non-grey quest-item protection, controls/feedback; automatic learned selling and policy explanations are not implemented |
-| #5–9 | Vendor restock, waypoint queue, cursor coordinates, tooltips, hunter alerts | NOT STARTED | — | — | Continue next development iteration after live verification of #1–4 |
+| #5 | Vendor restock with item targets, gold reserve and player-click batch | IMPLEMENTED / CI PENDING | `Modules/Merchant.lua`, `tests/lib/wowmock.lua` | `tests/spec/merchant_spec.lua` | Verify merchant return shape, bag-space and spending behavior in Forever |
+| #6 | Waypoint queue, arrival advance, saved stops and named-zone/map commands | IMPLEMENTED / CI PENDING | `Modules/Waypoints.lua` | `tests/spec/waypoints_spec.lua` | Confirm persistence, Travel zone lookup, game arrow ownership and death overlay |
+| #7 | Cursor coordinates on visible world map | IMPLEMENTED / CI PENDING | `Modules/Coords.lua` | `tests/spec/waypoints_spec.lua` | Confirm map canvas geometry on Forever, UI positioning and scale |
+| #8 | Combat tooltip suppression, Shift exception, quest objective remaining lines | IMPLEMENTED / CI PENDING | `Modules/Tooltips.lua`, `UI/TooltipLines.lua` | `tests/spec/tooltiplines_spec.lua` | Verify hooks, no protected/secret taint, quest line types, compatibility |
+| #9 | Hunter missing/Cheetah/Pack aspect and group Growl warnings | IMPLEMENTED / CI PENDING | `Modules/PetStatus.lua` | `tests/spec/petstatus_spec.lua` | Test with real hunter and party; API values/localization and rate limiting |
 | #10–15 | Tracker scrolling, chat, instance, map, mail and settings wins | NOT STARTED | — | — | Feature-by-feature |
 | #16/17/25 | Auto Shot, threat, damage-meter probes | NOT STARTED / PROBE | — | — | Real client API readings; no combat log |
 | #18 | Subzone-aware graveyard map | NOT STARTED | — | — | Death capture/ground truth; distinct from #3 corpse arrow |
@@ -23,7 +27,7 @@
 1. Pull the branch and run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython` locally. Windows GitHub Actions passed at `dcbb875d` but in-game proof is pending.
 2. If red, fix tests and code; rerun. If green, deploy with `tools/deploy.ps1`, fully restart WoW only if files/TOC changed, and test all four scenarios. In particular, check item allowlist/keep/once at a real vendor; ensure quest items are not sold.
 3. Record screenshots/logs, compare with the competing addon disabled and enabled; change each status only as supported by evidence.
-4. Once validated, continue #5–7 in small separate commits, then resume /loop. Update this table every iteration.
+4. After #1-9 pass local and in-game gates, begin #10 tracker scroll and #11 chat enhancements. Keep each completion evidence-backed. Update this table every iteration.
 
 ## Restrictions
 
