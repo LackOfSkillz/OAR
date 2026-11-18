@@ -206,6 +206,18 @@ end)
 ns.Hub:AddTab("waypoints", "Waypoints", function(p)
   UI:FormPage(p, {
     { "header", "Waypoint" },
+    -- where the arrow points, at a glance (premium rebuild 2026-11-18)
+    { "stats", function()
+      local W = ns.Waypoints
+      local w = W.current
+      local d = w and W:Distance()
+      local q = W:Settings().queue or {}
+      return {
+        { cap = "Arrow to", value = w and tostring(w.title or "a spot") or "Nothing", color = w and "gold" or nil },
+        { cap = "Distance", value = d and (math.floor(d + 0.5) .. " yd") or "—" },
+        { cap = "Queued stops", value = tostring(#q), note = #q > 0 and "the arrow moves on by itself" or "none" },
+      }
+    end },
     { "note", function()
       local w = ns.Waypoints.current
       return w and ("Arrow to " .. tostring(w.title) .. ", " .. tostring(ns.Waypoints:Activity())) or "No waypoint set."
