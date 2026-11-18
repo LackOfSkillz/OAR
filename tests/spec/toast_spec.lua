@@ -72,6 +72,7 @@ T.describe("toast", function()
 
   T.it("in combat a toast still shows, with no protected calls, and the button works after combat", function()
     local game, ns = session()
+    ns.Modules:Get("PetStatus"):Settings().warnAspect = false -- isolate generic toast behavior
     game:setCombat(true)
     local f = ns.Toast:Show({ title = "Rare", text = "seen", button = { label = "Target", macro = "/target X" }, duration = 30 })
     T.eq(ns.Toast:Count(), 1)
