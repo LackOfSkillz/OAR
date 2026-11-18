@@ -113,6 +113,7 @@ Modules\CraftQueue.lua
 Modules\SkillUp.lua
 Modules\GearScore.lua
 Modules\DungeonGuide.lua
+Modules\DungeonJournal.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua
 Modules\Handoffs.lua
