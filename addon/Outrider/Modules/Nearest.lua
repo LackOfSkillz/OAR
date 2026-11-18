@@ -239,7 +239,7 @@ function M:ActualDeath()
   -- even if a client reports UnitIsDead during the feign animation.
   if C.Readable(C.Call("UnitIsFeignDeath", "player")) == true then return false end
   local feign = C.Call("C_UnitAuras.GetPlayerAuraBySpellID", 5384)
-  if type(feign) == "table" and C.Readable(feign.spellId or feign.spellID) == 5384 then return false end
+  if type(feign) == "table" then return false end -- queried specifically for Feign Death (5384)
   local ghost = C.Readable(C.Call("UnitIsGhost", "player"))
   if ghost == true then return true end
   local dead = C.Readable(C.Call("UnitIsDeadOrGhost", "player"))
