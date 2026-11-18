@@ -3,7 +3,7 @@
   "branch": "p1-foundation",
   "source_head": "54f36218b6a6265fe71976e6241696287c45c8f8",
   "generated": "2026-11-18",
-  "warning": "Quick wins 1-9 have passing automated CI but none has passed real WoW Forever in-game gate. No Works/Matches/Surpasses claim should be recorded without live evidence.",
+  "warning": "Ranks 1-14 have automated tests green but no in-game certification. Remaining 24 ranked builds plus cross-addon acceptance still open; do not call Works or Matches without game evidence.",
   "statuses": [
     "not_started",
     "implemented_unverified",
@@ -166,7 +166,7 @@
       "details": "past 45 rows; \"focus this quest\" dims other pins",
       "competitors": "Questie",
       "notes": "[Q03]",
-      "status": "not_started",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -182,7 +182,7 @@
       "details": "whisper history per person, longer history after reload (50 → 500+), class-coloured names",
       "competitors": "WIM, Prat, Chattynator",
       "notes": "[UI03]",
-      "status": "not_started",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -198,7 +198,7 @@
       "details": "timer starts on leaving, instance ID, delete a wrong entry, lockouts on minimap button hover",
       "competitors": "Nova Instance Tracker",
       "notes": "[D07]",
-      "status": "not_started",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -214,7 +214,7 @@
       "details": "list and count of undiscovered areas; fishing skill per zone; Darkmoon Faire location and next dates",
       "competitors": "Leatrix Maps, NWB",
       "notes": "NEW",
-      "status": "not_started",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -230,7 +230,7 @@
       "details": "open filters (AH sold/won/expired only), keep N slots free, Shift-click take",
       "competitors": "Postal",
       "notes": "[B05]",
-      "status": "not_started",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -1489,8 +1489,8 @@
     }
   ],
   "ci": {
-    "last_verified_code_commit": "19b124ced2c1340c29e44213b8b588dd058299d3",
-    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44297903933",
+    "last_verified_code_commit": "e0f869398f3c5b3af7dcd2603772b96c0b9c724d",
+    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44299730077",
     "conclusion": "success",
     "date": "2026-11-18",
     "game_validation": "not_performed"
@@ -1511,5 +1511,29 @@
     },
     "python_tests": "passed",
     "game_validation": "not_performed"
+  },
+  "batch3": {
+    "range": [
+      10,
+      14
+    ],
+    "state": "tests_green_needs_game",
+    "code_head": "e0f869398f3c5b3af7dcd2603772b96c0b9c724d",
+    "ci_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44299730077",
+    "ci_status": "success",
+    "lua_tests": {
+      "passed": 669,
+      "failed": 0,
+      "syntax_errors": 0
+    },
+    "python_tests": "passed",
+    "game_validation": "not_performed",
+    "caveats": [
+      "Quest-focus map effects require Forever rendering validation",
+      "Chat named-class coloring only when player GUID resolves, whisper history is stored per-character/account as configured and not imported into Blizzard frames",
+      "Lockout expiry is only an estimate based on observed exit and logged instance ID",
+      "Exploration names unavailable from overlay data, reports positions; Faire dates sourced from current community/Forever guides, realm hours unverified",
+      "Auction mail category inference depends on English sender/subject, free-slot reserve only for attachment pickup"
+    ]
   }
 }
