@@ -38,6 +38,7 @@ Outrider is one addon for WoW Forever that replaces a stack of others. It advise
 Two macros per character that follow your spellbook for its whole life: drag key 1 to action slot 1 and key 2 to slot 2. Outrider rewrites them by itself, out of combat, whenever you learn a spell, change weapon, a buff goes on or off, or (druid) your forms change.
 
 - **Make them.** Class page > Fight macros > Make or show the macros (or /ride fight). Then open the macro window, Character tab, and drag them to your bar.
+- **Built for your build.** The macros follow your class, talent build (the tree with the most points; under 10 points the levelling plan), race and level, from researched rotations for every class (PvE and PvP, a ranged and a melee key). Extra keys come with them where they help: Trap for hunters, Pull for warriors and rogues, Reach for paladins, and your race's Burst, Break and Recover keys. /ride fightplan shows what Outrider picked; /ride fightplan pvp or pve chooses the set (auto: PvP in battlegrounds). If one of your own macros misses big parts of your rotation or cuts a channel short, Outrider says so once. Unverified until checked in game.
 - **How a press works.** WoW Forever tries one spell per press. Each macro is ordered: buffs before the pull (only while missing), once-per-pull spells, spells on cooldown, then the always-usable filler. Spam it.
 - **Hunter.** Fight (ranged): Aspect of the Hawk, Hunter's Mark, Auto Shot, Serpent Sting, Arcane Shot, pet sent in. Back to Hawk in a fight when Arcane Shot is cooling down. Strike (melee): Aspect of the Monkey, Wing Clip once, Raptor Strike, Immolation Trap (at your feet, when ready), Mongoose Bite. Pet: Revive, Call or Mend Pet.
 - **Warrior.** Fight: Charge, Battle Shout, Rend once, Mortal Strike / Bloodthirst / Shield Slam, Heroic Strike. Strike: Overpower, Revenge, Execute, Thunder Clap, Cleave - press it when one lights up.
@@ -210,6 +211,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride favor` | Merchant's Favor balance and what your crates need |
 | `/ride feed` | show the last 10 notifications |
 | `/ride fight` | [concussive\|wingclip\|pet\|auto on\|off]  make, show or change your class's Fight macros (every class) |
+| `/ride fightplan` | pve\|pvp\|auto  which fight macros to use; no word: what Outrider picked for you |
 | `/ride fights` | fights [list\|show\|toast on\|toast off]  Blizzard post-fight meter |
 | `/ride find` | [text]  find a rare, place, NPC, gear upgrade, macro or tab |
 | `/ride fishkey` | <KEY>\|off  the key that casts Fishing and hooks the bobber |

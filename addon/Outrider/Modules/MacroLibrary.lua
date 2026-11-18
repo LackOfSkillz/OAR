@@ -173,17 +173,68 @@ end
 -- --------------------------------------------------------------- tab
 local STATE_COLOR = { ready = "text", installed = "good", changed = "warn" }
 
+-- Build- and level-aware list (Gary, 2026-11-18: "a rogue ... should only be
+-- presented with rogue macros ... and the recommendations based on their
+-- build and their level"). Entries() is already this class only; Sections()
+-- orders them: Recommended for you (the fight keys written for your build,
+-- then pack macros for your build and level), From level N (not yet), and
+-- Other builds (tagged for another talent tree of your class).
+M.SPEC_TAG = { survival = "sv", marksmanship = "mm", beastmastery = "bm", ["beast mastery"] = "bm" }
+local function specTagOf(e, trees)
+  for _, t in ipairs(e.tags or {}) do
+    local tag = M.SPEC_TAG[t] or t
+    for _, tree in ipairs(trees) do if tree == tag then return tag end end
+  end
+end
+
+function M:Sections()
+  local FP = ns.FightPlan
+  local plan = FP and FP.Plan and FP.Plan()
+  local trees = plan and plan.trees or {}
+  local spec = FP and FP.enabled and FP:Spec() or "levelling"
+  local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  local rec, recPack, later, other = {}, {}, {}, {}
+  for _, e in ipairs(self:Entries()) do
+    local tag = specTagOf(e, trees)
+    local st = self:State(e)
+    if e.dynamic then rec[#rec + 1] = e
+    elseif tag and spec ~= "levelling" and tag ~= spec then other[#other + 1] = e
+    elseif (e.level and e.level > level) or not (st == "ready" or st == "installed" or st == "changed") then later[#later + 1] = e
+    else recPack[#recPack + 1] = e end
+  end
+  table.sort(later, function(a, b) return (a.level or 0) < (b.level or 0) end)
+  local out = {}
+  local function section(title, list)
+    if #list == 0 then return end
+    out[#out + 1] = { header = title }
+    for _, e in ipairs(list) do out[#out + 1] = e end
+  end
+  section("Recommended for you", rec)
+  section(#rec > 0 and "Also good for your build" or "Recommended for you", recPack)
+  section("Not yet (level or spell to learn)", later)
+  section("Other builds of your class", other)
+  return out, spec, level
+end
+
 ns.Hub:AddTab("macros", "Macros", function(p)
   p.list = UI:ScrollList(p, {
     rows = 13, rowHeight = 26,
     render = function(row, e)
+      if e.header then
+        row.text:SetText("|cfff1d58e" .. string.upper(e.header) .. "|r")
+        return
+      end
       local st = M:State(e)
-      row.text:SetText(string.format("%s%s|r  %s", ns.Theme:Hex(STATE_COLOR[st] or "muted"), e.name, st))
+      local when = e.level and e.level > (tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1) and ("at " .. e.level) or st
+      row.text:SetText(string.format("  %s%s|r  |cff8f96a6%s|r", ns.Theme:Hex(STATE_COLOR[st] or "muted"), e.name, when))
     end,
-    onClick = function(e) p:ShowEntry(e) end,
+    onClick = function(e) if not e.header then p:ShowEntry(e) end end,
   })
-  p.list:SetPoint("TOPLEFT", 0, 0)
-  p.list:SetWidth(230)
+  -- who these are for: "Rogue · Combat · level 24"
+  p.who = UI.Text(p, "normal", "goldText")
+  p.who:SetPoint("TOPLEFT", 2, 0)
+  p.list:SetPoint("TOPLEFT", 0, -22)
+  p.list:SetWidth(260)
   local d = UI:Card(p)   -- Expedition look: the selected macro sits in a card
   d:SetPoint("TOPLEFT", p.list, "TOPRIGHT", 12, 0)
   d:SetPoint("BOTTOMRIGHT", -4, 0)
@@ -244,8 +295,14 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     d.msg:SetText((st ~= "ready" and st ~= "installed" and st ~= "changed") and ("Not yet: " .. st) or "")
   end
   function p:Refresh()
-    local entries = M:Entries()
+    local entries, spec, level = M:Sections()
+    local FP = ns.FightPlan
+    local cls = ns.PlayerClass() or ""
+    local specName = FP and FP.SPEC_NAMES and FP.SPEC_NAMES[spec] or spec
+    self.who:SetText(string.format("%s%s  ·  %s  ·  level %d", cls:sub(1, 1), cls:sub(2):lower(), ns.TitleCase(specName or ""), level))
     self.list:SetItems(entries)
-    if self.current then self:ShowEntry(self.current) elseif entries[1] then self:ShowEntry(entries[1]) end
+    local first
+    for _, e in ipairs(entries) do if not e.header then first = e break end end
+    if self.current then self:ShowEntry(self.current) elseif first then self:ShowEntry(first) end
   end
 end, 42)

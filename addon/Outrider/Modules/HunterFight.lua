@@ -76,7 +76,16 @@ function M.WatchState()
 end
 function M.MonkeyOn() return M.AuraOn("Aspect of the Monkey") end
 
-function M:Kinds() return M.CLASS_KINDS[ns.PlayerClass()] or {} end
+function M:Kinds()
+  local base = M.CLASS_KINDS[ns.PlayerClass()] or {}
+  -- the plan adds keys (Pull, Reach, Strike for casters) and the class/race
+  -- utility keys (Trap, Burst, Break, Recover); Modules/FightPlan.lua
+  local FP = ns.FightPlan
+  if not (FP and FP.enabled) then return base end
+  local out = FP:Kinds(base)
+  for _, u in ipairs(FP:Utility()) do out[#out + 1] = u.kind end
+  return out
+end
 function M:Supported() return M.CLASS_KINDS[ns.PlayerClass()] ~= nil end
 
 local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
@@ -146,6 +155,22 @@ function M:Lines(kind)
   local L = {}
   local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
   local cls = ns.PlayerClass()
+  -- Class/spec/race/level plans first (Modules/FightPlan.lua, research
+  -- 2026-11-18); the hand-built orders below stay as the fallback.
+  local FP = ns.FightPlan
+  if FP and FP.enabled then
+    for _, u in ipairs(FP:Utility()) do
+      if u.kind == kind then
+        local k = 1
+        for l in u.text:gmatch("[^\n]+") do
+          if not l:find("^#showtooltip") then add(k, l, u.why) k = k + 1 end
+        end
+        return L
+      end
+    end
+    if FP:Lines(kind, add) then return L end
+    L = {}
+  end
   if CASTER[cls] then CASTER[cls](kind, add) return L end
   if cls ~= "HUNTER" then return L end
   -- Pet key (Gary got his pet, 2026-11-12): one button for pet care, out of
@@ -260,6 +285,19 @@ function M:Entry(kind)
   local s = self:Settings()
   local body = self:Body(kind)
   local cls = ns.PlayerClass()
+  -- keys the plan added (Pull, Reach, Trap, Burst, Break, Recover...) carry its names
+  local FP = ns.FightPlan
+  if FP and FP.enabled and not (kind == "ranged" or kind == "heal" or kind == "pet" or (kind == "melee" and M.CLASS_KINDS[cls] and
+    (function() for _, k in ipairs(M.CLASS_KINDS[cls]) do if k == "melee" then return true end end end)())) then
+    local name = FP:Name(kind)
+    for _, u in ipairs(FP:Utility()) do if u.kind == kind then name = u.name end end
+    if kind == "melee" then name = s.meleeName end
+    if name then
+      return { id = cls:lower() .. "-" .. kind, name = name, class = cls, body = body, scope = "char",
+        tags = { "combat" }, dynamic = true, empty = M.Spells(self:Lines(kind)) == 0,
+        explain = "From the fight plan for your class, spec and race. Outrider rewrites it when you learn a spell." }
+    end
+  end
   if cls ~= "HUNTER" then
     local name = kind == "heal" and s.healName or kind == "melee" and s.meleeName or s.name
     return { id = cls:lower() .. "-" .. (M.SUFFIX[kind] or kind), name = name, class = cls, body = body, scope = "char",

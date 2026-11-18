@@ -64,6 +64,7 @@ Data\Macros_Warlock.lua
 Data\Macros_Druid.lua
 Data\Macros_Shaman.lua
 Data\Macros_Paladin.lua
+Data\FightPlans.lua
 Data\StatWeights.lua
 Data\Herbs.lua
 Data\Transports.lua
@@ -82,6 +83,7 @@ Modules\MacroLibrary.lua
 Modules\RankCheck.lua
 Modules\HunterFight.lua
 Modules\ClassFight.lua
+Modules\FightPlan.lua
 Modules\HealPanel.lua
 Modules\Census.lua
 Modules\InfoBar.lua
