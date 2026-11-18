@@ -19,12 +19,13 @@ local M = ns:NewModule("Mailbox", {
   title = "Mailbox collect",
   phase = "P5",
   order = 77,
-  defaults = {},
+  defaults = { filter = "all", keepFree = 0 },
 })
 ns.Mailbox = M
 
 M.WARN_DAYS = 3
 M.RECENT = 8
+M.FILTERS = { "all", "sold", "won", "expired" }
 
 function M:OnInitialize()
   local g = ns.db.global
@@ -33,15 +34,38 @@ function M:OnInitialize()
   self.expiry, self.recent = g.mailExpiry, g.mailRecent
 end
 
--- Mails with money or items and no COD: { {index, money, items, days} }
+function M.MailKind(sender, subject)
+  if type(sender) ~= "string" or type(subject) ~= "string" then return "other" end
+  -- Conservative English subject classification; uncertain/localized messages
+  -- stay in "all", never silently classified as auction sales.
+  local from, title = sender:lower(), subject:lower()
+  if not (from:find("auction", 1, true) or title:find("auction", 1, true)) then return "other" end
+  if title:find("sold", 1, true) or title:find("successful", 1, true) then return "sold" end
+  if title:find("won", 1, true) then return "won" end
+  if title:find("expired", 1, true) or title:find("outbid", 1, true) then return "expired" end
+  return "other"
+end
+
+function M:BagSpaceOK()
+  local keep = tonumber(self:Settings().keepFree) or 0
+  if keep <= 0 then return true end
+  local free = ns.InfoBar and ns.InfoBar.Bags and ns.InfoBar.Bags()
+  return type(free) == "number" and free > keep
+end
+
+-- Mails with money or items and no COD: { {index, money, items, days, kind} }
 function M:Collectable()
   local out = {}
   for i = 1, (C.Call("GetInboxNumItems") or 0) do
     -- 8 return values; C.Call passes only 5, so call directly
-    local ok, _, _, _, _, money, cod, days, items = pcall(GetInboxHeaderInfo, i)
+    local ok, _, _, sender, subject, money, cod, days, items = pcall(GetInboxHeaderInfo, i)
     if not ok then money, cod, items = 0, 0, 0 end
-    money, cod, items = money or 0, cod or 0, items or 0
-    if cod == 0 and (money > 0 or items > 0) then out[#out + 1] = { index = i, money = money, items = items, days = tonumber(days) } end
+    money, cod, items = tonumber(C.Readable(money)) or 0, tonumber(C.Readable(cod)) or 0, tonumber(C.Readable(items)) or 0
+    local kind = M.MailKind(C.Readable(sender), C.Readable(subject))
+    local filter = self:Settings().filter or "all"
+    if cod == 0 and (money > 0 or items > 0) and (filter == "all" or filter == kind) then
+      out[#out + 1] = { index = i, money = money, items = items, days = tonumber(C.Readable(days)), kind = kind }
+    end
   end
   return out
 end
@@ -135,7 +159,7 @@ function M:BuildSendTo()
   local anchor = self.button or self:Build()
   local f = CreateFrame("Frame", nil, anchor:GetParent())
   f:SetSize(150, 10)
-  f:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -10)
+  f:SetPoint("TOPLEFT", self.filterButton or anchor, "BOTTOMLEFT", 0, -10)
   f.head = UI.Text(f, "small", "muted")
   f.head:SetPoint("TOPLEFT", 0, 0)
   f.head:SetText("Send to")
@@ -166,10 +190,18 @@ function M:RefreshSendTo()
   f:SetShown(#list > 0)
 end
 
-function M:CollectOne()
+function M:CollectOne(preferItem)
   if C.InCombat() then return nil end
   local mail = self:Collectable()[1]
   if not mail then return nil end
+  if preferItem and mail.items > 0 and self:BagSpaceOK() then
+    for a = 1, (rawget(_G, "ATTACHMENTS_MAX_RECEIVE") or 16) do
+      if C.Call("GetInboxItemLink", mail.index, a) then
+        if pcall(TakeInboxItem, mail.index, a) then return "item" end
+        return nil
+      end
+    end
+  end
   if mail.money > 0 then
     if pcall(TakeInboxMoney, mail.index) then
       self:Debug("took %s from mail %d", ns.Prices.Money(mail.money), mail.index)
@@ -177,6 +209,7 @@ function M:CollectOne()
     end
     return nil
   end
+  if not self:BagSpaceOK() then return nil end
   for a = 1, (rawget(_G, "ATTACHMENTS_MAX_RECEIVE") or 16) do
     if C.Call("GetInboxItemLink", mail.index, a) then
       if pcall(TakeInboxItem, mail.index, a) then return "item" end
@@ -189,13 +222,23 @@ function M:Build()
   if self.button then return self.button end
   local anchor = rawget(_G, "MailFrame") or UIParent
   local b = UI:Button(anchor, "Collect", 150, function()
-    local got = M:CollectOne()
+    local got = M:CollectOne(C.Call("IsShiftKeyDown"))
     if got then M.taken = (M.taken or 0) + 1 end
     ns.Timer.After(0.4, function() M:Refresh() end, "mail:refresh")
   end)
   b:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 6, -30)
   b:Hide()
   self.button = b
+  local filter = UI:Button(anchor, "All mail", 150, function()
+    local s = M:Settings()
+    local pos = 1
+    for i, value in ipairs(M.FILTERS) do if value == s.filter then pos = i break end end
+    s.filter = M.FILTERS[pos % #M.FILTERS + 1]
+    M:Refresh()
+  end)
+  filter:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -4)
+  filter:Hide()
+  self.filterButton = filter
   return b
 end
 
@@ -209,11 +252,14 @@ function M:Refresh()
   b.label:SetText(n > 0 and ("Collect (" .. n .. " mail: " .. table.concat(what, ", ") .. ")") or "Nothing to collect")
   UI.Tip(b, "Collect", "Each click takes one thing: the gold, else one item, from the first mail. Waiting: " ..
     (n > 0 and table.concat(what, " and ") or "nothing") .. ". Cash-on-delivery mail is never touched.")
+  if self.filterButton then
+    self.filterButton.label:SetText("Mail: " .. (self:Settings().filter or "all"))
+  end
   self:NoteExpiry()
 end
 
 function M:OnEnable()
-  self:On("MAIL_SHOW", function(mod) mod.taken = 0 mod:Build():Show() mod:Refresh() mod:RefreshSendTo() end)
+  self:On("MAIL_SHOW", function(mod) mod.taken = 0 mod:Build():Show() if mod.filterButton then mod.filterButton:Show() end mod:Refresh() mod:RefreshSendTo() end)
   self:On("PLAYER_ENTERING_WORLD", function(mod, _, isLogin) if isLogin then mod:WarnExpiring() end end)
   if not self.sendHooked and type(rawget(_G, "SendMail")) == "function" then
     hooksecurefunc("SendMail", function(to) if M.enabled then ns.Safe("mail:remember", M.Remember, M, to) end end)
@@ -222,6 +268,7 @@ function M:OnEnable()
   self:On("MAIL_INBOX_UPDATE", function(mod) mod:Refresh() end)
   self:On("MAIL_CLOSED", function(mod)
     if mod.button then mod.button:Hide() end
+    if mod.filterButton then mod.filterButton:Hide() end
     if mod.sendTo then mod.sendTo:Hide() end
     if (mod.taken or 0) > 0 then mod:Info("collected %d things from mail", mod.taken) mod.taken = 0 end
   end)
@@ -229,7 +276,25 @@ end
 
 function M:OnDisable()
   if self.button then self.button:Hide() end
+  if self.filterButton then self.filterButton:Hide() end
   if self.sendTo then self.sendTo:Hide() end
 end
 
 function M:Activity() return "Collect button at the mailbox (one thing per click, COD skipped)" end
+
+ns.AddCommand("mail", "mail all|sold|won|expired | free <slots>", function(arg)
+  local s = M:Settings()
+  arg = tostring(arg or "")
+  local n = tonumber(arg:match("^free%s+(%d+)$"))
+  if n and n >= 0 and n <= 100 then
+    s.keepFree = math.floor(n)
+    ns.Print("mail: reserve %d free bag slots before taking attachments", s.keepFree)
+  else
+    local valid
+    for _, v in ipairs(M.FILTERS) do if arg == v then valid = true break end end
+    if valid then s.filter = arg
+    else ns.Print("usage: /ride mail all|sold|won|expired | free <slots>") return end
+    ns.Print("mail filter: %s", s.filter)
+  end
+  M:Refresh()
+end)
