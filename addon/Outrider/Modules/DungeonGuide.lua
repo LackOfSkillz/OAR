@@ -109,6 +109,37 @@ ns.AddCommand("dungeonquests", "dungeonquests <dungeon name> | link <questID> <d
   end
 end)
 
+-- Boss loot is taken directly from the loaded dungeon pack, not scraped
+-- dynamically, and is only as complete as that pack's last import.
+function M:BossLoot(bossName)
+  local out = {}
+  local needle = type(bossName) == "string" and bossName:lower() or ""
+  if needle == "" then return out end
+  for _, dungeon in pairs(self:ByName()) do
+    for _, boss in ipairs(dungeon.bosses) do
+      if tostring(boss[2]):lower():find(needle, 1, true) then
+        for _, itemID in ipairs(boss[5] or {}) do
+          local item = dungeon.items[itemID]
+          out[#out + 1] = { id = itemID, name = item and item[1] or ("item " .. itemID),
+            boss = boss[2], dungeon = dungeon.name, source = "imported boss loot" }
+        end
+      end
+    end
+  end
+  table.sort(out, function(a, b) return a.id < b.id end)
+  return out
+end
+
+ns.AddCommand("bossloot", "bossloot <boss name>  known boss drops, with wishlist markers", function(arg)
+  local loot = M:BossLoot(arg)
+  if #loot == 0 then ns.Print("no boss loot matches in installed dungeon pack") return end
+  for i, row in ipairs(loot) do
+    if i > 35 then break end
+    local marked = ns.BagExtras and ns.BagExtras:Wishlist()[row.id]
+    ns.Print("%s: %s [item %d]%s", row.boss, row.name, row.id, marked and " (WISHLIST)" or "")
+  end
+end)
+
 -- Upgrades for this character from one dungeon: now = usable today, later = needs a few more levels.
 -- { {itemID, name, boss, pct, slot, reqLevel, later} } best first
 function M:Upgrades(d)
