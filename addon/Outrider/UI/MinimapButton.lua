@@ -21,6 +21,12 @@ local function onTooltip(tt)
   if #ns.Errors.list > 0 then tt:AddLine(#ns.Errors.list .. " error(s): /ride errors", 1, 0.4, 0.4) end
   local unread = ns.Feed and ns.Feed:Unread() or 0
   if unread > 0 then tt:AddLine(unread .. " new in the Feed tab", 1, 0.78, 0.3) end
+  if ns.Alts and ns.Alts.enabled then
+    local lk = ns.Alts:Lockouts()
+    tt:AddLine(string.format("Instances (estimated): %d/%d hour, %d/%d day",
+      lk.hour, ns.Alts.HOUR_LIMIT, lk.day, ns.Alts.DAY_LIMIT), 0.9, 0.75, 0.3)
+    if lk.freeAt then tt:AddLine("Next estimated slot: " .. date("%H:%M", lk.freeAt), 0.8, 0.8, 0.8) end
+  end
   tt:AddLine("Left click: open   Right click: settings   Drag: move", 0.56, 0.82, 1)
 end
 
