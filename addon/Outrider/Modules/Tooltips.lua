@@ -13,7 +13,7 @@ local M = ns:NewModule("Tooltips", {
   title = "Tooltip style and target line",
   phase = "P7",
   order = 102,
-  defaults = { target = true },
+  defaults = { target = true, hideInCombat = true, questLeft = true },
   yieldsTo = { "TipTac", "ElvUI", "TinyTooltip" },
 })
 ns.Tooltips = M
@@ -47,7 +47,51 @@ function M.BorderFor(unit)
   return cc and { cc.r, cc.g, cc.b } or nil
 end
 
+function M:ShouldHide()
+  return self:Settings().hideInCombat and C.InCombat() and
+    not C.Call("IsShiftKeyDown")
+end
+
+function M:EnforceVisibility(tip)
+  if tip == rawget(_G, "GameTooltip") and self.enabled and self:ShouldHide() then
+    tip:Hide()
+    return true
+  end
+  return false
+end
+
+-- The typed quest objective tooltip lines are already supplied by the client.
+-- Report only incomplete counters and never guess quest progress in combat.
+function M:QuestProgress(unit)
+  if not unit or not self:Settings().questLeft then return {} end
+  local data = C.Call("C_TooltipInfo.GetUnit", unit)
+  if type(data) ~= "table" or type(data.lines) ~= "table" then return {} end
+  local out = {}
+  for _, line in ipairs(data.lines) do
+    local val = type(line) == "table" and C.Readable(line.leftText)
+    if line and line.type == 8 and type(val) == "string" then
+      local have, need = val:match("(%d+)%s*/%s*(%d+)")
+      have, need = tonumber(have), tonumber(need)
+      if have and need and need > have and need <= 10000 then
+        local desc = val:gsub("^[%s%-]+", ""):gsub(":%s*%d+%s*/%s*%d+.*$", "")
+        out[#out + 1] = string.format("Quest: %s (%d left)", desc, need - have)
+        if #out >= 4 then break end
+      end
+    end
+  end
+  return out
+end
+
 function M:OnEnable()
+  local tooltip = rawget(_G, "GameTooltip")
+  if tooltip and tooltip.HookScript and not self.visibilityHooked then
+    self.visibilityHooked = true
+    tooltip:HookScript("OnShow", function(tip) M:EnforceVisibility(tip) end)
+  end
+  self:On("PLAYER_REGEN_DISABLED", function(mod)
+    local tip = rawget(_G, "GameTooltip")
+    if tip then mod:EnforceVisibility(tip) end
+  end)
   if self.hooked then return end
   self.hooked = true
   local add = C.Resolve("TooltipDataProcessor.AddTooltipPostCall")
@@ -57,6 +101,7 @@ function M:OnEnable()
   -- every tooltip: Clean dark; unit tooltips: class border for players
   add(all or unitEnum, function(tip)
     if not M.enabled or tip ~= rawget(_G, "GameTooltip") then return end
+    if M:EnforceVisibility(tip) then return end
     local unit
     if tip.GetUnit then local ok, _, u = pcall(tip.GetUnit, tip) unit = ok and u or nil end
     ns.Safe("Tooltips:style", M.Style, M, tip, M.BorderFor(unit))
@@ -77,3 +122,13 @@ ns.TooltipLines:Add("unit", "target", M, function(tip)
 end)
 
 function M:Activity() return "Clean dark tooltips, class borders for players, target line" end
+
+-- Objective progress available in NPC tooltip data, not the combat log.
+ns.TooltipLines:Add("unit", "questleft", M, function(tip)
+  if not tip.GetUnit or M:ShouldHide() then return nil end
+  local _, unit = tip:GetUnit()
+  local lines = M:QuestProgress(unit)
+  local out = {}
+  for _, v in ipairs(lines) do out[#out + 1] = { v, "good" } end
+  return out
+end)
