@@ -23,7 +23,7 @@ function UI:ScrollList(parent, opts)
     local row = CreateFrame("Button", nil, list)
     row:SetHeight(rowH)
     row:SetPoint("TOPLEFT", 2, -2 - (i - 1) * rowH)
-    row:SetPoint("RIGHT", list, "RIGHT", -2, 0)
+    row:SetPoint("RIGHT", list, "RIGHT", -9, 0) -- room for the scroll bar
     -- Expedition look: faint stripe on every other row, gold-tinted hover
     if i % 2 == 0 then
       local stripe = row:CreateTexture(nil, "BACKGROUND")
@@ -47,6 +47,26 @@ function UI:ScrollList(parent, opts)
   end
   list:EnableMouseWheel(true)
   list:SetScript("OnMouseWheel", function(self, delta) self:Scroll(-delta * (opts.wheelStep or 3)) end)
+  -- A slim gold scroll bar whenever there's more than fits (premium plan B7:
+  -- All commands looked like it ended at "errands"). Drag-free: the wheel scrolls.
+  list.track = list:CreateTexture(nil, "ARTWORK")
+  list.track:SetPoint("TOPRIGHT", -3, -3)
+  list.track:SetPoint("BOTTOMRIGHT", -3, 3)
+  list.track:SetWidth(4)
+  list.track:SetColorTexture(Theme:Color("bg"))
+  list.thumb = list:CreateTexture(nil, "OVERLAY")
+  list.thumb:SetWidth(4)
+  list.thumb:SetColorTexture(Theme:Color("gold"))
+  function list:UpdateBar()
+    local total, shown = #self.items, #self.rowFrames
+    if total <= shown then self.track:Hide() self.thumb:Hide() return end
+    local h = (self:GetHeight() or (shown * rowH)) - 6
+    local th = math.max(18, h * shown / total)
+    self.thumb:ClearAllPoints()
+    self.thumb:SetPoint("TOPRIGHT", self, "TOPRIGHT", -3, -3 - (h - th) * self.offset / math.max(1, self:MaxOffset()))
+    self.thumb:SetHeight(th)
+    self.track:Show() self.thumb:Show()
+  end
 
   function list:MaxOffset() return math.max(0, #self.items - #self.rowFrames) end
   function list:SetOffset(o)
@@ -70,6 +90,7 @@ function UI:ScrollList(parent, opts)
         row:Hide()
       end
     end
+    self:UpdateBar()
   end
   -- Items currently on screen (used by tests and by "visible only" work).
   function list:VisibleItems()

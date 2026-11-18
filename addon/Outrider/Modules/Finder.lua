@@ -113,11 +113,17 @@ function P.item(out, text)
   end
 end
 
+-- Quests you can do now. Red ones (5+ levels above you) are left out: they
+-- topped "best quests" by raw XP although you can't do them yet (Gary's tour,
+-- 2026-11-18: "A Sealed Crate [60]" three times for a level 20). A quest with
+-- several givers is listed once; Find() keeps the nearest after timing.
 function P.quest(out)
   local level = C.Call("UnitLevel", "player") or 1
   for _, q in ipairs(available()) do
-    add(out, "quest", q.name, q.mapID, q.x, q.y, { level = q.level, diff = q.diff, questID = q.id,
-      xp = ns.Journey.XP(q.level, level), sub = "from " .. tostring(q.giver) })
+    if q.diff ~= "red" then
+      add(out, "quest", q.name, q.mapID, q.x, q.y, { level = q.level, diff = q.diff, questID = q.id,
+        xp = ns.Journey.XP(q.level, level), sub = "from " .. tostring(q.giver) })
+    end
   end
 end
 
@@ -319,6 +325,18 @@ function M:Find(opts)
       out[#out + 1] = e
     end
   end
+  -- one row per quest: keep its nearest giver
+  local best, dedup = {}, {}
+  for _, e in ipairs(out) do
+    if e.kind == "quest" and e.questID then
+      local b = best[e.questID]
+      if not b or (e.seconds or 1e12) < (b.seconds or 1e12) then best[e.questID] = e end
+    end
+  end
+  for _, e in ipairs(out) do
+    if not (e.kind == "quest" and e.questID) or best[e.questID] == e then dedup[#dedup + 1] = e end
+  end
+  out = dedup
   local sort = opts.sort or M.DEFAULT_SORT[kind] or "nearest"
   local cmp = SORTERS[sort]
   if sort == "level" then

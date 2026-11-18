@@ -14,7 +14,10 @@ local function session()
     { 601, "vendor", 0.40, 0.40, "Ama Breadbaker", "Food & Drink", nil, nil },
     { 602, "quest_giver", 0.45, 0.45, "Fillion Flamebreeze", nil, nil, {
       { 701, "The Missing Scholar", 1, 13, nil, 0, {}, {} },
-      { 702, "Old Errand", 1, 4, nil, 0, {}, {} } } },
+      { 702, "Old Errand", 1, 4, nil, 0, {}, {} },
+      { 703, "A Sealed Crate", 1, 60, nil, 0, {}, {} } } },
+    { 603, "quest_giver", 0.90, 0.90, "Far Fillion", nil, nil, {
+      { 701, "The Missing Scholar", 1, 13, nil, 0, {}, {} } } },
   } } }
   rawset(game.env, "Outrider_DataMobs", game.base.Outrider_DataMobs)
   rawset(game.env, "Outrider_DataNPC", game.base.Outrider_DataNPC)
@@ -77,5 +80,14 @@ T.describe("finder", function()
     T.ok(ns.Journey.goal, "guiding")
     T.ok(ns.Waypoints.current, "arrow set")
     T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("best quests skip ones far above your level and list each quest once", function()
+    local game, ns = session()
+    local list = ns.Finder:Find({ kind = "quest" })
+    T.no(has(list, "A Sealed Crate"), "a level 60 quest is not suggested to a level 13")
+    local n = 0
+    for _, e in ipairs(list) do if e.name == "The Missing Scholar" then n = n + 1 end end
+    T.eq(n, 1, "two givers, one row")
   end)
 end)

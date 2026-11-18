@@ -1108,17 +1108,26 @@ end)
 ns.Hub:AddTab("commands", "All commands", function(p)
   local head = UI.Text(p, "small", "muted")
   head:SetPoint("TOPLEFT", 0, 0)
-  head:SetText("Every Outrider command. Click one, add what it needs, then Run. Results show in chat.")
+  head:SetText("Every Outrider command. Type to filter, click one, add what it needs, then Run. Results show in chat.")
+  p.filter = UI:SearchBox(p, 220, "filter commands")
+  p.filter:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, 2)
+  p.filter:HookScript("OnTextChanged", function() if p.Refresh then p:Refresh() end end)
+  p.count = UI.Text(p, "small", "muted")
+  p.count:SetPoint("RIGHT", p.filter, "LEFT", -10, 0)
   p.list = UI:ScrollList(p, {
-    rows = 14, rowHeight = 22,
-    render = function(row, c) row.text:SetText(string.format("%s  |cffbbbbbb%s|r", c.name, c.usage)) end,
+    rows = 22, rowHeight = 22,
+    -- the usage repeats the name ("bossloot bossloot <boss>"): show it once
+    render = function(row, c)
+      local usage = tostring(c.usage or ""):gsub("^" .. c.name:gsub("%p", "%%%0") .. "%s*", "")
+      row.text:SetText(string.format("|cfff1d58e%s|r   |cffc3c8d2%s|r", c.name, usage))
+    end,
     onClick = function(c) p.current = c p.label:SetText(c.name) p.box:SetText("") p.box:SetFocus() end,
   })
-  p.list:SetPoint("TOPLEFT", 0, -18)
+  p.list:SetPoint("TOPLEFT", 0, -26)
   p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  p.label = UI.Text(p, "large", "accent")
+  p.label = UI.Text(p, "large", "goldText")
   p.label:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -10)
-  p.label:SetText("pick a command")
+  p.label:SetText("Pick a command")
   p.box = UI:SearchBox(p, 300, "what it needs, if anything")
   p.box:SetPoint("LEFT", p.label, "RIGHT", 10, 0)
   local function run()
@@ -1133,9 +1142,13 @@ ns.Hub:AddTab("commands", "All commands", function(p)
     local out = {}
     for _, name in ipairs(ns.Slash.order) do
       local c = ns.Slash.commands[name]
-      if c then out[#out + 1] = { name = name, usage = c.usage } end
+      local q = tostring(self.filter and self.filter:GetText() or ""):lower()
+      if c and (q == "" or name:find(q, 1, true) or tostring(c.usage or ""):lower():find(q, 1, true)) then
+        out[#out + 1] = { name = name, usage = c.usage }
+      end
     end
     table.sort(out, function(a, b) return a.name < b.name end)
     self.list:SetItems(out)
+    self.count:SetText(#out .. " commands")
   end
 end)
