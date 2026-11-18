@@ -95,15 +95,18 @@ function M:Lines(prof, target)
   local ranked = self:Rank(prof)
   for i = 1, math.min(5, #ranked) do
     local r = ranked[i]
-    lines[#lines + 1] = string.format("  %s (%s): %s per point", r.name, r.color,
-      r.perPoint and ns.Prices.Money(math.floor(r.perPoint + 0.5)) or "price unknown")
+    -- 0 means "nothing to buy": materials owned or not priced yet, never "0c"
+    local cost = r.perPoint and r.perPoint >= 1 and (ns.Prices.Money(math.floor(r.perPoint + 0.5)) .. " per point")
+      or r.perPoint and "nothing to buy (in your bags, or not priced yet)" or "price unknown"
+    lines[#lines + 1] = string.format("  %s (%s): %s", r.name, r.color, cost)
   end
   if #ranked == 0 then lines[#lines + 1] = "  no recipe gives skill right now (or colors not scanned yet)" end
   if target > skill then
     local route = self:Route(prof, target - skill)
-    lines[#lines + 1] = string.format("Route to %d (about %s, colors change as you go):", target, ns.Prices.Money(math.floor(route.cost + 0.5)))
+    local total = route.cost >= 1 and ("about " .. ns.Prices.Money(math.floor(route.cost + 0.5))) or "nothing to buy that's priced"
+    lines[#lines + 1] = string.format("Route to %d (%s, colors change as you go):", target, total)
     for _, s in ipairs(route.steps) do
-      lines[#lines + 1] = string.format("  %d x %s (%s)", s.crafts, s.name, ns.Prices.Money(math.floor(s.cost + 0.5)))
+      lines[#lines + 1] = string.format("  %d x %s%s", s.crafts, s.name, s.cost >= 1 and (" (" .. ns.Prices.Money(math.floor(s.cost + 0.5)) .. ")") or "")
     end
     if route.short then lines[#lines + 1] = "  not enough priced recipes to get all the way: browse the AH for their materials" end
   end

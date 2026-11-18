@@ -330,8 +330,10 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       local out = {
         { ok = true, icon = "Interface\\Icons\\Trade_Fishing", text = skill and string.format("Fishing %d / %d", skill, max or 0) or "Fishing not learned yet" },
         { ok = true, icon = "Interface\\Icons\\INV_Misc_Fish_02", text = string.format("%d fish in %d casts (%s caught)", st.catches, st.casts, M:Rate() and (M:Rate() .. "%") or "?") },
-        { ok = nxt ~= nil, icon = "Interface\\Icons\\Spell_Holy_SurgeOfLight",
-          text = nxt and string.format("About %d more catches to the next point", nxt) or "Next point: measured after two skill-ups" },
+        { ok = nxt ~= nil or (skill and max and skill >= max) or false, warn = true, icon = "Interface\\Icons\\Spell_Holy_SurgeOfLight",
+          -- at the cap there is no next point to measure: say what unlocks more
+          text = (skill and max and skill >= max) and string.format("Capped at %d: train the next rank to keep going", max)
+            or nxt and string.format("About %d more catches to the next point", nxt) or "Next point: measured after two skill-ups" },
       }
       if m then out[#out + 1] = { ok = m.ready, icon = "Interface\\Icons\\INV_Misc_Book_09", text = m.title .. (m.ready and ": ready" or ": not yet") } end
       return out
