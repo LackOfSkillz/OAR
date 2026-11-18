@@ -16,12 +16,12 @@ local M = ns:NewModule("QuestTracker", {
   title = "Quest tracker",
   phase = "P4",
   order = 48,
-  defaults = { show = true, sort = "distance", folded = {}, foldedZones = {}, hideBlizzard = false },
+  defaults = { show = true, sort = "distance", folded = {}, foldedZones = {}, hideBlizzard = false, scrollOffset = 0, focus = nil },
   yieldsTo = { "Questie" },
 })
 ns.QuestTracker = M
 
-M.WIDTH, M.ROW, M.MAX_ROWS = 270, 15, 45
+M.WIDTH, M.ROW, M.MAX_ROWS = 270, 15, 20 -- visible viewport; full log is scrollable
 local function readable(v) return C.Readable(v) end
 
 -- { { zone, quests = { {questID, title, level, complete, objectives} } } } from the log
@@ -140,6 +140,8 @@ function M:Build()
   f.sort:SetHeight(18)
   f.sort:SetPoint("TOPRIGHT", -4, -4)
   f.rows = {}
+  f:EnableMouseWheel(true)
+  f:SetScript("OnMouseWheel", function(_, delta) M:Scroll(-delta * 3) end)
   self.frame = f
   self:Place()
   return f
@@ -175,11 +177,39 @@ function M:Row(i)
   return r
 end
 
+function M:Scroll(delta)
+  local s = self:Settings()
+  local total = #(self:Lines())
+  s.scrollOffset = math.max(0, math.min(math.max(0, total - M.MAX_ROWS), (s.scrollOffset or 0) + delta))
+  self:Refresh()
+end
+
+function M:Focus(questID)
+  local s = self:Settings()
+  if questID and not self:QuestExists(questID) then return false end
+  s.focus = s.focus == questID and nil or questID
+  if ns.MapPins then ns.MapPins:Invalidate() ns.MapPins:Refresh() end
+  local mm = ns.Modules:Get("MinimapPins")
+  if mm and mm.Update then mm:Update() end
+  self:Refresh()
+  return true
+end
+
+function M:QuestExists(questID)
+  for _, z in ipairs(M.Read()) do
+    for _, q in ipairs(z.quests) do if q.questID == questID then return true end end
+  end
+  return false
+end
+
 function M:Click(line, button)
   if not line then return end
   local s = self:Settings()
   if line.zone then
     s.foldedZones[line.zone] = not s.foldedZones[line.zone] or nil
+  elseif line.questID and (button == "MiddleButton" or (button == "LeftButton" and C.Call("IsShiftKeyDown"))) then
+    self:Focus(line.questID)
+    return
   elseif line.questID and button == "RightButton" then
     s.folded[line.questID] = not s.folded[line.questID] or nil
   elseif line.questID and ns.QuestObjectives then
@@ -202,7 +232,7 @@ function M:Hover(row)
       GameTooltip:AddLine(who.name .. (who.done and ": done" or ": " .. table.concat(who.lines, "; ")), ns.Theme:Color("muted"))
     end
   end
-  GameTooltip:AddLine("Click: arrow to it. Right-click: fold.", ns.Theme:Color("muted"))
+  GameTooltip:AddLine("Click: arrow. Right-click: fold. Shift-click: focus/dim other quest pins.", ns.Theme:Color("muted"))
   GameTooltip:Show()
 end
 
@@ -214,17 +244,23 @@ function M:Refresh()
   local lines = self:Lines()
   local n = 0
   for _, l in ipairs(lines) do if l.questID and l.indent == 6 then n = n + 1 end end
-  f.title:SetText(string.format("Quests (%d)", n))
+  local maxOffset = math.max(0, #lines - M.MAX_ROWS)
+  s.scrollOffset = math.min(math.max(0, s.scrollOffset or 0), maxOffset)
+  if s.focus and not self:QuestExists(s.focus) then s.focus = nil end
+  f.title:SetText(string.format("Quests (%d) %d-%d/%d%s", n,
+    #lines > 0 and s.scrollOffset + 1 or 0, math.min(#lines, s.scrollOffset + M.MAX_ROWS), #lines,
+    s.focus and " [focused]" or ""))
   f.sort.label:SetText(s.sort == "distance" and "Nearest" or "Level")
   local shown = math.min(#lines, M.MAX_ROWS)
   for i = 1, shown do
     local r = self:Row(i)
-    local l = lines[i]
+    local l = lines[i + s.scrollOffset]
     r.line = l
     r:ClearAllPoints()
     r:SetPoint("TOPLEFT", f, "TOPLEFT", 8 + (l.indent or 0), -24 - (i - 1) * M.ROW)
     r:SetPoint("RIGHT", f, "RIGHT", -6, 0)
     r.text:SetText(l.text)
+    r:SetAlpha(s.focus and l.questID and l.questID ~= s.focus and 0.45 or 1)
     if l.color then r.text:SetTextColor(ns.Theme:Color(l.color)) else r.text:SetTextColor(1, 1, 1) end
     r:Show()
   end
@@ -265,13 +301,20 @@ function M:OnDisable()
   self:Blizzard()
 end
 
-ns.AddCommand("tracker", "Outrider's quest tracker: /ride tracker on|off|reset|level|nearest", function(arg)
+ns.AddCommand("tracker", "Outrider quest tracker: on|off|reset|level|nearest|up|down|focus <questID>|unfocus", function(arg)
   arg = tostring(arg or ""):lower()
   local s = M:Settings()
   if arg == "on" or arg == "off" then s.show = arg == "on"
   elseif arg == "reset" then s.point = nil M:Place()
   elseif arg == "level" then s.sort = "level"
   elseif arg == "nearest" then s.sort = "distance"
+  elseif arg == "up" then M:Scroll(-M.MAX_ROWS) return
+  elseif arg == "down" then M:Scroll(M.MAX_ROWS) return
+  elseif arg == "unfocus" then M:Focus(nil) return
+  elseif arg:match("^focus%s+%d+$") then
+    local qid = tonumber(arg:match("%d+"))
+    if not M:Focus(qid) then ns.Print("quest not in active log: %d", qid) end
+    return
   else s.show = not s.show end
   M:Refresh()
   ns.Print("quest tracker %s, sorted by %s", s.show and "on" or "off", s.sort == "distance" and "nearest" or "level")
