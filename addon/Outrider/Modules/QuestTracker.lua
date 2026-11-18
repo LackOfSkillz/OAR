@@ -187,7 +187,7 @@ end
 function M:Focus(questID)
   local s = self:Settings()
   if questID and not self:QuestExists(questID) then return false end
-  s.focus = s.focus == questID and nil or questID
+  if s.focus == questID then s.focus = nil else s.focus = questID end
   if ns.MapPins then ns.MapPins:Invalidate() ns.MapPins:Refresh() end
   local mm = ns.Modules:Get("MinimapPins")
   if mm and mm.Update then mm:Update() end
