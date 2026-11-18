@@ -135,12 +135,15 @@ T.describe("corpse navigation", function()
     local game, ns = session()
     ns.Waypoints:Set(1412, 0.6, 0.7, "Before death")
     local original = ns.Waypoints.current
+    -- The client must actually report dead/ghost; Feign Death alone is ignored.
+    game.isGhost = true
     game:fire("PLAYER_DEAD")
     T.eq(ns.Waypoints.current, original)
     game.isGhost = true
     game:fire("PLAYER_ALIVE")
     T.eq(ns.Waypoints.current, original)
     T.ok(ns.Modules:Get("Nearest").corpseTicker)
+    game.isGhost = false
     game:fire("PLAYER_UNGHOST")
     T.eq(ns.Timer.Pending(), 1, "only the existing waypoint arrival timer remains")
   end)
@@ -148,6 +151,8 @@ T.describe("corpse navigation", function()
   T.it("points at the actual corpse after release and restores prior waypoint on resurrection", function()
     local game, ns = session()
     ns.Waypoints:Set(1412, 0.6, 0.7, "Before death")
+    -- The client must actually report dead/ghost; Feign Death alone is ignored.
+    game.isGhost = true
     game:fire("PLAYER_DEAD")
     game.isGhost = true
     game.corpse = { mapID = 1412, x = 0.42, y = 0.31 }
@@ -155,6 +160,7 @@ T.describe("corpse navigation", function()
     T.eq(ns.Waypoints.current.title, "Your corpse")
     T.eq(ns.Waypoints.current.x, 0.42)
     T.eq(ns.Waypoints.current.y, 0.31)
+    game.isGhost = false
     game.isGhost = false
     game:fire("PLAYER_UNGHOST")
     T.eq(ns.Waypoints.current.title, "Before death")
@@ -166,9 +172,12 @@ T.describe("corpse navigation", function()
     local game, ns = session()
     ns.Waypoints:Set(1412, 0.6, 0.7, "Before death")
     game.corpse = { mapID = 1412, x = 0.4, y = 0.3 }
+    -- The client must actually report dead/ghost; Feign Death alone is ignored.
+    game.isGhost = true
     game:fire("PLAYER_DEAD")
     T.eq(ns.Waypoints.current.title, "Your corpse")
     ns.Waypoints:Set(1412, 0.5, 0.5, "My new waypoint")
+    game.isGhost = false
     game:fire("PLAYER_UNGHOST")
     T.eq(ns.Waypoints.current.title, "My new waypoint")
   end)
@@ -177,11 +186,14 @@ T.describe("corpse navigation", function()
     local game, ns = session()
     ns.Waypoints:Set(1412, 0.6, 0.7, "Original journey")
     game.corpse = { mapID = 1412, x = 0.5, y = 0.6 }
+    -- The client must actually report dead/ghost; Feign Death alone is ignored.
+    game.isGhost = true
     game:fire("PLAYER_DEAD")
     T.eq(ns.Waypoints.current.title, "Your corpse")
     game.opts.x, game.opts.y = 0.5, 0.6
     game:advance(1.5)
     T.eq(ns.Waypoints.current, nil, "corpse arrow clears when ghost reaches it")
+    game.isGhost = false
     game:fire("PLAYER_UNGHOST")
     T.eq(ns.Waypoints.current.title, "Original journey")
     T.eq(#ns.Errors.list, 0)
@@ -190,6 +202,8 @@ T.describe("corpse navigation", function()
   T.it("uses no timer when corpse coordinates are immediately available", function()
     local game, ns = session()
     game.corpse = { mapID = 1412, x = 0.5, y = 0.6 }
+    -- The client must actually report dead/ghost; Feign Death alone is ignored.
+    game.isGhost = true
     game:fire("PLAYER_DEAD")
     T.eq(ns.Waypoints.current.title, "Your corpse")
     T.eq(ns.Modules:Get("Nearest").corpseTicker, nil)
