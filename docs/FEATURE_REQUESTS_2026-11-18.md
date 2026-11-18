@@ -81,3 +81,19 @@ Ranked by value for Gary per hour of work:
 6. **#10 Trainer filter**, including the pet trainer.
 7. **#5 Escort ready-check** and **#12 quest gold requirement**: both cheap.
 8. **#2 Crowd gauge**, then **#6 layer age**: bigger, and unique.
+
+---
+
+## Implementation checkpoint: first three requests (2026-11-18)
+
+**Branch:** `p1-foundation` only. **Automated gate:** [710 Lua tests / zero failures / zero syntax errors / Python green](https://github.com/LackOfSkillz/OAR/actions/runs/44349318495). **Live Forever gate:** not yet performed. None is certified Works/Matches/Surpasses until gameplay and competitor option checks.
+
+| Research request | Implementation | Acceptance / dependency |
+|---|---|---|
+| #8 Shift-gated tooltip extras | `UI/TooltipLines.lua`, `UI/Pages.lua`, `Modules/Tooltips.lua`; global Shift-only choice, per-source enabled/disabled, line caps, optional tooltip refresh on Shift, `/ride toolextras` | Shift-only is **opt-in** (existing users retain their current tooltips). Some clients lack tooltip RefreshData; re-hover is supported fallback. Validate actual in-game tooltip kinds and option persistence |
+| #11 Feign Death guard | `Modules/Nearest.lua`: death events remain uncommitted until UnitIsGhost/UnitIsDeadOrGhost/UnitIsDead confirms death, with Feign Death API and aura veto; deferred checks canceled on resurrection. Graveyard learning requires a confirmed ghost state | Verify on real hunter using Feign Death and genuine corpse runs; existing learned data from earlier false samples is not automatically rewritten |
+| #9 Item quest context | `Modules/QuestObjectives.lua` indexes quest starter and objective uses beyond current log, status labels and top-N; `tools/import_questie_quests.py` emits `itemStarts` and `itemUses` reverse indexes for the private quest pack | **Regenerate private quest pack locally** using `python tools/import_questie_quests.py --deploy`. Only quests with imported metadata are shown; no full public quest data included, per licensing constraints |
+
+**User commands:** `/ride toolextras shift` (or `always`), `/ride toolextras limit 2`, `/ride toolextras list`, `/ride toolextras hide questuses` / `show questuses`. The Settings page also provides checkboxes and sliders. For reliable updates to load-on-demand quest data, do a complete game restart after regenerating the private pack. Test no duplicate tooltip lines and no false graveyard observations.
+
+**Remaining requests (all other items in the research table)** have not been built as part of this checkpoint. The recommended next priorities remain #3 pet XP catch-up, #1 quest item drop meter, then #10 trainer filter.
