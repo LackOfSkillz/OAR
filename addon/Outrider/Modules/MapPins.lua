@@ -26,7 +26,7 @@ local COLORS = {
 local LABELS = {
   rare = "Rare", spirit_healer = "Spirit healer", flight_master = "Flight master", vendor = "Vendor",
   repair = "Repair", trainer = "Trainer", bank = "Bank", auction = "Auction house",
-  stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
+  stable_master = "Stable master", mailbox = "Mailbox", note = "Your map note", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
   dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in", qpath = "Quest NPC path",
@@ -42,7 +42,7 @@ local GROUP = {
   trainer = "trainer",
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
-  rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
+  rare = "rare", note = "service", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
   trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
 }
 M.GROUP_COLOR = {
@@ -229,6 +229,7 @@ function M:BuildPins(mapID)
       end
     end
   end
+  if ns.MapTab then for _, note in ipairs(ns.MapTab:NotesFor(mapID)) do out[#out + 1] = note end end
   -- Guildmates sharing their location (P8-04), class colored
   if ns.LocationShare and ns.LocationShare.enabled and not hidden.guildmate then
     local colors = rawget(_G, "RAID_CLASS_COLORS") or {}
@@ -348,6 +349,7 @@ M.MENU = {
   { "Travel and dungeons", { "transport", "ride", "dungeon" } },
   { "Your trail", { "trail" } },
   { "Guildmates", { "guildmate" } },
+  { "Your notes", { "note" } },
 }
 
 function M:AllShown() return not self:Settings().off end
@@ -449,7 +451,7 @@ end
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
-local NO_MERGE = { rare = true, guild = true, trail = true, ride = true, transport = true }
+local NO_MERGE = { rare = true, note = true, guild = true, trail = true, ride = true, transport = true }
 
 function M.Declutter(pins, px, py)
   local out, cells = {}, {}
