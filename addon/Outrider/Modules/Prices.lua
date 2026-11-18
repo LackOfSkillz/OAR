@@ -42,6 +42,109 @@ function M:Record(itemID, copper)
   self.seen = (self.seen or 0) + 1
 end
 
+-- DEEP-37: historical trend engine. The existing 14-day store records the
+-- *minimum* price observed each day, NOT a representative market sample.
+-- Median and volatility describe those daily lows; never claim true volume,
+-- liquidity or an average sales price.
+function M:Statistics(itemID)
+  local history = self.db[tonumber(itemID)]
+  if type(history) ~= "table" or #history == 0 then return nil end
+  local prices, earliest, latest = {}, nil, nil
+  for _, row in ipairs(history) do
+    local d, price = tonumber(row[1]), tonumber(row[2])
+    if d and price and price > 0 then
+      prices[#prices + 1] = price
+      earliest = math.min(earliest or d, d)
+      latest = math.max(latest or d, d)
+    end
+  end
+  if #prices == 0 then return nil end
+  table.sort(prices)
+  local n = #prices
+  local median = n % 2 == 1 and prices[(n + 1) / 2] or
+    (prices[n / 2] + prices[n / 2 + 1]) / 2
+  local sum, variance = 0, 0
+  for _, price in ipairs(prices) do sum = sum + price end
+  local mean = sum / n
+  for _, price in ipairs(prices) do variance = variance + (price - mean) ^ 2 end
+  local std = math.sqrt(variance / n)
+  return { itemID = tonumber(itemID), count = n, days = (latest - earliest) + 1,
+    median = median, low = prices[1], high = prices[n], mean = mean,
+    volatility = mean > 0 and std / mean or nil,
+    source = "14-day daily lowest observed auctions; not transaction volume" }
+end
+
+function M:ShoppingLists()
+  ns.db.char.shoppingLists = type(ns.db.char.shoppingLists) == "table" and ns.db.char.shoppingLists or {}
+  return ns.db.char.shoppingLists
+end
+function M:ShoppingGroups()
+  ns.db.char.shoppingGroups = type(ns.db.char.shoppingGroups) == "table" and ns.db.char.shoppingGroups or {}
+  return ns.db.char.shoppingGroups
+end
+function M:ShoppingAdd(group, itemID, quantity, target)
+  if type(group) ~= "string" or group == "" or #group > 60 then return false end
+  itemID, quantity, target = tonumber(itemID), tonumber(quantity), tonumber(target)
+  if not itemID or itemID < 1 or not quantity or quantity < 1 or quantity > 9999 then return false end
+  local lists = self:ShoppingLists()
+  local key = group:lower()
+  lists[key] = type(lists[key]) == "table" and lists[key] or {}
+  local count = 0 for _ in pairs(lists[key]) do count = count + 1 end
+  if count >= 200 and not lists[key][itemID] then return false end
+  lists[key][itemID] = { id = itemID, quantity = math.floor(quantity), target = target,
+    at = time() }
+  return true
+end
+function M:ShoppingRows(group)
+  local list = self:ShoppingLists()[tostring(group or ""):lower()] or {}
+  local result = {}
+  for id, rule in pairs(list) do
+    local seen = self:Statistics(id)
+    local price = self:Get(id)
+    local target = tonumber(rule.target)
+    result[#result + 1] = { id = id, quantity = rule.quantity,
+      price = price, target = target, median = seen and seen.median or nil,
+      volatility = seen and seen.volatility or nil,
+      buyCandidate = target and type(price) == "number" and price <= target or false }
+  end
+  table.sort(result, function(a, b) return a.id < b.id end)
+  return result
+end
+
+ns.AddCommand("market", "market <itemID> | add <group> <id> <qty> [targetCopper] | list <group> | groups", function(arg)
+  arg = tostring(arg or "")
+  if arg == "groups" then
+    local names = {}
+    for key in pairs(M:ShoppingLists()) do names[#names + 1] = key end
+    table.sort(names)
+    ns.Print("shopping groups: %s", table.concat(names, ", "))
+    return
+  end
+  local group, id, qty, target = arg:match("^add%s+(%S+)%s+(%d+)%s+(%d+)%s*(%d*)$")
+  if group then
+    ns.Print(M:ShoppingAdd(group, id, qty, target ~= "" and target or nil)
+      and "shopping target saved" or "invalid shopping target")
+    return
+  end
+  local list = arg:match("^list%s+(%S+)$")
+  if list then
+    for _, item in ipairs(M:ShoppingRows(list)) do
+      ns.Print("item %d x%d: market %s, median daily low %s%s", item.id, item.quantity,
+        M.Money(item.price), M.Money(item.median),
+        item.buyCandidate and " (at or under target; check live AH)" or "")
+    end
+    return
+  end
+  local id = tonumber(arg)
+  if id then
+    local stats = M:Statistics(id)
+    if not stats then ns.Print("no historical auction prices observed for item %d", id) return end
+    ns.Print("item %d: daily-low median %s; min %s; max %s; volatility %.1f%% across %d observed days",
+      id, M.Money(stats.median), M.Money(stats.low), M.Money(stats.high),
+      (stats.volatility or 0) * 100, stats.count)
+  else ns.Print("usage: /ride market <itemID> | add|list|groups") end
+end)
+
 -- Lowest price within the window (cheapest recent listing).
 function M:History(itemID)
   local h = self.db[itemID]
