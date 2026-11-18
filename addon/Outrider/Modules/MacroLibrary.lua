@@ -165,6 +165,16 @@ function M:Import(text)
   if type(p) ~= "table" or p.kind ~= self.KIND then return nil, "this string is not an Outrider macro export" end
   if type(p.v) ~= "number" or p.v > self.VERSION then return nil, "made by a newer Outrider" end
   if type(p.ids) ~= "table" then return nil, "no macros in this string" end
+  -- A copied string is untrusted; never let it cause unbounded CreateMacro
+  -- operations even when the player explicitly clicks Import.
+  if #p.ids < 1 or #p.ids > 120 then return nil, "macro set size is invalid" end
+  local checked = {}
+  for _, id in ipairs(p.ids) do
+    if type(id) ~= "string" or #id < 1 or #id > 100 or checked[id] then
+      return nil, "duplicate or invalid macro id"
+    end
+    checked[id] = true
+  end
   local byId = {}
   for _, e in ipairs(self:Entries()) do byId[e.id] = e end
   local installed, skipped = 0, {}

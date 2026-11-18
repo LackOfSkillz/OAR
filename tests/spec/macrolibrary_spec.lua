@@ -114,6 +114,24 @@ T.describe("macro export and import", function()
     T.eq(g2.macros[#g2.macros].name, "AutoShot")
   end)
 
+  T.it("rejects duplicated and oversized imported macro ID lists before making changes", function()
+    local game, ns, L = session()
+    local duplicates = ns.Serialize.Export({
+      kind = "macros", v = 1, ids = { "hunter-autoshot", "hunter-autoshot" }
+    })
+    local n, reason = L:Import(duplicates)
+    T.eq(n, nil)
+    T.contains(reason, "duplicate")
+    T.eq(#game.macros, 0)
+    local ids = {}
+    for i = 1, 121 do ids[i] = "unknown-" .. tostring(i) end
+    local oversized = ns.Serialize.Export({ kind = "macros", v = 1, ids = ids })
+    n, reason = L:Import(oversized)
+    T.eq(n, nil)
+    T.contains(reason, "size")
+    T.eq(#game.macros, 0)
+  end)
+
   T.it("a priest importing hunter macros skips them; broken strings are refused", function()
     local game, ns, L = session()
     L:Install(entry(ns, "hunter-autoshot"))
