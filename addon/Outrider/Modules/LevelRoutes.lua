@@ -135,9 +135,26 @@ function M:OnLoot(_, category, items)
     end
   end
 end
-function M:OnKill(_, unit)
-  -- UNIT_DIED is not guaranteed to fire outside combat logs on Forever.
-  -- No automatic kill credit unless a safe, verified event payload exists.
+function M:OnKill()
+  -- A kill is credited only from the player's own quest objective updates,
+  -- not COMBAT_LOG_EVENT_UNFILTERED (unsafe on Forever). An ordinary mob
+  -- kill without a quest objective cannot be confirmed and stays manual.
+  local step = self:Current()
+  if not step or step.kind ~= "kill" or not step.questID then return false end
+  local f = C.Resolve("C_QuestLog.GetQuestObjectives")
+  if type(f) ~= "function" then return false end
+  local ok, list = pcall(f, step.questID)
+  if not ok or type(list) ~= "table" then return false end
+  for _, objective in ipairs(list) do
+    local name = C.Readable(objective.text)
+    local finished = C.Readable(objective.finished)
+    if type(name) == "string" and name:lower():find(step.name:lower(), 1, true)
+      and finished == true then
+      self:Mark(step, "done")
+      return true
+    end
+  end
+  return false
 end
 function M:CheckPlace()
   local step = self:Current()
@@ -159,6 +176,7 @@ end
 
 function M:OnEnable()
   self:On("QUEST_TURNED_IN", self.OnQuest)
+  self:On("QUEST_LOG_UPDATE", function(mod) mod:OnKill() end)
   self:On("OTR_LOOT", self.OnLoot)
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) mod:CheckPlace() end)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:CheckPlace() end)
