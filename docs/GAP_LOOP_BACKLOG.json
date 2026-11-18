@@ -410,13 +410,14 @@
       "details": "from `C_DamageMeter` (out of combat, Blizzard's numbers)",
       "competitors": "Details",
       "notes": "[D05, C03]. PROBE the session shape",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "C_DamageMeter post-fight snapshot and history; not a live Details parity meter"
     },
     {
       "id": "DEEP-26",
@@ -426,13 +427,14 @@
       "details": "use-first and never lists, Well Fed reminder, delete-old-food button",
       "competitors": "Rucksack",
       "notes": "NEW",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "food preferences, exclusions, Well Fed reminder and obsolete-food review; delete-old-food click UI not built"
     },
     {
       "id": "DEEP-27",
@@ -442,13 +444,14 @@
       "details": ", spec scales, Pawn string import",
       "competitors": "Pawn",
       "notes": "[G03]. Storage already exists",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "named scales, numeric editing, restricted Pawn import; full per-spec UI editor not built"
     },
     {
       "id": "DEEP-28",
@@ -458,13 +461,14 @@
       "details": "bag list on the selling side, one-click cancel per undercut, sales/expired ledger",
       "competitors": "Auctionator, Journalator",
       "notes": "[A01, A03, A06]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "bag sale candidates, user-confirmed cancel and history of disappeared auctions; sold vs expired cannot be distinguished without confirmation"
     },
     {
       "id": "DEEP-29",
@@ -474,13 +478,14 @@
       "details": "unlearned recipes with trainer/vendor/drop/quest and colour thresholds",
       "competitors": "What's Training, SkillUp",
       "notes": "[P01, P05]. Needs a cited data pack",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "observed trainer recipes and explicit source registry; cited full profession/drop/quest pack absent"
     },
     {
       "id": "DEEP-30",
@@ -490,13 +495,14 @@
       "details": "reputations per alt, \"known by alt\" on recipe tooltips, browse alt bags",
       "competitors": "Altoholic",
       "notes": "[AL01]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "per-alt cached reputation/recipe/bag snapshots from logged-in characters only"
     },
     {
       "id": "DEEP-31",
@@ -506,13 +512,14 @@
       "details": "with icons and a missing-item report",
       "competitors": "ItemRack",
       "notes": "[G02]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "equipment-set list, item icons, missing-item report and user-click equip"
     },
     {
       "id": "DEEP-32",
@@ -522,13 +529,14 @@
       "details": "3D model (PlayerModel, fails soft to an icon); loot list once a cited drop source exists",
       "competitors": "RareScanner",
       "notes": "[R01, R04]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "3D model preview only when sourced displayID exists, icon toast fallback and sourced-only loot list"
     },
     {
       "id": "DEEP-33",
@@ -538,7 +546,7 @@
       "details": "our own step format; steps tick off from quest, kill, loot and place events; skip with undo; starts at any level. First pack: Horde 1–20 in our zones",
       "competitors": "Polestar, Forever Route, Guidelime",
       "notes": "[Q04, Q05]. Write our own routes; don't copy paid guides",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -547,7 +555,8 @@
       "deps": [
         "DEEP-01",
         "DEEP-06"
-      ]
+      ],
+      "implementation_note": "original step engine, quest/loot/quest-linked kill/place progress, skip/undo, on-demand Horde 1-20 candidate data; curated zone route pack incomplete"
     },
     {
       "id": "DEEP-34",
@@ -557,13 +566,14 @@
       "details": "with categories, bank, alts, a search that lights up slots, and BoE marks. Yields to Bagnon/Baganator",
       "competitors": "Baganator, Bagnon, Rucksack",
       "notes": "[B01, B02]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
         "surpasses": "Measured cross-module advantage documented"
       },
-      "deps": []
+      "deps": [],
+      "implementation_note": "separate categorized bag/bank/alt viewer, search dimming and BoE flags; read-only, yields to bag add-ons"
     },
     {
       "id": "DEEP-35",
@@ -1556,5 +1566,20 @@
       "22": "known-quest XP band only, abandon-list and multi-level projection absent",
       "23": "wishlist and boss loot dependent on private dungeon pack; loot data coverage not assured"
     }
+  },
+  "batch5": {
+    "range": [
+      25,
+      34
+    ],
+    "status": "implemented_ci_pending",
+    "note": "Ten slices committed and regression coverage; awaiting final Windows GitHub Actions run and live WoW Forever Works/Matches/Surpasses testing.",
+    "hard_gates": [
+      "CI green on final commit",
+      "client API and protected action audit",
+      "cited data packs for recipes/rares/leveing quests",
+      "competitor option matrix and in-game parity verification"
+    ],
+    "last_test": "691 passed, 2 failed, 0 syntax errors on first combined run; auction backward-compatibility and boot-command samples corrected in later commits."
   }
 }
