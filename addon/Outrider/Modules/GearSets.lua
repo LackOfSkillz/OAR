@@ -44,6 +44,80 @@ function M:Equip(name)
   return true, changed, missing
 end
 
+-- DEEP-31: visual inventory report; never equips items without a click.
+function M:Missing(name)
+  local set = self:Settings().sets[tostring(name or ""):lower()]
+  if not set then return nil end
+  local found, absent = {}, {}
+  for slot, link in pairs(set.items) do
+    local id = type(link) == "string" and tonumber(link:match("item:(%d+)"))
+    if id then
+      local worn = C.Call("GetInventoryItemLink", "player", slot)
+      local equippedID = type(worn) == "string" and tonumber(worn:match("item:(%d+)"))
+      local bags = 0
+      for b = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
+        for k = 1, C.NumSlots(b) do
+          local n, bagID = C.ItemCountAt(b, k)
+          if bagID == id then bags = bags + (n or 0) end
+        end
+      end
+      local row = { slot = slot, id = id, link = link, equipped = equippedID == id,
+        inBags = bags > 0 }
+      if row.equipped or row.inBags then found[#found + 1] = row
+      else absent[#absent + 1] = row end
+    end
+  end
+  table.sort(found, function(a,b) return a.slot < b.slot end)
+  table.sort(absent, function(a,b) return a.slot < b.slot end)
+  return { found = found, missing = absent, name = set.name }
+end
+function M:BuildWindow()
+  if self.window then return self.window end
+  local f = ns.UI:Window("Outrider_GearSets", "Equipment sets", 530, 385, ns.db.char.gearWindow or {})
+  self.window = f
+  f.list = ns.UI:ScrollList(f.content, {
+    rows = 11, rowHeight = 26,
+    render = function(row, set)
+      local report = M:Missing(set.name)
+      row.text:SetText(string.format("%s  |cffbbbbbb%d items, %d missing|r",
+        set.name, report and #report.found + #report.missing or 0,
+        report and #report.missing or 0))
+    end,
+    onClick = function(set)
+      local report = M:Missing(set.name)
+      if not report then return end
+      M.selected = set.name
+      local missing = {}
+      for _, row in ipairs(report.missing) do missing[#missing + 1] = tostring(row.slot) .. ": item " .. row.id end
+      ns.Print("set %s: %d missing: %s", set.name, #missing,
+        #missing > 0 and table.concat(missing, ", ") or "none")
+    end,
+  })
+  f.list:SetPoint("TOPLEFT", 4, -10)
+  f.list:SetPoint("RIGHT", -4, 0)
+  local equip = ns.UI:Button(f.content, "Equip selected", 140, function()
+    if not M.selected then return end
+    local ok, changed, missing = M:Equip(M.selected)
+    ns.Print(ok and string.format("%d item(s) equipped; %d missing", changed, #missing) or tostring(changed))
+  end)
+  equip:SetPoint("BOTTOMLEFT", 4, 4)
+  ns.UI.Tip(equip, "Equip selected set", "Equip only on click, outside combat. Missing items are reported.")
+  f:Hide()
+  return f
+end
+function M:RefreshWindow()
+  if not self.window then return end
+  local sets = {}
+  for _, v in pairs(self:Settings().sets) do sets[#sets + 1] = v end
+  table.sort(sets, function(a,b) return a.name < b.name end)
+  self.window.list:SetItems(sets)
+end
+ns.AddCommand("gearwindow", "gearwindow  display equipment sets with missing-item report", function()
+  local win = M:BuildWindow()
+  M:RefreshWindow()
+  win:SetShown(not win:IsShown())
+end)
+
 function M:Activity()
   local names = {}
   for _, s in pairs(self:Settings().sets) do names[#names + 1] = s.name end
