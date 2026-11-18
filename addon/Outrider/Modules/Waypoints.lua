@@ -267,13 +267,20 @@ ns.AddCommand("way", "<x> <y> [title] | <zone> <x> <y> | add <zone> <x> <y> | st
   if arg == "next" then ns.Print(M:QueueNext() and "next stop selected" or "route empty") return end
   local enqueue = arg:match("^add%s+")
   local raw = enqueue and arg:sub(5) or arg
-  -- Coordinate-only form retains the original command semantics.
-  local xs, ys, title = raw:match("^([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
-  local mapID, x, y
-  if xs and ys then mapID = C.PlayerPosition("player") x, y = tonumber(xs), tonumber(ys)
+  -- Explicit 3-number form must be parsed first: mapID x y. Otherwise
+  -- "1412 40 50" is silently mistaken for x=1412, y=40.
+  local mapID, x, y, title
+  local zid, zx, zy, ztitle = raw:match("^(%d+)%s+([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
+  if zid and zx and zy then
+    mapID, x, y, title = M:MapArgument(zid), tonumber(zx), tonumber(zy), ztitle
   else
-    local zone, xx, yy, rest = raw:match("^(.-)%s+([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
-    mapID, x, y, title = zone and M:MapArgument(zone), tonumber(xx), tonumber(yy), rest
+    local xs, ys, atitle = raw:match("^([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
+    if xs and ys then
+      mapID, x, y, title = C.PlayerPosition("player"), tonumber(xs), tonumber(ys), atitle
+    else
+      local zone, xx, yy, rest = raw:match("^(.-)%s+([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
+      mapID, x, y, title = zone and M:MapArgument(zone), tonumber(xx), tonumber(yy), rest
+    end
   end
   if not (mapID and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100) then
     ns.Print("usage: /ride way [add] [zone] 45.2 61.8 [title] | start|next|pause|list|clearqueue")
