@@ -169,6 +169,9 @@ function M:Pins(mapID, hidden)
   if not pack then return {} end
   local out = {}
   self:ExtraPins(mapID, hidden, out)
+  if ns.QuestInfo and ns.QuestInfo.enabled and not (hidden and hidden.qpath) then
+    for _, pin in ipairs(ns.QuestInfo:PathPins(mapID)) do out[#out + 1] = pin end
+  end
   if hidden and hidden.objective then return out end
   for _, t in ipairs(self:Targets()) do
     local title = (t.progress or t.name) .. "  (" .. t.quest .. ")"
@@ -280,7 +283,13 @@ function M:LinesFor(kind, key)
     elseif kind == "item" then
       hit = t.kind == "item" and t.id == key
     end
-    if hit then out[#out + 1] = { t.quest .. ": " .. (t.progress or t.name), "good" } end
+    if hit then
+      out[#out + 1] = { t.quest .. ": " .. (t.progress or t.name), "good" }
+      if ns.PartyQuests and ns.PartyQuests.enabled and t.progress then
+        local party = ns.PartyQuests:ObjectiveLines(t.questID, t.progress)
+        if #party > 0 then out[#out + 1] = { "  party: " .. table.concat(party, ", "), "muted" } end
+      end
+    end
   end
   return out
 end
@@ -382,6 +391,9 @@ ns.Hub:AddTab("quests", "Quests", function(p)
         if q.complete then tags[#tags + 1] = { "Ready to hand in", "gold" } end
         local lines = {}
         for _, o in ipairs(q.objectives) do lines[#lines + 1] = (o.finished and "|cff7fff7f" or "") .. o.text .. (o.finished and "|r" or "") end
+        if ns.QuestInfo and ns.QuestInfo.enabled then
+          for _, l in ipairs(ns.QuestInfo:Lines(q.questID)) do lines[#lines + 1] = "|cff8fb4ff" .. l .. "|r" end
+        end
         local actions = {}
         if e then
           actions[1] = { q.complete and "Go hand it in" or "Go to nearest", function() if not M:Guide(q.questID) then ns.Print("no location known for %s", q.title) end end,
@@ -393,6 +405,32 @@ ns.Hub:AddTab("quests", "Quests", function(p)
       return out
     end },
     { "note", function() return #M.Log() == 0 and "Your quest log is empty. Quest givers (!) show on the map." or "" end },
+    { "header", "Quest tracker", icon = "INV_Misc_Spyglass_02" },
+    { "check", "Show Outrider's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().show end,
+      function(on) if ns.QuestTracker then ns.QuestTracker:Settings().show = on ns.QuestTracker:Refresh() end end },
+    { "check", "Hide the game's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().hideBlizzard end,
+      function(on) if ns.QuestTracker then ns.QuestTracker:Settings().hideBlizzard = on ns.QuestTracker:Refresh() end end },
+    { "note", "Click a quest for the arrow, right-click to fold it, drag the title to move. /ride tracker level or nearest sorts it." },
+    { "header", "Quest givers and sounds", icon = "INV_Misc_Bell_01" },
+    { "check", "Show event quests (Darkmoon Faire, holidays)", function() return ns.QuestInfo and ns.QuestInfo:Settings().showEvent end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().showEvent = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
+    { "check", "Show quests for professions I don't have", function() return ns.QuestInfo and ns.QuestInfo:Settings().showOtherProf end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().showOtherProf = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
+    { "check", "Show repeatable quests", function() return ns.QuestInfo and ns.QuestInfo:Settings().showRepeatable end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().showRepeatable = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
+    { "check", "Sound when an objective or quest is done", function() return ns.QuestInfo and ns.QuestInfo:Settings().sounds end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().sounds = on end end },
+    { "check", "Quest levels in chat links", function() return ns.QuestInfo and ns.QuestInfo:Settings().links end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().links = on end end },
+    { "check", "Warn about skipped breadcrumb quests", function() return ns.QuestInfo and ns.QuestInfo:Settings().warnBreadcrumb end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().warnBreadcrumb = on end end },
+    { "check", "Walking paths of escort NPCs on the map", function() return ns.QuestInfo and ns.QuestInfo:Settings().paths end,
+      function(on) if ns.QuestInfo then ns.QuestInfo:Settings().paths = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
+    { "header", "Quest history", icon = "INV_Misc_Book_09" },
+    { "note", function()
+      local lines = ns.QuestInfo and ns.QuestInfo:HistoryLines(15) or {}
+      return #lines > 0 and table.concat(lines, "\n") or "Quests you take, hand in or abandon show here, with the date, your level and the zone."
+    end },
   })
 end)
 

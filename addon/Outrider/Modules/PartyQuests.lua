@@ -122,25 +122,35 @@ end
 -- ------------------------------------------------------------------ your quests
 function M:Scan()
   local log = ns.QuestObjectives and ns.QuestObjectives.Log() or {}
-  local now, changed = {}, false
+  local now, changed, sig = {}, false, {}
   for _, q in ipairs(log) do
     local objs = {}
     for i, o in ipairs(q.objectives) do objs[i] = o.finished end
     now[q.questID] = { complete = q.complete, objectives = objs, title = q.title, list = q.objectives }
     local before = self.prev and self.prev[q.questID]
-    if before and self:InParty() and self:OwnAnnounces() then
+    local announce = before and self:InParty() and self:OwnAnnounces()
+    if before then
       for i, o in ipairs(q.objectives) do
         if o.finished and not before.objectives[i] then
-          self:Say("obj:" .. q.questID .. ":" .. i, string.format("Outrider: %s for %s!", o.text, M.QuestLink(q.questID, q.title)))
+          ns.Events:Fire("OTR_QUEST_OBJECTIVE", q.questID, i, o.text)
+          if announce then
+            self:Say("obj:" .. q.questID .. ":" .. i, string.format("Outrider: %s for %s!", o.text, M.QuestLink(q.questID, q.title)))
+          end
         end
       end
       if q.complete and not before.complete then
-        self:Say("ready:" .. q.questID, string.format("Outrider: Quest ready to hand in: %s", M.QuestLink(q.questID, q.title)))
+        ns.Events:Fire("OTR_QUEST_READY", q.questID)
+        if announce then
+          self:Say("ready:" .. q.questID, string.format("Outrider: Quest ready to hand in: %s", M.QuestLink(q.questID, q.title)))
+        end
       end
     end
+    for _, o in ipairs(q.objectives) do sig[#sig + 1] = o.text end
     if q.complete ~= (before and before.complete) then changed = true end
   end
   self.prev = now
+  local signature = table.concat(sig, "|")
+  if signature ~= self.signature then self.signature, changed = signature, true end
   if changed then self:Share() end
   self:CheckEveryone()
 end
@@ -165,11 +175,56 @@ function M:MyDone()
   return out
 end
 
+-- your objective texts per quest ("Shadowhide Pendant: 6/10"), for the party
+function M:MyProgress()
+  local out, n = {}, 0
+  for id, q in pairs(self.prev or {}) do
+    local texts = {}
+    for _, o in ipairs(q.list or {}) do texts[#texts + 1] = o.text end
+    if #texts > 0 and n < 25 then out[id] = texts n = n + 1 end
+  end
+  return out
+end
+
+-- Party members' progress on a quest: { { name, lines = { "text", ... }, done } }
+function M:ProgressFor(questID)
+  local out = {}
+  for _, p in ipairs(self:InParty() and self:Party() or {}) do
+    local m = self.members[p.name]
+    local lines = {}
+    if m and m.prog and type(m.prog[questID]) == "table" then
+      for _, t in ipairs(m.prog[questID]) do if type(t) == "string" then lines[#lines + 1] = t end end
+    elseif m and m.obj[questID] then
+      for k in pairs(m.obj[questID]) do lines[#lines + 1] = k .. ": done" end
+    end
+    local done = m and self:MemberDone(m, questID, self.prev and self.prev[questID])
+    if #lines > 0 or done then
+      local name = readable(C.Call("UnitName", p.unit)) or p.name
+      out[#out + 1] = { name = name, lines = lines, done = done }
+    end
+  end
+  return out
+end
+
+-- Party lines for one objective of yours ("Oni 6/10"), matched by its text.
+function M:ObjectiveLines(questID, text)
+  local key, out = M.Key(text), {}
+  for _, who in ipairs(self:ProgressFor(questID)) do
+    for _, l in ipairs(who.lines) do
+      if M.Key(l) == key or M.Key(l:gsub(": done$", "")) == key then
+        local count = l:match("(%d+%s*/%s*%d+)") or (l:find(": done$") and "done") or l
+        out[#out + 1] = who.name .. " " .. count
+      end
+    end
+  end
+  return out
+end
+
 -- ------------------------------------------------------------------ others
 function M:Share()
   if not self:InParty() or not ns.Comm or not ns.Comm.enabled then return end
   ns.Throttle("partyquests:share", 2, function()
-    ns.Comm:Send("QSTAT", { done = M:MyDone() }, "PARTY")
+    ns.Comm:Send("QSTAT", { done = M:MyDone(), prog = M:MyProgress() }, "PARTY")
   end)
 end
 
@@ -177,6 +232,7 @@ function M:OnComm(_, kind, data, sender, channel)
   if kind ~= "QSTAT" or channel ~= "PARTY" or type(data) ~= "table" then return end
   local m = self:Member(M.Short(sender))
   m.done, m.outrider = {}, true
+  m.prog = type(data.prog) == "table" and data.prog or nil
   for _, id in ipairs(type(data.done) == "table" and data.done or {}) do
     if type(id) == "number" then m.done[id] = true end
   end

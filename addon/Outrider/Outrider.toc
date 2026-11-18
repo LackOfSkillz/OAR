@@ -162,6 +162,8 @@ Modules\Trail.lua
 Modules\MapPins.lua
 Modules\MapReveal.lua
 Modules\QuestObjectives.lua
+Modules\QuestInfo.lua
+Modules\QuestTracker.lua
 Modules\PartyQuests.lua
 Modules\ZoneLevels.lua
 Modules\MinimapPins.lua

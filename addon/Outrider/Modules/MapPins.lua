@@ -29,7 +29,7 @@ local LABELS = {
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
-  dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in",
+  dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in", qpath = "Quest NPC path",
 }
 M.LABELS = LABELS
 
@@ -43,7 +43,7 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
-  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest",
+  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
@@ -329,7 +329,7 @@ end
 -- for the minimap.
 M.MENU = {
   { "Rares", { "rare" } },
-  { "Quests", { "quest_giver", "objective", "turnin" } },
+  { "Quests", { "quest_giver", "objective", "turnin", "qpath" } },
   { "Vendors and repair", { "vendor", "repair" } },
   { "Trainers", { "trainer" } },
   { "Services", { "innkeeper", "bank", "auction", "flight_master", "stable_master", "mailbox", "guild_master", "tabard", "spirit_healer" } },
