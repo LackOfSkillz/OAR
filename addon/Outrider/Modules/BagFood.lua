@@ -12,7 +12,7 @@ local M = ns:NewModule("BagFood", {
   title = "Food and drink in macros",
   phase = "P4",
   order = 63,
-  defaults = { autoUpdate = true },
+  defaults = { autoUpdate = true, prefer = {}, never = {}, fedReminder = true },
 })
 ns.BagFood = M
 
@@ -29,6 +29,10 @@ function M:Scan()
   local function consider(kind, info)
     local b = best[kind]
     local score = (info.conjured and 1000 or 0) + (info.reqLevel or 0)
+    local prefs = self:Settings()
+    if prefs.never[info.name:lower()] then return end
+    local priority = tonumber(prefs.prefer[info.name:lower()])
+    if priority then score = score + 10000 + priority end
     if not b or score > b.score then best[kind] = { name = info.name, score = score } end
   end
   for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
@@ -55,6 +59,10 @@ end
 function M:OnEnable()
   self:On("BAG_UPDATE_DELAYED", function(mod) mod:Changed() end)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Scan() end)
+  self:On("PLAYER_REGEN_ENABLED", function(mod) mod:CheckWellFed() end)
+  self:On("UNIT_AURA", function(mod, _, unit)
+    if unit == "player" then ns.Throttle("bagfood:fed", 2, function() mod:CheckWellFed() end) end
+  end)
   self:On("PLAYER_REGEN_ENABLED", function(mod)
     if mod.pending then ns.Throttle("bagfood", 10, function() M:UpdateMacros() end) end
   end)
@@ -87,6 +95,69 @@ function M:UpdateMacros()
     end
   end
 end
+
+-- Never remove or use items automatically: player must press the Blizzard
+-- Use/Delete button. Show obsolete consumables as candidates only.
+function M:OldFood()
+  local entries = {}
+  local current = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
+    for slot = 1, C.NumSlots(bag) do
+      local _, id = C.ItemCountAt(bag, slot)
+      if id then
+        local spell = itemSpell(id)
+        local info = (spell == "Food" or spell == "Drink" or spell == "Refreshment") and C.ItemInfo(id)
+        if info and type(info.reqLevel) == "number" and info.reqLevel <= current - 15 then
+          entries[#entries + 1] = { bag = bag, slot = slot, id = id, name = info.name, level = info.reqLevel }
+        end
+      end
+    end
+  end
+  return entries
+end
+
+function M:CheckWellFed()
+  if not self:Settings().fedReminder then return end
+  local aura = C.Resolve("C_UnitAuras.GetAuraDataByIndex")
+  if type(aura) ~= "function" then return end
+  local fed = false
+  for i = 1, 40 do
+    local ok, data = pcall(aura, "player", i, "HELPFUL")
+    if not ok or type(data) ~= "table" then break end
+    if C.Readable(data.name) == "Well Fed" then fed = true break end
+  end
+  if fed then self.warnedFed = nil return end
+  if not self.warnedFed and self.food and not C.InCombat() then
+    self.warnedFed = true
+    ns.Print("food reminder: no readable Well Fed aura; eat if your food grants a buff (not all food does).")
+  end
+end
+
+ns.AddCommand("foodrules", "foodrules prefer|never|allow <food name> | old | list", function(arg)
+  arg = tostring(arg or "list")
+  local action, name = arg:match("^(%S+)%s*(.*)$")
+  local prefs = M:Settings()
+  if (action == "prefer" or action == "never" or action == "allow") and name ~= "" then
+    local k = name:lower()
+    if action == "prefer" then prefs.prefer[k] = 100 prefs.never[k] = nil
+    elseif action == "never" then prefs.never[k] = true prefs.prefer[k] = nil
+    else prefs.never[k], prefs.prefer[k] = nil, nil end
+    M:Changed()
+    ns.Print("food rule: %s %s", action, name)
+    return
+  end
+  if action == "old" then
+    local list = M:OldFood()
+    ns.Print("%d old food stacks (review and delete manually in your bags)", #list)
+    for i = 1, math.min(15, #list) do ns.Print("bag %d slot %d: %s", list[i].bag, list[i].slot, list[i].name) end
+    return
+  end
+  local lines = {}
+  for k in pairs(prefs.prefer) do lines[#lines + 1] = "prefer: " .. k end
+  for k in pairs(prefs.never) do lines[#lines + 1] = "never: " .. k end
+  table.sort(lines)
+  ns.Print("food rules (%d): %s", #lines, #lines > 0 and table.concat(lines, ", ") or "none")
+end)
 
 function M:Activity()
   return string.format("food: %s, drink: %s", tostring(self.food or "none"), tostring(self.drink or "none"))
