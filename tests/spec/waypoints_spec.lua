@@ -101,6 +101,20 @@ T.describe("corpse navigation", function()
     T.eq(ns.Waypoints.current.title, "My new waypoint")
   end)
 
+  T.it("restores the previous waypoint if the ghost arrived at the corpse before resurrecting", function()
+    local game, ns = session()
+    ns.Waypoints:Set(1412, 0.6, 0.7, "Original journey")
+    game.corpse = { mapID = 1412, x = 0.5, y = 0.6 }
+    game:fire("PLAYER_DEAD")
+    T.eq(ns.Waypoints.current.title, "Your corpse")
+    game.opts.x, game.opts.y = 0.5, 0.6
+    game:advance(1.5)
+    T.eq(ns.Waypoints.current, nil, "corpse arrow clears when ghost reaches it")
+    game:fire("PLAYER_UNGHOST")
+    T.eq(ns.Waypoints.current.title, "Original journey")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("uses no timer when corpse coordinates are immediately available", function()
     local game, ns = session()
     game.corpse = { mapID = 1412, x = 0.5, y = 0.6 }
