@@ -67,6 +67,47 @@ T.describe("merchant helper", function()
     T.eq(ns.Merchant:Settings().sellOnce[3], nil)
   end)
 
+  T.it("restocks only on click within a gold reserve; never on merchant open", function()
+    local game, ns = session()
+    game.items[8] = { name = "Arrows", quality = 1, buy = 200, bundle = 20 }
+    game.items[9] = { name = "Bread", quality = 1, buy = 400, bundle = 5 }
+    game.merchant = { 8, 9 }
+    game.money = 30000
+    game:slash("restock add 8 100")
+    game:slash("restock add 9 15")
+    game:slash("restock reserve 2")
+    game:fire("MERCHANT_SHOW")
+    T.eq(game.bought, nil, "opening a vendor never buys")
+    local plan, price = ns.Merchant:RestockPlan()
+    T.eq(#plan, 2)
+    T.eq(price, 2200)
+    ns.Merchant.frame.restock.__scripts.OnClick(ns.Merchant.frame.restock)
+    T.eq(#game.bought, 2)
+    T.eq(game.bought[1].count, 100)
+    T.eq(game.bought[2].count, 15)
+    T.eq(game.money, 27800)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("cannot spend reserved gold, buy restricted items, or purchase outside a vendor", function()
+    local game, ns = session()
+    game.items[8] = { name = "Arrows", quality = 1, buy = 2000, bundle = 20 }
+    game.items[9] = { name = "Special", quality = 1, buy = 500, extended = true }
+    game.merchant = { 8, 9 }
+    game.money = 11000
+    game:slash("restock add 8 200")
+    game:slash("restock add 9 30")
+    local count = ns.Merchant:Restock()
+    T.eq(count, 0)
+    game:fire("MERCHANT_SHOW")
+    local plan = ns.Merchant:RestockPlan()
+    T.eq(#plan, 0, "10g price exceeds free 1g budget; extended costs excluded")
+    game:setCombat(true)
+    T.eq(ns.Merchant:Restock(), 0)
+    game:setCombat(false)
+    T.eq(game.bought, nil)
+  end)
+
   T.it("repairs on click and never on open", function()
     local game, ns = session()
     game.repairCost = 1234
