@@ -46,6 +46,7 @@ UI\Settings.lua
 Intelligence\Profiles.lua
 Intelligence\Evidence.lua
 Intelligence\Opportunity.lua
+Intelligence\Economy.lua
 
 # Advisor groundwork (dormant until Phase 9)
 Advisor\Snapshot.lua
