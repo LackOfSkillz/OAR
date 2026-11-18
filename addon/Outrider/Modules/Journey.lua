@@ -83,6 +83,54 @@ function M:XPList()
   return out
 end
 
+-- DEEP-22: zone-level XP opportunity summary. Estimates are explicitly
+-- conditional on the available QuestieDB quest-giver pack; absence is NOT
+-- evidence that a zone has no quests.
+function M:ZoneOutlook()
+  local result, all = {}, {}
+  local playerLevel = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  local currentXP = tonumber(C.Readable(C.Call("UnitXP", "player"))) or 0
+  local toNext = tonumber(C.Readable(C.Call("UnitXPMax", "player"))) or 0
+  for _, q in ipairs(ns.NPCPack and ns.NPCPack:AvailableEverywhere() or {}) do
+    if type(q.mapID) == "number" and type(q.level) == "number" then
+      local group = all[q.mapID]
+      if not group then
+        group = { mapID = q.mapID, name = zone(q.mapID), count = 0, estimatedXP = 0,
+          greySoon = 0, greyNow = 0 }
+        all[q.mapID] = group
+        result[#result + 1] = group
+      end
+      group.count = group.count + 1
+      local xp = M.XP(q.level, playerLevel)
+      if q.diff ~= "grey" and q.diff ~= "red" then group.estimatedXP = group.estimatedXP + xp end
+      if q.level <= playerLevel - 5 then group.greySoon = group.greySoon + 1 end
+      if q.diff == "grey" then group.greyNow = group.greyNow + 1 end
+    end
+  end
+  for _, g in ipairs(result) do
+    g.remainingToLevel = math.max(0, toNext - currentXP)
+    -- Only indicates whether the currently *known, offered* quests could
+    -- theoretically grant enough XP; not a guarantee of level completion.
+    g.couldLevel = g.remainingToLevel > 0 and g.estimatedXP >= g.remainingToLevel
+  end
+  table.sort(result, function(a, b)
+    if a.estimatedXP ~= b.estimatedXP then return a.estimatedXP > b.estimatedXP end
+    return a.name < b.name
+  end)
+  return result
+end
+
+ns.AddCommand("zones", "zones  known available quest XP by zone (estimates)", function()
+  local groups = M:ZoneOutlook()
+  if #groups == 0 then ns.Print("zone XP: quest-giver pack unavailable or no confirmed offerings") return end
+  for i = 1, math.min(10, #groups) do
+    local g = groups[i]
+    ns.Print("%s: ~%d XP, %d known quests (%d near-grey, %d grey)%s",
+      g.name, g.estimatedXP, g.count, g.greySoon, g.greyNow,
+      g.couldLevel and "; enough *estimated* XP for next level" or "")
+  end
+end)
+
 function M.Line(e)
   if e.kind == "gear" then
     return string.format("%s  |cffbbbbbb%s, %s|r", e.detail, zone(e.mapID), ns.Travel.Minutes(e.seconds))
