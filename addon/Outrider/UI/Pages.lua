@@ -399,6 +399,18 @@ local function profRows()
   local function make(prof) return function() if ns.Crafter then ns.Crafter:Make(prof) end end end
   local rows = {}
   local function r(t) rows[#rows + 1] = t end
+  -- a skill bar per profession you have (premium rebuild 2026-11-18)
+  r({ "stats", function()
+    local out = {}
+    for name, d in pairs(ns.db.char.professions or {}) do
+      if type(d) == "table" and d.skill then
+        out[#out + 1] = { cap = name, value = d.skill .. " / " .. tostring(d.max or "?"), color = "gold",
+          fill = d.max and d.max > 0 and d.skill / d.max or nil }
+      end
+    end
+    table.sort(out, function(x, y) return x.cap < y.cap end)
+    return out
+  end })
   local crafts = {}
   if owned.Cooking then crafts[#crafts + 1] = { "Cook", make("Cooking") } end
   if owned.Alchemy then crafts[#crafts + 1] = { "Brew", make("Alchemy") } end

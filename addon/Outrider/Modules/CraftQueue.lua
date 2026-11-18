@@ -118,28 +118,50 @@ ns.Hub:AddTab("crafting", "Crafting", function(p)
     render = function(row, r) row.text:SetText(r.name .. "  |cff888888" .. r.prof .. "|r") end,
     onClick = function(r) M:Add(r.key, C.Call("IsShiftKeyDown") and 5 or 1) p:Refresh() end,
   })
-  p.list:SetPoint("TOPLEFT", 0, 0)
-  p.list:SetWidth(230)
-  p.side = UI:Card(p)   -- Expedition look: queue and shopping list in a card
-  p.side:SetPoint("TOPLEFT", p.list, "TOPRIGHT", 12, 0)
-  p.side:SetPoint("BOTTOMRIGHT", -4, 0)
-  p.queue = UI.Text(p.side, "small", "text")
-  p.queue:SetPoint("TOPLEFT", 14, -12)
-  p.queue:SetPoint("RIGHT", p.side, "RIGHT", -14, 0) p.queue:SetJustifyH("LEFT")
-  p.shop = UI.Text(p.side, "small", "text")
-  p.shop:SetPoint("TOPLEFT", p.queue, "BOTTOMLEFT", 0, -12)
-  p.shop:SetPoint("RIGHT", p.side, "RIGHT", -14, 0) p.shop:SetJustifyH("LEFT")
+  -- three columns (premium rebuild 2026-11-18): recipes | queue | shopping
+  p.listHead = UI.Text(p, "large", "goldText")
+  p.listHead:SetPoint("TOPLEFT", 2, 0)
+  p.listHead:SetText("Recipes")
+  p.list:SetPoint("TOPLEFT", 0, -22)
+  p.list:SetWidth(260)
+  local function column(title)
+    local c = UI:Card(p, true)
+    c.head = UI.Text(c, "large", "goldText")
+    c.head:SetPoint("TOPLEFT", 14, -12)
+    c.head:SetText(title)
+    c.body = UI.Text(c, "normal", "body")
+    c.body:SetPoint("TOPLEFT", c.head, "BOTTOMLEFT", 0, -8)
+    c.body:SetPoint("RIGHT", c, "RIGHT", -14, 0)
+    c.body:SetJustifyH("LEFT")
+    if c.body.SetSpacing then c.body:SetSpacing(2) end
+    return c
+  end
+  p.qcard = column("Queue")
+  p.qcard:SetPoint("TOPLEFT", p.list, "TOPRIGHT", 12, 22)
+  p.qcard:SetPoint("BOTTOM", p, "BOTTOM", 0, 0)
+  p.scard = column("Shopping list")
+  p.scard:SetPoint("TOPLEFT", p.qcard, "TOPRIGHT", 12, 0)
+  p.scard:SetPoint("BOTTOMRIGHT", -4, 0)
+  local function sizeCols()
+    local w = (p:GetWidth() or 900) - 260 - 12 - 12 - 4
+    p.qcard:SetWidth(math.max(180, math.floor(w * 0.42)))
+  end
+  sizeCols()
+  if p.HookScript then p:HookScript("OnSizeChanged", sizeCols) end
+  p.side = p.qcard
+  p.queue, p.shop = p.qcard.body, p.scard.body
   p.clear = UI:Button(p, "Clear queue", 110, function() M:Clear() p:Refresh() end)
   p.clear:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -6)
   function p:Refresh()
     self.list:SetItems(M:Recipes())
-    local lines = { "Queue (click a recipe to add, Shift adds 5):" }
+    local lines = {}
     for key, n in pairs(M:Settings().queue) do
       local r = M:Find(key)
-      lines[#lines + 1] = "  " .. n .. " x " .. (r and r.name or key)
+      lines[#lines + 1] = "|cfff1d58e" .. n .. " x|r  " .. (r and r.name or key)
     end
-    self.queue:SetText(table.concat(lines, "\n"))
-    local text = "Shopping list:\n" .. M:ShoppingText()
+    self.queue:SetText(#lines > 0 and table.concat(lines, "\n")
+      or "|cff8f96a6Empty. Click a recipe on the left to add one (Shift adds 5).|r")
+    local text = M:ShoppingText()
     if ns.SkillUp and ns.SkillUp.enabled then
       for prof in pairs(ns.db.char.professions or {}) do
         local l = ns.SkillUp:Lines(prof)
