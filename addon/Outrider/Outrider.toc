@@ -142,6 +142,7 @@ Modules\Find.lua
 Modules\RarePlates.lua
 Modules\Advisor.lua
 Intelligence\Radar.lua
+Intelligence\DealDesk.lua
 Modules\Skin.lua
 Modules\Tooltips.lua
 Modules\UnitLook.lua
