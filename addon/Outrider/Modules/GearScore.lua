@@ -15,7 +15,7 @@ local M = ns:NewModule("GearScore", {
   title = "Gear advisor",
   phase = "P6",
   order = 80,
-  defaults = { weights = {} },
+  defaults = { weights = {}, scales = {}, activeScale = "default" },
 })
 ns.GearScore = M
 
@@ -118,9 +118,77 @@ function M:Weights(cls)
   local base = ns.StatWeights[cls or ns.PlayerClass()] or ns.StatWeights.WARRIOR
   local out = {}
   for k, v in pairs(base) do out[k] = v end
-  if not cls then for k, v in pairs(self:Settings().weights) do out[k] = v end end
+  if not cls then
+    local cfg = self:Settings()
+    for k, v in pairs(cfg.weights) do out[k] = v end
+    local scale = cfg.scales[cfg.activeScale or "default"]
+    if scale then
+      for stat, weight in pairs(scale.weights or {}) do out[stat] = weight end
+      out.role = scale.role or cfg.activeScale
+    end
+  end
   return out
 end
+
+-- Named weight scales and a restricted Pawn import, never executable text.
+M.PAWN = { Agility = "ITEM_MOD_AGILITY_SHORT", Strength = "ITEM_MOD_STRENGTH_SHORT",
+  Stamina = "ITEM_MOD_STAMINA_SHORT", Intellect = "ITEM_MOD_INTELLECT_SHORT",
+  Spirit = "ITEM_MOD_SPIRIT_SHORT", AttackPower = "ITEM_MOD_ATTACK_POWER_SHORT",
+  RangedAttackPower = "ITEM_MOD_RANGED_ATTACK_POWER_SHORT", CritRating = "ITEM_MOD_CRIT_RATING_SHORT",
+  HitRating = "ITEM_MOD_HIT_RATING_SHORT", SpellPower = "ITEM_MOD_SPELL_POWER_SHORT",
+  MeleeDps = "meleeDPS", RangedDps = "rangedDPS" }
+function M:ValidWeight(k, v)
+  return type(k) == "string" and type(v) == "number" and v >= 0 and v <= 1000
+    and (k:match("^ITEM_MOD_[%w_]+$") or k == "rangedDPS" or k == "meleeDPS") ~= nil
+end
+function M:SaveScale(name, weights)
+  if type(name) ~= "string" or #name < 1 or #name > 45 or type(weights) ~= "table" then return false end
+  local safe = {}
+  for k, v in pairs(weights) do if self:ValidWeight(k, v) then safe[k] = v end end
+  if not next(safe) then return false end
+  self:Settings().scales[name:lower()] = { role = name, weights = safe }
+  return true
+end
+function M:ImportPawn(source)
+  if type(source) ~= "string" or #source > 4000 then return false, "Pawn text too long" end
+  local name = source:match('Name%s*=%s*"([^"]+)"') or "Imported Pawn"
+  local weights = {}
+  for label, value in source:gmatch("([%a][%w]*)%s*=%s*([%d%.]+)") do
+    local key = M.PAWN[label]
+    if key then weights[key] = tonumber(value) end
+  end
+  if not self:SaveScale(name, weights) then return false, "No supported Pawn stats" end
+  self:Settings().activeScale = name:lower()
+  return true, name
+end
+function M:Scales()
+  local out = { "default" }
+  for name in pairs(self:Settings().scales) do out[#out + 1] = name end
+  table.sort(out)
+  return out
+end
+ns.AddCommand("scale", "scale list|use <name>|set <stat> <weight>|import <Pawn text>", function(arg)
+  local action, rest = tostring(arg or "list"):match("^(%S+)%s*(.*)$")
+  local cfg = M:Settings()
+  if action == "list" then ns.Print("stat scales: %s (active %s)", table.concat(M:Scales(), ", "), cfg.activeScale or "default") return end
+  if action == "use" then
+    if rest ~= "default" and not cfg.scales[rest:lower()] then ns.Print("unknown scale: %s", rest) return end
+    cfg.activeScale = rest:lower() ns.Print("active scale: %s", rest)
+  elseif action == "set" then
+    local token, value = rest:match("^(%S+)%s+([%d%.]+)$")
+    local number = tonumber(value)
+    token = M.PAWN[token] or token
+    if M:ValidWeight(token, number) then
+      local scale = cfg.activeScale or "default"
+      if scale == "default" then cfg.weights[token] = number
+      else cfg.scales[scale].weights[token] = number end
+      ns.Print("stat %s = %.3f", token, number)
+    else ns.Print("invalid stat or weight") end
+  elseif action == "import" then
+    local ok, result = M:ImportPawn(rest)
+    ns.Print(ok and ("Imported Pawn scale " .. result) or tostring(result))
+  else ns.Print("usage: /ride scale list|use|set|import") end
+end)
 
 function M.Stats(link)
   local get = C.Resolve("C_Item.GetItemStats") or rawget(_G, "GetItemStats")
