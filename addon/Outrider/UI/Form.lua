@@ -72,6 +72,7 @@ function UI:Form(parent, rows)
         end
       else
         local h = measure(e)
+        e.y = y
         e.f:ClearAllPoints()
         e.f:SetPoint("TOPLEFT", c, "TOPLEFT", e.indent, -y)
         y = y + h
@@ -116,6 +117,7 @@ function UI:Form(parent, rows)
     local r, g, b = Theme:Color("gold")
     rule:SetColorTexture(r, g, b, 0.35)
     place(head, 48)
+    entries[#entries].searchLabel = title
   end
   local titled = false
   for _, r in ipairs(rows) do
@@ -156,6 +158,7 @@ function UI:Form(parent, rows)
       local chk = UI:Check(host, r[2], r[3], r[4])
       if r[5] then chk.note:SetText(r[5]) end
       place(chk, ROW.check)
+      entries[#entries].searchLabel = r[2]
       scroll.items[#scroll.items + 1] = chk
     elseif kind == "buttons" then
       local row = CreateFrame("Frame", nil, host)
@@ -196,6 +199,7 @@ function UI:Form(parent, rows)
       UI.Tip(btn, r[2], tip)
       row.box, row.button = box, btn
       place(row, ROW.input)
+      entries[#entries].searchLabel = r[2]
     elseif kind == "key" then
       -- { "key", "Label", get, set(key or nil), note }: click, then press a key
       -- (or a mouse side/middle button); right-click clears; Escape cancels.
@@ -243,12 +247,14 @@ function UI:Form(parent, rows)
       row.Refresh = show
       show()
       place(row, ROW.input)
+      entries[#entries].searchLabel = r[2]
       scroll.items[#scroll.items + 1] = row
     elseif kind == "slider" then
       local s = UI:Slider(host, r[2], r[3], r[4], r[5], r[6], r[7], r[8])
       s:SetWidth(320)
       UI.Tip(s, r[2], "Drag to change it, from " .. tostring(r[3]) .. " to " .. tostring(r[4]) .. ".")
       place(s, ROW.slider)
+      entries[#entries].searchLabel = r[2]
       scroll.items[#scroll.items + 1] = { slider = s, get = r[6] }
     elseif kind == "list" then
       local list = UI:ScrollList(host, { rows = r[2], rowHeight = 22, render = r[3], onClick = r[4] })
@@ -276,6 +282,28 @@ function UI:Form(parent, rows)
   end
   closeCard()
   scroll:Layout()
+
+  -- Search the actual control labels and jump to their measured positions.
+  function scroll:FindSetting(query)
+    query = type(query) == "string" and query:lower():match("^%s*(.-)%s*$") or ""
+    if query == "" then return nil, 0 end
+    local matches = {}
+    for _, e in ipairs(entries) do
+      if type(e.searchLabel) == "string" and e.searchLabel:lower():find(query, 1, true) then
+        matches[#matches + 1] = e
+      end
+    end
+    if #matches == 0 then return nil, 0 end
+    if self.lastSearch == query then
+      self.searchIndex = (self.searchIndex or 0) % #matches + 1
+    else
+      self.lastSearch, self.searchIndex = query, 1
+    end
+    local match = matches[self.searchIndex]
+    if self.SetVerticalScroll then self:SetVerticalScroll(match.y or 0) end
+    return match.searchLabel, #matches
+  end
+
   function scroll:Refresh()
     for _, it in ipairs(self.items) do
       if it.Refresh then ns.Safe("form:refresh", it.Refresh, it)
