@@ -1,0 +1,1491 @@
+{
+  "schema": "outrider-gap-loop-v1",
+  "branch": "p1-foundation",
+  "source_head": "54f36218b6a6265fe71976e6241696287c45c8f8",
+  "generated": "2026-11-18",
+  "warning": "Statuses from code commits are provisional. Never mark Works/Matches/Surpasses without actual live evidence.",
+  "statuses": [
+    "not_started",
+    "implemented_unverified",
+    "tests_green_needs_game",
+    "works",
+    "matches",
+    "surpasses",
+    "blocked"
+  ],
+  "deep_ranked": [
+    {
+      "id": "DEEP-01",
+      "rank": 1,
+      "tier": 1,
+      "feature": "XP pace",
+      "details": "XP/hour, time to level, session XP; \"ready now\" quest XP vs whole log, with the level you'd land at and a per-quest list",
+      "competitors": "TurnInXP, Titan, RestedXP",
+      "notes": "NEW. QuestExtras already sums log XP",
+      "status": "implemented_unverified",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-02",
+      "rank": 2,
+      "tier": 1,
+      "feature": "Layer on the info bar",
+      "details": ", visited layers with \"seen 12 min ago\"",
+      "competitors": "NWB, Layer-Swap",
+      "notes": "NEW. Layers.lua has it; just show it",
+      "status": "implemented_unverified",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-03",
+      "rank": 3,
+      "tier": 1,
+      "feature": "Corpse arrow",
+      "details": "after release (GetCorpseMapPosition)",
+      "competitors": "TomTom",
+      "notes": "NEW. Today it points at a spirit healer",
+      "status": "implemented_unverified",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-04",
+      "rank": 4,
+      "tier": 1,
+      "feature": "Sell lists",
+      "details": "\"always sell\" and \"sell once\", learned from what you sell; the Merchant button sells them. Never-sell protection for quest items",
+      "competitors": "Rucksack, Scrap",
+      "notes": "NEW. One click, your click",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-05",
+      "rank": 5,
+      "tier": 1,
+      "feature": "Restock button",
+      "details": "at the vendor: buy ammo, food and water up to set amounts, with a gold reserve",
+      "competitors": "Rucksack, TSM",
+      "notes": "NEW. One click per purchase batch, Gary presses it",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-06",
+      "rank": 6,
+      "tier": 1,
+      "feature": "Waypoint queue",
+      "details": "several waypoints, auto-advance on arrival, kept across sessions, `/ride way <zone> x y`",
+      "competitors": "TomTom",
+      "notes": "NEW. Rare routes need this",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-07",
+      "rank": 7,
+      "tier": 1,
+      "feature": "Cursor coordinates",
+      "details": "on the world map",
+      "competitors": "Leatrix Maps, TomTom",
+      "notes": "NEW",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-08",
+      "rank": 8,
+      "tier": 1,
+      "feature": "Tooltip",
+      "details": "hide in combat (Shift shows it); quest \"4 left\" on mob tooltips",
+      "competitors": "MouseOverTooltip",
+      "notes": "NEW",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-09",
+      "rank": 9,
+      "tier": 1,
+      "feature": "Hunter: aspect warning",
+      "details": "(no aspect, or Cheetah/Pack in combat) and **Growl left on in a group**",
+      "competitors": "ZHunterMod, Quiver",
+      "notes": "NEW",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-10",
+      "rank": 10,
+      "tier": 1,
+      "feature": "Tracker scroll",
+      "details": "past 45 rows; \"focus this quest\" dims other pins",
+      "competitors": "Questie",
+      "notes": "[Q03]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-11",
+      "rank": 11,
+      "tier": 1,
+      "feature": "Chat",
+      "details": "whisper history per person, longer history after reload (50 → 500+), class-coloured names",
+      "competitors": "WIM, Prat, Chattynator",
+      "notes": "[UI03]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-12",
+      "rank": 12,
+      "tier": 1,
+      "feature": "Lockout fixes",
+      "details": "timer starts on leaving, instance ID, delete a wrong entry, lockouts on minimap button hover",
+      "competitors": "Nova Instance Tracker",
+      "notes": "[D07]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-13",
+      "rank": 13,
+      "tier": 1,
+      "feature": "Map extras",
+      "details": "list and count of undiscovered areas; fishing skill per zone; Darkmoon Faire location and next dates",
+      "competitors": "Leatrix Maps, NWB",
+      "notes": "NEW",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-14",
+      "rank": 14,
+      "tier": 1,
+      "feature": "Mailbox",
+      "details": "open filters (AH sold/won/expired only), keep N slots free, Shift-click take",
+      "competitors": "Postal",
+      "notes": "[B05]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-15",
+      "rank": 15,
+      "tier": 1,
+      "feature": "Settings search box",
+      "details": "",
+      "competitors": "Leatrix Plus",
+      "notes": "[UI01]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-16",
+      "rank": 16,
+      "tier": 2,
+      "feature": "Auto Shot timer",
+      "details": "\"stop moving\" mark and dead-zone/range marker on Blizzard's own ranged swing bar (Forever has it, PROBE_RESULTS:113)",
+      "competitors": "Quiver, Improved Auto Shot Timer, DaylightUI",
+      "notes": "NEW. PROBE `UnitRangedDamage` and `C_Spell.IsSpellInRange` in combat",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-17",
+      "rank": 17,
+      "tier": 2,
+      "feature": "Threat colours on nameplates",
+      "details": "with pet threat (blue), plus a small threat list",
+      "competitors": "ThreatTint, ThreatClassic2",
+      "notes": "NEW. PROBE `UnitDetailedThreatSituation` on nameplates in combat. ThreatTint working on Forever is a good sign",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-18",
+      "rank": 18,
+      "tier": 2,
+      "feature": "Graveyard map",
+      "details": "\"you'd respawn at X\" box, map hover, and death logging (predicted vs actual) so it learns. Subzone from the game's own data",
+      "competitors": "Deathskip",
+      "notes": "NEW. High value on Forever",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": [
+        "DEEP-03"
+      ]
+    },
+    {
+      "id": "DEEP-19",
+      "rank": 19,
+      "tier": 2,
+      "feature": "Dungeon quests",
+      "details": "per dungeon, givers, chains, rewards, map spot; live progress inside",
+      "competitors": "DungeonJournal, Polestar, Forever Route",
+      "notes": "[D01 part]. QuestieDB already has the data",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-20",
+      "rank": 20,
+      "tier": 2,
+      "feature": "Level-up training card",
+      "details": "without a trainer visit: spells and cost per level",
+      "competitors": "What's Training, Polestar",
+      "notes": "[P01 part]. Needs a cited spell/rank/cost pack (rule 7)",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-21",
+      "rank": 21,
+      "tier": 2,
+      "feature": "Rare route",
+      "details": "through all, or only watched, rares on the map, as a waypoint queue",
+      "competitors": "RareScanner",
+      "notes": "[R02]. Needs #6",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": [
+        "DEEP-06"
+      ]
+    },
+    {
+      "id": "DEEP-22",
+      "rank": 22,
+      "tier": 2,
+      "feature": "Where to? zones",
+      "details": "XP left per zone, the level you'd reach, chains about to go grey, abandon list (quests that never pay off)",
+      "competitors": "Forever Route, Polestar",
+      "notes": "[Q02 part]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-23",
+      "rank": 23,
+      "tier": 2,
+      "feature": "Gear wishlist",
+      "details": "Alt+click to save, owned marker, tooltip tag; full loot table of any boss",
+      "competitors": "AtlasLoot",
+      "notes": "[D02, G04]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-24",
+      "rank": 24,
+      "tier": 2,
+      "feature": "Map notes you write",
+      "details": "(click to add, edit, minimap)",
+      "competitors": "HandyNotes",
+      "notes": "[M02]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-25",
+      "rank": 25,
+      "tier": 2,
+      "feature": "Post-fight meter",
+      "details": "from `C_DamageMeter` (out of combat, Blizzard's numbers)",
+      "competitors": "Details",
+      "notes": "[D05, C03]. PROBE the session shape",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-26",
+      "rank": 26,
+      "tier": 2,
+      "feature": "Food rules",
+      "details": "use-first and never lists, Well Fed reminder, delete-old-food button",
+      "competitors": "Rucksack",
+      "notes": "NEW",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-27",
+      "rank": 27,
+      "tier": 2,
+      "feature": "Stat weight editor",
+      "details": ", spec scales, Pawn string import",
+      "competitors": "Pawn",
+      "notes": "[G03]. Storage already exists",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-28",
+      "rank": 28,
+      "tier": 2,
+      "feature": "Auction selling",
+      "details": "bag list on the selling side, one-click cancel per undercut, sales/expired ledger",
+      "competitors": "Auctionator, Journalator",
+      "notes": "[A01, A03, A06]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-29",
+      "rank": 29,
+      "tier": 2,
+      "feature": "Recipe sources",
+      "details": "unlearned recipes with trainer/vendor/drop/quest and colour thresholds",
+      "competitors": "What's Training, SkillUp",
+      "notes": "[P01, P05]. Needs a cited data pack",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-30",
+      "rank": 30,
+      "tier": 2,
+      "feature": "Alt detail",
+      "details": "reputations per alt, \"known by alt\" on recipe tooltips, browse alt bags",
+      "competitors": "Altoholic",
+      "notes": "[AL01]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-31",
+      "rank": 31,
+      "tier": 2,
+      "feature": "Equipment set window",
+      "details": "with icons and a missing-item report",
+      "competitors": "ItemRack",
+      "notes": "[G02]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-32",
+      "rank": 32,
+      "tier": 2,
+      "feature": "Rare toast",
+      "details": "3D model (PlayerModel, fails soft to an icon); loot list once a cited drop source exists",
+      "competitors": "RareScanner",
+      "notes": "[R01, R04]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-33",
+      "rank": 33,
+      "tier": 3,
+      "feature": "Levelling route engine",
+      "details": "our own step format; steps tick off from quest, kill, loot and place events; skip with undo; starts at any level. First pack: Horde 1–20 in our zones",
+      "competitors": "Polestar, Forever Route, Guidelime",
+      "notes": "[Q04, Q05]. Write our own routes; don't copy paid guides",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": [
+        "DEEP-01",
+        "DEEP-06"
+      ]
+    },
+    {
+      "id": "DEEP-34",
+      "rank": 34,
+      "tier": 3,
+      "feature": "Bag window",
+      "details": "with categories, bank, alts, a search that lights up slots, and BoE marks. Yields to Bagnon/Baganator",
+      "competitors": "Baganator, Bagnon, Rucksack",
+      "notes": "[B01, B02]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-35",
+      "rank": 35,
+      "tier": 3,
+      "feature": "Dungeon journal",
+      "details": "bosses, loot, quests, map, readiness",
+      "competitors": "DungeonJournal, AtlasLoot",
+      "notes": "[D01, D02]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-36",
+      "rank": 36,
+      "tier": 3,
+      "feature": "Heal panel for 40",
+      "details": ", click-binding editor, Ctrl/Alt modifiers",
+      "competitors": "VuhDo, HealBot",
+      "notes": "[HE01, HE02]. For Gary's priest",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-37",
+      "rank": 37,
+      "tier": 3,
+      "feature": "Auction engine",
+      "details": "median and volatility, shopping lists, groups",
+      "competitors": "TSM, Auctionator",
+      "notes": "[A02, A04]",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    },
+    {
+      "id": "DEEP-38",
+      "rank": 38,
+      "tier": 3,
+      "feature": "Boss notes and timelines",
+      "details": "(C_EncounterTimeline)",
+      "competitors": "DBM, BigWigs",
+      "notes": "[D03, D04]. Probe first; last",
+      "status": "not_started",
+      "acceptance": {
+        "works": "Requires passing full suite and a real Forever client test without competing addon",
+        "matches": "All applicable competitor option rows from raw research checked in game",
+        "surpasses": "Measured cross-module advantage documented"
+      },
+      "deps": []
+    }
+  ],
+  "broader_roadmap": [
+    {
+      "id": "Q01",
+      "priority": "P0",
+      "audit_status": "VERIFY",
+      "feature": "Audit coverage of all available/active/completed quests, objective NPCs/items, prerequisite chains and zones independent of Questie",
+      "minimum_acceptance": "Two installs with Questie disabled; 50-quest golden matrix across 10 zones, original/Forever quests, factions, and levels; count missing/incorrect pins and labels",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q02",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "A real Questie 'Quests by Zone' browser with available, completed, locked, and why-locked states",
+      "minimum_acceptance": "Zone explorer with level/class/race/faction/profession/chain filters, reward XP, and provenance; five tested zones",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q03",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Questie tracker interaction parity: focus quest/dim other pins, click-through to journal, objective-level context menu and dynamic scroll beyond 45 rows",
+      "minimum_acceptance": "All controls reachable with 50+ quest/objective lines; no lost interactions in combat",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q04",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Continuous 1-60 ordered leveling route instead of only 3-5 What Now suggestions",
+      "minimum_acceptance": "Versioned faction/class/race guide packs; initial 1-20 route passes uninterrupted dry-run and two in-game sessions",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q05",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Guide-authoring engine like Guidelime: typed steps, prerequisites, skips, backtracking, routes and shareable custom guides",
+      "minimum_acceptance": "Original DSL/schema compiler, schema/error tests, one self-contained sample guide; no copying paid guides",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q06",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Quest objective clusters, patrol uncertainty, drops, escort path execution and map-density overlays",
+      "minimum_acceptance": "Choose ranked locations for 25 quests with explicit confidence, not an arbitrary single pin",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q07",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Group quest coordination: who has/needs prerequisites, synchronized shared quest objectives and target distribution",
+      "minimum_acceptance": "Multi-client tests with Outrider and Questie clients; respectful rate limits and privacy",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q08",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Forever-specific quest correction/verification queue and discrepancy reporting",
+      "minimum_acceptance": "Report a wrong quest pin with automatic client snapshot; corrected records stay provenance-tagged",
+      "status": "not_verified"
+    },
+    {
+      "id": "Q09",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Dedicated side-by-side leveling efficiency dashboard by XP/hr, deaths, distance, and quest completion",
+      "minimum_acceptance": "Session history and guide-path comparisons with timestamps and optional display",
+      "status": "not_verified"
+    },
+    {
+      "id": "D01",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Complete DungeonJournal-style directory: every boss, interior map, entrance, quest giver, dungeon quests, rewards, loot and prerequisites",
+      "minimum_acceptance": "For three dungeons, cross-check all bosses, quests, loot, maps and rewards; data-pack and freshness labels",
+      "status": "not_verified"
+    },
+    {
+      "id": "D02",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "AtlasLoot-style searchable full loot tables (not only gear upgrades for this character), with bosses, currencies, recipes and collection sets",
+      "minimum_acceptance": "Search by item/boss/dungeon; at least three dungeons and one raid, all drops linked to provenance",
+      "status": "not_verified"
+    },
+    {
+      "id": "D03",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Boss-mechanic encyclopedia with class/role actions, interrupt/dispel assignments and quick guide",
+      "minimum_acceptance": "Boss details show each mechanic, response and source; class-relevant short checklist",
+      "status": "not_verified"
+    },
+    {
+      "id": "D04",
+      "priority": "P0",
+      "audit_status": "VERIFY",
+      "feature": "Encounter timelines and role-filtered warnings using C_EncounterTimeline official API (not combat log)",
+      "minimum_acceptance": "Probe event shape in a real encounter; if unsupported, disable feature gracefully; never claim DBM parity without fight coverage",
+      "status": "not_verified"
+    },
+    {
+      "id": "D05",
+      "priority": "P0",
+      "audit_status": "VERIFY",
+      "feature": "Post-fight damage/healing/threat analytics from C_DamageMeter and supported threat APIs",
+      "minimum_acceptance": "Collect 10 fight sessions; reconcile totals to Blizzard UI; ensure secret values never enter unsafe comparisons",
+      "status": "not_verified"
+    },
+    {
+      "id": "D06",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Attune-style graph of keys, dungeon/raid unlock quests, and class/Forever progression requirements",
+      "minimum_acceptance": "Show dependency graph, current checkpoint, missing prerequisites, how-to-reach, test 3 chains",
+      "status": "not_verified"
+    },
+    {
+      "id": "D07",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Full instance journal: boss kill state, raid lockout IDs, reset windows, per-character run and loot history, group status",
+      "minimum_acceptance": "Compare to Blizzard lockout state, handle 5/hr 30/day estimates explicitly as estimates",
+      "status": "not_verified"
+    },
+    {
+      "id": "D08",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Group tactical panel: pull roles, ready check extensions, raid assignments, interrupt roster and optional sync",
+      "minimum_acceptance": "No automatic casting; player-initiated notes; 5-player and 20-player mock tests",
+      "status": "not_verified"
+    },
+    {
+      "id": "D09",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Boss-specific configurable alerts, sound packs, encounter-specific settings and after-action review",
+      "minimum_acceptance": "Five experimentally proven Forever encounters with reliable only-if-observable warnings",
+      "status": "not_verified"
+    },
+    {
+      "id": "D10",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Targeted dungeon route/planning support: objectives, route checkpoints, quest collection, teleport/return path",
+      "minimum_acceptance": "One complete dungeon journey covers quest prerequisites, entrance, bosses, return and turn-ins",
+      "status": "not_verified"
+    },
+    {
+      "id": "C01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Class/spec/build-specific macro intelligence rather than one fixed spell-order template per class",
+      "minimum_acceptance": "All 9 classes x leveling milestones x roles tests, generated macros fit 255 characters, in-game spell availability verified",
+      "status": "not_verified"
+    },
+    {
+      "id": "C02",
+      "priority": "P0",
+      "audit_status": "VERIFY",
+      "feature": "Macro correctness/performance: priority failures, first-invalid-spell behavior, target switches, buffs and ranges",
+      "minimum_acceptance": "Per-class real-combat trace with failures categorized and known-client constraints; no 'best DPS' claims absent evidence",
+      "status": "not_verified"
+    },
+    {
+      "id": "C03",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Integrated combat meter drilldowns: DPS/HPS, avoidable damage when available, casts, deaths, threat and comparison to previous fights",
+      "minimum_acceptance": "Post-fight dashboard and role comparison relying only on supported C_DamageMeter data",
+      "status": "not_verified"
+    },
+    {
+      "id": "C04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Macro variants for solo/group/dungeon/PvP, consumable/interrupt/defensive sets, per-encounter readiness",
+      "minimum_acceptance": "Versioned templates per class and role; protect any user-authored macro and allow rollback",
+      "status": "not_verified"
+    },
+    {
+      "id": "C05",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Real macro editing workbench: searchable templates, preview simulation, explain condition conflicts, hotkey mapping, conflict report",
+      "minimum_acceptance": "Representative 100-macro corpus validation and user-visible diff before installation",
+      "status": "not_verified"
+    },
+    {
+      "id": "C06",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Cooldown and proc visibility using documented permitted CooldownViewer UI/APIs, rather than forbidden WeakAuras combat secrets",
+      "minimum_acceptance": "In-game permission/API gate then customizable watch display; no forbidden protected logic",
+      "status": "not_verified"
+    },
+    {
+      "id": "C07",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Post-fight suggestion engine that recommends player-initiated macro changes based on observed outcome",
+      "minimum_acceptance": "Suggestions expose measured evidence and never rewrite active macros while combat-locked",
+      "status": "not_verified"
+    },
+    {
+      "id": "C08",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Action-bar presentation choices: cooldown digits, missing reagent indicator, keybind/conflict help without taking ownership of protected Blizzard frames",
+      "minimum_acceptance": "Bench against OmniCC/Bartender on Forever, off-by-default, zero taint",
+      "status": "not_verified"
+    },
+    {
+      "id": "R01",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "RareScanner-style rare details/loot explorer: all known drops, rarity, upgrade suitability, required level and wishlist",
+      "minimum_acceptance": "At least 20 rares with inspectable verified/unverified drops and search",
+      "status": "not_verified"
+    },
+    {
+      "id": "R02",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Rare route builder for filtered wanted rares, dynamically optimized across travel time and layers",
+      "minimum_acceptance": "Route 10 visible spawn locations, recompute after sighting and filter changes, explicit uncertainty",
+      "status": "not_verified"
+    },
+    {
+      "id": "R03",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Detection coverage benchmark across nameplates, target, mouseover, death, layers and missing vignettes; false positives",
+      "minimum_acceptance": "20 NPC scenarios and live sessions, dedupe and alert sensitivity metrics",
+      "status": "not_verified"
+    },
+    {
+      "id": "R04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Rare model preview and high-clarity details window (where the API and art permit)",
+      "minimum_acceptance": "Model gracefully degrades to creature icon; no protected API calls",
+      "status": "not_verified"
+    },
+    {
+      "id": "R05",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Respawn confidence and telemetry quality: sample sizes, layer independence, censored sightings and stale data",
+      "minimum_acceptance": "Only report probability/window when samples justify it; never present claimed timers as measured truth",
+      "status": "not_verified"
+    },
+    {
+      "id": "R06",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "WhatNow integration by rare value: upgrades, tame skills, unique rewards vs distance and contest risk",
+      "minimum_acceptance": "Top rare recommendations explain 'why' and show route, loot and data confidence",
+      "status": "not_verified"
+    },
+    {
+      "id": "R07",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Treasures and non-NPC events as first-class scanner targets only where Forever supports their identification",
+      "minimum_acceptance": "Item/object discovery events mapped without false promises of inaccessible detection",
+      "status": "not_verified"
+    },
+    {
+      "id": "R08",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Rare-specific configurable sounds, sounds by rarity/watch tier, snooze and alert history",
+      "minimum_acceptance": "No duplicate spam, per-character accessible sounds/visual cues",
+      "status": "not_verified"
+    },
+    {
+      "id": "H01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Searchable beast and pet-skill training database (who teaches which rank, location, beast family, level, attack speed)",
+      "minimum_acceptance": "For level-10-to-60 hunter, search wanted ability and find minimum reachable candidates, with provenance",
+      "status": "not_verified"
+    },
+    {
+      "id": "H02",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Pet stable roster and comparison: abilities, loyalty/happiness where client exposes it, best pet for role, training upgrade path",
+      "minimum_acceptance": "Account-safe snapshots and role comparison, unknown fields shown as unknown",
+      "status": "not_verified"
+    },
+    {
+      "id": "H03",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Tame safety plan incorporating interrupts/knockdowns, pet sacrifice, trap, emergency fallback and macro verification",
+      "minimum_acceptance": "One-click-per-action secure macros; real test on three creature ability profiles",
+      "status": "not_verified"
+    },
+    {
+      "id": "H04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Hunter leveling pet recommendation graph, keyed by level/zone and tested damage/survivability",
+      "minimum_acceptance": "Recommend top pets and learnable ranks, show route and observed evidence",
+      "status": "not_verified"
+    },
+    {
+      "id": "H05",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Pet happiness, diet, food inventory and restock forecast integrated with Errands and AH",
+      "minimum_acceptance": "No unsupported loyalty promises; restock prompts configurable",
+      "status": "not_verified"
+    },
+    {
+      "id": "M01",
+      "priority": "P0",
+      "audit_status": "VERIFY",
+      "feature": "All Forever maps, portal/boat paths, zone changes, interior maps, reveal overlays and Forever-redrawn geography",
+      "minimum_acceptance": "Test per-continent map coords and 10 redrawn-zone checkpoints; no Classic coordinates silently treated as verified",
+      "status": "not_verified"
+    },
+    {
+      "id": "M02",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "HandyNotes custom player notes: icons, freeform notes, import/export, editing and per-character/global categories",
+      "minimum_acceptance": "Create/edit/move/export/import notes; never collide with existing pin groups",
+      "status": "not_verified"
+    },
+    {
+      "id": "M03",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Route planner accuracy using terrain, obstacles, transport schedules and unknown taxi connections rather than straight-line only",
+      "minimum_acceptance": "Compare ETA/route for 15 real trips, record error and offer fallback if inaccessible",
+      "status": "not_verified"
+    },
+    {
+      "id": "M04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "GatherMate2-style editable and importable prefilled node database, with visibility filters and confidence per node",
+      "minimum_acceptance": "Dataset attribution/license review; filter herbs/ores/fish, versioned schema, mislocated nodes marked",
+      "status": "not_verified"
+    },
+    {
+      "id": "M05",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Route optimization through selected gathering nodes with current-node state and density overlays",
+      "minimum_acceptance": "20-node walk/flight route supports replan, hide harvested and route summary",
+      "status": "not_verified"
+    },
+    {
+      "id": "M06",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "World-map customization: zoom/move/opacity, dungeon interior map and transport line overlays where supported",
+      "minimum_acceptance": "Do not replace Blizzard protected frames; per-control compatibility tests",
+      "status": "not_verified"
+    },
+    {
+      "id": "M07",
+      "priority": "P2",
+      "audit_status": "PARTIAL",
+      "feature": "Waypoints interchange with TomTom/other addon data and conflict-free takeover when competitors are present",
+      "minimum_acceptance": "Import/export coordinates and preference setting, validated for Forever maps",
+      "status": "not_verified"
+    },
+    {
+      "id": "G01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Correct role/spec/level stat-weight profiles, weapons and 2H/offhand, hit caps, weapon speeds, resistances and set bonuses",
+      "minimum_acceptance": "At least 15 gold-standard comparisons per class and role, display assumptions and limits",
+      "status": "not_verified"
+    },
+    {
+      "id": "G02",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Equipment set manager UI with saved icons, preview, slot flyouts, missing item report, single click to equip out of combat",
+      "minimum_acceptance": "Five sets with user-confirmed swaps; never autoequip or touch gear in protected combat",
+      "status": "not_verified"
+    },
+    {
+      "id": "G03",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Pawn-style editable named stat scales, export/import and user selected role emphasis",
+      "minimum_acceptance": "Per-character scales and validated strings, no numerical overflow and deterministic ratings",
+      "status": "not_verified"
+    },
+    {
+      "id": "G04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Complete targeted gear wishlist/BiS planning by slot, source, raid/dungeon/quest/AH price and upgrade size",
+      "minimum_acceptance": "Search source and action route from item card, 30-item test matrix",
+      "status": "not_verified"
+    },
+    {
+      "id": "G05",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Live upgrade advice must distinguish potential item, eligible item, affordable item and equipped item",
+      "minimum_acceptance": "Clear verdicts across AH, quest reward, dungeon loot, alt storage; no 'can use' hallucinations",
+      "status": "not_verified"
+    },
+    {
+      "id": "G06",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Set variants and action-bar/talent links with explicit one-click switch (Loadout comparison)",
+      "minimum_acceptance": "Save/import/copy, non-destructive rollback, combat queue status visible",
+      "status": "not_verified"
+    },
+    {
+      "id": "G07",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Resistance and consumable preparations for raids/roles plus upgrade value by encounter",
+      "minimum_acceptance": "Class and encounter view reports missing pieces, conservative costs",
+      "status": "not_verified"
+    },
+    {
+      "id": "B01",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Actual Baganator-grade combined bags/bank window, categories or single-pane view, clean item icons and tooltips",
+      "minimum_acceptance": "Remote inventory views without touching Blizzard bank protected state; normal bag interactions when available",
+      "status": "not_verified"
+    },
+    {
+      "id": "B02",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Search by item attributes, slot, quality, binding, level, category and bool AND/OR/NOT, across bags/bank/mail/auctions/alts",
+      "minimum_acceptance": "20 queries with correct category and item-level matching; include provenance and freshness",
+      "status": "not_verified"
+    },
+    {
+      "id": "B03",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Inventory index with item-instance details, equipment sets, bank tabs, guild storage where accessible, auction listings, expiry",
+      "minimum_acceptance": "Account-wide counts stay consistent after transfers and reloads",
+      "status": "not_verified"
+    },
+    {
+      "id": "B04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Custom category rules, sorting preferences, filtered transfers and confirmation before moves/sells",
+      "minimum_acceptance": "Human confirmation on each protected action per policy; avoid fighting installed bag addons",
+      "status": "not_verified"
+    },
+    {
+      "id": "B05",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Postal-style inbox type filters/selective collect, quick attach, richer contact autocomplete and attached-item classification",
+      "minimum_acceptance": "Mock inbox 100 mails; skip COD/GM; respect user-click rule",
+      "status": "not_verified"
+    },
+    {
+      "id": "B06",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Mail queue previews with alt supply goals, material shipment planning, reserve space and expiry alerts",
+      "minimum_acceptance": "Queue identifies target and contents before each user-initiated send",
+      "status": "not_verified"
+    },
+    {
+      "id": "B07",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Bank organization/cleaning and item cleanup safety (user designated junk, 'never sell' list)",
+      "minimum_acceptance": "No auto-deletion; undoable labels and confirmation flows",
+      "status": "not_verified"
+    },
+    {
+      "id": "A01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Auctionator search parity: saved shopping lists, query filters, session history, multi-search, sortable results",
+      "minimum_acceptance": "20 standardized searches, full-scan performance and rate limits",
+      "status": "not_verified"
+    },
+    {
+      "id": "A02",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Market price engine: historical median/volatility, sale velocity proxy, outlier rejection, freshness and confidence",
+      "minimum_acceptance": "Unknown sale volume shown as unknown; 14+ day history and tests for bad quotes",
+      "status": "not_verified"
+    },
+    {
+      "id": "A03",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Posting workflow with safe undercut, minimum profit, deposit and auction house cut plus one-click cancel per allowed action",
+      "minimum_acceptance": "No misleading default and no unapproved posting or canceling",
+      "status": "not_verified"
+    },
+    {
+      "id": "A04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "TSM-style item groups/operations and policy presets (craft/sell/buy/hold) without automation",
+      "minimum_acceptance": "User configures price rules and previews exact action before click",
+      "status": "not_verified"
+    },
+    {
+      "id": "A05",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Craft-versus-buy arbitrage planner with full reagent chain and opportunity cost",
+      "minimum_acceptance": "Use latest known quotes, calculate fees and losses; 50 deterministic test cases",
+      "status": "not_verified"
+    },
+    {
+      "id": "A06",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Profit/loss dashboard by item, profession, dungeon, fishing, alt and time period",
+      "minimum_acceptance": "Reconcile gold ledger against known transactions without implying invisible sales data",
+      "status": "not_verified"
+    },
+    {
+      "id": "A07",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Smart restock, shopping target, inventory handoffs and vendor comparison",
+      "minimum_acceptance": "Only shows buy candidates within budget; costs and stale quotes explicit",
+      "status": "not_verified"
+    },
+    {
+      "id": "A08",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Auction pricing histograms/trend graphs, deal alerts and user-configurable watch thresholds",
+      "minimum_acceptance": "Sound/notifications opt-in and no automated purchases",
+      "status": "not_verified"
+    },
+    {
+      "id": "P01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Full unlearned recipe catalog, trainers, drops/vendors/quests, weapon skills, rank costs and next learnable spells without prior trainer visit",
+      "minimum_acceptance": "Verify 3 professions x tiers, provenance and price from sources",
+      "status": "not_verified"
+    },
+    {
+      "id": "P02",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Skill-up planner models recipe availability, material alternatives, expected successes and total budget not just colors",
+      "minimum_acceptance": "Calculate route with remaining mats, AH buy cost, skill chance uncertainty",
+      "status": "not_verified"
+    },
+    {
+      "id": "P03",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "TSM-like recursive crafting queue and craftability dependency graph for intermediate materials",
+      "minimum_acceptance": "Queue nested recipes, reserve existing stock, correctly aggregate supplies",
+      "status": "not_verified"
+    },
+    {
+      "id": "P04",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Actual craft profitability ranking accounts for reagent sources, auction cut, deposits, vendor prices, cooldown scarcity",
+      "minimum_acceptance": "50 recipes with unit tests and cost provenance",
+      "status": "not_verified"
+    },
+    {
+      "id": "P05",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Discovery and profession recipe collection tracker with acquisition route and completion percentage",
+      "minimum_acceptance": "Missing recipe filters per character and account, 30 verified source entries",
+      "status": "not_verified"
+    },
+    {
+      "id": "P06",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Alt/guild crafter directory with learned recipes, optional opt-in sharing, cooldown availability",
+      "minimum_acceptance": "No public broadcasts; freshness and privacy controls",
+      "status": "not_verified"
+    },
+    {
+      "id": "P07",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Profession-specific optimizer for disenchant returns and crafting specialization where Forever permits",
+      "minimum_acceptance": "Strict feature gating by profession and game availability",
+      "status": "not_verified"
+    },
+    {
+      "id": "F01",
+      "priority": "P0",
+      "audit_status": "VERIFY",
+      "feature": "Fishing skill route and zone/fish database accuracy for Forever new fish, catch chances, special conditions",
+      "minimum_acceptance": "40-catch sample in 3 zones, confidence and price timestamps",
+      "status": "not_verified"
+    },
+    {
+      "id": "F02",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Fishing session analytics: catch distribution, hourly gains, lure/gear impact, best-time estimates and rarity",
+      "minimum_acceptance": "Distinct session vs lifetime stats, no inferred drop-rate claims from tiny samples",
+      "status": "not_verified"
+    },
+    {
+      "id": "F03",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Gathering node map completeness and prefilled node imports, observed respawn state and rare pool detection",
+      "minimum_acceptance": "No falsely precise 'available now'; complete per-type filter and sample nodes",
+      "status": "not_verified"
+    },
+    {
+      "id": "F04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Integrated gold/XP gathering route generator across professions and fishing with AH cost trends",
+      "minimum_acceptance": "10 locations and route rerank, conflict-free with normal quest route",
+      "status": "not_verified"
+    },
+    {
+      "id": "F05",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Fishing tournament schedule and collection/completion log where events exist in Forever",
+      "minimum_acceptance": "Game time/cycle provenance, manual verification",
+      "status": "not_verified"
+    },
+    {
+      "id": "HE01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "Raid-size coverage, flexible group/role sorting and assigned target selection: fixed 10 bars currently",
+      "minimum_acceptance": "40-member test, configurable visible subset and safe secure frame updates",
+      "status": "not_verified"
+    },
+    {
+      "id": "HE02",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "VuhDo-style click binding editor per class, modifier combinations, mouseover keys and profile import/export",
+      "minimum_acceptance": "All bindings only changed out of combat; preview before apply",
+      "status": "not_verified"
+    },
+    {
+      "id": "HE03",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Debuff/buff/HoT/shield/incoming-heal/threat/aggro indicators where Forever allows readable data",
+      "minimum_acceptance": "Unknown secrets never evaluated for conditional coloring; 15 status test cases",
+      "status": "not_verified"
+    },
+    {
+      "id": "HE04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Group buff, dispel, resurrection and role reminders (advice only)",
+      "minimum_acceptance": "No automatic actions, context explains eligible spell and target",
+      "status": "not_verified"
+    },
+    {
+      "id": "HE05",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Raid-frame layouts/role presets, accessibility tests and multi-monitor scaling",
+      "minimum_acceptance": "Test priest/paladin/druid/shaman, no taint",
+      "status": "not_verified"
+    },
+    {
+      "id": "UI01",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Leatrix-grade modular options catalog: individually configurable convenience toggles and searchable settings",
+      "minimum_acceptance": "Feature comparison grid, on/off persistence, zero unexpected behavior",
+      "status": "not_verified"
+    },
+    {
+      "id": "UI02",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Customizable info bar/data broker plugins, placement and per-stat display, zero clutter by default",
+      "minimum_acceptance": "15 data fields, per-character export, 1-second refresh cost measured",
+      "status": "not_verified"
+    },
+    {
+      "id": "UI03",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Prat features: advanced chat search, user-defined channels, class/level coloring, abbreviations, edit-box behavior and copied history",
+      "minimum_acceptance": "Search returns exact lines after /reload; modules independently toggle",
+      "status": "not_verified"
+    },
+    {
+      "id": "UI04",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Theme consistency: consistent page navigation, scrollable responsive tables, standardized status chips, gamepad-friendly focus",
+      "minimum_acceptance": "Small/large resolution screenshot set, no text clipping",
+      "status": "not_verified"
+    },
+    {
+      "id": "UI05",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Minimap scale/shape and map UI customization without competing owner of protected frames",
+      "minimum_acceptance": "Settings tested in combat and with Leatrix/ElvUI on",
+      "status": "not_verified"
+    },
+    {
+      "id": "UI06",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "More robust cross-addon detection and user-facing conflict screen: who owns bag/map/quest/raid frames",
+      "minimum_acceptance": "One owner per frame, modules independently yield; explicit diagnostics",
+      "status": "not_verified"
+    },
+    {
+      "id": "AL01",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "Account character roster: skills, rested cap, money, inventory, mail, lockouts, exact freshness and actionable tasks",
+      "minimum_acceptance": "Show 10 characters, 'last updated' per category and no stale total disguised as current",
+      "status": "not_verified"
+    },
+    {
+      "id": "AL02",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Account-wide progression/checklist dashboard: keys, rare collection, recipe completion, exploration, attunement",
+      "minimum_acceptance": "Character-level and account-level progress independently tracked",
+      "status": "not_verified"
+    },
+    {
+      "id": "AL03",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Optional party/guild attunement and quest readiness checks, sharing only explicitly approved metadata",
+      "minimum_acceptance": "Consent per channel/category, deny unknown add-on payloads",
+      "status": "not_verified"
+    },
+    {
+      "id": "AL04",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Guild utility directory: recipes/crafters and verified instance readiness, opt-in and no server-wide census broadcasts",
+      "minimum_acceptance": "Permissioned sharing and opt-out support",
+      "status": "not_verified"
+    },
+    {
+      "id": "AL05",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Cross-character errands orchestration: optimal character to log into, mail or craft next",
+      "minimum_acceptance": "Actionable steps with no automation",
+      "status": "not_verified"
+    },
+    {
+      "id": "X01",
+      "priority": "P0",
+      "audit_status": "PARTIAL",
+      "feature": "True goal planner with 30/60/120-minute itinerary, prerequisites, gold, XP, group requirements, route and actual reassessment",
+      "minimum_acceptance": "Plans persist, are correct after quest turn-in/zone change and contain reason/confidence/source per step",
+      "status": "not_verified"
+    },
+    {
+      "id": "X02",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Every module publishes an explicit capabilities/coverage contract, data freshness and known limitations to advisor",
+      "minimum_acceptance": "No suggestions citing disabled modules/missing data; deterministic fallback",
+      "status": "not_verified"
+    },
+    {
+      "id": "X03",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "Automated parity regression fixtures against competitors: Questie quest coverage, DungeonJournal loot, RareScanner rare data",
+      "minimum_acceptance": "License-safe separately sourced fixtures, expected counts and change reports",
+      "status": "not_verified"
+    },
+    {
+      "id": "X04",
+      "priority": "P0",
+      "audit_status": "GAP",
+      "feature": "CI/static acceptance gate: Lua syntax, mocked events, newly added files/TOC, private pack absent and secret-value handling",
+      "minimum_acceptance": "CI passes without local private packs; sensitive paths absent; no forbidden COMBAT_LOG event registration",
+      "status": "not_verified"
+    },
+    {
+      "id": "X05",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Module interoperability test matrix (Questie, Auctionator, Baganator, HealBot, ElvUI)",
+      "minimum_acceptance": "No double overlays, no frame ownership conflicts, one on/off switch per integration",
+      "status": "not_verified"
+    },
+    {
+      "id": "X06",
+      "priority": "P1",
+      "audit_status": "PARTIAL",
+      "feature": "User-visible source provenance & accuracy ratings for every recommendation, including Forever map coordinate changes",
+      "minimum_acceptance": "Trace source and timestamp in every actionable card",
+      "status": "not_verified"
+    },
+    {
+      "id": "X07",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Low-resource certification with peak RAM, idle/active CPU, frame/timer caps and load-on-demand packs",
+      "minimum_acceptance": "Measured before/after in 30-minute gameplay; hard caps, pooled frame tests",
+      "status": "not_verified"
+    },
+    {
+      "id": "X08",
+      "priority": "P1",
+      "audit_status": "GAP",
+      "feature": "Automatic addon feature coverage report and release notes generated from manifests and tests",
+      "minimum_acceptance": "No claims of parity until in-game verified",
+      "status": "not_verified"
+    },
+    {
+      "id": "X09",
+      "priority": "P2",
+      "audit_status": "GAP",
+      "feature": "Data pack updater/verification workflow on desktop, explicit consent, versioned snapshots, no in-game network calls",
+      "minimum_acceptance": "Works offline when not updating; no surprise traffic or unlicensed data imports",
+      "status": "not_verified"
+    },
+    {
+      "id": "X10",
+      "priority": "P2",
+      "audit_status": "PARTIAL",
+      "feature": "Accessible onboarding: presets for solo/leveling, hunter, dungeon, raid healer, trader, gatherer",
+      "minimum_acceptance": "10-minute first-use test per persona, opt-in settings and rollback",
+      "status": "not_verified"
+    }
+  ]
+}
