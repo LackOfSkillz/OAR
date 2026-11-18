@@ -632,6 +632,38 @@ function M.new(opts)
   -- merchant: game.merchant = { itemID, ... }; game.itemClass[itemID] = classID
   base.GetMerchantNumItems = function() return game.merchant and #game.merchant or 0 end
   base.GetMerchantItemID = function(i) return game.merchant and game.merchant[i] end
+  base.GetMerchantItemInfo = function(i)
+    local id = game.merchant and game.merchant[i]
+    local item = id and game.items and game.items[id]
+    if not item then return nil end
+    local price = item.buy or 100
+    local bundle = item.bundle or 1
+    local available = item.available == nil and -1 or item.available
+    return item.name, "", price, bundle, available, item.usable ~= false, item.extended or false
+  end
+  base.BuyMerchantItem = function(i, units)
+    if game.combat then error("purchase in combat") end
+    local id = game.merchant and game.merchant[i]
+    if not id then error("no merchant item") end
+    local item = game.items[id] or {}
+    local bundle = item.bundle or 1
+    local count = math.ceil(units / bundle) * bundle
+    local cost = math.ceil(count / bundle) * (item.buy or 100)
+    game.money = (game.money or game.player.money) - cost
+    game.bought = game.bought or {}
+    game.bought[#game.bought + 1] = { id = id, count = count, cost = cost }
+    game.bags = game.bags or {}
+    game.bags[0] = game.bags[0] or {}
+    for j = 1, 16 do
+      if not game.bags[0][j] then
+        game.bags[0][j] = id
+        game.counts = game.counts or {}
+        game.counts[0] = game.counts[0] or {}
+        game.counts[0][j] = count
+        break
+      end
+    end
+  end
   base.C_Item = base.C_Item or {}
   -- bags: game.bags[bag][slot] = itemID; game.items[itemID] = { name, reqLevel, spell }
   base.C_Container = {
