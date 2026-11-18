@@ -1,9 +1,9 @@
 {
   "schema": "outrider-gap-loop-v1",
   "branch": "p1-foundation",
-  "source_head": "54f36218b6a6265fe71976e6241696287c45c8f8",
+  "source_head": "4f85b778897c41691e32fb9dca5c5f1223422458",
   "generated": "2026-11-18",
-  "warning": "Ranks 1-14 have prior passing CI; ranks 15-24 have implementation slices pushed but consolidated CI has not passed (last full 666 pass 8 fail before fixes). Zero in-game Works/Matches/Surpasses accepted.",
+  "warning": "All 38 ranked gaps now have automated-tested implementation slices, NOT 38 complete parity features. Only ranks 1-14 previously marked normal tests-green; ranks 15-38 contain explicit partial work. No in-game Works/Matches/Surpasses certification has been performed.",
   "statuses": [
     "not_started",
     "implemented_unverified",
@@ -246,7 +246,7 @@
       "details": "",
       "competitors": "Leatrix Plus",
       "notes": "[UI01]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -262,7 +262,7 @@
       "details": "\"stop moving\" mark and dead-zone/range marker on Blizzard's own ranged swing bar (Forever has it, PROBE_RESULTS:113)",
       "competitors": "Quiver, Improved Auto Shot Timer, DaylightUI",
       "notes": "NEW. PROBE `UnitRangedDamage` and `C_Spell.IsSpellInRange` in combat",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -278,7 +278,7 @@
       "details": "with pet threat (blue), plus a small threat list",
       "competitors": "ThreatTint, ThreatClassic2",
       "notes": "NEW. PROBE `UnitDetailedThreatSituation` on nameplates in combat. ThreatTint working on Forever is a good sign",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -294,7 +294,7 @@
       "details": "\"you'd respawn at X\" box, map hover, and death logging (predicted vs actual) so it learns. Subzone from the game's own data",
       "competitors": "Deathskip",
       "notes": "NEW. High value on Forever",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -312,7 +312,7 @@
       "details": "per dungeon, givers, chains, rewards, map spot; live progress inside",
       "competitors": "DungeonJournal, Polestar, Forever Route",
       "notes": "[D01 part]. QuestieDB already has the data",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -328,7 +328,7 @@
       "details": "without a trainer visit: spells and cost per level",
       "competitors": "What's Training, Polestar",
       "notes": "[P01 part]. Needs a cited spell/rank/cost pack (rule 7)",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -344,7 +344,7 @@
       "details": "through all, or only watched, rares on the map, as a waypoint queue",
       "competitors": "RareScanner",
       "notes": "[R02]. Needs #6",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -362,7 +362,7 @@
       "details": "XP left per zone, the level you'd reach, chains about to go grey, abandon list (quests that never pay off)",
       "competitors": "Forever Route, Polestar",
       "notes": "[Q02 part]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -378,7 +378,7 @@
       "details": "Alt+click to save, owned marker, tooltip tag; full loot table of any boss",
       "competitors": "AtlasLoot",
       "notes": "[D02, G04]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -394,7 +394,7 @@
       "details": "(click to add, edit, minimap)",
       "competitors": "HandyNotes",
       "notes": "[M02]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -410,7 +410,7 @@
       "details": "from `C_DamageMeter` (out of combat, Blizzard's numbers)",
       "competitors": "Details",
       "notes": "[D05, C03]. PROBE the session shape",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -427,7 +427,7 @@
       "details": "use-first and never lists, Well Fed reminder, delete-old-food button",
       "competitors": "Rucksack",
       "notes": "NEW",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -444,7 +444,7 @@
       "details": ", spec scales, Pawn string import",
       "competitors": "Pawn",
       "notes": "[G03]. Storage already exists",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -461,7 +461,7 @@
       "details": "bag list on the selling side, one-click cancel per undercut, sales/expired ledger",
       "competitors": "Auctionator, Journalator",
       "notes": "[A01, A03, A06]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -478,7 +478,7 @@
       "details": "unlearned recipes with trainer/vendor/drop/quest and colour thresholds",
       "competitors": "What's Training, SkillUp",
       "notes": "[P01, P05]. Needs a cited data pack",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -495,7 +495,7 @@
       "details": "reputations per alt, \"known by alt\" on recipe tooltips, browse alt bags",
       "competitors": "Altoholic",
       "notes": "[AL01]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -512,7 +512,7 @@
       "details": "with icons and a missing-item report",
       "competitors": "ItemRack",
       "notes": "[G02]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -529,7 +529,7 @@
       "details": "3D model (PlayerModel, fails soft to an icon); loot list once a cited drop source exists",
       "competitors": "RareScanner",
       "notes": "[R01, R04]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -546,7 +546,7 @@
       "details": "our own step format; steps tick off from quest, kill, loot and place events; skip with undo; starts at any level. First pack: Horde 1–20 in our zones",
       "competitors": "Polestar, Forever Route, Guidelime",
       "notes": "[Q04, Q05]. Write our own routes; don't copy paid guides",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -566,7 +566,7 @@
       "details": "with categories, bank, alts, a search that lights up slots, and BoE marks. Yields to Bagnon/Baganator",
       "competitors": "Baganator, Bagnon, Rucksack",
       "notes": "[B01, B02]",
-      "status": "implemented_ci_pending",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -583,7 +583,7 @@
       "details": "bosses, loot, quests, map, readiness",
       "competitors": "DungeonJournal, AtlasLoot",
       "notes": "[D01, D02]",
-      "status": "not_started",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -599,7 +599,7 @@
       "details": ", click-binding editor, Ctrl/Alt modifiers",
       "competitors": "VuhDo, HealBot",
       "notes": "[HE01, HE02]. For Gary's priest",
-      "status": "not_started",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -615,7 +615,7 @@
       "details": "median and volatility, shopping lists, groups",
       "competitors": "TSM, Auctionator",
       "notes": "[A02, A04]",
-      "status": "not_started",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -631,7 +631,7 @@
       "details": "(C_EncounterTimeline)",
       "competitors": "DBM, BigWigs",
       "notes": "[D03, D04]. Probe first; last",
-      "status": "not_started",
+      "status": "tests_green_partial_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -1499,9 +1499,15 @@
     }
   ],
   "ci": {
-    "last_verified_code_commit": "e0f869398f3c5b3af7dcd2603772b96c0b9c724d",
-    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44299730077",
+    "last_verified_code_commit": "4f85b778897c41691e32fb9dca5c5f1223422458",
+    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44330275735",
     "conclusion": "success",
+    "lua_tests": {
+      "passed": 702,
+      "failed": 0,
+      "syntax_errors": 0
+    },
+    "python_tests": "passed (cloud 18, companion 16, intelligence 29, security 5)",
     "date": "2026-11-18",
     "game_validation": "not_performed"
   },
@@ -1551,7 +1557,7 @@
       15,
       24
     ],
-    "status": "implemented_ci_pending",
+    "status": "tests_green_partial_needs_game",
     "source_commit": "0250cb319f0284b46ced20007d4e74da40e4e1ca",
     "last_full_test_run": "https://github.com/LackOfSkillz/OAR/actions/runs/44304072219",
     "last_full_test_result": "666 passed, 8 failed, 0 syntax errors before fixture and tooltip fixes",
@@ -1572,7 +1578,7 @@
       25,
       34
     ],
-    "status": "implemented_ci_pending",
+    "status": "tests_green_partial_needs_game",
     "note": "Ten slices committed and regression coverage; awaiting final Windows GitHub Actions run and live WoW Forever Works/Matches/Surpasses testing.",
     "hard_gates": [
       "CI green on final commit",
@@ -1581,5 +1587,36 @@
       "competitor option matrix and in-game parity verification"
     ],
     "last_test": "691 passed, 2 failed, 0 syntax errors on first combined run; auction backward-compatibility and boot-command samples corrected in later commits."
+  },
+  "batch6": {
+    "range": [
+      35,
+      38
+    ],
+    "status": "tests_green_partial_needs_game",
+    "code_head": "4f85b778897c41691e32fb9dca5c5f1223422458",
+    "ci_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44330275735",
+    "ci_status": "success",
+    "lua_tests": {
+      "passed": 702,
+      "failed": 0,
+      "syntax_errors": 0
+    },
+    "python_tests": "passed",
+    "game_validation": "not_performed",
+    "features": {
+      "35": "Dungeon journal assembled from dungeon/quest packs: bosses, recorded loot, quest links, readiness, entrances",
+      "36": "40-player, five-column secure heal bars, configurable Shift/Ctrl/Alt bindings, visual editor",
+      "37": "daily observed lowest-price median and coefficient of variation, per-character shopping groups and target lists",
+      "38": "read-only encounter timeline of known events, saved manual boss notes, no guessed timers"
+    },
+    "remaining": [
+      "Incomplete boss loot, dungeon quest and recipe data packs",
+      "No confirmed live WoW Forever 40-player secure click-binding test, including combat lockdown",
+      "Timeline API return-shape/cadence and boss encounter notes need live probes and data",
+      "Auction shopping lists are user configured, daily-low median not a full TSM market price model",
+      "Ranks 1-34 have several partial implementations, all still require raw competitor option-row verification",
+      "Zero ranked features have Works/Matches/Surpasses game certifications"
+    ]
   }
 }
