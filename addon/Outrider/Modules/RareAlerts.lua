@@ -13,7 +13,7 @@ local M = ns:NewModule("RareAlerts", {
   phase = "P2",
   order = 30,
   yieldsTo = { "RareScanner" },
-  defaults = { mode = "all", sound = true, soundName = "RAID_WARNING", toast = true, cooldown = 300, flash = true, arrow = true },
+  defaults = { mode = "all", sound = true, soundName = "RAID_WARNING", toast = true, cooldown = 300, flash = true, arrow = true, model = true },
 })
 
 local L = {
@@ -63,6 +63,7 @@ function M:OnRareSeen(_, info)
   end
   self.lastAlert[info.npcID] = now
   self.lastInfo = info
+  if self:Settings().model then self:ShowModel(info) end
   local s = self:Settings()
   local button = { label = "Target", macro = "/targetexact " .. info.name }
   local tame = ns.Modules:Get("TameHelper")
@@ -95,6 +96,51 @@ function M:OnRareSeen(_, info)
     ns.Waypoints:Set(info.mapID, info.x, info.y, "Rare: " .. info.name)
   end
   self:Info("alert npcID=%d %s how=%s layer=%s", info.npcID, tostring(info.name), info.how, tostring(info.layer))
+end
+
+-- DEEP-32: purely decorative model preview, never a protected action.
+-- On clients with no working displayID lookup, show the existing icon toast.
+function M:KnownLoot(npcID)
+  local source = ns.db.global.rareLootSources
+  local data = type(source) == "table" and source[npcID]
+  if type(data) ~= "table" then return {} end
+  local out = {}
+  for _, row in ipairs(data) do
+    if type(row) == "table" and type(row.id) == "number" and row.source then
+      out[#out + 1] = { id = row.id, chance = row.chance, source = row.source }
+    end
+  end
+  return out
+end
+
+function M:ShowModel(info)
+  local id = tonumber(info.npcID)
+  local pack = id and ns.Data:Get("rare", id)
+  local displayID = pack and tonumber(pack.displayID)
+  -- No arbitrary model guessing from an NPC ID; display ID must be sourced.
+  if not displayID then return false, "model display ID not available" end
+  local make = C.Resolve("CreateFrame")
+  if type(make) ~= "function" then return false, "model API missing" end
+  if not self.modelFrame then
+    local ok, frame = pcall(make, "PlayerModel", nil, UIParent)
+    if not ok or not frame then return false, "PlayerModel unavailable" end
+    frame:SetSize(105, 105)
+    frame:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -20, -110)
+    if frame.EnableMouse then frame:EnableMouse(false) end
+    self.modelFrame = frame
+  end
+  local frame = self.modelFrame
+  if type(frame.SetDisplayInfo) ~= "function" then frame:Hide() return false, "model display unavailable" end
+  if not pcall(frame.SetDisplayInfo, frame, displayID) then frame:Hide() return false, "model failed" end
+  frame:Show()
+  if self.modelTimer then self.modelTimer:Cancel() end
+  self.modelTimer = ns.Timer.After(16, function() if M.modelFrame then M.modelFrame:Hide() end end, "rare:model")
+  return true
+end
+
+function M:OnDisable()
+  if self.modelTimer then self.modelTimer:Cancel() self.modelTimer = nil end
+  if self.modelFrame then self.modelFrame:Hide() end
 end
 
 -- A red border round the whole screen that pulses 4 times (plain frame, not
@@ -143,3 +189,14 @@ function M:Activity()
   for _ in pairs(self.lastAlert) do n = n + 1 end
   return n == 0 and "waiting for a rare (toast + sound when one shows up)" or (n .. " alerts this session, last: " .. tostring(self.lastInfo and self.lastInfo.name))
 end
+
+ns.AddCommand("rareloot", "rareloot <npcID>  sourced known drops, never invented", function(arg)
+  local id = tonumber(arg)
+  if not id then ns.Print("usage: /ride rareloot <npcID>") return end
+  local list = M:KnownLoot(id)
+  if #list == 0 then ns.Print("no sourced drops for rare %d; drop pack not installed or unverified", id) return end
+  for _, row in ipairs(list) do
+    ns.Print("item %d%s (source: %s)", row.id,
+      row.chance and string.format(", %.1f%% reported", row.chance) or "", row.source)
+  end
+end)
