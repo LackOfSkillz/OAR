@@ -220,7 +220,11 @@ function M:Tip(id, tt)
           tt:AddLine("XP/hour: collecting at least 60 seconds of active gains", 0.7, 0.7, 0.7)
         end
       end
-      local _, _, items = ns.QuestExtras and ns.QuestExtras:QuestXP()
+      local items
+      if ns.QuestExtras and ns.QuestExtras.QuestXP then
+        local _, _, rows = ns.QuestExtras:QuestXP()
+        items = rows
+      end
       if items then
         local shown = 0
         for _, q in ipairs(items) do
