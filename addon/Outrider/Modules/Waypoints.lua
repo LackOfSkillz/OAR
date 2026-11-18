@@ -13,7 +13,7 @@ local M = ns:NewModule("Waypoints", {
   title = "Waypoints",
   phase = "P3",
   order = 50,
-  defaults = { arrive = 10, autoClear = true },
+  defaults = { arrive = 10, autoClear = true, queue = {}, queueRunning = false },
 })
 ns.Waypoints = M
 
@@ -111,8 +111,24 @@ end
 function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod)
     mod:Requests()
+    if mod:Settings().queueRunning and not mod.current then mod:QueueStart() end
     if mod.calibrated then return end
     if mod:Calibrate() ~= nil then mod.calibrated = true end
+  end)
+  self:On("OTR_WAYPOINT_CLEARED", function(mod, _, waypoint, why)
+    if why == "arrived" and waypoint.opts and waypoint.opts.queued then
+      local settings = mod:Settings()
+      if settings.queueRunning and settings.queue[1] and settings.queue[1].mapID == waypoint.mapID
+        and settings.queue[1].x == waypoint.x and settings.queue[1].y == waypoint.y then
+        table.remove(settings.queue, 1)
+        if #settings.queue > 0 then
+          mod:QueueStart()
+        else
+          settings.queueRunning = false
+          ns.Print("waypoint queue finished")
+        end
+      end
+    end
   end)
 end
 
@@ -129,6 +145,9 @@ end
 function M:Set(mapID, x, y, title, opts)
   if type(mapID) ~= "number" or type(x) ~= "number" or type(y) ~= "number" then return false, "bad waypoint" end
   if x < 0 or x > 1 or y < 0 or y > 1 then return false, "x and y must be 0..1" end
+  if self:Settings().queueRunning and not (opts and opts.queued) then
+    self:Settings().queueRunning = false  -- manual, corpse, or rare pin takes priority
+  end
   self:Clear("replaced", true)
   local backend = self:Backend()
   local w = { mapID = mapID, x = x, y = y, title = title or "Waypoint", backend = backend, t = time(), opts = opts }
@@ -176,15 +195,102 @@ function M:Clear(why, quiet)
   return true
 end
 
-ns.AddCommand("way", "<x> <y> [title] | clear  waypoint on the current map (map numbers 0-100)", function(arg)
-  if not arg or arg == "clear" then M:Clear("command") ns.Print("waypoint cleared") return end
-  local xs, ys, title = arg:match("^([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
-  local x, y = tonumber(xs), tonumber(ys)
-  local mapID = C.PlayerPosition("player")
-  if not (x and y and mapID) then ns.Print("usage: /ride way 45.2 61.8 [title]") return end
+M.QUEUE_MAX = 30
+
+function M:QueueAdd(mapID, x, y, title)
+  if type(mapID) ~= "number" or type(x) ~= "number" or type(y) ~= "number"
+     or x < 0 or x > 1 or y < 0 or y > 1 then return false, "bad queued waypoint" end
+  local s = self:Settings()
+  s.queue = type(s.queue) == "table" and s.queue or {}
+  if #s.queue >= M.QUEUE_MAX then return false, "queue is full (30 stops)" end
+  s.queue[#s.queue + 1] = { mapID = mapID, x = x, y = y, title = title or "Route stop" }
+  return true, #s.queue
+end
+
+function M:QueueStart()
+  local s = self:Settings()
+  if not s.queue or #s.queue == 0 then s.queueRunning = false return false, "queue empty" end
+  if self.current and not (self.current.opts and self.current.opts.queued) then
+    s.queueRunning = false
+    return false, "a manual waypoint is active; clear it before resuming"
+  end
+  s.queueRunning = true
+  local w = s.queue[1]
+  return self:Set(w.mapID, w.x, w.y, w.title, { queued = true })
+end
+
+function M:QueueNext()
+  local s = self:Settings()
+  if not s.queue or #s.queue == 0 then return false end
+  if self.current and self.current.opts and self.current.opts.queued then self:Clear("skipped", true) end
+  table.remove(s.queue, 1)
+  if #s.queue == 0 then s.queueRunning = false return true end
+  if s.queueRunning then return self:QueueStart() end
+  return true
+end
+
+function M:MapArgument(text)
+  local num = tonumber(text)
+  if num and num >= 1 and num == math.floor(num) then return num end
+  return ns.Travel and ns.Travel:MapByName(text) or nil
+end
+
+ns.AddCommand("way", "<x> <y> [title] | <zone> <x> <y> | add <zone> <x> <y> | start|pause|next|list|clearqueue", function(arg)
+  arg = tostring(arg or "")
+  if arg == "clear" then
+    M:Clear("command")
+    M:Settings().queueRunning = false
+    ns.Print("waypoint cleared; queue paused")
+    return
+  end
+  if arg == "list" then
+    local s = M:Settings()
+    ns.Print("route: %d stops (%s)", #(s.queue or {}), s.queueRunning and "running" or "paused")
+    for i, p in ipairs(s.queue or {}) do
+      if i > 10 then break end
+      ns.Print("%d. %s (map %d: %.1f, %.1f)", i, p.title, p.mapID, p.x * 100, p.y * 100)
+    end
+    return
+  end
+  if arg == "pause" then M:Settings().queueRunning = false ns.Print("route paused") return end
+  if arg == "clearqueue" then
+    M:Settings().queueRunning, M:Settings().queue = false, {}
+    if M.current and M.current.opts and M.current.opts.queued then M:Clear("route cleared") end
+    ns.Print("route queue cleared")
+    return
+  end
+  if arg == "start" or arg == "resume" then
+    local ok, msg = M:QueueStart()
+    ns.Print(ok and "route started" or tostring(msg))
+    return
+  end
+  if arg == "next" then ns.Print(M:QueueNext() and "next stop selected" or "route empty") return end
+  local enqueue = arg:match("^add%s+")
+  local raw = enqueue and arg:sub(5) or arg
+  -- Coordinate-only form retains the original command semantics.
+  local xs, ys, title = raw:match("^([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
+  local mapID, x, y
+  if xs and ys then mapID = C.PlayerPosition("player") x, y = tonumber(xs), tonumber(ys)
+  else
+    local zone, xx, yy, rest = raw:match("^(.-)%s+([%d%.]+)[,%s]+([%d%.]+)%s*(.*)$")
+    mapID, x, y, title = zone and M:MapArgument(zone), tonumber(xx), tonumber(yy), rest
+  end
+  if not (mapID and x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100) then
+    ns.Print("usage: /ride way [add] [zone] 45.2 61.8 [title] | start|next|pause|list|clearqueue")
+    return
+  end
+  if enqueue then
+    local ok, why = M:QueueAdd(mapID, x / 100, y / 100, title ~= "" and title or nil)
+    ns.Print(ok and string.format("queued stop %d at %.1f, %.1f (map %d)", why, x, y, mapID) or tostring(why))
+    return
+  end
   local ok, w = M:Set(mapID, x / 100, y / 100, title ~= "" and title or nil)
   if ok then ns.Print("waypoint %s at %.1f, %.1f (%s)", w.title, x, y, w.backend) else ns.Print(tostring(w)) end
 end)
+
+-- Original /ride way command replaced above.
+--
+
 
 function M:Activity()
   local w = self.current
