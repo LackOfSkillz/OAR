@@ -77,7 +77,20 @@ function M:BuildWindow()
   self.window = f
   f.list = ns.UI:ScrollList(f.content, {
     rows = 11, rowHeight = 26,
+    build = function(row)
+      row.setIcon = row:CreateTexture(nil, "ARTWORK")
+      row.setIcon:SetSize(20, 20)
+      row.setIcon:SetPoint("LEFT", 4, 0)
+      row.text:ClearAllPoints()
+      row.text:SetPoint("LEFT", row.setIcon, "RIGHT", 6, 0)
+      row.text:SetPoint("RIGHT", -4, 0)
+    end,
     render = function(row, set)
+      local first
+      for _, link in pairs(set.items or {}) do first = link break end
+      local id = type(first) == "string" and tonumber(first:match("item:(%d+)"))
+      local icon = id and C.Call("C_Item.GetItemIconByID", id)
+      row.setIcon:SetTexture(icon or "Interface\\\\Icons\\\\INV_Chest_Chain")
       local report = M:Missing(set.name)
       row.text:SetText(string.format("%s  |cffbbbbbb%d items, %d missing|r",
         set.name, report and #report.found + #report.missing or 0,
