@@ -2,7 +2,7 @@
 
 One character-aware addon for World of Warcraft Forever instead of ten. It knows which character you're on (class, race, level, professions, gold) and shows only what applies to that character. It works on its own: no Questie, TomTom, Auctionator or TSM needed (if they're installed, Outrider uses their data or steps aside).
 
-Built by Claude Code on Gary's PC and tested by Gary in game. Every action in the game is a key press or click by the player; Outrider never plays for you.
+Created by **Gary Mix** and developed with AI-assisted coding tools. Tested by Gary in game. Every action in the game is a key press or click by the player; Outrider never plays for you.
 
 **What it does:** see the [user guide](docs/USER_GUIDE.md) (also in game: `/ride`, then **Help**).
 
@@ -60,7 +60,11 @@ Open the hub with `/ride` (or the minimap button). Pages are grouped in the side
 
 ## Data and licence
 
-The NPC, gear, creature, node and dungeon data packs are converted from [QuestieDB](https://github.com/Questie/Questie) and shared under GPLv3 (`gpl-3.0.md` and `LICENSE-DATA.txt` in each data folder). Outrider is not made by or affiliated with the Questie team. New-in-Forever game data is captured in game and stays marked unverified until checked on WoW Forever. Outrider's own licence is still open (docs/DECISIONS.md, Q3).
+**Created by Gary Mix.** Copyright (C) 2026 Gary Mix for his original Outrider contributions. The original Outrider project is licensed under **GNU GPLv3-only**: see [LICENSE](LICENSE) and [COPYRIGHT.md](COPYRIGHT.md) for the full license and attribution.
+
+NPC, gear, creature, node, quest and dungeon packs are derived from [QuestieDB](https://github.com/Questie/QuestieDB), whose GPLv3 redistribution permission includes a **documented historical-contributor rights caveat**. The upstream source retains its own copyrights. Follow [our provenance and publication checklist](docs/QUESTIEDB_PUBLICATION_REVIEW_2026-11-18.md), preserve full upstream notices and license terms, and ensure corresponding generated sources are provided. Outrider is not affiliated with Questie. New-in-Forever game data stays marked unverified until checked on WoW Forever.
+
+**Public-pack decision (2026-11-18):** Gary Mix elected to publish the data and quest packs. However, the GitHub repo presently contains only the Words data addon; QuestieDB-derived generated files remain under the local git-ignored `private/` folder. They have **not been imported into this GitHub repository**. Publishing those generated files requires accessing the local build outputs, reviewing their provenance, and committing them with per-pack notices and GPLv3 documents. Public availability of the repository itself does not make missing pack files downloadable.
 
 ## Developers
 
