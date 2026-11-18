@@ -448,7 +448,29 @@ function M:Nearest(questID)
   end
 end
 
+-- Track the quest the way clicking it on the world map does (Gary,
+-- 2026-11-18: the tracker click showed no arrow or area on the minimap): the
+-- game's own super-tracking draws the arrow and the shaded objective area from
+-- Forever's own quest data, and moves to the turn-in when the quest is done.
+-- Outrider's own waypoint (Questie data) is only the fallback.
+function M:Track(questID)
+  local set = C.Resolve("C_SuperTrack.SetSuperTrackedQuestID")
+  if type(set) ~= "function" or not questID then return false end
+  local ok = pcall(set, questID)
+  if not ok then return false end
+  -- keep it watched so the game draws its area on the minimap
+  local watch = C.Resolve("C_QuestLog.AddQuestWatch")
+  if type(watch) == "function" then pcall(watch, questID) end
+  -- our own arrow would sit on top of the game's: clear it if it's ours
+  local W = ns.Waypoints
+  if W and self.guideWP and W.current == self.guideWP then W:Clear("quest tracked") end
+  self.guideWP, self.guideQuest, self.tracked = nil, questID, questID
+  self:Info("tracking quest %d (game's own arrow and area)", questID)
+  return true
+end
+
 function M:Guide(questID)
+  if self:Track(questID) then return true end
   local spot = self:Nearest(questID)
   if not (spot and ns.Waypoints) then return false end
   local ok, w = ns.Waypoints:Set(spot.mapID, spot.x, spot.y, spot.label)
@@ -475,6 +497,8 @@ function M:CheckReady()
         tostring(readable(C.Call("C_QuestLog.ReadyForTurnIn", id))))
       local cur = W and W.current
       local ours = cur == nil or (self.guideWP ~= nil and cur == self.guideWP)
+      -- a quest the game tracks: its arrow already moves to the turn-in
+      if self.tracked == id then ours = false end
       if ours and self:Guide(id) then
         self:Info("quest ready: arrow to the turn-in of %s", q.title)
         return

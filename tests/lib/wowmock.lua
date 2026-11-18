@@ -921,6 +921,10 @@ function M.new(opts)
   base.GetPlayerFacing = function() return game.facing or 0 end
   base.UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, x = x, y = y } end }
   base.C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) game.superTracked = on end }
+  if not opts.noQuestTrack then
+    base.C_SuperTrack.SetSuperTrackedQuestID = function(id) game.trackedQuest = id end
+    base.C_SuperTrack.GetSuperTrackedQuestID = function() return game.trackedQuest or 0 end
+  end
   base.UnitPosition = function(unit)
     if unit ~= "player" then return nil end
     local w = game.mapWorld and game.mapWorld[opts.mapID or 1412]

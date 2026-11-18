@@ -150,8 +150,18 @@ T.describe("quest objectives: Questie parity", function()
     T.eq(M.Log()[1].complete, true)
   end)
 
+  T.it("clicking a quest tracks it with the game's own arrow and area, like the world map", function()
+    local game, ns, M = start()
+    T.ok(M:Guide(3741))
+    T.eq(game.trackedQuest, 3741, "the game tracks the quest")
+    T.eq(ns.Waypoints.current, nil, "no second arrow from Outrider")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("when a quest becomes ready the arrow moves to its turn-in, but never over your own waypoint", function()
     local game, ns, M = start()
+    -- without the game's quest tracking, Outrider's own arrow does the job
+    game.env.C_SuperTrack.SetSuperTrackedQuestID = nil
     game:fire("QUEST_LOG_UPDATE") game:advance(1)
     T.ok(M:Guide(3741), "arrow on the necklace")
     T.eq(ns.Waypoints.current.title, "Hilary's Necklace")
@@ -160,6 +170,7 @@ T.describe("quest objectives: Questie parity", function()
     T.contains(ns.Waypoints.current.title, "Hand in", "arrow moved to the turn-in by itself")
     -- your own waypoint stays put
     local game2, ns2, M2 = start()
+    game2.env.C_SuperTrack.SetSuperTrackedQuestID = nil
     game2:fire("QUEST_LOG_UPDATE") game2:advance(1)
     ns2.Waypoints:Set(1433, 0.5, 0.5, "My spot")
     game2.questObjectives[3741] = { { text = "Hilary's Necklace: 1/1", finished = true } }
