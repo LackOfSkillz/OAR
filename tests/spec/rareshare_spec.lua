@@ -33,7 +33,7 @@ T.describe("rareshare", function()
     seen(ns, nil, game)
     local g2, ns2 = session({ name = "Lumen" })
     g2:slash("watch The Rake")
-    ns2.Layers.current = 321
+    ns2.Layers.current, ns2.Layers.confidence, ns2.Layers.mapID = 321, 1, 1412
     g2:fire("CHAT_MSG_ADDON", "Outrider", game.sent[1].msg, "GUILD", "Torrant-Forever")
     local list = ns2.Sightings.db[5807]
     T.eq(list[#list].by, "Torrant-Forever")
