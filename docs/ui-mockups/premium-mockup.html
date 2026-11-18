@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outrider Premium Mock-up</title>
+<style>
+/* Colours are Outrider's own Theme.lua tokens; fonts approximate Morpheus / Friz Quadrata. */
+:root{
+  --bg:#0f1116; --panel:#0b0d11; --raised:#161a22; --hover:#1c2330; --border:#262b36; --strong:#3a4150;
+  --text:#e8eaef; --body:#c3c8d2; --muted:#8f96a6; --accent:#8fd1ff;
+  --gold:#d4a84a; --goldSoft:#2a2414; --goldText:#f1d58e; --onGold:#1c1405;
+  --good:#66d980; --warn:#ffc74d; --bad:#ff6161;
+  --q-grey:#9d9d9d; --q-green:#1eff00; --q-yellow:#ffd100; --q-orange:#ff8040; --q-red:#ff2020;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#05060a;color:var(--body);font:13px/1.45 "Palatino Linotype","Book Antiqua",Georgia,serif;padding:16px}
+.note{max-width:1080px;margin:0 auto 10px;color:var(--muted);font-size:12px}
+.note b{color:var(--goldText)}
+.hub{max-width:1080px;margin:0 auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.titlebar{display:flex;align-items:center;gap:10px;background:var(--panel);border-bottom:1px solid var(--border);padding:8px 12px}
+.brand{font:20px/1 "Trajan Pro","Cinzel",Georgia,serif;letter-spacing:2px;color:var(--goldText)}
+.who{color:var(--muted);font-size:12px}
+.search{margin-left:auto;background:var(--raised);border:1px solid var(--strong);border-radius:4px;padding:5px 10px;color:var(--muted);width:240px;font-size:12px}
+.wrap{display:flex;min-height:640px}
+.side{width:170px;flex:none;background:var(--panel);border-right:1px solid var(--border);padding:8px 0}
+.grp{color:var(--gold);font-size:10px;letter-spacing:1.5px;padding:10px 14px 4px;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:8px;padding:5px 14px;color:var(--body);cursor:pointer;border-left:3px solid transparent;font-size:13px}
+.nav:hover{background:var(--raised)}
+.nav.on{background:var(--hover);border-left-color:var(--gold);color:var(--goldText)}
+.ico{width:18px;height:18px;border-radius:3px;background:linear-gradient(135deg,#5a4520,#2a2010);border:1px solid #6b5426;flex:none}
+.page{flex:1;padding:18px 22px;display:none;min-width:0}
+.page.on{display:block}
+.hero{position:relative;border:1px solid var(--border);border-radius:6px;padding:18px 20px;margin-bottom:14px;
+  background:linear-gradient(100deg,rgba(212,168,74,.16),rgba(15,17,22,0) 55%),linear-gradient(180deg,#1a1d26,#12141b)}
+.hero h1{margin:0;font:28px/1.1 "Trajan Pro","Cinzel",Georgia,serif;color:var(--goldText);letter-spacing:1px}
+.hero .sub{color:var(--muted);margin-top:4px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.tile{background:rgba(11,13,17,.7);border:1px solid var(--border);border-radius:5px;padding:10px 12px}
+.tile .cap{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.tile .big{color:var(--text);font-size:22px;font-variant-numeric:tabular-nums;margin-top:2px}
+.tile .big.good{color:var(--good)} .tile .big.warn{color:var(--warn)} .tile .big.gold{color:var(--goldText)}
+.bar{height:5px;background:var(--raised);border-radius:3px;margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--goldText))}
+.bar.good i{background:var(--good)} .bar.bad i{background:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:12px}
+.card.emph{border-left:3px solid var(--gold)}
+.card h2{margin:0 0 10px;font-size:15px;color:var(--goldText);font-weight:normal;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.card h2 .count{margin-left:auto;font-size:11px;color:var(--muted)}
+.row{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(38,43,54,.7)}
+.row:first-of-type{border-top:0}
+.row .rico{width:32px;height:32px;border-radius:4px;flex:none;border:1px solid var(--strong);background:linear-gradient(135deg,#3b2f18,#191510)}
+.row .rico.q-green{border-color:var(--q-green)} .row .rico.q-blue{border-color:#0070dd} .row .rico.rare{border-color:var(--bad)}
+.row .txt{flex:1;min-width:0}
+.row .t{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .val{width:96px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text);flex:none}
+.row .val small{display:block;color:var(--muted);font-size:11px}
+.pill{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:9px;border:1px solid;letter-spacing:.5px;vertical-align:1px}
+.pill.good{color:var(--good);border-color:rgba(102,217,128,.5);background:rgba(102,217,128,.08)}
+.pill.bad{color:var(--bad);border-color:rgba(255,97,97,.5);background:rgba(255,97,97,.08)}
+.pill.warn{color:var(--warn);border-color:rgba(255,199,77,.5);background:rgba(255,199,77,.08)}
+.pill.muted{color:var(--muted);border-color:var(--strong)}
+.pill.gold{color:var(--goldText);border-color:rgba(212,168,74,.6);background:var(--goldSoft)}
+.lvl{font-variant-numeric:tabular-nums;font-size:11px;padding:1px 6px;border-radius:3px;background:#0b0d11;border:1px solid var(--strong)}
+.btn{flex:none;font:12px Georgia,serif;padding:6px 14px;border-radius:4px;border:1px solid var(--strong);background:transparent;color:var(--body);cursor:pointer}
+.btn:hover{border-color:var(--gold);color:var(--goldText)}
+.btn.primary{background:linear-gradient(180deg,#e2b85a,#c79733);color:var(--onGold);border-color:#e9c470;font-weight:bold}
+.iconbtn{flex:none;width:28px;height:28px;border-radius:4px;border:1px solid var(--strong);background:transparent;color:var(--muted);cursor:pointer}
+.next{display:flex;align-items:center;gap:16px}
+.next .big{font-size:24px;color:var(--good)}
+.services{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.svc{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px 4px;text-align:center;font-size:11.5px;color:var(--body);cursor:pointer}
+.svc:hover{border-color:var(--gold)}
+.svc .ico{margin:0 auto 4px;width:22px;height:22px}
+.svc.off{opacity:.4;cursor:default}
+.banner{display:flex;gap:10px;align-items:center;background:rgba(255,199,77,.07);border:1px solid rgba(255,199,77,.35);color:var(--warn);border-radius:5px;padding:8px 12px;margin-bottom:12px;font-size:12.5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{font-size:12px;padding:4px 10px;border-radius:12px;border:1px solid var(--strong);color:var(--body);background:var(--raised);cursor:pointer}
+.chip.on{border-color:var(--gold);color:var(--goldText);background:var(--goldSoft)}
+.chip b{color:var(--muted);font-weight:normal;margin-left:4px}
+.zone{color:var(--gold);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 0 4px;border-bottom:1px solid var(--border)}
+.prog{width:120px;flex:none}
+.prog .bar{margin-top:3px}
+.prog span{font-size:11px;color:var(--muted)}
+.d-grey{color:var(--q-grey);border-color:#555}.d-green{color:var(--q-green);border-color:#2a6a1e}.d-yellow{color:var(--q-yellow);border-color:#6a5a1e}.d-orange{color:var(--q-orange);border-color:#7a3d1e}
+.foot{color:var(--muted);font-size:11.5px;margin-top:6px}
+@media (max-width:760px){.side{display:none}.tiles{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.services{grid-template-columns:repeat(3,1fr)}.search{display:none}}
+</style>
+</head>
+<body>
+<p class="note"><b>Mock-up, not the game.</b> Uses Outrider's own theme colours; sample data from Gary's tour (Khreos, level 20 hunter, Redridge). Click the sidebar to switch between the three redesigned pages. Fonts are approximations of Morpheus and Friz Quadrata.</p>
+<div class="hub">
+  <div class="titlebar">
+    <span class="brand">OUTRIDER</span><span class="who">Khreos · level 20 Hunter · Redridge Mountains</span>
+    <span class="search">Search Outrider…</span>
+  </div>
+  <div class="wrap">
+    <nav class="side">
+      <div class="nav on" data-p="home"><span class="ico"></span>What now?</div>
+      <div class="nav"><span class="ico"></span>Help</div>
+      <div class="grp">Explore</div>
+      <div class="nav"><span class="ico"></span>Journey</div>
+      <div class="nav"><span class="ico"></span>Map</div>
+      <div class="nav" data-p="rares"><span class="ico"></span>Rares</div>
+      <div class="nav"><span class="ico"></span>Dungeons</div>
+      <div class="nav" data-p="quests"><span class="ico"></span>Quests</div>
+      <div class="grp">Character</div>
+      <div class="nav"><span class="ico"></span>Hunter</div>
+      <div class="nav"><span class="ico"></span>Gear</div>
+      <div class="nav"><span class="ico"></span>Professions</div>
+      <div class="grp">Town</div>
+      <div class="nav"><span class="ico"></span>Money</div>
+      <div class="nav"><span class="ico"></span>Feed</div>
+      <div class="grp">Outrider</div>
+      <div class="nav"><span class="ico"></span>Settings</div>
+    </nav>
+
+    <!-- WHAT NOW -->
+    <section class="page on" id="home">
+      <div class="hero">
+        <h1>Welcome back, Khreos</h1>
+        <div class="sub">Level 20 Hunter · Redridge Mountains · MystMane is happy</div>
+        <div class="tiles">
+          <div class="tile"><div class="cap">Experience</div><div class="big">70%</div><div class="bar"><i style="width:70%"></i></div></div>
+          <div class="tile"><div class="cap">Ready to hand in</div><div class="big good">+6%</div><div class="foot" style="margin:0">3 quests · 1,250 XP</div></div>
+          <div class="tile"><div class="cap">This session</div><div class="big gold">2,840 XP</div><div class="foot" style="margin:0">9,100 XP/hour</div></div>
+          <div class="tile"><div class="cap">Gold</div><div class="big">78s 39c</div><div class="foot" style="margin:0">+12s this session</div></div>
+        </div>
+      </div>
+      <div class="card emph">
+        <h2>Next step</h2>
+        <div class="next">
+          <div class="rico" style="width:44px;height:44px;border-radius:5px;border:1px solid var(--gold);background:linear-gradient(135deg,#6b5222,#251c0c)"></div>
+          <div class="txt" style="flex:1">
+            <div class="t" style="font-size:16px;color:var(--text)">Pick up <b style="color:var(--goldText);font-weight:normal">Raven Hill</b> <span class="lvl d-yellow">20</span> <span class="pill gold">Recommended</span></div>
+            <div class="m">Lakeshire, 180 yards · about 2 minutes away</div>
+          </div>
+          <div style="text-align:right"><div class="big">263</div><div class="foot" style="margin:0">XP a minute</div></div>
+          <button class="btn primary">Go</button><button class="iconbtn" title="More">⋯</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Nearest</h2>
+        <div class="services">
+          <div class="svc"><span class="ico"></span>Inn</div><div class="svc"><span class="ico"></span>Vendor</div><div class="svc"><span class="ico"></span>Repair</div>
+          <div class="svc"><span class="ico"></span>Flight</div><div class="svc"><span class="ico"></span>Trainer</div><div class="svc"><span class="ico"></span>Mailbox</div>
+          <div class="svc"><span class="ico"></span>Bank</div><div class="svc off"><span class="ico"></span>Auction</div><div class="svc"><span class="ico"></span>Stable</div>
+          <div class="svc"><span class="ico"></span>Spirit healer</div><div class="svc"><span class="ico"></span>Ammo</div><div class="svc off"><span class="ico"></span>Guild</div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h2>Best quests for you <span class="count">by XP a minute</span></h2>
+          <div class="row"><div class="rico"></div><div class="txt"><div class="t">Murloc Poachers <span class="lvl d-yellow">20</span></div><div class="m">Lake Everstill · 8 Murloc Fins left</div></div><div class="val">310<small>XP/min</small></div></div>
+          <div class="row"><div class="rico"></div><div class="txt"><div class="t">Shadow Magic <span class="lvl d-green">18</span></div><div class="m">Stonewatch · 3 Midnight Orbs left</div></div><div class="val">240<small>XP/min</small></div></div>
+          <div class="row"><div class="rico"></div><div class="txt"><div class="t">Howling in the Hills <span class="lvl d-orange">23</span></div><div class="m">Render's Rock · elite nearby</div></div><div class="val">205<small>XP/min</small></div></div>
+        </div>
+        <div class="card">
+          <h2>Upgrades in this zone</h2>
+          <div class="row"><div class="rico q-green"></div><div class="txt"><div class="t" style="color:var(--q-green)">Brawler's Leather Hood</div><div class="m">Quest reward · Redridge</div></div><span class="pill good">+4 Agi +3 Sta</span></div>
+          <div class="row"><div class="rico q-green"></div><div class="txt"><div class="t" style="color:var(--q-green)">Tunic of Westfall</div><div class="m">Quest · The Defias Brotherhood</div></div><span class="pill good">+6 Agi</span></div>
+          <div class="row"><div class="rico q-blue"></div><div class="txt"><div class="t" style="color:#4a9dff">Field Researcher's Loop</div><div class="m">Quest · Greater Friend of the Library</div></div><span class="pill good">+5 Agi +2 Sta</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RARES -->
+    <section class="page" id="rares">
+      <div class="hero">
+        <h1>Rares</h1>
+        <div class="sub">Redridge Mountains · watching 2 · you are on Layer 2</div>
+        <div class="tiles">
+          <div class="tile"><div class="cap">Watched</div><div class="big">2</div></div>
+          <div class="tile"><div class="cap">Seen today</div><div class="big">5</div></div>
+          <div class="tile"><div class="cap">Next likely</div><div class="big warn">~18 min</div><div class="foot" style="margin:0">Mystmane window</div></div>
+          <div class="tile"><div class="cap">Tamed</div><div class="big gold">1</div><div class="foot" style="margin:0">MystMane</div></div>
+        </div>
+      </div>
+      <div class="chips"><span class="chip on">All <b>6</b></span><span class="chip">Watched <b>2</b></span><span class="chip">Tameable <b>3</b></span><span class="chip">This zone <b>4</b></span></div>
+      <div class="card">
+        <div class="row"><div class="rico rare"></div><div class="txt"><div class="t">Mystmane <span class="lvl">19</span> <span class="pill muted">UNKNOWN</span> <span class="pill gold">Tameable · Bear</span></div><div class="m">Seen 47 min ago · Layer 2 · respawn window 7–14 min after clearing</div><div class="bar" style="max-width:420px"><i style="width:78%"></i></div></div><div class="val">~18 min<small>window</small></div><button class="btn primary">Waypoint</button><button class="iconbtn" title="Watching" style="color:var(--gold)">★</button></div>
+        <div class="row"><div class="rico rare"></div><div class="txt"><div class="t">Rippa <span class="lvl">21</span> <span class="pill bad">DEAD</span></div><div class="m">Killed 1 h 12 min ago · Layer 2</div><div class="bar bad" style="max-width:420px"><i style="width:30%"></i></div></div><div class="val">—<small>no timer yet</small></div><button class="btn">Waypoint</button><button class="iconbtn" title="Watch">☆</button></div>
+        <div class="row"><div class="rico rare"></div><div class="txt"><div class="t">Kazon <span class="lvl">27</span> <span class="pill good">ALIVE</span></div><div class="m">Seen 3 min ago by a guild member · Layer 2 · 640 yards</div></div><div class="val">now<small>alive</small></div><button class="btn">Waypoint</button><button class="iconbtn">☆</button></div>
+        <div class="row"><div class="rico rare"></div><div class="txt"><div class="t">Ribchaser <span class="lvl">19</span> <span class="pill muted">UNKNOWN</span></div><div class="m">Seen 1 day 17 h ago · Layer 21</div></div><div class="val">—<small>no data</small></div><button class="btn">Waypoint</button><button class="iconbtn">☆</button></div>
+      </div>
+      <div class="banner">⚠ Layer learned from nearby creatures. Respawn timers are per layer, so they reset when you change layer.</div>
+    </section>
+
+    <!-- QUESTS -->
+    <section class="page" id="quests">
+      <div class="hero">
+        <h1>Quests</h1>
+        <div class="sub">16 in your log · sorted by distance</div>
+        <div class="tiles">
+          <div class="tile"><div class="cap">In log</div><div class="big">16</div></div>
+          <div class="tile"><div class="cap">Ready to hand in</div><div class="big good">3</div></div>
+          <div class="tile"><div class="cap">Nearest objective</div><div class="big">120 yd</div></div>
+          <div class="tile"><div class="cap">Log worth</div><div class="big gold">9,850 XP</div><div class="bar"><i style="width:42%"></i></div></div>
+        </div>
+      </div>
+      <div class="chips"><span class="chip on">Nearest</span><span class="chip">Level</span><span class="chip">Ready <b>3</b></span><span class="chip">Party <b>2</b></span></div>
+      <div class="card">
+        <div class="zone">Redridge Mountains · 11</div>
+        <div class="row"><div class="rico"></div><div class="txt"><div class="t">Murloc Poachers <span class="lvl d-yellow">20</span></div><div class="m">Murloc Fin · Lake Everstill · party: Oni 6/8</div></div><div class="prog"><span>0 / 8</span><div class="bar"><i style="width:0"></i></div></div><div class="val">120 yd</div><button class="btn">Go</button></div>
+        <div class="row"><div class="rico"></div><div class="txt"><div class="t">An Unwelcome Guest <span class="lvl d-orange">23</span></div><div class="m">Bellygrub's Tusk · Lakeshire</div></div><div class="prog"><span>1 / 1</span><div class="bar good"><i style="width:100%"></i></div></div><div class="val"><span class="pill good">READY</span></div><button class="btn primary">Hand in</button></div>
+        <div class="row"><div class="rico"></div><div class="txt"><div class="t">Shadow Magic <span class="lvl d-green">18</span></div><div class="m">Midnight Orb · Stonewatch Keep</div></div><div class="prog"><span>3 / 5</span><div class="bar"><i style="width:60%"></i></div></div><div class="val">410 yd</div><button class="btn">Go</button></div>
+        <div class="row"><div class="rico"></div><div class="txt"><div class="t">Wanted: Gath'Ilzogg <span class="lvl d-orange">26</span> <span class="pill bad">ELITE</span></div><div class="m">Head of Gath'Ilzogg · Stonewatch Keep · group suggested</div></div><div class="prog"><span>0 / 1</span><div class="bar"><i style="width:0"></i></div></div><div class="val">520 yd</div><button class="btn">Go</button></div>
+        <div class="zone">Westfall · 2</div>
+        <div class="row"><div class="rico"></div><div class="txt"><div class="t">The Defias Brotherhood <span class="lvl d-green">18</span></div><div class="m">Talk to Gryan Stoutmantle · Sentinel Hill</div></div><div class="prog"><span>chain 3 of 7</span><div class="bar"><i style="width:43%"></i></div></div><div class="val">2 zones</div><button class="btn">Go</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.nav[data-p]').forEach(function(n){
+  n.addEventListener('click',function(){
+    document.querySelectorAll('.nav').forEach(function(x){x.classList.remove('on')});
+    document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on')});
+    n.classList.add('on');
+    document.getElementById(n.dataset.p).classList.add('on');
+  });
+});
+</script>
+</body>
+</html>
