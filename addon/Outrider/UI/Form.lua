@@ -372,6 +372,25 @@ function UI:Form(parent, rows)
     return match.searchLabel, #matches
   end
 
+  -- Every match at once, grouped by its card (gallery idea from Leatrix Plus,
+  -- 2026-11-18): { label, section, y, on = true|false|nil (switches only) }.
+  function scroll:SearchAll(query)
+    query = type(query) == "string" and query:lower():match("^%s*(.-)%s*$") or ""
+    local out = {}
+    if query == "" then return out end
+    for _, e in ipairs(entries) do
+      local section = e.card and e.card.title and e.card.title.GetText and e.card.title:GetText() or nil
+      local hit = type(e.searchLabel) == "string" and (e.searchLabel:lower():find(query, 1, true)
+        or (section and section:lower():find(query, 1, true)))
+      if hit and e.searchLabel ~= section then -- the card's own heading isn't a setting
+        out[#out + 1] = { label = e.searchLabel, section = section or "", y = e.y or 0,
+          on = type(e.f) == "table" and e.f.on ~= nil and e.f.on or nil }
+      end
+    end
+    return out
+  end
+  function scroll:JumpTo(y) if self.SetVerticalScroll then self:SetVerticalScroll(math.max(0, (y or 0) - 8)) self:UpdateBar() end end
+
   function scroll:Refresh()
     for _, it in ipairs(self.items) do
       if it.Refresh then ns.Safe("form:refresh", it.Refresh, it)

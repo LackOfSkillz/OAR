@@ -1022,6 +1022,29 @@ ns.Hub:AddTab("settings", "Settings", function(p)
         result:SetText(label and (matches .. " matches: " .. label) or "No setting found")
       end
       box:SetScript("OnEnterPressed", find)
+      -- Results as you type, grouped by section, each switch showing ON/OFF;
+      -- click one to jump there (gallery idea from Leatrix Plus, 2026-11-18).
+      local res = UI:ScrollList(p, {
+        rows = 8, rowHeight = 22,
+        render = function(r, m)
+          local state = m.on == true and "  |cff66d980ON|r" or m.on == false and "  |cff8f96a6OFF|r" or ""
+          r.text:SetText(string.format("|cff8f96a6%s ›|r  %s%s", m.section ~= "" and m.section or "Settings", m.label, state))
+        end,
+        onClick = function(m) p.form:JumpTo(m.y) p.searchResults:Hide() end,
+      })
+      res:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -2)
+      res:SetWidth(520)
+      if res.SetFrameStrata then res:SetFrameStrata("DIALOG") end
+      res:Hide()
+      p.searchResults = res
+      box:HookScript("OnTextChanged", function(self)
+        local q = self:GetText() or ""
+        local list = q ~= "" and p.form and p.form:SearchAll(q) or {}
+        res:SetItems(list)
+        res:SetShown(#list > 0)
+        result:SetText(q == "" and "" or (#list .. " found"))
+      end)
+      box:HookScript("OnEscapePressed", function() res:Hide() end)
       local btn = UI:Button(row, "Find next", 110, find)
       btn:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -4)
       UI.Tip(btn, "Find next setting", "Searches settings labels and scrolls to the next matching control.")
