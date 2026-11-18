@@ -33,7 +33,7 @@ T.describe("merchant helper", function()
     game.items[3] = { name = "Old Dagger", quality = 1, sell = 100 }
     game.items[4] = { name = "Quest Relic", quality = 1, sell = 200 }
     game.items[5] = { name = "Family Trinket", quality = 1, sell = 300 }
-    game.bags[0][17], game.bags[0][18], game.bags[0][19] = 3, 4, 5
+    game.bags[1] = { [1] = 3, [2] = 4, [3] = 5 }
     game.questItems = { [4] = true }
     game:slash("sell always 3")
     game:slash("sell always 4")
@@ -47,9 +47,9 @@ T.describe("merchant helper", function()
     game:fire("MERCHANT_SHOW")
     ns.Merchant:SellJunk()
     ns.Merchant:SellJunk()
-    T.eq(game.bags[0][17], nil)
-    T.eq(game.bags[0][18], 4)
-    T.eq(game.bags[0][19], 5)
+    T.eq(game.bags[1][1], nil)
+    T.eq(game.bags[1][2], 4)
+    T.eq(game.bags[1][3], 5)
     T.eq(#ns.Errors.list, 0)
   end)
 
@@ -57,13 +57,13 @@ T.describe("merchant helper", function()
     local game, ns = session()
     game.items[3] = { name = "Old Dagger", quality = 1, sell = 100 }
     for i = 1, 15 do game.bags[0][i] = nil end
-    game.bags[0][17], game.bags[0][18] = 3, 3
+    game.bags[1] = { [1] = 3, [2] = 3 }
     game:slash("sell once 3")
     T.eq(#ns.Merchant:Junk(), 2)
     local sold = ns.Merchant:SellJunk()
     T.eq(sold, 1)
-    T.eq(game.bags[0][17], nil)
-    T.eq(game.bags[0][18], 3)
+    T.eq(game.bags[1][1], nil)
+    T.eq(game.bags[1][2], 3)
     T.eq(ns.Merchant:Settings().sellOnce[3], nil)
   end)
 
