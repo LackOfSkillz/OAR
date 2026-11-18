@@ -1,0 +1,130 @@
+-- Intelligence 2.0 initial user-invoked offline Radar.
+-- Deliberately no events polling game in background, no external model, no bridge.
+local _, ns = ...
+local M = ns:NewModule("OpportunityRadar", {
+  title = "Opportunity Radar (offline coach)", phase = "P9", order = 105,
+  defaultEnabled = false, defaults = { quiet = true, enabledHud = false, scale = 1, muted = {} },
+})
+ns.OpportunityRadar = M
+local E, O = ns.IntelEvidence, ns.IntelOpportunity
+local function state()
+  local c = ns.db.char
+  if type(c.radarFeedback) ~= "table" then c.radarFeedback = {} end
+  return c.radarFeedback
+end
+local function visible(c, now)
+  local f = state()[c.key]
+  return not (f and f.untilAt and now < f.untilAt)
+end
+function M:Feedback(card, verdict)
+  if not (card and type(card.candidateId) == "string") then return false end
+  if verdict ~= "useful" and verdict ~= "wrong" and verdict ~= "done" and verdict ~= "snooze" and verdict ~= "dismiss" then return false end
+  local store, now = state(), time()
+  if not store[card.candidateId] and self:FeedbackCount() >= 80 then
+    local oldest, stamp
+    for k, v in pairs(store) do
+      if not stamp or v.t < stamp then oldest, stamp = k, v.t end
+    end
+    store[oldest] = nil
+  end
+  store[card.candidateId] = { verdict = verdict, t = now,
+    untilAt = (verdict == "dismiss" or verdict == "wrong" or verdict == "done") and (now + 86400)
+      or verdict == "snooze" and (now + 900) or nil }
+  -- Existing WhatNow skip is retained for wrong/dismiss outcomes.
+  if verdict == "wrong" or verdict == "dismiss" then ns.WhatNow:Skip({key = card.candidateId}) end
+  return true
+end
+function M:FeedbackCount()
+  local n = 0
+  for _ in pairs(state()) do n = n + 1 end
+  return n
+end
+function M:Refresh()
+  if not self.enabled then return {} end
+  if ns.Compat.InCombat() then return self.cards or {} end
+  E:Clear()
+  E:Register("WhatNow", "ready")
+  local profile = ns.ClassProfiles.Current()
+  local now, cards = time(), {}
+  local candidates = ns.WhatNow:Candidates()
+  for _, c in ipairs(candidates) do
+    if visible(c, now) and not self:Settings().muted[c.kind] and
+      ns.ClassProfiles.Allows(profile.class, profile.role, c.roleHint) then
+      local label = c.label or "inferred"
+      if label == "observed" or label == "verified" or label == "community" or label == "inferred" then
+        local category = c.kind == "quest" and "quest" or c.kind == "gear" and "gear"
+          or c.kind == "errand" and "errand" or "generic"
+        local ev = E:Record("WhatNow", c.key, category,
+          { benefit = c.benefit, confidence = c.confidence, kind = c.kind },
+          label)
+        local card = O:FromWhatNow(c, profile, ev)
+        if card then cards[#cards + 1] = card end
+      end
+    end
+  end
+  self.cards, self.refreshedAt = O:Top(cards, 3), now
+  return self.cards
+end
+function M:Cards()
+  if not self.enabled then return {} end
+  if not self.cards or time() - (self.refreshedAt or 0) > 30 then return self:Refresh() end
+  return self.cards
+end
+function M:Open()
+  if not self.enabled then ns.Print("Opportunity Radar is off. Enable it under Outrider features.") return end
+  if ns.Compat.InCombat() then return end
+  if not self.window then
+    local p = ns.UI:Window("Outrider_OpportunityRadar", "Opportunity Radar", 460, 300, self:Settings())
+    p.rows = {}
+    for i = 1, 3 do
+      local row = {}
+      row.label = ns.UI.Text(p.content, "small", "body")
+      row.label:SetPoint("TOPLEFT", 6, -8 - (i - 1) * 80)
+      row.label:SetWidth(430)
+      row.label:SetJustifyH("LEFT")
+      row.why = ns.UI:Button(p.content, "Why?", 65, function()
+        local c = row.card
+        if c then ns.Print("%s — %s [%s]", c.title, c.why, c.label) end
+      end)
+      row.why:SetPoint("TOPLEFT", 6, -35 - (i - 1) * 80)
+      row.go = ns.UI:Button(p.content, "Go", 55, function()
+        local c = row.card
+        if c and O:Valid(c) then ns.WhatNow:Go(c._candidate) end
+      end)
+      row.go:SetPoint("LEFT", row.why, "RIGHT", 8, 0)
+      row.later = ns.UI:Button(p.content, "Later", 62, function()
+        if row.card then M:Feedback(row.card, "snooze") M:Render() end
+      end)
+      row.later:SetPoint("LEFT", row.go, "RIGHT", 8, 0)
+      p.rows[i] = row
+    end
+    self.window = p
+  end
+  self:Render()
+  self.window:Show()
+end
+function M:Render()
+  if not self.window then return end
+  local cards = self:Refresh()
+  for i, row in ipairs(self.window.rows) do
+    local c = cards[i]
+    row.card = c
+    row.label:SetText(c and string.format("%d. %s [%s] - %s", i, c.title, c.label, c.where)
+      or (i == 1 and "No verified opportunities available." or ""))
+    row.why:SetShown(c ~= nil)
+    row.go:SetShown(c ~= nil and c._candidate.go ~= nil)
+    row.later:SetShown(c ~= nil)
+  end
+end
+function M:OnEnable()
+  self.cards = nil
+end
+function M:OnDisable()
+  E:Clear()
+  self.cards = nil
+  if self.window then self.window:Hide() end
+end
+function M:Activity()
+  return "offline only; " .. tostring(#(self.cards or {})) .. " suggestions"
+end
+ns.AddCommand("radar", "show the offline Opportunity Radar (feature is off by default)", function() M:Open() end)

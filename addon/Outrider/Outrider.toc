@@ -42,6 +42,11 @@ UI\Hub.lua
 UI\MinimapButton.lua
 UI\Settings.lua
 
+# Intelligence 2.0 base services (passive until Radar enabled)
+Intelligence\\Profiles.lua
+Intelligence\\Evidence.lua
+Intelligence\\Opportunity.lua
+
 # Advisor groundwork (dormant until Phase 9)
 Advisor\Snapshot.lua
 Advisor\Advice.lua
