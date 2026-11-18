@@ -68,11 +68,17 @@ end
 function M:GrowlAutocast()
   if not C.Has("GetPetActionInfo") then return nil end
   local count = rawget(_G, "NUM_PET_ACTION_SLOTS") or 10
+  local get = C.Resolve("GetPetActionInfo")
+  if type(get) ~= "function" then return nil end
   for i = 1, count do
-    local name, _, token, _, allowed, active = C.Call("GetPetActionInfo", i)
-    name, allowed, active = C.Readable(name), C.Readable(allowed), C.Readable(active)
-    if name == "Growl" and not token then
-      return allowed and active and true or false
+    -- Six values; generic Compat.Call only forwards five.
+    local ok, name, _, token, _, allowed, active = pcall(get, i)
+    if ok then
+      name, allowed, active = C.Readable(name), C.Readable(allowed), C.Readable(active)
+      if name == "Growl" and token == false then
+        if type(allowed) ~= "boolean" or type(active) ~= "boolean" then return nil end
+        return allowed and active
+      end
     end
   end
   return nil
@@ -96,8 +102,8 @@ function M:CheckHunterWarnings(inCombat)
   if warning then active.aspect = warning end
   if growl then active.growl = "Pet Growl autocast is on in a group" end
   for name, msg in pairs(active) do
-    if not self.hunterWarned[name] then
-      self.hunterWarned[name] = true
+    if self.hunterWarned[name] ~= msg then
+      self.hunterWarned[name] = msg
       ns.Toast:Show({ title = msg, text = name == "growl" and "Turn off Growl autocast for group tanking." or "Select an appropriate aspect yourself.", color = "warn", duration = 8 })
       self:Info("hunter warning: %s", msg)
     end
