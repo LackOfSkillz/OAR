@@ -88,6 +88,9 @@ function M:OnEnable()
     self.visibilityHooked = true
     tooltip:HookScript("OnShow", function(tip) M:EnforceVisibility(tip) end)
   end
+  self:On("MODIFIER_STATE_CHANGED", function(_, _, key)
+    if ns.TooltipLines then ns.TooltipLines:RefreshOnModifier(key) end
+  end)
   self:On("PLAYER_REGEN_DISABLED", function(mod)
     local tip = rawget(_G, "GameTooltip")
     if tip then mod:EnforceVisibility(tip) end
