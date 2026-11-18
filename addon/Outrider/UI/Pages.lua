@@ -1020,6 +1020,7 @@ ns.Hub:AddTab("settings", "Settings", function(p)
       box:SetScript("OnEnterPressed", find)
       local btn = UI:Button(row, "Find next", 110, find)
       btn:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -4)
+      UI.Tip(btn, "Find next setting", "Searches settings labels and scrolls to the next matching control.")
       row.searchBox, row.searchResult, row.searchNext = box, result, btn
       p.settingsSearch = row
       return row
