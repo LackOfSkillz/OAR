@@ -1,3 +1,23 @@
+T.describe("settings search", function()
+  T.it("finds labels and cycles matching controls", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Hub:Build()
+    ns.Hub.frame.tabBar:Select("settings")
+    local p = ns.Hub.byId.settings.panel
+    local label, count = p.form:FindSetting("bag slots")
+    T.ok(label and count >= 2)
+    T.contains(label:lower(), "bag slots")
+    T.ok(p.form:FindSetting("bag slots"))
+    T.eq(p.form:FindSetting("impossible-setting-qqq"), nil)
+    p.settingsSearch.searchBox:SetText("High contrast")
+    p.settingsSearch.searchBox.__scripts.OnEnterPressed(p.settingsSearch.searchBox)
+    T.contains(p.settingsSearch.searchResult:GetText(), "High contrast")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
 -- New hub pages: controls do what the typed commands do.
 local T, mock = ...
 
