@@ -504,6 +504,23 @@ ns.Hub:AddTab("quests", "Quests", function(p)
   local UI = ns.UI
   UI:FormPage(p, {
     { "header", "Quests" },
+    { "stats", function()
+      local log, ready = M.Log(), 0
+      for _, q in ipairs(log) do if q.complete then ready = ready + 1 end end
+      local QE, total, readyXP = ns.QuestExtras, 0, 0
+      if QE and QE.QuestXP then total, readyXP = QE:QuestXP() end
+      local need = tonumber(C.Readable(C.Call("UnitXPMax", "player"))) or 0
+      local pace = QE and QE.Pace and QE:Pace()
+      return {
+        { cap = "In your log", value = tostring(#log), note = #log >= 20 and "log is filling up" or "quests" },
+        { cap = "Ready to hand in", value = tostring(ready), color = ready > 0 and "good" or nil,
+          note = readyXP > 0 and (readyXP .. " XP waiting") or "none yet" },
+        { cap = "Log is worth", value = total > 0 and (total .. " XP") or "—", color = "gold",
+          fill = need > 0 and total / need or nil },
+        { cap = "XP pace", value = pace and pace.perHour and (math.floor(pace.perHour + 0.5) .. "/h") or "—",
+          note = pace and pace.secondsToLevel and ("level in " .. ns.Duration(pace.secondsToLevel)) or "this session" },
+      }
+    end },
     { "header", "Your quest log", icon = "INV_Misc_Note_01" },
     { "note", function()
       if not M:Pack() then return "The quest data pack isn't installed: run python tools/import_questie_quests.py --deploy, then restart the game." end

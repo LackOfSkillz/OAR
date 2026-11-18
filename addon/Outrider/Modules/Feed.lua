@@ -73,6 +73,20 @@ function M:Activity() return string.format("%d notifications kept, %d new", #sel
 ns.Hub:AddTab("feed", "Feed", function(p)
   UI:FormPage(p, {
     { "header", "Feed" },
+    { "stats", function()
+      local today, rares = 0, 0
+      for _, e in ipairs(M.list) do
+        if time() - (e.t or 0) < 86400 then
+          today = today + (e.count or 1)
+          if tostring(e.title or ""):lower():find("rare") then rares = rares + 1 end
+        end
+      end
+      return {
+        { cap = "New since you looked", value = tostring(M:Unread()), color = M:Unread() > 0 and "gold" or nil },
+        { cap = "Last 24 hours", value = tostring(today), note = "notifications" },
+        { cap = "Rare alerts today", value = tostring(rares), color = rares > 0 and "bad" or nil },
+      }
+    end },
     { "header", "Latest", icon = "INV_Letter_15" },
     { "cards", function()
       local out = {}

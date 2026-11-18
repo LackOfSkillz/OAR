@@ -309,6 +309,17 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
   local function act(fn) return function() local ok, why = fn() M.status = ok and nil or why p:Refresh() end end
   UI:FormPage(p, {
     { "header", "Fishing" },
+    { "stats", function()
+      local skill, max = M:Skill()
+      local lvl = tonumber(C.Readable(C.Call("UnitLevel", "player")))
+      local nxt = skill and M:Milestone(skill, max, lvl)
+      return {
+        { cap = "Fishing skill", value = skill and (skill .. " / " .. (max or "?")) or "—", color = "gold",
+          fill = skill and max and max > 0 and skill / max or nil },
+        { cap = "Next step", value = nxt and nxt.title or (skill and max and skill >= max and "Train the next rank" or "Keep fishing"),
+          note = nxt and nxt.how or nil },
+      }
+    end },
     { "header", "Your fishing", icon = "Trade_Fishing" },
     { "tiles", function()
       local skill, max = M:Skill()

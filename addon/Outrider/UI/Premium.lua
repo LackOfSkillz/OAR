@@ -310,3 +310,79 @@ function UI:BarList(parent)
   end
   return box
 end
+
+-- ------------------------------------------------------------------ stat strip
+-- Premium plan S3 (2026-11-18): the hero row of big numbers at the top of a
+-- page. items { cap = "EXPERIENCE", value = "70%", color = "good"|"warn"|"bad"|
+-- "gold"|nil, note = "3 quests", fill = 0..1 (optional bar) }. 2-4 per row.
+local STAT_H, STAT_GAP = 64, 10
+
+function UI:StatStrip(parent)
+  local box = CreateFrame("Frame", nil, parent)
+  box:SetSize(560, 10)
+  box.tiles, box.items = {}, {}
+  function box:SetItems(items)
+    self.items = items or {}
+    local n = math.min(4, #self.items)
+    local w = self:GetWidth() or 560
+    if w < 200 then w = 560 end
+    local cols = math.max(1, n)
+    local tw = math.floor((w - STAT_GAP * (cols - 1)) / cols)
+    for i = 1, n do
+      local it = self.items[i]
+      local t = self.tiles[i]
+      if not t then
+        t = CreateFrame("Frame", nil, self, Theme:BackdropTemplate())
+        t.cap = UI.Text(t, "small", "muted")
+        t.cap:SetPoint("TOPLEFT", 12, -9)
+        t.cap:SetPoint("RIGHT", t, "RIGHT", -10, 0)
+        t.cap:SetJustifyH("LEFT")
+        t.value = t:CreateFontString(nil, "OVERLAY")
+        t.value:SetFont(Theme.font.path, 20, "")
+        t.value:SetPoint("TOPLEFT", 12, -24)
+        t.value:SetPoint("RIGHT", t, "RIGHT", -10, 0)
+        t.value:SetJustifyH("LEFT")
+        if t.value.SetWordWrap then t.value:SetWordWrap(false) end
+        t.note = UI.Text(t, "small", "muted")
+        t.note:SetPoint("BOTTOMLEFT", 12, 8)
+        t.note:SetPoint("RIGHT", t, "RIGHT", -10, 0)
+        t.note:SetJustifyH("LEFT")
+        if t.note.SetWordWrap then t.note:SetWordWrap(false) end
+        t.track = t:CreateTexture(nil, "ARTWORK")
+        t.track:SetPoint("BOTTOMLEFT", 12, 9)
+        t.track:SetPoint("BOTTOMRIGHT", -12, 9)
+        t.track:SetHeight(4)
+        t.track:SetColorTexture(Theme:Color("bg"))
+        t.fill = t:CreateTexture(nil, "OVERLAY")
+        t.fill:SetPoint("LEFT", t.track, "LEFT", 0, 0)
+        t.fill:SetHeight(4)
+        self.tiles[i] = t
+      end
+      t:SetSize(tw, STAT_H)
+      t:ClearAllPoints()
+      t:SetPoint("TOPLEFT", (i - 1) * (tw + STAT_GAP), 0)
+      Theme:ApplyPanel(t, "panel", "border")
+      t.cap:SetText(tostring(it.cap or ""):upper())
+      t.value:SetText(tostring(it.value or "—"))
+      local col = it.color == "gold" and "goldText" or it.color or "text"
+      t.value:SetTextColor(Theme:Color(col))
+      local fill = tonumber(it.fill)
+      if fill then
+        t.note:Hide()
+        t.track:Show()
+        t.fill:SetWidth(math.max(2, (tw - 24) * math.min(1, math.max(0, fill))))
+        t.fill:SetColorTexture(Theme:Color(it.color == "good" and "good" or it.color == "bad" and "bad" or "gold"))
+        t.fill:Show()
+      else
+        t.track:Hide() t.fill:Hide()
+        t.note:SetText(it.note or "")
+        t.note:Show()
+      end
+      t:Show()
+    end
+    for i = n + 1, #self.tiles do self.tiles[i]:Hide() end
+    self:SetHeight(math.max(1, self:LayoutHeight()))
+  end
+  function box:LayoutHeight() return #self.items > 0 and (STAT_H + 4) or 0 end
+  return box
+end

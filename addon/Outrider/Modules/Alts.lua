@@ -315,6 +315,18 @@ ns.Hub:AddTab("alts", "My characters", function(p)
   local gold = function(c) return ns.InfoBar and ns.InfoBar.GoldText(c) or tostring(c) end
   UI:FormPage(p, {
     { "header", "My characters" },
+    { "stats", function()
+      local list, rested = M:List(), 0
+      for _, c in ipairs(list) do if (tonumber(c.a.rested) or 0) > 0 then rested = rested + 1 end end
+      local lock = M:Lockouts()
+      return {
+        { cap = "Characters", value = tostring(#list), note = rested .. " with rested XP" },
+        { cap = "Gold, all characters", value = gold(M:TotalGold()), color = "gold" },
+        { cap = "Dungeons this hour", value = lock.hour .. " / " .. M.HOUR_LIMIT, color = lock.hour >= M.HOUR_LIMIT and "bad" or nil,
+          fill = lock.hour / M.HOUR_LIMIT },
+        { cap = "Dungeons today", value = lock.day .. " / " .. (M.DAY_LIMIT or 30), fill = lock.day / (M.DAY_LIMIT or 30) },
+      }
+    end },
     { "header", "Every character", icon = "INV_Misc_Head_Human_01" },
     { "note", function()
       return string.format("%d characters, %s in all. Rested XP keeps growing while you're offline (estimated: faster in an inn or city).",

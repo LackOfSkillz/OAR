@@ -10,6 +10,7 @@
 --   { "key", "Label", get, set(key or nil), note } press-a-key setter (right-click clears)
 --   { "slider", "Label", min, max, step, get, set, fmt }
 --   { "list", rows, render, onClick, getItems }   embedded scroll list
+--   { "stats", getItems }                         hero row of 2-4 big numbers
 -- form:Refresh() re-reads every check, slider, live note and list.
 
 local _, ns = ...
@@ -283,13 +284,16 @@ function UI:Form(parent, rows)
       place(list, r[2] * 22 + 10)
       entries[#entries].stretch = true
       scroll.items[#scroll.items + 1] = { list = list, getItems = r[5] }
-    elseif kind == "cards" or kind == "tiles" or kind == "bars" then
-      -- { "cards", getItems } / { "tiles", getItems } / { "bars", getItems }: premium blocks (UI/Premium.lua)
-      local f = kind == "cards" and UI:CardList(host) or kind == "bars" and UI:BarList(host) or UI:StatusTiles(host)
+    elseif kind == "cards" or kind == "tiles" or kind == "bars" or kind == "stats" then
+      -- { "cards", getItems } / { "tiles", getItems } / { "bars", getItems } /
+      -- { "stats", getItems } (the hero row of big numbers): premium blocks (UI/Premium.lua)
+      local f = kind == "cards" and UI:CardList(host) or kind == "bars" and UI:BarList(host)
+        or kind == "stats" and UI:StatStrip(host) or UI:StatusTiles(host)
       f:SetWidth(W)
       f.getItems = r[2]
       f.Refresh = function(self)
-        local ok, items = pcall(self.getItems)
+        -- a block that errors is recorded (Tools page, tests), never silently blank
+        local ok, items = ns.Safe("form:" .. kind, self.getItems)
         self:SetItems(ok and items or {})
       end
       f:Refresh()

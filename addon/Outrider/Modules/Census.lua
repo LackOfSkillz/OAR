@@ -582,6 +582,18 @@ ns.Hub:AddTab("census", "Census", function(p)
   local function st() return M:Stats() end
   UI:FormPage(p, {
     { "header", "Census" },
+    { "stats", function()
+      local s = st()
+      local topClass = s.classes and s.classes[1]
+      return {
+        { cap = "Players counted", value = tostring(s.total or 0), note = (s.fromWho or 0) .. " from /who" },
+        { cap = "Average level", value = string.format("%.0f", s.avg or 0) },
+        { cap = "Most played class", value = topClass and (M.ClassName(topClass.key) or ns.TitleCase(tostring(topClass.key):lower())) or "—",
+          note = topClass and (topClass.n or 0) .. " players" or nil },
+        { cap = "Highest level seen", value = s.top and s.top[1] and tostring(s.top[1].l) or "—",
+          note = s.top and s.top[1] and s.top[1].name or nil },
+      }
+    end },
     { "header", "Who's playing", icon = "INV_Misc_GroupLooking" },
     { "note", function()
       local s = st()
