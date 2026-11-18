@@ -106,6 +106,7 @@ end
 
 function M:OnDisable()
   self.pendingDeath = nil
+  if self.pendingDeathTimer then self.pendingDeathTimer:Cancel() self.pendingDeathTimer = nil end
   self:StopCorpsePolling()
   self.dead = nil
 end
@@ -171,6 +172,7 @@ end
 
 function M:OnResurrected()
   self.pendingDeath = nil
+  if self.pendingDeathTimer then self.pendingDeathTimer:Cancel() self.pendingDeathTimer = nil end
   self:StopCorpsePolling()
   local W = ns.Waypoints
   -- Only touch our own corpse waypoint. If the player changed it, leave it.
@@ -253,6 +255,7 @@ function M:ConfirmDeath()
   if self.deathLog and self.deathLog.confirmed then return true end
   local context = self.pendingDeath or {}
   self.pendingDeath = nil
+  if self.pendingDeathTimer then self.pendingDeathTimer:Cancel() self.pendingDeathTimer = nil end
   self:StopCorpsePolling()
   self.dead, self.corpseWP, self.corpseArrived, self.corpseAttempts = true, nil, nil, 0
   local mapID = context.mapID or C.PlayerPosition("player")
@@ -272,7 +275,9 @@ function M:OnDead()
   -- only its origin briefly; do not record until a later state confirms it.
   self.pendingDeath = { t = time(), mapID = C.PlayerPosition("player"),
     subzone = C.Readable(C.Call("GetSubZoneText")) }
-  ns.Timer.After(0.3, function()
+  if self.pendingDeathTimer then self.pendingDeathTimer:Cancel() end
+  self.pendingDeathTimer = ns.Timer.After(0.3, function()
+    M.pendingDeathTimer = nil
     if not M.enabled or not M.pendingDeath then return end
     if not M:ConfirmDeath() then
       M.pendingDeath = nil
