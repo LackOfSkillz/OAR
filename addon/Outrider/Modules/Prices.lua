@@ -305,8 +305,14 @@ end
 ns.TooltipLines:Add("item", "value", M, function(_, data)
   local id = data and C.Readable(data.id)
   if type(id) ~= "number" then return nil end
+  -- Vendor and Auction on their own rows, the amount right-aligned with coin
+  -- icons (gallery idea from Auctionator, 2026-11-18)
+  local ah, _, vendor = M:Get(id)
+  if not ah and not (vendor and vendor > 0) then return nil end
   local out = {}
-  for _, l in ipairs(M:TooltipLines(id)) do out[#out + 1] = { l, "muted" } end
+  if vendor and vendor > 0 then out[#out + 1] = { "Vendor", "goldText", right = M.Coins(vendor) } end
+  if ah then out[#out + 1] = { "Auction", "goldText", right = M.Coins(ah) } end
+  if ah and vendor and vendor > 0 and ah < vendor then out[#out + 1] = { "Sells for more at a vendor", "warn" } end
   return out
 end)
 

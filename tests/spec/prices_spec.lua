@@ -24,6 +24,18 @@ T.describe("prices", function()
     T.eq(ns.Prices:TooltipLines(2589)[2], "Sells for more at a vendor")
   end)
 
+  T.it("item tooltips show Vendor and Auction on their own rows, amounts right-aligned with coins", function()
+    local game, ns = session()
+    game.browse = { { itemKey = { itemID = 2318 }, minPrice = 220 } }
+    game:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+    local rows = ns.TooltipLines:Lines("item", game.env.GameTooltip, { id = 2318 })
+    local byLabel = {}
+    for _, r in ipairs(rows) do byLabel[r[1]] = r end
+    T.ok(byLabel.Vendor and byLabel.Vendor.right:find("UI%-CopperIcon"), "vendor 15c with a copper coin")
+    T.ok(byLabel.Auction and byLabel.Auction.right:find("UI%-SilverIcon"), "auction 2s 20c with coins")
+    T.eq(ns.Prices.Coins(0):find("0", 1, true), 1)
+  end)
+
   T.it("money formats as gold/silver/copper", function()
     local _, ns = session()
     T.eq(ns.Prices.Money(123456), "12g 34s")

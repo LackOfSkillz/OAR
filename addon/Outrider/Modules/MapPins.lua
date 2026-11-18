@@ -225,6 +225,37 @@ function M.AddQuests(pin, packEntry)
   return true
 end
 
+-- Questie-style quest tooltip (gallery idea, 2026-11-18): each NPC's name in
+-- green, then its quests as "[15] Dry Times" in difficulty colour with the
+-- state on the right ("Available" / "Complete"), for every quest NPC stacked
+-- on this spot. Returns true when it drew something.
+local function addGiver(tt, d)
+  local isTurnin = d.kind == "turnin"
+  if not (isTurnin or (d.kind == "quest_giver" and d.quests and #d.quests > 0)) then return false end
+  local name = d.giver or d.npcName or (isTurnin and (d.title or ""):match(" to (.+)$")) or d.name or "?"
+  tt:AddLine(tostring(name), 0.4, 0.85, 0.5)
+  if isTurnin then
+    local quest = tostring(d.name or ""):gsub("^Turn in: ", "")
+    tt:AddDoubleLine("  " .. quest, "Complete", 1, 0.82, 0, 0.4, 0.85, 0.5)
+    return true
+  end
+  for i = 1, math.min(6, #d.quests) do
+    local q = d.quests[i]
+    local c = ns.NPCPack.DIFF_COLOR[q.diff] or { 1, 1, 1 }
+    tt:AddDoubleLine(string.format("  [%d] %s", q.level or 0, tostring(q.name)), "Available", c[1], c[2], c[3], 1, 0.82, 0)
+  end
+  if #d.quests > 6 then tt:AddLine(string.format("  and %d more", #d.quests - 6), 0.56, 0.59, 0.65) end
+  return true
+end
+
+function M.QuestTooltip(tt, data)
+  local drew = addGiver(tt, data)
+  for _, m in ipairs(data.more or {}) do
+    if addGiver(tt, m) then drew = true end
+  end
+  return drew
+end
+
 -- Tooltip/card lines for a quest giver's quests (at most 5).
 function M.QuestLines(pin)
   local out = {}
@@ -527,6 +558,10 @@ function M:AcquirePin(canvas)
     pin:SetScript("OnClick", function(self) M:ShowCard(self.data) end)
     pin:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      if (self.data.kind == "quest_giver" or self.data.kind == "turnin") and M.QuestTooltip(GameTooltip, self.data) then
+        GameTooltip:Show()
+        return
+      end
       GameTooltip:AddLine(self.data.name or "?")
       local first, second = ns.POI.Describe(self.data.poi or self.data, LABELS[self.data.kind] or self.data.kind)
       GameTooltip:AddLine(first, ns.Theme:Color("muted"))

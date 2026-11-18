@@ -216,6 +216,9 @@ local function buildMethods(game)
   m.EnableMouse = noop
   -- tooltip-ish
   m.AddLine = function(self, text) self.__lines = self.__lines or {} table.insert(self.__lines, text) end
+  -- two columns, recorded as "left<TAB>right"
+  m.AddDoubleLine = function(self, l, r) self.__lines = self.__lines or {} table.insert(self.__lines, tostring(l) .. "	" .. tostring(r)) end
+  m.ClearLines = function(self) self.__lines = {} end
   m.NumLines = function(self) return self.__lines and #self.__lines or 0 end
   m.SetOwner = function(self) self.__lines = {} end
   -- chat frame

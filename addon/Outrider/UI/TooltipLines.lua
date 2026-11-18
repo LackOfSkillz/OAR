@@ -116,7 +116,13 @@ function TL:Fill(kind, tip, data)
   local lines = self:Lines(kind, tip, data)
   for _, l in ipairs(lines) do
     local r, g, b = ns.Theme:Color(l[2] or "accent")
-    tip:AddLine(tostring(l[1]), r, g, b)
+    if l.right and tip.AddDoubleLine then
+      -- two columns: label left, value right-aligned (Auctionator style)
+      local rr, rg, rb = ns.Theme:Color(l.rightColor or "text")
+      tip:AddDoubleLine(tostring(l[1]), tostring(l.right), r, g, b, rr, rg, rb)
+    else
+      tip:AddLine(tostring(l[1]), r, g, b)
+    end
   end
   return #lines
 end
