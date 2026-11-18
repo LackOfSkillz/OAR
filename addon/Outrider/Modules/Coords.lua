@@ -101,6 +101,7 @@ end
 function M:UpdateCursor()
   if not self.cursorText then return end
   local mapID, x, y = self:CursorPosition()
+  if mapID then self.lastHovered = { mapID = mapID, x = x, y = y } end
   self.cursorText:SetText(mapID and ("Cursor: " .. M.Format(mapID, x, y)) or "Cursor: --")
 end
 
