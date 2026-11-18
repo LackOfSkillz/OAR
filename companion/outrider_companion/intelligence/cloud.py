@@ -52,9 +52,8 @@ class CloudProvider(ModelProvider):
 
 
 class AnthropicProvider(CloudProvider):
-    """Claude via the Messages API. Server-side fallback is on for refusals
-    (fallbacks: "default"), so a declined request is retried on another model
-    inside the same call; a refusal that remains is reported, not retried."""
+    """Claude via the Messages API. No server-side fallback or model substitution.
+    A refusal is returned to the caller; another paid model is never selected."""
     name = "anthropic"
     label = "Claude (Anthropic API)"
 
@@ -63,10 +62,8 @@ class AnthropicProvider(CloudProvider):
         system, rest = self._split(messages)
         body = {"model": self.model, "max_tokens": int(max_output_tokens or MAX_TOKENS),
                 "system": system, "messages": rest,
-                "output_config": {"effort": "low"},   # a short structured answer: low effort is enough
-                "fallbacks": "default"}
-        headers = {"x-api-key": self.api_key, "anthropic-version": ANTHROPIC_VERSION,
-                   "anthropic-beta": "server-side-fallback-2026-07-01"}
+                "output_config": {"effort": "low"}}   # a short structured answer
+        headers = {"x-api-key": self.api_key, "anthropic-version": ANTHROPIC_VERSION}
         out = post_json(self._opener, self.url or ANTHROPIC_URL, body, headers, timeout_seconds, "the Anthropic API")
         u = out.get("usage") if isinstance(out, dict) else None
         if isinstance(u, dict):
