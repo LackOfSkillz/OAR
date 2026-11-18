@@ -12,12 +12,12 @@ local M = ns:NewModule("InfoBar", {
   title = "Info bar",
   phase = "P7",
   order = 48,
-  defaults = { shown = true, point = nil, flight = true, gold = true, bags = true, dura = true, ammo = true, xp = true, clock = true, net = true },
+  defaults = { shown = true, point = nil, flight = true, gold = true, bags = true, dura = true, ammo = true, xp = true, layer = true, clock = true, net = true },
   yieldsTo = { "Titan", "ChocolateBar", "Bazooka" },
 })
 ns.InfoBar = M
 
-M.ORDER = { "flight", "gold", "bags", "dura", "ammo", "xp", "clock", "net" }
+M.ORDER = { "flight", "layer", "gold", "bags", "dura", "ammo", "xp", "clock", "net" }
 
 local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
@@ -96,6 +96,12 @@ function M:Text(id)
     local left, to = F:Remaining()
     return left and string.format("|cff7fbfffLanding in %s|r", F.Clock(left)) or string.format("|cff7fbfffFlying to %s|r", tostring(to or "?"))
   end
+  if id == "layer" then
+    local layers = ns.Layers
+    if not (layers and layers.enabled) or C.Call("IsInInstance") then return nil end
+    local _, _, label = layers:Current()
+    return "Layer " .. (label or "?")
+  end
   if id == "gold" then return M.GoldText(C.Call("GetMoney")) end
   if id == "bags" then
     local free, total = M.Bags()
@@ -142,6 +148,24 @@ function M:Tip(id, tt)
       tt:AddLine(string.format("%s to %s", F.flight.from, F.flight.to), 1, 1, 1, true)
       local left = F:Remaining()
       tt:AddLine(left and ("Landing in " .. F.Clock(left)) or "First time on this flight: Outrider times it now.", 0.6, 0.6, 0.6, true)
+    end
+  elseif id == "layer" then
+    tt:AddLine("Current layer", 1, 0.82, 0)
+    local layers = ns.Layers
+    if layers and layers.enabled then
+      local id, conf, label = layers:Current()
+      if id then
+        tt:AddLine(string.format("%s (zone UID %d, %.0f%% confidence)", label, id, conf * 100), 1, 1, 1)
+      else
+        tt:AddLine("Unknown: observing nearby creatures.", 0.7, 0.7, 0.7)
+      end
+      local mapID = C.PlayerPosition("player")
+      local history = layers:History(mapID, 8)
+      if #history > 0 then tt:AddLine("Recently observed on this map:", 1, 0.82, 0) end
+      for _, h in ipairs(history) do
+        local age = math.max(0, time() - (tonumber(h.at) or time()))
+        tt:AddDoubleLine(layers.Label(h.id), string.format("%d min ago", math.floor(age / 60)), 1, 1, 1, 0.7, 0.7, 0.7)
+      end
     end
   elseif id == "gold" then
     tt:AddLine("Gold", 1, 0.82, 0)
