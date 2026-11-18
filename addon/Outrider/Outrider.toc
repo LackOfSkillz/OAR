@@ -172,6 +172,7 @@ Modules\MapTab.lua
 Modules\Coords.lua
 Modules\Travel.lua
 Modules\Journey.lua
+Modules\LevelRoutes.lua
 Modules\Finder.lua
 UI\HelpData.lua
 UI\HelpPage.lua
