@@ -75,6 +75,48 @@ T.describe("pet status", function()
     T.contains(ns.Toast.visible[1].title:GetText(), "unhappy")
   end)
 
+  T.it("warns on missing or movement aspect in combat without spamming", function()
+    local game, ns, M = session()
+    game.units.player = { auras = {} }
+    game:setCombat(true)
+    T.eq(ns.Toast:Count(), 1)
+    T.contains(ns.Toast.visible[1].title:GetText(), "No hunter aspect")
+    game:fire("UNIT_AURA", "player")
+    T.eq(ns.Toast:Count(), 1)
+    game.units.player.auras = { { name = "Aspect of the Hawk" } }
+    game:fire("UNIT_AURA", "player")
+    game.units.player.auras = { { name = "Aspect of the Cheetah" } }
+    game:fire("UNIT_AURA", "player")
+    T.eq(ns.Toast:Count(), 2)
+    T.contains(ns.Toast.visible[2].title:GetText(), "Cheetah")
+    game:setCombat(false)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("warns when Growl autocast remains on in a party and resets after corrected", function()
+    local game, ns, M = session()
+    game.petActions = { { name = "Growl", allowed = true, auto = true } }
+    game.inGroup = true
+    game:fire("GROUP_ROSTER_UPDATE")
+    T.eq(ns.Toast:Count(), 1)
+    T.contains(ns.Toast.visible[1].title:GetText(), "Growl")
+    game:fire("PET_BAR_UPDATE")
+    T.eq(ns.Toast:Count(), 1)
+    game.petActions[1].auto = false
+    game:fire("PET_BAR_UPDATE")
+    game.petActions[1].auto = true
+    game:fire("PET_BAR_UPDATE")
+    T.eq(ns.Toast:Count(), 2)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("does not guess Growl when pet action API has no relevant information", function()
+    local game, ns, M = session({ inGroup = true })
+    game:fire("GROUP_ROSTER_UPDATE")
+    T.eq(ns.Toast:Count(), 0)
+    T.eq(M:GrowlAutocast(), nil)
+  end)
+
   T.it("not loaded for other classes", function()
     local _, ns = session({ class = "PRIEST" })
     T.no(ns.Modules:Get("PetStatus").enabled)
