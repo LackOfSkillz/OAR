@@ -1,3 +1,4 @@
+local T, mock = ...
 T.describe("settings search", function()
   T.it("finds labels and cycles matching controls", function()
     local game = mock.new()
