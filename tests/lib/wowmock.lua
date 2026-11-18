@@ -370,6 +370,12 @@ function M.new(opts)
       return false
     end,
   }
+  base.C_DeathInfo = {
+    GetCorpseMapPosition = function(mapID)
+      local p = game.corpse
+      if p and p.mapID == mapID then return { x = p.x, y = p.y, GetXY = function(self) return self.x, self.y end } end
+    end,
+  }
   -- temporary weapon enchant (a fishing lure): game.lureMs = milliseconds left, nil = none
   base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return game.mhEnchant or false end
   -- druid forms: game.forms = { spellID, ... } in stance-bar order
@@ -565,6 +571,7 @@ function M.new(opts)
   base.UnitXP = function(unit) if unit == "player" then return game.xp or 0 end end
   base.UnitXPMax = function(unit) if unit == "player" then return game.xpMax or 1000 end end
   base.GetXPExhaustion = function() return game.rested end
+  base.UnitIsGhost = function(unit) return unit == "player" and game.isGhost or false end
   base.GetNetStats = function() return 0, 0, game.latency or 40, game.latency or 40 end
   base.GetFramerate = function() return game.fps or 60 end
   base.ToggleAllBags = function() game.bagsToggled = (game.bagsToggled or 0) + 1 end
