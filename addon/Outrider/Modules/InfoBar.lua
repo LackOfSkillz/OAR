@@ -76,8 +76,9 @@ function M.XP()
   local xp, need = tonumber(readable(C.Call("UnitXP", "player"))), tonumber(readable(C.Call("UnitXPMax", "player")))
   if not (xp and need and need > 0) then return nil end
   local rested = tonumber(readable(C.Call("GetXPExhaustion"))) or 0
-  local quest = ns.QuestExtras and ns.QuestExtras.LogXP and ns.QuestExtras:LogXP() or 0
-  return xp / need * 100, rested / need * 100, quest, xp, need
+  local quest, ready = 0, 0
+  if ns.QuestExtras and ns.QuestExtras.QuestXP then quest, ready = ns.QuestExtras:QuestXP() end
+  return xp / need * 100, rested / need * 100, quest, xp, need, ready
 end
 
 function M.Net()
@@ -122,11 +123,14 @@ function M:Text(id)
     return string.format("Ammo %s%d|r", col, n)
   end
   if id == "xp" then
-    local pct, rested, quest, _, need = M.XP()
+    local pct, rested, quest, _, need, ready = M.XP()
     if not pct then return nil end
     local t = string.format("XP %d%%", math.floor(pct))
     if rested > 0 then t = t .. string.format(" |cff7fbfff+%d%% rested|r", math.floor(rested + 0.5)) end
-    if quest > 0 then t = t .. string.format(" |cff7fff7f+%d%% quests|r", math.floor(quest / need * 100 + 0.5)) end
+    if ready > 0 then t = t .. string.format(" |cff7fff7f+%d%% ready|r", math.floor(ready / need * 100 + 0.5))
+    elseif quest > 0 then t = t .. string.format(" |cffaaaaaa+%d%% in log|r", math.floor(quest / need * 100 + 0.5)) end
+    local pace = ns.QuestExtras and ns.QuestExtras:Pace()
+    if pace and pace.perHour then t = t .. string.format("  %d XP/h", math.floor(pace.perHour + 0.5)) end
     return t
   end
   if id == "clock" then return date("%H:%M") end
@@ -196,12 +200,36 @@ function M:Tip(id, tt)
     tt:AddLine("Ammo", 1, 0.82, 0)
     tt:AddLine(tostring(M.Ammo() or "?") .. " in your quiver and bags.", 1, 1, 1, true)
   elseif id == "xp" then
-    local pct, rested, quest, xp, need = M.XP()
+    local pct, rested, quest, xp, need, ready = M.XP()
     tt:AddLine("Experience", 1, 0.82, 0)
     if pct then
       tt:AddLine(string.format("%d / %d (%.1f%%)", xp, need, pct), 1, 1, 1)
       if rested > 0 then tt:AddLine(string.format("Rested: %d%% of a level (double XP from kills)", math.floor(rested + 0.5)), 0.5, 0.75, 1, true) end
-      if quest > 0 then tt:AddLine(string.format("Quests in your log are worth %d XP (%d%% of a level).", quest, math.floor(quest / need * 100 + 0.5)), 0.5, 1, 0.5, true) end
+      tt:AddLine(string.format("Quest XP: %d ready to turn in, %d in whole log", ready, quest), 0.5, 1, 0.5, true)
+      if ready > 0 then
+        tt:AddLine(xp + ready >= need and "Ready quests should get you at least to the next level." or
+          string.format("Ready quests would put you at %.1f%% of this level.", (xp + ready) / need * 100), 0.5, 1, 0.5, true)
+      end
+      local pace = ns.QuestExtras and ns.QuestExtras:Pace()
+      if pace then
+        tt:AddLine(string.format("Session: +%d XP (since login/reload)", pace.gained or 0), 1, 1, 1)
+        if pace.perHour then
+          tt:AddLine(string.format("Active pace: %d XP/hour", math.floor(pace.perHour + 0.5)), 1, 1, 1)
+          if pace.secondsToLevel then tt:AddLine(string.format("At this pace: ~%d minutes to level", math.ceil(pace.secondsToLevel / 60)), 1, 1, 1) end
+        else
+          tt:AddLine("XP/hour: collecting at least 60 seconds of active gains", 0.7, 0.7, 0.7)
+        end
+      end
+      local _, _, items = ns.QuestExtras and ns.QuestExtras:QuestXP()
+      if items then
+        local shown = 0
+        for _, q in ipairs(items) do
+          if q.ready and shown < 12 then
+            tt:AddDoubleLine(q.title, tostring(q.xp) .. " XP", 0.7, 1, 0.7, 0.7, 1, 0.7)
+            shown = shown + 1
+          end
+        end
+      end
     end
     tt:AddLine("Click: What now?", 0.6, 0.6, 0.6)
   elseif id == "clock" then
