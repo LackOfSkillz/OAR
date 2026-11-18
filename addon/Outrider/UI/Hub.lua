@@ -628,3 +628,106 @@ Hub:AddTab("tools", L.tools, function(p)
     self.recent:SetText(#lines > 0 and table.concat(lines, "\n") or "No recent errors.")
   end
 end, 90)
+
+-- ------------------------------------------------------------- page tour
+-- Development only (Gary, 2026-11-18, D19): a screenshot of every Outrider
+-- page so Claude can review the UI. /ride tour opens the first page and shows
+-- a Next button; each click of Next saves one screenshot of what's on screen
+-- (the game's own Screenshot()), then moves on. Nothing happens without that
+-- click, it never runs in combat, and it only pictures Outrider's interface.
+local C = ns.Compat
+local Tour = {}
+Hub.Tour = Tour
+
+function Tour:Steps()
+  local steps = {}
+  for _, t in ipairs(Hub.tabs) do
+    if Hub:Visible(t) then steps[#steps + 1] = { label = t.title, tab = t.id } end
+  end
+  steps[#steps + 1] = { label = "World map with pins", map = true }
+  steps[#steps + 1] = { label = "World map Pins menu", map = true, menu = true }
+  return steps
+end
+
+function Tour:Bar()
+  if self.bar then return self.bar end
+  local b = CreateFrame("Frame", "Outrider_TourBar", UIParent, Theme:BackdropTemplate())
+  b:SetSize(360, 34)
+  b:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 140)
+  b:SetFrameStrata("FULLSCREEN_DIALOG")
+  Theme:ApplyPanel(b, "panel")
+  b.text = UI.Text(b, "small", "text")
+  b.text:SetPoint("LEFT", 10, 0)
+  b.text:SetWidth(220)
+  b.text:SetJustifyH("LEFT")
+  b.next = UI:Button(b, "Next", 60, function() Tour:Capture() end)
+  b.next:SetPoint("RIGHT", -72, 0)
+  b.stop = UI:Button(b, "Stop", 56, function() Tour:Stop("stopped") end)
+  b.stop:SetPoint("RIGHT", -8, 0)
+  UI.Tip(b.next, "Next", "Saves a screenshot of this page, then opens the next one.")
+  UI.Tip(b.stop, "Stop", "Ends the page tour.")
+  self.bar = b
+  return b
+end
+
+function Tour:Show()
+  local s = self.steps and self.steps[self.i]
+  if not s then return self:Stop("done") end
+  local map = rawget(_G, "WorldMapFrame")
+  if s.map then
+    if Hub.frame then Hub.frame:Hide() end
+    if map and not map:IsShown() and type(rawget(_G, "ToggleWorldMap")) == "function" then pcall(ToggleWorldMap) end
+    if s.menu and ns.MapPins and ns.MapPins.ToggleMenu then
+      local menu = rawget(_G, "Outrider_MapPinsMenu")
+      if not (menu and menu:IsShown()) then ns.Safe("tour:pinsmenu", ns.MapPins.ToggleMenu, ns.MapPins) end
+    end
+  else
+    local f = Hub:Build()
+    f:Show()
+    Hub:ShowTab(s.tab)
+  end
+  local b = self:Bar()
+  b.text:SetText(string.format("Tour %d/%d: %s", self.i, #self.steps, s.label))
+  b:Show()
+end
+
+function Tour:Start()
+  if C.InCombat() then ns.Print("tour: not in combat") return end
+  self.steps, self.i, self.shots = self:Steps(), 1, 0
+  ns.Log:Info("tour", "page tour started: %d steps", #self.steps)
+  self:Show()
+end
+
+-- Gary's click: hide the bar, take the picture, then move on.
+function Tour:Capture()
+  if not self.steps or self.busy then return end
+  if C.InCombat() then ns.Print("tour: paused in combat") return end
+  self.busy = true
+  local b = self:Bar()
+  b:Hide()
+  local s = self.steps[self.i]
+  ns.Timer.After(0.1, function()
+    if C.Has("Screenshot") then C.Call("Screenshot") self.shots = self.shots + 1 end
+    ns.Log:Info("tour", "screenshot %d: %s", self.i, s and s.label or "?")
+  end, "tour:shot")
+  ns.Timer.After(1.2, function()
+    self.busy = false
+    self.i = self.i + 1
+    self:Show()
+  end, "tour:next")
+end
+
+function Tour:Stop(why)
+  if self.bar then self.bar:Hide() end
+  local map = rawget(_G, "WorldMapFrame")
+  if map and map:IsShown() and type(rawget(_G, "ToggleWorldMap")) == "function" then pcall(ToggleWorldMap) end
+  local menu = rawget(_G, "Outrider_MapPinsMenu")
+  if menu and menu:IsShown() then menu:Hide() end
+  ns.Log:Info("tour", "page tour %s: %d screenshots", tostring(why), self.shots or 0)
+  ns.Print("tour %s: %d screenshots saved in your Screenshots folder", tostring(why), self.shots or 0)
+  self.steps, self.busy = nil, false
+end
+
+ns.AddCommand("tour", "tour  development: a screenshot of every Outrider page, one click of Next each", function()
+  Tour:Start()
+end)
