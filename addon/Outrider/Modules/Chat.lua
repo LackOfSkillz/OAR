@@ -134,6 +134,19 @@ function M:Keywords()
   return out
 end
 
+-- Class colors only with an explicit, readable character GUID. Unknown
+-- classes, NPCs and clickable player hyperlinks are unchanged.
+function M:ColorAuthor(author, guid)
+  if not self:Settings().colorNames or type(author) ~= "string" or
+    type(guid) ~= "string" or C.IsSecret(author) or C.IsSecret(guid) or
+    author:find("|H", 1, true) then return nil end
+  local _, class = C.Call("GetPlayerInfoByGUID", guid)
+  local cc = class and (rawget(_G, "RAID_CLASS_COLORS") or {})[C.Readable(class)]
+  if not cc then return nil end
+  return string.format("|cff%02x%02x%02x%s|r", math.floor(cc.r * 255),
+    math.floor(cc.g * 255), math.floor(cc.b * 255), author)
+end
+
 -- Returns hide, newText (nil when unchanged), matched keyword
 function M:Process(event, msg, author)
   if type(msg) ~= "string" or C.IsSecret(msg) or C.IsSecret(author) then return false end
@@ -190,7 +203,7 @@ local function filter(frame, event, ...)
   if not d then
     local ok, hide, text = pcall(M.Process, M, event, msg, author)
     if not ok then hide, text = false, nil end
-    d = { hide = hide, text = text, route = M.Routed(event, msg, base) }
+    d = { hide = hide, text = text, route = M.Routed(event, msg, base), author = M:ColorAuthor(author, select(12, ...)) }
     if type(msg) == "string" and not C.IsSecret(msg) then M:RememberLine(event, msg, author) end
     if lineID then
       M.decided[lineID] = d
@@ -207,7 +220,7 @@ local function filter(frame, event, ...)
       return true
     end
   end
-  if d.text then return false, d.text, select(2, ...) end
+  if d.text or d.author then return false, d.text or msg, d.author or author end
   return false
 end
 
