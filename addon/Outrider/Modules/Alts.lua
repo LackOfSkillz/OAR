@@ -36,6 +36,77 @@ function M:OnInitialize()
   self.alts, self.runs, self.inst = g.alts, g.runs, g.instances
 end
 
+-- DEEP-30: bounded snapshots only when each alt is logged in. No offline
+-- character APIs or inferred reputation standings.
+function M:ReadReputations()
+  local out = {}
+  local getCount = C.Resolve("C_Reputation.GetNumFactions") or C.Resolve("GetNumFactions")
+  local getInfo = C.Resolve("GetFactionInfo")
+  local modern = C.Resolve("C_Reputation.GetFactionDataByIndex")
+  local count = type(getCount) == "function" and tonumber(C.Call(
+    getCount == C.Resolve("GetNumFactions") and "GetNumFactions" or "C_Reputation.GetNumFactions")) or 0
+  for i = 1, math.min(250, count or 0) do
+    local name, standing, value
+    if type(modern) == "function" then
+      local data = C.Call("C_Reputation.GetFactionDataByIndex", i)
+      if type(data) == "table" then
+        name, standing, value = C.Readable(data.name),
+          C.Readable(data.reaction), C.Readable(data.currentStanding)
+      end
+    elseif type(getInfo) == "function" then
+      name, _, standing, _, _, value = C.Call("GetFactionInfo", i)
+    end
+    if type(name) == "string" and name ~= "" then
+      out[name] = { standing = tonumber(standing), value = tonumber(value) }
+    end
+  end
+  return out
+end
+function M:KnownBy(recipeID)
+  local out = {}
+  for char, a in pairs(self.alts) do
+    if a.recipes and a.recipes[tonumber(recipeID)] then out[#out + 1] = char end
+  end
+  table.sort(out)
+  return out
+end
+function M:SnapshotRecipes()
+  local result = {}
+  for _, p in pairs(ns.db.char.professions or {}) do
+    for id in pairs(p.recipes or {}) do
+      if type(id) == "number" then result[id] = true end
+    end
+  end
+  return result
+end
+function M:AltBags(key)
+  local inv = ns.Inventory and ns.Inventory.db and ns.Inventory.db[key]
+  local items = {}
+  for id, n in pairs(inv and inv.bags or {}) do
+    if n > 0 then
+      local data = C.ItemInfo(id)
+      items[#items + 1] = { id = id, n = n, name = data and data.name or ("item " .. id) }
+    end
+  end
+  table.sort(items, function(x,y) return x.name < y.name end)
+  return items
+end
+
+ns.AddCommand("altdetail", "altdetail <character key> | recipes <recipeID>", function(arg)
+  arg = tostring(arg or "")
+  local id = tonumber(arg:match("^recipes%s+(%d+)$"))
+  if id then ns.Print("Recipe %d known by: %s", id, table.concat(M:KnownBy(id), ", ")) return end
+  local alt = M.alts[arg]
+  if not alt then ns.Print("unknown alt; use /ride altdetail <Character-Realm>") return end
+  ns.Print("%s: %d recorded reputations, %d remembered recipes", arg,
+    alt.reputations and ns.Inventory.Kinds(alt.reputations) or 0,
+    alt.recipes and ns.Inventory.Kinds(alt.recipes) or 0)
+  for i, item in ipairs(M:AltBags(arg)) do
+    if i > 20 then break end
+    ns.Print("  %s x%d", item.name, item.n)
+  end
+end)
+
 -- ------------------------------------------------------------------ alts
 function M:Record(why)
   local key = ns.db.key
@@ -62,6 +133,8 @@ function M:Record(why)
   a.dura, a.duraLow = dura and math.floor(dura + 0.5), low and math.floor(low + 0.5)
   a.ammo = IB and IB.Ammo() or nil
   a.profs = profs
+  a.reputations = self:ReadReputations()
+  a.recipes = self:SnapshotRecipes()
   a.zone = readable(C.Call("GetZoneText")) or a.zone
   a.t = time()
   self.alts[key] = a
