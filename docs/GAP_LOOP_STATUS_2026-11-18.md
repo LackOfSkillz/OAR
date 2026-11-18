@@ -3,14 +3,15 @@
 **Branch:** `p1-foundation` (do not merge to main without passing tests and live validation).  
 **Created:** 2026-11-18.  
 **Primary plan:** `docs/GAP_ANALYSIS_DEEP_2026-11-18.md` (38 ranked builds) and raw option-by-option checks. The broader GPT roadmap carries 107 named sub-gaps, many overlapping the deep plan.  
-**Important:** The following changes were committed using a GitHub repository connector; there was **no access to the Windows local WoW client or a runnable copy of the full private repository**. The full Lua + companion test suite and actual Forever behavior remain **unverified** until a local or CI test runs. Never mark anything `WORKS` before in-game checks.
+**Important:** The following changes were committed using a GitHub repository connector; there was **no access to the Windows local WoW client**. Windows GitHub Actions now executes the full Lua + companion suite, and the latest source build passed automated CI on 2026-11-18 at commit `dcbb875d` ([run](https://github.com/LackOfSkillz/OAR/actions/runs/44294608991)). Actual Forever gameplay remains unverified. Never mark anything `WORKS` before in-game checks.
 
 | Deep gap | Feature | Status | Source changes | Test artifacts | Missing evidence |
 |---|---|---|---|---|---|
-| #1 | XP pace + ready quest XP | IMPLEMENTED / UNTESTED | `Modules/QuestExtras.lua`, `Modules/InfoBar.lua` | `tests/spec/questextras_spec.lua` | Run full test suite; login/AFK/level-up and quest turn-ins in-game |
-| #2 | Layer bar + visited history | IMPLEMENTED / UNTESTED | `Modules/Layers.lua`, `Modules/InfoBar.lua` | `tests/spec/layers_spec.lua`, `tests/spec/infobar_spec.lua` | Test zone changes, instances, uncertainty, recent-visit timestamp, restart, and text layout in-game |
-| #3 | Corpse arrow | IMPLEMENTED / UNTESTED | `Modules/Nearest.lua`, `tests/lib/wowmock.lua` | `tests/spec/waypoints_spec.lua` | Verify `C_DeathInfo.GetCorpseMapPosition` returns expected coordinates on Forever; release, ghost navigation, resurrection, old waypoint restore; ensure no regression |
-| #4–9 | Vendor sells/restock, waypoint queue, cursor coordinates, tooltips, hunter alerts | NOT STARTED | — | — | Check deps and run after 1–3 prove green |
+| #1 | XP pace + ready quest XP | TESTS GREEN / NEEDS GAME | `Modules/QuestExtras.lua`, `Modules/InfoBar.lua` | `tests/spec/questextras_spec.lua` | Run full test suite; login/AFK/level-up and quest turn-ins in-game |
+| #2 | Layer bar + visited history | TESTS GREEN / NEEDS GAME | `Modules/Layers.lua`, `Modules/InfoBar.lua` | `tests/spec/layers_spec.lua`, `tests/spec/infobar_spec.lua` | Test zone changes, instances, uncertainty, recent-visit timestamp, restart, and text layout in-game |
+| #3 | Corpse arrow | TESTS GREEN / NEEDS GAME | `Modules/Nearest.lua`, `tests/lib/wowmock.lua` | `tests/spec/waypoints_spec.lua` | Verify `C_DeathInfo.GetCorpseMapPosition` returns expected coordinates on Forever; release, ghost navigation, resurrection, old waypoint restore; ensure no regression |
+| #4 | Sell-approved, sell-once and never-sell vendor lists | TESTS GREEN / NEEDS GAME; PARTIAL depth | `Modules/Merchant.lua`, `tests/lib/wowmock.lua` | `tests/spec/merchant_spec.lua`; Windows CI 44294608991 passed | Live vendor checks, non-grey quest-item protection, controls/feedback; automatic learned selling and policy explanations are not implemented |
+| #5–9 | Vendor restock, waypoint queue, cursor coordinates, tooltips, hunter alerts | NOT STARTED | — | — | Continue next development iteration after live verification of #1–4 |
 | #10–15 | Tracker scrolling, chat, instance, map, mail and settings wins | NOT STARTED | — | — | Feature-by-feature |
 | #16/17/25 | Auto Shot, threat, damage-meter probes | NOT STARTED / PROBE | — | — | Real client API readings; no combat log |
 | #18 | Subzone-aware graveyard map | NOT STARTED | — | — | Death capture/ground truth; distinct from #3 corpse arrow |
@@ -19,10 +20,10 @@
 
 ## Next executable gate
 
-1. Pull the branch and run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython`. Check GitHub Actions run status if available.
-2. If red, fix tests and code; rerun. If green, deploy with `tools/deploy.ps1`, fully restart WoW only if files/TOC changed, and test all three scenarios.
+1. Pull the branch and run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython` locally. Windows GitHub Actions passed at `dcbb875d` but in-game proof is pending.
+2. If red, fix tests and code; rerun. If green, deploy with `tools/deploy.ps1`, fully restart WoW only if files/TOC changed, and test all four scenarios. In particular, check item allowlist/keep/once at a real vendor; ensure quest items are not sold.
 3. Record screenshots/logs, compare with the competing addon disabled and enabled; change each status only as supported by evidence.
-4. Once validated, continue #4–6 in small separate commits, then resume /loop. Update this table every iteration.
+4. Once validated, continue #5–7 in small separate commits, then resume /loop. Update this table every iteration.
 
 ## Restrictions
 
