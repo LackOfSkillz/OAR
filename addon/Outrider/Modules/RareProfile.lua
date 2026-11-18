@@ -63,10 +63,13 @@ function M:RareOn(unit)
 end
 
 function M:OnSpell(event, unit, _, spellID)
+  -- In combat the spell can be a secret value: never use it as a table key or
+  -- compare it (hard rule 4; the Tools page logged this 83 times, B3).
+  if C.IsSecret(unit) or C.IsSecret(spellID) then return end
   local npcID = self:RareOn(unit)
-  if not npcID then return end
+  if not npcID or C.IsSecret(npcID) then return end
   local name = C.SpellName(spellID)
-  if type(name) ~= "string" then return end
+  if type(name) ~= "string" or C.IsSecret(name) then return end
   local p = self:Profile(npcID)
   local s = p.spells[name] or { n = 0, gaps = {} }
   p.spells[name] = s

@@ -263,6 +263,7 @@ function M:Build()
     fr:StopMovingOrSizing()
     local p, _, _, x, y = fr:GetPoint()
     M:Settings().point = { p, x, y }
+    if M.wbtn then M:WeaponsButton() end -- the button follows the HUD
   end)
   f.lines = {}
   for i = 1, 4 do
@@ -303,8 +304,12 @@ function M:Refresh()
     local sw = t.GetStringWidth and t:GetStringWidth()
     if type(sw) == "number" and sw + 16 > w then w = sw + 16 end
   end
-  self.frame:SetWidth(math.min(w, 460))
-  self.frame:SetHeight(lines[4] and 70 or 55)
+  local nw, nh = math.min(w, 460), lines[4] and 70 or 55
+  if self.frame:GetWidth() ~= nw or self.frame:GetHeight() ~= nh then
+    self.frame:SetWidth(nw)
+    self.frame:SetHeight(nh)
+    if self.wbtn then self:WeaponsButton() end
+  end
 end
 
 -- Shown with the pole (the Fishing module's own test), hidden without it.
@@ -359,7 +364,16 @@ function M:WeaponsButton()
     local body = "/equipslot 16 " .. w.mh .. (w.oh and ("\n/equipslot 17 " .. w.oh) or "")
     ns.SecureButtons:SetMacro(b, body)
     ns.SecureButtons:SetLabel(b, "Weapons")
-    ns.SecureButtons:Place(b, "TOPRIGHT", self.frame, "TOPRIGHT", -4, -4)
+    -- Placed against UIParent at the HUD's corner, never anchored to the HUD:
+    -- a secure button anchored to a frame makes that frame protected, and then
+    -- resizing or hiding the HUD in combat was blocked (B4, 35 ADDON_ACTION_BLOCKED).
+    local f = self.frame
+    local right, top = f and f:GetRight(), f and f:GetTop()
+    if right and top then
+      ns.SecureButtons:Place(b, "TOPRIGHT", UIParent, "BOTTOMLEFT", right - 4, top - 4)
+    else
+      ns.SecureButtons:Place(b, "TOPRIGHT", UIParent, "CENTER", 0, 0)
+    end
     ns.SecureButtons:Raise(b, "HIGH")
     ns.SecureButtons:SetShown(b, true)
   elseif self.wbtn then

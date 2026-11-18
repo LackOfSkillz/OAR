@@ -195,7 +195,10 @@ function UI:StatusTiles(parent)
     self.items = items or {}
     local w = (self:GetWidth() or 560)
     if w < 200 then w = 560 end
-    local tw = math.floor((w - TILE_GAP * (COLS - 1)) / COLS)
+    -- more columns on a wide page (premium plan S1)
+    local cols = w >= 900 and 4 or w >= 680 and 3 or COLS
+    self.cols = cols
+    local tw = math.floor((w - TILE_GAP * (cols - 1)) / cols)
     for i, it in ipairs(self.items) do
       local t = self.tiles[i]
       if not t then
@@ -213,7 +216,7 @@ function UI:StatusTiles(parent)
         self.tiles[i] = t
       end
       t:SetSize(tw, TILE_H)
-      local col, row = (i - 1) % COLS, math.floor((i - 1) / COLS)
+      local col, row = (i - 1) % cols, math.floor((i - 1) / cols)
       t:ClearAllPoints()
       t:SetPoint("TOPLEFT", col * (tw + TILE_GAP), -row * (TILE_H + TILE_GAP))
       Theme:ApplyPanel(t, it.ok and "raised" or "goldSoft", it.ok and "border" or "bad")
@@ -229,7 +232,7 @@ function UI:StatusTiles(parent)
   function box:LayoutHeight()
     local n = #self.items
     if n == 0 then return 0 end
-    local rows = math.ceil(n / COLS)
+    local rows = math.ceil(n / (self.cols or COLS))
     return rows * TILE_H + (rows - 1) * TILE_GAP + 6
   end
   return box

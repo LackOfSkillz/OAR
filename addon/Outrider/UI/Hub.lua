@@ -124,7 +124,7 @@ local function Sidebar(parent, onSelect)
     b.mark = b:CreateTexture(nil, "ARTWORK")
     b.mark:SetPoint("TOPLEFT", 0, 0)
     b.mark:SetPoint("BOTTOMLEFT", 0, 0)
-    b.mark:SetWidth(2)
+    b.mark:SetWidth(3)
     b.mark:SetColorTexture(Theme:Color("gold"))
     b.mark:Hide()
     local hl = b:CreateTexture(nil, "HIGHLIGHT")
@@ -192,15 +192,21 @@ local function Sidebar(parent, onSelect)
     end
     self.listHeight = top - y
   end
-  function bar:Select(id)
-    if not self.buttons[id] then id = self.order[1] end
-    if not id then return end
+  -- Light up a row without opening anything (Hub:ShowTab calls this, so the
+  -- sidebar follows pages opened by buttons, the tour or code: B1, 2026-11-18).
+  function bar:Highlight(id)
+    if not self.buttons[id] then return end
     self.selected = id
     for tid, b in pairs(self.buttons) do
-      b.label:SetTextColor(Theme:Color(tid == id and "text" or "body"))
+      b.label:SetTextColor(Theme:Color(tid == id and "goldText" or "body"))
       b.bg:SetShown(tid == id)
       if b.mark then b.mark:SetShown(tid == id) end
     end
+  end
+  function bar:Select(id)
+    if not self.buttons[id] then id = self.order[1] end
+    if not id then return end
+    self:Highlight(id)
     if onSelect then ns.Safe("tabs:select", onSelect, id) end
   end
   return bar
@@ -393,6 +399,7 @@ function Hub:ShowTab(id)
   for _, o in ipairs(self.tabs) do if o.panel and o ~= t then o.panel:Hide() end end
   local p = self:Panel(t)
   p:Show()
+  if self.frame and self.frame.tabBar and self.frame.tabBar.selected ~= t.id then self.frame.tabBar:Highlight(t.id) end
   if p.Refresh then ns.Safe("hub:refresh:" .. t.id, p.Refresh, p) end
   self.current = t.id
   ns.db.char.hub.tab = t.id

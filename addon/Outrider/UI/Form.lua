@@ -32,7 +32,12 @@ function UI:Form(parent, rows)
   end)
   -- the content follows the window's width, so cards stretch like Home's
   if scroll.HookScript then
-    scroll:HookScript("OnSizeChanged", function(self, w) if type(w) == "number" and w > 200 then c:SetWidth(w - 8) end end)
+    scroll:HookScript("OnSizeChanged", function(self, w)
+      if type(w) == "number" and w > 200 then
+        c:SetWidth(w - 14)
+        if self.Layout and math.abs((self.laidWidth or 0) - w) > 2 then self.laidWidth = w self:Layout() end
+      end
+    end)
   end
   scroll.content, scroll.items = c, {}
   -- Layout engine (2026-11-16): rows are recorded in order and placed by
@@ -43,6 +48,19 @@ function UI:Form(parent, rows)
   local W = 600
   local function place(f, h, indent)
     entries[#entries + 1] = { f = f, h = h, indent = (indent or 0) + pad, card = card }
+  end
+  -- Full width (premium plan S1, 2026-11-18): rows that should span the page
+  -- get the width that's actually there at layout time, not a fixed 560.
+  local function stretch(e)
+    if not e.stretch then return end
+    local cw = c:GetWidth() or 620
+    if cw < 200 then cw = 620 end
+    local w = math.floor(cw - e.indent - (e.card and 22 or 6))
+    if w < 160 then return end
+    local cur = e.f.GetWidth and e.f:GetWidth() or 0
+    if math.abs(cur - w) < 1 then return end
+    e.f:SetWidth(w)
+    if e.dynamic and e.dynamic.items and e.dynamic.SetItems then e.dynamic:SetItems(e.dynamic.items) end
   end
   local function measure(e)
     if e.dynamic then return e.dynamic:LayoutHeight() + (e.dynamic:LayoutHeight() > 0 and 6 or 0) end
@@ -71,6 +89,7 @@ function UI:Form(parent, rows)
           open = nil
         end
       else
+        stretch(e)
         local h = measure(e)
         e.y = y
         e.f:ClearAllPoints()
@@ -80,6 +99,7 @@ function UI:Form(parent, rows)
     end
     c.height = y + 10
     c:SetHeight(c.height)
+    if scroll.UpdateBar then scroll:UpdateBar() end
   end
   local function closeCard()
     if not card then return end
@@ -154,6 +174,7 @@ function UI:Form(parent, rows)
       -- measured by Layout: a long note takes the lines it needs
       place(t, r[3] or ROW.note)
       entries[#entries].text = t
+      entries[#entries].stretch = true
     elseif kind == "check" then
       local chk = UI:Check(host, r[2], r[3], r[4])
       if r[5] then chk.note:SetText(r[5]) end
@@ -260,6 +281,7 @@ function UI:Form(parent, rows)
       local list = UI:ScrollList(host, { rows = r[2], rowHeight = 22, render = r[3], onClick = r[4] })
       list:SetWidth(W)
       place(list, r[2] * 22 + 10)
+      entries[#entries].stretch = true
       scroll.items[#scroll.items + 1] = { list = list, getItems = r[5] }
     elseif kind == "cards" or kind == "tiles" or kind == "bars" then
       -- { "cards", getItems } / { "tiles", getItems } / { "bars", getItems }: premium blocks (UI/Premium.lua)
@@ -273,6 +295,7 @@ function UI:Form(parent, rows)
       f:Refresh()
       place(f, 0)
       entries[#entries].dynamic = f
+      entries[#entries].stretch = true
       scroll.items[#scroll.items + 1] = f
     elseif kind == "custom" then
       local f = r[2](host)
@@ -281,6 +304,46 @@ function UI:Form(parent, rows)
     end
   end
   closeCard()
+
+  -- A slim gold scroll bar and a fade at the bottom whenever the page is
+  -- taller than the window (premium plan S3), so nothing looks cut off.
+  local track = CreateFrame("Frame", nil, parent)
+  track:SetPoint("TOPRIGHT", scroll, "TOPRIGHT", -1, -2)
+  track:SetPoint("BOTTOMRIGHT", scroll, "BOTTOMRIGHT", -1, 2)
+  track:SetWidth(4)
+  track.bg = track:CreateTexture(nil, "BACKGROUND")
+  track.bg:SetAllPoints()
+  track.bg:SetColorTexture(Theme:Color("raised"))
+  track.thumb = track:CreateTexture(nil, "ARTWORK")
+  track.thumb:SetWidth(4)
+  track.thumb:SetColorTexture(Theme:Color("gold"))
+  local fade = parent:CreateTexture(nil, "OVERLAY")
+  fade:SetPoint("BOTTOMLEFT", scroll, "BOTTOMLEFT", 0, 0)
+  fade:SetPoint("BOTTOMRIGHT", scroll, "BOTTOMRIGHT", -8, 0)
+  fade:SetHeight(28)
+  fade:SetColorTexture(1, 1, 1, 1)
+  local br, bgc, bb = Theme:Color("bg")
+  if fade.SetGradient and CreateColor then
+    pcall(fade.SetGradient, fade, "VERTICAL", CreateColor(br, bgc, bb, 0.95), CreateColor(br, bgc, bb, 0))
+  else
+    fade:SetColorTexture(br, bgc, bb, 0.6)
+  end
+  scroll.track, scroll.fade = track, fade
+  function scroll:UpdateBar()
+    local view = self:GetHeight() or 0
+    local total = c.height or 0
+    local over = total - view
+    if view < 40 or over <= 4 then track:Hide() fade:Hide() return end
+    local pos = math.max(0, math.min(over, self:GetVerticalScroll() or 0))
+    local th = math.max(24, (track:GetHeight() or view) * view / total)
+    local room = math.max(0, (track:GetHeight() or view) - th)
+    track.thumb:ClearAllPoints()
+    track.thumb:SetPoint("TOP", track, "TOP", 0, -room * pos / over)
+    track.thumb:SetHeight(th)
+    track:Show()
+    fade:SetShown(pos < over - 4)
+  end
+  scroll:HookScript("OnMouseWheel", function(self) self:UpdateBar() end)
   scroll:Layout()
 
   -- Search the actual control labels and jump to their measured positions.
