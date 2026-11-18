@@ -86,8 +86,78 @@ function M:Scan()
   return out
 end
 
+-- DEEP-20: no invented trainer costs or spell unlock levels. Until a
+-- sourced class-training pack is shipped, cards use *observed* class-trainer
+-- service info from this character's prior visits, across later level-ups.
+-- This supports advance planning AFTER observation, but full independent
+-- 1-60 coverage is a separate cited-data task.
+function M:TrainingStore()
+  ns.db.global.classTraining = type(ns.db.global.classTraining) == "table" and ns.db.global.classTraining or {}
+  local class = ns.PlayerClass()
+  ns.db.global.classTraining[class] = ns.db.global.classTraining[class] or {}
+  return ns.db.global.classTraining[class]
+end
+
+function M:ObserveTrainer()
+  local num = tonumber(C.Readable(C.Call("GetNumTrainerServices")))
+  local info = C.Resolve("GetTrainerServiceInfo")
+  local price = C.Resolve("GetTrainerServiceCost")
+  if not (num and num > 0 and type(info) == "function" and type(price) == "function") then
+    self:Info("class training: vendor has no readable service list; no forecast inferred")
+    return 0
+  end
+  local saved, n = self:TrainingStore(), 0
+  for i = 1, math.min(300, num) do
+    local ok, name, sub, category, _, _, reqLevel = pcall(info, i)
+    local okCost, copper = pcall(price, i)
+    name, reqLevel, copper = C.Readable(name), C.Readable(reqLevel), C.Readable(copper)
+    if ok and okCost and type(name) == "string" and
+      type(reqLevel) == "number" and reqLevel >= 1 and reqLevel <= 80 and
+      type(copper) == "number" and copper >= 0 then
+      local key = name:lower() .. ":" .. tostring(sub or "")
+      saved[key] = { name = name, rank = C.Readable(sub), level = reqLevel,
+        cost = copper, observedAt = time(), source = "trainer UI observed" }
+      n = n + 1
+    end
+  end
+  return n
+end
+
+function M:TrainingAt(level)
+  level = tonumber(level) or tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  local rows = {}
+  for _, r in pairs(self:TrainingStore()) do
+    if r.level == level and not self:Known(r.name) then rows[#rows + 1] = r end
+  end
+  table.sort(rows, function(a, b) return a.name < b.name end)
+  return rows
+end
+
+function M:TrainingNotice(level)
+  local rows = self:TrainingAt(level)
+  if #rows == 0 then return end
+  local cost = 0
+  for _, r in ipairs(rows) do cost = cost + r.cost end
+  ns.Toast:Show({ title = "Trainer options at level " .. level,
+    text = string.format("%d observed class-training options, total %s. Check a trainer; costs may change.",
+      #rows, ns.Prices.Money(cost)), color = "good", duration = 14 })
+end
+
+ns.AddCommand("training", "training [level]  spells observed at your class trainer", function(arg)
+  local level = tonumber(arg) or tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  local rows = M:TrainingAt(level)
+  if #rows == 0 then ns.Print("training level %d: no *observed* unlearned spells in data yet; no independent training pack installed", level) return end
+  for i = 1, math.min(#rows, 25) do
+    local x = rows[i]
+    ns.Print("%s%s at level %d: %s (seen at trainer, cost may change)",
+      x.name, type(x.rank) == "string" and (" " .. x.rank) or "", level, ns.Prices.Money(x.cost))
+  end
+end)
+
 function M:OnEnable()
   self:On("SPELLS_CHANGED", function(mod) ns.Throttle("spellbook", 0.5, function() mod:Scan() end) end)
+  self:On("TRAINER_SHOW", function(mod) mod:ObserveTrainer() end)
+  self:On("PLAYER_LEVEL_UP", function(mod, _, level) mod:TrainingNotice(level) end)
   -- (LEARNED_SPELL_IN_TAB does not exist on Forever; SPELLS_CHANGED covers learning)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Scan() end)
 end
