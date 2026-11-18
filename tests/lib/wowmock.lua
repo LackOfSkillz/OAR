@@ -662,7 +662,13 @@ function M.new(opts)
     end,
     GetContainerItemInfo = function(bag, slot)
       local id = game.bags and game.bags[bag] and game.bags[bag][slot]
-      if id then return { itemID = id, stackCount = (game.counts and game.counts[bag] and game.counts[bag][slot]) or 5 } end
+      if id then return { itemID = id, stackCount = (game.counts and game.counts[bag] and game.counts[bag][slot]) or 5,
+        isLocked = game.lockedItems and game.lockedItems[id] or false } end
+    end,
+    GetContainerItemQuestInfo = function(bag, slot)
+      local id = game.bags and game.bags[bag] and game.bags[bag][slot]
+      if id then return { isQuestItem = game.questItems and game.questItems[id] or false,
+        questID = game.questStartItems and game.questStartItems[id] or nil } end
     end,
   }
   -- gear: game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 5, ... }; items[id].equipLoc / class / subclass
