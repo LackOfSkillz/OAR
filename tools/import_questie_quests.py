@@ -104,6 +104,7 @@ def main():
 
     quest_ids = sorted({int(m.group(1)) for k in meta for m in [re.match(r"^X-Quest-(\d+)-S$", k)] if m})
     quests, npcs, objects, items = {}, {}, {}, {}
+    item_starts, item_uses = {}, {}
     info, paths = {}, {}
 
     def npc_path(i):
@@ -189,6 +190,16 @@ def main():
         fin_npcs = [i for i in Q.id_list(fin[0]) if need_npc(i)] if len(fin) > 0 and fin[0] else []
         fin_objs = [i for i in Q.id_list(fin[1]) if need_object(i)] if len(fin) > 1 and fin[1] else []
         quests[qid] = (s.get(1) or "?", s.get(5) or 0, objs, explore, fin_npcs, fin_objs)
+        # Reverse indexes for item tooltips, including quests outside the
+        # player's current log. Quest startedBy is [NPCs, objects, items].
+        # Never infer starter status from a quest's objectives or item drops.
+        started_by = Q.lua_array(row("Quest", qid, "2") or [])
+        for item_id in (Q.id_list(started_by[2]) if len(started_by) > 2 and started_by[2] else []):
+            if isinstance(item_id, int) and item_id > 0:
+                item_starts.setdefault(item_id, set()).add(qid)
+        for kind, item_id, _ in objs:
+            if kind == "item" and isinstance(item_id, int) and item_id > 0:
+                item_uses.setdefault(item_id, set()).add(qid)
         # chains, breadcrumbs, reputation, category and flags (Questie's questKeys
         # 12 preQuestGroup, 13 preQuestSingle, 22 nextQuestInChain, 23 questFlags,
         # 24 specialFlags, 26 reputationReward, 27 breadcrumbForQuestId, 28 breadcrumbs,
@@ -268,7 +279,8 @@ def main():
         f.write("--   rep = {factionID, amount, ...}, s = category (negative zoneOrSort), r = repeatable, d = daily, req = required level }\n")
         f.write("-- paths[npcID] = { [uiMapID] = {x, y, ...} } walking path of escort and patrol NPCs\n")
         f.write("-- starters[objectID] = { {questID, name, requiredLevel, questLevel, faction, classMask, {preAny}, {preAll}, raceMask} }\n")
-        f.write("-- npcs/objects[id] = { name, { [uiMapID] = {x, y, x, y, ...} } }; items[id] = { name, {npc ids}, {object ids} }\n")
+        f.write("-- npcs/objects[id] = { name, { [uiMapID] = {x, y, x, y, ...} } }; items[id] = { name, {npc ids}, {object ids} }\\n")
+        f.write("-- itemStarts[itemID] = {quest IDs whose startedBy item list names this item}; itemUses[itemID] = {quest IDs with this item objective}\\n")
         f.write("Outrider_DataQuests = { source = %s,\n" % s("QuestieDB " + version))
         f.write("quests = {\n")
         for qid, (qn, lvl, objs, explore, fin_npcs, fin_objs) in sorted(quests.items()):
@@ -293,7 +305,13 @@ def main():
         for i, (n, dn, do) in sorted(items.items()):
             if dn or do:
                 f.write("[%d]={%s,{%s},{%s}},\n" % (i, s(n or "?"), ",".join(map(str, dn)), ",".join(map(str, do))))
-        f.write("},\ninfo = {\n")
+        f.write("},\\nitemStarts = {\\n")
+        for item_id, ids in sorted(item_starts.items()):
+            f.write("[%d]={%s},\\n" % (item_id, ",".join(map(str, sorted(ids)))))
+        f.write("},\\nitemUses = {\\n")
+        for item_id, ids in sorted(item_uses.items()):
+            f.write("[%d]={%s},\\n" % (item_id, ",".join(map(str, sorted(ids)))))
+        f.write("},\\ninfo = {\\n")
         def lst(v):
             return "{" + ",".join(map(str, v)) + "}"
         for qid, e in sorted(info.items()):
