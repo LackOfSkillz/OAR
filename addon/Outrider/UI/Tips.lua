@@ -10,6 +10,7 @@ local _, ns = ...
 local pages = {
   home = "Your character at a glance: the next step, errands, your pet or class keys, and the journey you're on.",
   whatnow = "What to do next with this character, ranked: errands, quests, gear, dungeons, training and gold. Pick a goal to narrow it.",
+  journal = "Your quest story: every quest you took, handed in or abandoned, by date, with your level and the zone. Pick one for details.",
   help = "What every part of Outrider does, one topic at a time, with buttons that take you there.",
   journey = "Search for anything (places, rares, quests, items, NPCs) and the best gear and XP quests for your level; a number guides you there.",
   map = "Which pins show on the world map and minimap, what Outrider records, and how much it has stored.",

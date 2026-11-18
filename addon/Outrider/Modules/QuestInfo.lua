@@ -316,3 +316,80 @@ end
 function M:Activity()
   return string.format("quest details: %d quests in this character's history", #self:History())
 end
+
+-- ------------------------------------------------------------------ journal
+-- Gallery idea from Questie's Journey (2026-11-18): your quest history as a
+-- dated list on the left and the picked entry in detail on the right, with a
+-- stat strip on top. Read-only; history is recorded per character (above).
+M.WHAT_COLOR = { took = "accent", ["handed in"] = "good", abandoned = "bad" }
+
+function M:JournalStats(now)
+  now = now or time()
+  local list = self:History()
+  local today, week, total, dropped = 0, 0, 0, 0
+  for _, e in ipairs(list) do
+    if e.what == "handed in" then
+      total = total + 1
+      if now - (e.t or 0) < 86400 then today = today + 1 end
+      if now - (e.t or 0) < 7 * 86400 then week = week + 1 end
+    elseif e.what == "abandoned" then dropped = dropped + 1 end
+  end
+  return { today = today, week = week, total = total, abandoned = dropped, entries = #list }
+end
+
+function M:JournalDetail(e)
+  if not e then return "Pick an entry on the left." end
+  local lines = {
+    string.format("|cfff1d58e%s|r", tostring(e.name or ("Quest " .. tostring(e.id)))),
+    string.format("%s %s", ns.TitleCase(tostring(e.what or "")), date("%A %b %d, %H:%M", e.t or 0)),
+    string.format("Level %s%s", tostring(e.lvl or "?"), e.zone and (" in " .. e.zone) or ""),
+  }
+  local ok, more = pcall(self.Lines, self, e.id)
+  if ok and type(more) == "table" and #more > 0 then
+    lines[#lines + 1] = ""
+    for _, l in ipairs(more) do lines[#lines + 1] = "|cff8fb4ff" .. l .. "|r" end
+  end
+  return table.concat(lines, "\n")
+end
+
+ns.Hub:AddTab("journal", "Journal", function(p)
+  local UI, Theme = ns.UI, ns.Theme
+  p.stats = UI:StatStrip(p)
+  p.stats:SetPoint("TOPLEFT", 0, 0)
+  p.stats:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  p.list = UI:ScrollList(p, {
+    rows = 22, rowHeight = 22,
+    render = function(row, e)
+      local col = Theme:Hex(M.WHAT_COLOR[e.what] or "body")
+      row.text:SetText(string.format("|cff8f96a6%s|r  %s%s|r  %s", date("%b %d %H:%M", e.t or 0),
+        col, ns.TitleCase(tostring(e.what or "")), tostring(e.name or "?")))
+    end,
+    onClick = function(e) p.picked = e p.detail:SetText(M:JournalDetail(e)) end,
+  })
+  p.list:SetPoint("TOPLEFT", p.stats, "BOTTOMLEFT", 0, -12)
+  p.list:SetWidth(460)
+  p.card = UI:Card(p, true)
+  p.card:SetPoint("TOPLEFT", p.list, "TOPRIGHT", 12, 0)
+  p.card:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  p.card:SetHeight(22 * 22 + 4)
+  p.detail = UI.Text(p.card, "normal", "body")
+  p.detail:SetPoint("TOPLEFT", 18, -16)
+  p.detail:SetPoint("RIGHT", p.card, "RIGHT", -18, 0)
+  p.detail:SetJustifyH("LEFT")
+  if p.detail.SetSpacing then p.detail:SetSpacing(3) end
+  function p:Refresh()
+    local st = M:JournalStats()
+    self.stats:SetItems({
+      { cap = "Handed in today", value = tostring(st.today), color = st.today > 0 and "good" or nil },
+      { cap = "This week", value = tostring(st.week) },
+      { cap = "All time", value = tostring(st.total), color = "gold", note = st.entries .. " entries" },
+      { cap = "Abandoned", value = tostring(st.abandoned), color = st.abandoned > 0 and "bad" or nil },
+    })
+    local list, out = M:History(), {}
+    for i = #list, 1, -1 do out[#out + 1] = list[i] end
+    self.list:SetItems(out)
+    if not self.picked then self.picked = out[1] end
+    self.detail:SetText(#out == 0 and "Quests you take, hand in or abandon show here as you play, with the date, your level and the zone."
+      or M:JournalDetail(self.picked))
+  end
+end)

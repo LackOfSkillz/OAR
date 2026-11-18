@@ -22,7 +22,7 @@ T.describe("rares tab", function()
     T.eq(#items, 1)
     T.eq(items[1].name, "Zone Rare")
     T.contains(p.list.rowFrames[1].text:GetText(), "alive, seen just now")
-    T.same(ns.Hub.frame.tabBar.order, { "home", "whatnow", "help", "journey", "map", "waypoints", "rares", "rarealerts", "dungeons", "quests", "class", "gear", "gearsets", "professions", "fishing", "crafting", "macros", "alts", "money", "errands", "forecasts", "feed", "chat", "sharing", "census", "people", "settings", "modules", "characters", "advisor", "overview", "tools", "commands" })
+    T.same(ns.Hub.frame.tabBar.order, { "home", "whatnow", "help", "journey", "map", "waypoints", "rares", "rarealerts", "dungeons", "quests", "journal", "class", "gear", "gearsets", "professions", "fishing", "crafting", "macros", "alts", "money", "errands", "forecasts", "feed", "chat", "sharing", "census", "people", "settings", "modules", "characters", "advisor", "overview", "tools", "commands" })
     T.eq(#ns.Errors.list, 0)
   end)
 
