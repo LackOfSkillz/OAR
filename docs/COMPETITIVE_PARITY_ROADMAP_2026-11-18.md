@@ -17,12 +17,29 @@
 
 ## Baseline and selection
 
-Starting catalog: [CurseForge WoW addons filtered to Forever, ranked by all-time downloads](https://www.curseforge.com/wow/search?class=addons&gameVersionTypeId=67408&page=1&pageSize=20&sortBy=total+downloads). For module-specific comparisons, prefer the relevant current addon project page rather than a global top-ten list. See linked benchmarks below.
+Starting catalog: [CurseForge WoW addons filtered to Forever, ranked by all-time downloads](https://www.curseforge.com/wow/search?class=addons&gameVersionTypeId=88568&page=1&pageSize=50&sortBy=total+downloads). For module-specific comparisons, prefer the relevant current addon project page rather than a global top-ten list. See linked benchmarks below.
 
 **Statuses:** `GAP` no comparable implementation found in scoped modules; `PARTIAL` existing code but not full competitor depth; `VERIFY` confirm in-game/with missing packs.  
 **Priority:** `P0` blocks 'one addon to rule them all' parity, `P1` valuable depth, `P2` specialization/polish. Priority is feature importance, not permission to violate WoW rules.
 
 **Source files reviewed** include: `README.md`, `CLAUDE.md`, `CHANGELOG.md`, `docs/ADDON_GAP_ANALYSIS.md`, `docs/FOREVER_CONSTRAINTS.md`, `docs/PROBE_RESULTS.md`, `docs/USER_GUIDE.md`, `docs/TASK_AUDIT_2026-11-15.md`, `Outrider.toc`, and the quest, rare, pet, macro, dungeon, map, auction, inventory, healer, profession, chat, alt and UI modules referenced below.
+
+## Verified CurseForge Forever-filter benchmark snapshot — 2026-11-18
+
+The direct [CurseForge WoW Forever results page](https://www.curseforge.com/wow/search?class=addons&gameVersionTypeId=88568&page=1&pageSize=50&sortBy=total+downloads) currently lists these ten highly downloaded **Forever-labeled** projects in this order (total lifetime downloads across all supported game flavors, **not Forever-specific installations**):
+
+1. **DBM – Deadly Boss Mods (DBM-Core)** — dungeon/raid encounter warnings, boss timer benchmark.
+2. **Details! Damage Meter** — combat analytics benchmark.
+3. **Questie** — quest objectives and map database benchmark.
+4. **Auctionator** — auction research, price lookup and buying/selling benchmark.
+5. **BigWigs** — boss warnings/role filtering benchmark.
+6. **Bagnon** — account-wide inventory and unified bag benchmark.
+7. **RareScanner** — rare discovery and alert benchmark.
+8. **LittleWigs** — dungeon-specific mechanic alerts benchmark.
+9. **Pawn** — stat-weight item comparison benchmark.
+10. **Plater Nameplates** — nameplate appearance and quest/target information benchmark.
+
+These ten are **not** the whole target list: use 2–3 specialized competitors for *each Outrider module* (as indexed below), including relevant niche addons such as DungeonJournal, Baganator, RestedXP, HandyNotes, HealBot, TSM and GatherMate2. A Forever label does not prove that its advanced feature set works on Forever. Record a specific supported-game-version check and actual in-game behavior before implementing parity claims. A plugin may also be unsuitable for Outrider's strict anti-automation and no-combat-log rules.
 
 ## Master gap register
 
