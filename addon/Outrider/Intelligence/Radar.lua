@@ -3,7 +3,7 @@
 local _, ns = ...
 local M = ns:NewModule("OpportunityRadar", {
   title = "Opportunity Radar (offline coach)", phase = "P9", order = 105,
-  defaultEnabled = false, defaults = { quiet = true, enabledHud = false, scale = 1, muted = {} },
+  defaultEnabled = false, defaults = { quiet = true, enabledHud = false, scale = 1, muted = {}, timeBudget = 45 },
 })
 ns.OpportunityRadar = M
 local E, O = ns.IntelEvidence, ns.IntelOpportunity
@@ -16,7 +16,7 @@ local function visible(c, now)
   local f = state()[c.key]
   return not (f and f.untilAt and now < f.untilAt)
 end
-function M:Feedback(card, verdict)
+function M:Feedback(card, verdict, reason)
   if not (card and type(card.candidateId) == "string" and O:Valid(card)) then return false end
   if verdict ~= "useful" and verdict ~= "wrong" and verdict ~= "done" and verdict ~= "snooze" and verdict ~= "dismiss" then return false end
   local store, now = state(), time()
@@ -27,13 +27,32 @@ function M:Feedback(card, verdict)
     end
     store[oldest] = nil
   end
-  store[card.candidateId] = { verdict = verdict, t = now,
+  reason = type(reason) == "string" and reason:gsub("|", ""):gsub("[%z\1-\31]", " "):sub(1, 120) or nil
+  store[card.candidateId] = { verdict = verdict, t = now, reason = reason,
     untilAt = (verdict == "dismiss" or verdict == "wrong" or verdict == "done") and (now + 86400)
       or verdict == "snooze" and (now + 900) or nil }
   -- Existing WhatNow skip is retained for wrong/dismiss outcomes.
   if verdict == "wrong" or verdict == "dismiss" then ns.WhatNow:Skip({key = card.candidateId}) end
   self.dirty = true
   return true
+end
+function M:SetTimeBudget(minutes)
+  minutes = tonumber(minutes)
+  if minutes ~= 30 and minutes ~= 45 and minutes ~= 60 then return false end
+  self:Settings().timeBudget = minutes
+  return true
+end
+function M:FeedbackHistory()
+  local out = {}
+  for id, f in pairs(state()) do
+    if type(id) == "string" and type(f) == "table" then
+      out[#out + 1] = { candidateId = id, verdict = f.verdict, at = f.t,
+        reason = f.reason }
+    end
+  end
+  table.sort(out, function(a, b) return (a.at or 0) > (b.at or 0) end)
+  for i = #out, 81, -1 do out[i] = nil end
+  return out
 end
 function M:Mute(kind, on)
   if type(kind) ~= "string" or #kind < 1 or #kind > 40 or kind:find("[%c|]") then return false end
@@ -77,7 +96,13 @@ function M:Refresh()
           { benefit = c.benefit, confidence = c.confidence, kind = c.kind },
           label)
         local card = O:FromWhatNow(c, profile, ev)
-        if card then cards[#cards + 1] = card end
+        if card then
+          local verdict = state()[card.candidateId]
+          -- Small local preference bonus only after an explicit useful vote.
+          -- Never promote stale, ineligible or unverified candidates.
+          if verdict and verdict.verdict == "useful" then card.score = card.score + 0.02 end
+          cards[#cards + 1] = card
+        end
       end
     end
   end
@@ -203,4 +228,26 @@ end
 function M:Activity()
   return "offline only; " .. tostring(#(self.cards or {})) .. " suggestions"
 end
-ns.AddCommand("radar", "show the offline Opportunity Radar (feature is off by default)", function() M:Open() end)
+ns.AddCommand("radar", "show | time 30|45|60 | feedback | reset | unmute <kind>  offline coach", function(arg)
+  arg = type(arg) == "string" and arg:lower():match("^%s*(.-)%s*$") or ""
+  local mins = arg:match("^time%s+(%d+)$")
+  if mins then
+    ns.Print(M:SetTimeBudget(mins) and ("Coach planning budget: " .. mins .. " minutes")
+      or "Use time 30, 45 or 60.")
+  elseif arg == "feedback" then
+    local history = M:FeedbackHistory()
+    local totals = {}
+    for _, item in ipairs(history) do totals[item.verdict] = (totals[item.verdict] or 0) + 1 end
+    ns.Print("Coach feedback: %d stored (useful %d, wrong %d, done %d, later %d, dismissed %d)",
+      #history, totals.useful or 0, totals.wrong or 0, totals.done or 0,
+      totals.snooze or 0, totals.dismiss or 0)
+  elseif arg == "reset" then
+    M:ClearFeedback()
+    ns.Print("Coach feedback reset; independent What now? skips remain unchanged.")
+  elseif arg:match("^unmute%s+") then
+    local kind = arg:match("^unmute%s+(%S+)$")
+    ns.Print(kind and M:Mute(kind, false) and ("Coach unmuted: " .. kind)
+      or "Usage: /ride radar unmute <category>")
+  elseif arg == "" or arg == "show" then M:Open()
+  else ns.Print("Usage: /ride radar show|time 30|45|60|feedback|reset|unmute <category>") end
+end)

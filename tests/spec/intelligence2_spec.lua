@@ -107,6 +107,29 @@ T.describe("intelligence 2.0 evidence", function()
   end)
 end)
 T.describe("intelligence 2.0 native radar", function()
+  T.it("feedback retention, explicit reasons, planning time and reset stay local", function()
+    local game, ns = session()
+    local R = ns.OpportunityRadar
+    ns.Modules:SetEnabled("OpportunityRadar", true)
+    local old = ns.WhatNow.Candidates
+    ns.WhatNow.Candidates = function()
+      return {{key="quest:one",kind="quest",title="Quest",benefit=1,
+        confidence=1,label="observed"}}, {}
+    end
+    local card = R:Refresh()[1]
+    T.ok(R:Feedback(card, "wrong", "Observed this quest is already done"))
+    local history = R:FeedbackHistory()
+    T.eq(history[1].verdict, "wrong")
+    T.eq(history[1].reason, "Observed this quest is already done")
+    T.ok(R:SetTimeBudget(30))
+    T.no(R:SetTimeBudget(13))
+    T.eq(R:Settings().timeBudget, 30)
+    R:ClearFeedback()
+    T.eq(#R:FeedbackHistory(), 0)
+    game:slash("radar feedback")
+    T.eq(#ns.Errors.list, 0)
+    ns.WhatNow.Candidates = old
+  end)
   T.it("offers Why, Later, Useful, Wrong, Done, Dismiss and Mute controls", function()
     local game, ns = session()
     local R = ns.OpportunityRadar
