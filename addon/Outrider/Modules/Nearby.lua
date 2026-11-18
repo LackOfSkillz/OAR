@@ -255,8 +255,89 @@ end
 
 -- Gear page as premium cards (2026-11-16): the item's own icon and tooltip,
 -- how much better it is, where it comes from, and a waypoint button.
+-- The equipment slot an upgrade is for (from GearScore's comparison).
+function M.SlotOf(c)
+  local ok, r = pcall(ns.GearScore.Compare, ns.GearScore, "item:" .. tostring(c.itemID))
+  return ok and type(r) == "table" and r.slot or nil
+end
+
+-- Paper-doll strip (premium rebuild 2026-11-18): what you wear, by slot, with
+-- a quality border; a green arrow where an upgrade is waiting; click a slot
+-- to show only its upgrades (click again for all).
+M.DOLL = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
+
+function M:Doll(host)
+  local f = CreateFrame("Frame", nil, host)
+  f:SetSize(600, 92)
+  f.slots = {}
+  local SIZE, GAP = 38, 6
+  for i, slot in ipairs(M.DOLL) do
+    local b = CreateFrame("Button", nil, f, ns.Theme:BackdropTemplate())
+    b:SetSize(SIZE, SIZE)
+    local col, row = (i - 1) % 9, math.floor((i - 1) / 9)
+    b:SetPoint("TOPLEFT", col * (SIZE + GAP), -row * (SIZE + GAP))
+    ns.Theme:ApplyPanel(b, "bg", "strong")
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetPoint("TOPLEFT", 2, -2)
+    b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
+    b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    b.up = b:CreateTexture(nil, "OVERLAY")
+    b.up:SetSize(14, 14)
+    b.up:SetPoint("TOPRIGHT", 2, 2)
+    b.up:SetTexture("Interface\\Buttons\\UI-MicroStream-Green")
+    b.slot = slot
+    b:SetScript("OnEnter", function(self)
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      local link = C.Call("GetInventoryItemLink", "player", self.slot)
+      if link and GameTooltip.SetInventoryItem then pcall(GameTooltip.SetInventoryItem, GameTooltip, "player", self.slot)
+      else GameTooltip:AddLine(ns.TitleCase(ns.GearScore.SLOT_NAMES[self.slot] or "slot") .. ": empty") end
+      if self.hasUp then GameTooltip:AddLine("Upgrade waiting: click to see it", 0.4, 0.85, 0.5) end
+      GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    b:SetScript("OnClick", function(self)
+      M.slotFilter = M.slotFilter ~= self.slot and self.slot or nil
+      if ns.Hub.Refresh then ns.Hub:Refresh() end
+    end)
+    f.slots[i] = b
+  end
+  function f:Refresh()
+    local ups = {}
+    for _, c in ipairs(M:Candidates()) do local sl = M.SlotOf(c) if sl then ups[sl] = true end end
+    -- rings and trinkets share an upgrade either way
+    if ups[11] or ups[12] then ups[11], ups[12] = true, true end
+    if ups[13] or ups[14] then ups[13], ups[14] = true, true end
+    for _, b in ipairs(self.slots) do
+      local tex = C.Call("GetInventoryItemTexture", "player", b.slot)
+      b.icon:SetTexture(tex or "Interface\\PaperDoll\\UI-Backpack-EmptySlot")
+      b.icon:SetDesaturated(tex == nil)
+      local q = tonumber(C.Readable(C.Call("GetInventoryItemQuality", "player", b.slot)))
+      local qc = q and rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[q]
+      if b.SetBackdropBorderColor then
+        if M.slotFilter == b.slot then b:SetBackdropBorderColor(ns.Theme:Color("gold"))
+        elseif qc then b:SetBackdropBorderColor(qc.r, qc.g, qc.b, 1)
+        else b:SetBackdropBorderColor(ns.Theme:Color("strong")) end
+      end
+      b.hasUp = ups[b.slot] and true or false
+      b.up:SetShown(b.hasUp)
+    end
+  end
+  f:Refresh()
+  return f
+end
+
 function M:CardItems()
   local list, f = self:Candidates(), self.filter
+  if self.slotFilter then
+    local keep, want = {}, self.slotFilter
+    for _, c in ipairs(list) do
+      local sl = M.SlotOf(c)
+      if sl == want or (want == 11 or want == 12) and (sl == 11 or sl == 12) or (want == 13 or want == 14) and (sl == 13 or sl == 14) then
+        keep[#keep + 1] = c
+      end
+    end
+    list = keep
+  end
   if f and f ~= "" then
     local keep = {}
     for _, c in ipairs(list) do
@@ -284,8 +365,14 @@ end
 ns.Hub:AddTab("gear", "Gear", function(p)
   UI:FormPage(p, {
     { "header", "Gear" },
+    { "header", "What you wear", icon = "INV_Chest_Chain" },
+    { "custom", function(host) return M:Doll(host) end, 92 },
+    { "note", "Green arrow: an upgrade is waiting. Click a slot to see only its upgrades." },
     { "header", "Upgrades near you", icon = "INV_Chest_Chain" },
-    { "note", function() return M.filter and M.filter ~= "" and ("Upgrades matching '" .. M.filter .. "'.") or "Best first. Hover the picture for the item; sources are unverified community data." end },
+    { "note", function()
+      if M.slotFilter then return "Upgrades for your " .. tostring(ns.GearScore.SLOT_NAMES[M.slotFilter] or "slot") .. " (click the slot again for all)." end
+      return M.filter and M.filter ~= "" and ("Upgrades matching '" .. M.filter .. "'.") or "Best first. Hover the picture for the item; sources are unverified community data."
+    end },
     { "cards", function() return M:CardItems() end },
     { "note", function() return #M:Candidates() == 0 and "No upgrades found here yet (item data may still be loading)." or "" end },
   })
