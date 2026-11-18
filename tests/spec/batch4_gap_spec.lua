@@ -25,6 +25,30 @@ T.describe("batch4 read-only combat", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("Auto Shot hint stays quiet out of combat and without an enemy target", function()
+    local canAttack = false
+    local g, ns = session(function(game)
+      game.base.UnitRangedDamage = function() return 2.8 end
+      game.base.GetUnitSpeed = function() return 7 end
+      game.base.UnitCanAttack = function() return canAttack end
+      for _, k in ipairs({ "UnitRangedDamage", "GetUnitSpeed", "UnitCanAttack" }) do rawset(game.env, k, game.base[k]) end
+    end)
+    rawset(g.env, "SwingTimerRanged", g.env.CreateFrame("Frame"))
+    local M = ns.HunterFight
+    local frame = M:ShotOverlay()
+    T.ok(frame, "overlay built on the ranged swing timer")
+    M:UpdateShotOverlay()
+    T.eq(frame.label:GetText(), "", "moving out of combat: no hint")
+    g:setCombat(true)
+    M:UpdateShotOverlay()
+    T.eq(frame.label:GetText(), "", "in combat, no enemy target: no hint")
+    canAttack = true
+    M:UpdateShotOverlay()
+    T.contains(frame.label:GetText(), "Stop moving")
+    g:setCombat(false)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("threat status distinguishes player and pet and leaves nameplates unchanged", function()
     local g, ns = session(function(game)
       game.base.UnitDetailedThreatSituation = function(who)
@@ -79,8 +103,10 @@ T.describe("batch4 training and dungeon data", function()
     local g, ns = session(function(game)
       game.base.GetNumTrainerServices = function() return 1 end
       game.base.GetTrainerServiceInfo = function()
-        return "Cited Test Spell", "Rank 1", "available", nil, nil, nil, 22
+        return "Cited Test Spell", "Rank 1", "available", false
       end
+      game.base.GetTrainerServiceLevelReq = function() return 22 end
+      rawset(game.env, "GetTrainerServiceLevelReq", game.base.GetTrainerServiceLevelReq)
       game.base.GetTrainerServiceCost = function() return 550 end
       rawset(game.env, "GetNumTrainerServices", game.base.GetNumTrainerServices)
       rawset(game.env, "GetTrainerServiceInfo", game.base.GetTrainerServiceInfo)
@@ -88,6 +114,7 @@ T.describe("batch4 training and dungeon data", function()
     end)
     T.eq(ns.Spellbook:TrainingAt(22)[1], nil)
     g:fire("TRAINER_SHOW")
+    g:advance(0.5)
     local rows = ns.Spellbook:TrainingAt(22)
     T.eq(rows[1].name, "Cited Test Spell")
     T.eq(rows[1].cost, 550)

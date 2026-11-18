@@ -102,13 +102,20 @@ function M:ObserveTrainer()
   local num = tonumber(C.Readable(C.Call("GetNumTrainerServices")))
   local info = C.Resolve("GetTrainerServiceInfo")
   local price = C.Resolve("GetTrainerServiceCost")
-  if not (num and num > 0 and type(info) == "function" and type(price) == "function") then
+  local levelOf = C.Resolve("GetTrainerServiceLevelReq")
+  -- Profession trainers belong to ProfExtras; this list is class spells only.
+  if C.Readable(C.Call("IsTradeskillTrainer")) then return 0 end
+  if not (num and num > 0 and type(info) == "function" and type(price) == "function" and type(levelOf) == "function") then
     self:Info("class training: vendor has no readable service list; no forecast inferred")
     return 0
   end
   local saved, n = self:TrainingStore(), 0
   for i = 1, math.min(300, num) do
-    local ok, name, sub, category, _, _, reqLevel = pcall(info, i)
+    -- GetTrainerServiceInfo gives name, rank, category; the level comes from
+    -- GetTrainerServiceLevelReq (Classic trainer API).
+    local ok, name, sub, category = pcall(info, i)
+    local okLevel, reqLevel = pcall(levelOf, i)
+    if not okLevel then reqLevel = nil end
     local okCost, copper = pcall(price, i)
     name, reqLevel, copper = C.Readable(name), C.Readable(reqLevel), C.Readable(copper)
     if ok and okCost and type(name) == "string" and
@@ -156,7 +163,8 @@ end)
 
 function M:OnEnable()
   self:On("SPELLS_CHANGED", function(mod) ns.Throttle("spellbook", 0.5, function() mod:Scan() end) end)
-  self:On("TRAINER_SHOW", function(mod) mod:ObserveTrainer() end)
+  -- the service list fills in just after the window opens
+  self:On("TRAINER_SHOW", function(mod) ns.Timer.After(0.3, function() mod:ObserveTrainer() end, "spellbook:trainer") end)
   self:On("PLAYER_LEVEL_UP", function(mod, _, level) mod:TrainingNotice(level) end)
   -- (LEARNED_SPELL_IN_TAB does not exist on Forever; SPELLS_CHANGED covers learning)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Scan() end)

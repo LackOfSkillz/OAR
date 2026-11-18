@@ -13,7 +13,7 @@ local M = ns:NewModule("QuestRewards", {
   title = "Best quest reward and bag upgrades",
   phase = "P6",
   order = 81,
-  defaults = { bagToasts = true },
+  defaults = { bagToasts = true, toastedUpgrades = {} },
 })
 ns.QuestRewards = M
 
@@ -72,7 +72,11 @@ end
 
 function M:ScanBags()
   if not self:Settings().bagToasts or C.InCombat() or C.Call("IsInInstance") or not ns.GearScore then return end
-  self.toasted = self.toasted or {}
+  -- Each upgrade is announced once per character, across reloads and logins
+  -- (Gary, 2026-11-18: the same items popped up after every /reload).
+  local s = self:Settings()
+  if type(s.toastedUpgrades) ~= "table" then s.toastedUpgrades = {} end
+  self.toasted = s.toastedUpgrades
   for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
     for slot = 1, C.NumSlots(bag) do
       local link = C.ItemLinkAt(bag, slot)

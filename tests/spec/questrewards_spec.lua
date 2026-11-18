@@ -48,4 +48,16 @@ T.describe("quest rewards", function()
     T.eq(n, 1)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("an announced upgrade stays quiet after a reload (remembered per character)", function()
+    local game, ns = session()
+    game.bags = { [0] = { 102 } }
+    game:fire("BAG_UPDATE_DELAYED") game:advance(3)
+    local M = ns.Modules:Get("QuestRewards")
+    T.ok(M:Settings().toastedUpgrades[102], "saved in the character settings")
+    M.toasted = nil -- what a /reload does to session state
+    local before = #ns.Toast.visible
+    game:fire("BAG_UPDATE_DELAYED") game:advance(3)
+    T.eq(#ns.Toast.visible, before)
+  end)
 end)

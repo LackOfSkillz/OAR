@@ -50,8 +50,18 @@ end
 
 function M:ShowTestsAtLogin()
   if ns.Compat.InCombat() then return end
-  if not self.state.buttonDone and not ns.SecureButtons.test then ns.SecureButtons:SelfTest() end
-  if self.state.toastBuild ~= ns.build then
+  -- The secure "Wave" test button also stops appearing by itself after a few
+  -- logins, verified or not (it showed at every login; /ride selftest button
+  -- still brings it back).
+  local shown = tonumber(self.state.buttonShown) or 0
+  if not self.state.buttonDone and not ns.SecureButtons.test and shown < 3 then
+    self.state.buttonShown = shown + 1
+    ns.SecureButtons:SelfTest()
+  end
+  -- The sample toast shows once ever (it used to show once per build, so it
+  -- came back after nearly every deploy: Gary, 2026-11-18 "a bit spammy").
+  -- /ride selftest toast still shows it on demand.
+  if not self.state.toastBuild then
     self.state.toastBuild = ns.build
     ns.Toast:SelfTest()
   end

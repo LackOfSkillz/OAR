@@ -543,6 +543,8 @@ function M:UpdateShotOverlay()
   local frame = self:ShotOverlay()
   if not frame then return end
   if not self:Settings().shotHints or not status or not status.known then frame.label:SetText("") return end
+  -- Only mid-fight with an enemy targeted; walking around town says nothing.
+  if not C.InCombat() or not C.Readable(C.Call("UnitCanAttack", "player", "target")) then frame.label:SetText("") return end
   local hints = {}
   if status.moving then hints[#hints + 1] = "Stop moving for Auto Shot" end
   if status.inRange == false then hints[#hints + 1] = "Target out of Auto Shot range" end
