@@ -88,6 +88,7 @@ function M:State(entry)
 end
 
 function M:Install(entry, force)
+  if not entry or type(entry.name) ~= "string" or type(entry.body) ~= "string" then return false, "invalid library entry" end
   if C.InCombat() then return false, "not in combat" end
   local why = self:Missing(entry)
   if why then return false, why end
@@ -95,12 +96,19 @@ function M:Install(entry, force)
   if E.Errors(body) > 0 then return false, "macro has errors" end
   local installed = self:Settings().installed
   local index = C.Call("GetMacroIndexByName", entry.name) or 0
-  if index > 0 and not installed[entry.name] and not force then
+  if index > 0 and not installed[entry.name] then
+    -- Even a force flag must not overwrite a same-named player macro.
     return false, "you already have a macro called " .. entry.name .. " that Outrider didn't make"
   end
   local perChar = entry.scope ~= "account"
   if index > 0 then
-    if not pcall(EditMacro, index, entry.name, nil, body) then return false, "EditMacro failed" end
+    local rec = installed[entry.name]
+    local _, _, current = C.Call("GetMacroInfo", index)
+    if not rec or not E.Same(C.Readable(current), rec.body) then
+      return false, "macro text was changed outside Outrider; review it manually before updating"
+    end
+    local ok, result = pcall(EditMacro, index, entry.name, nil, body)
+    if not ok or result == false then return false, "EditMacro failed" end
   else
     local acct, char = C.Call("GetNumMacros")
     local maxA = rawget(_G, "MAX_ACCOUNT_MACROS") or 120
@@ -117,10 +125,19 @@ function M:Install(entry, force)
 end
 
 function M:Remove(entry)
+  if not entry or type(entry.name) ~= "string" then return false, "invalid library entry" end
   if C.InCombat() then return false, "not in combat" end
-  if not self:Settings().installed[entry.name] then return false, "Outrider didn't install this one" end
+  local rec = self:Settings().installed[entry.name]
+  if not rec then return false, "Outrider didn't install this one" end
   local index = C.Call("GetMacroIndexByName", entry.name) or 0
-  if index > 0 then pcall(DeleteMacro, index) end
+  if index > 0 then
+    local _, _, current = C.Call("GetMacroInfo", index)
+    if not E.Same(C.Readable(current), rec.body) then
+      return false, "macro text changed outside Outrider; not deleting player edits"
+    end
+    local ok, result = pcall(DeleteMacro, index)
+    if not ok or result == false then return false, "DeleteMacro failed" end
+  end
   self:Settings().installed[entry.name] = nil
   self:Info("removed macro %s", entry.name)
   return true
