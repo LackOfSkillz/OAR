@@ -24,6 +24,7 @@ ns.Trail = M
 M.SPACING = 12      -- yards between dots
 M.NEAR = 7          -- no new dot within this many yards of an old one
 M.MAX = 800         -- dots per map; the oldest go first
+M.MAP_HOURS, M.MAP_DOTS, M.MAP_GAP = 3, 200, 0.02 -- what the world map draws
 M.EVERY = 2         -- seconds between samples while moving
 
 function M:OnInitialize()
@@ -79,9 +80,18 @@ end
 function M:Pins(mapID, hidden)
   local out = {}
   if not hidden.trail then
-    for i, d in ipairs(self:Dots(mapID)) do
-      out[#out + 1] = { id = string.format("trail-%06d", i), kind = "trail", mapID = mapID, x = d.x, y = d.y,
-        name = "You walked here", when = d.t, small = true }
+    -- On the map only the recent path, thinned (premium plan B20: the full
+    -- trail drew a dense scribble over towns): the last 3 hours, no two dots
+    -- closer than ~2% of the map, at most 200. The saved trail is untouched.
+    local dots, cut, shown, lx, ly = self:Dots(mapID), time() - M.MAP_HOURS * 3600, 0, nil, nil
+    for i = #dots, 1, -1 do
+      local d = dots[i]
+      if (d.t or 0) < cut or shown >= M.MAP_DOTS then break end
+      if not lx or (d.x - lx) ^ 2 + (d.y - ly) ^ 2 >= M.MAP_GAP ^ 2 then
+        out[#out + 1] = { id = string.format("trail-%06d", i), kind = "trail", mapID = mapID, x = d.x, y = d.y,
+          name = "You walked here", when = d.t, small = true }
+        shown, lx, ly = shown + 1, d.x, d.y
+      end
     end
   end
   if not hidden.ride then

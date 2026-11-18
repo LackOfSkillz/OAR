@@ -349,12 +349,15 @@ function Hub:Panel(t)
     -- strip belongs to the panel (drawn above its top edge) so it shows and
     -- hides with it. A form page's first heading replaces the title text.
     p:SetPoint("TOPLEFT", SIDE + 14, -(self.TITLE_H + 2))
-    if ns.Art and ns.Art:Has("header") then
+    -- each sidebar group gets its own banner when the art is in (batch 4b)
+    local banner = "header_" .. tostring(t.group or ""):lower()
+    if not (ns.Art and ns.Art:Has(banner)) then banner = "header" end
+    if ns.Art and ns.Art:Has(banner) then
       p.scene = p:CreateTexture(nil, "BACKGROUND")
       p.scene:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 6)
       p.scene:SetPoint("RIGHT", p, "RIGHT", 0, 0)
       p.scene:SetHeight(self.TITLE_H - 6)
-      ns.Art:Set(p.scene, "header")
+      ns.Art:Set(p.scene, banner)
       if p.scene.SetAlpha then p.scene:SetAlpha(0.45) end
     end
     -- hero (2026-11-16, Gary: "every page a custom premium feel", like What

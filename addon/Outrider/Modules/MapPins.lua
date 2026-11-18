@@ -71,9 +71,30 @@ local CLASSES = { "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Shaman", "
 function M.Group(kind) return GROUP[kind] or "service" end
 
 -- Texture path for a pin (pure: by kind, then title / goods for vendors and trainers).
+-- Outrider's own pin glyphs (art batch 4c) replace the game icons as they
+-- arrive; anything not delivered keeps the game icon below.
+M.PIN_ART = {
+  repair = "pin_repair", trainer = "pin_trainer", flight_master = "pin_flight", innkeeper = "pin_inn",
+  mailbox = "pin_mail", bank = "pin_bank", auction = "pin_auction", stable_master = "pin_stable",
+  spirit_healer = "pin_spirit", rare = "pin_rare", quest_giver = "pin_questgiver", turnin = "pin_turnin",
+  objective = "pin_objective", herb = "pin_herb", ore = "pin_ore", fish = "pin_fish", pool = "pin_fish",
+  dungeon = "pin_dungeon", note = "pin_note",
+}
+local function ownArt(name) return name and ns.Art and ns.Art:Path(name) or nil end
+
 function M.IconFor(pin)
   if pin.icon then return pin.icon end
   local kind, p = pin.kind, pin.poi or pin
+  if kind == "vendor" then
+    local goods = p and p.goods and table.concat(p.goods, ",") or ""
+    local title = (p and p.title or ""):lower()
+    local ammo = goods:find("ammo") or title:find("bowyer") or title:find("gunsmith") or title:find("ammo")
+    local own = ownArt(ammo and "pin_ammo" or "pin_vendor")
+    if own then return own end
+  else
+    local own = ownArt(M.PIN_ART[kind])
+    if own then return own end
+  end
   if kind == "trainer" then
     local title = p and p.title or ""
     for _, c in ipairs(CLASSES) do if title:find(c, 1, true) then return TRACK .. "Class" end end
