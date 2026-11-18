@@ -3,7 +3,7 @@
   "branch": "p1-foundation",
   "source_head": "54f36218b6a6265fe71976e6241696287c45c8f8",
   "generated": "2026-11-18",
-  "warning": "Statuses from code commits are provisional. Never mark Works/Matches/Surpasses without actual live evidence.",
+  "warning": "Statuses reflect automated CI at dcbb875d. Does not establish Works / Matches / Surpasses without game evidence. #4 still missing learned sales and other parity options.",
   "statuses": [
     "not_started",
     "implemented_unverified",
@@ -22,7 +22,7 @@
       "details": "XP/hour, time to level, session XP; \"ready now\" quest XP vs whole log, with the level you'd land at and a per-quest list",
       "competitors": "TurnInXP, Titan, RestedXP",
       "notes": "NEW. QuestExtras already sums log XP",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -38,7 +38,7 @@
       "details": ", visited layers with \"seen 12 min ago\"",
       "competitors": "NWB, Layer-Swap",
       "notes": "NEW. Layers.lua has it; just show it",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -54,7 +54,7 @@
       "details": "after release (GetCorpseMapPosition)",
       "competitors": "TomTom",
       "notes": "NEW. Today it points at a spirit healer",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -70,7 +70,7 @@
       "details": "\"always sell\" and \"sell once\", learned from what you sell; the Merchant button sells them. Never-sell protection for quest items",
       "competitors": "Rucksack, Scrap",
       "notes": "NEW. One click, your click",
-      "status": "not_started",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -1487,5 +1487,12 @@
       "minimum_acceptance": "10-minute first-use test per persona, opt-in settings and rollback",
       "status": "not_verified"
     }
-  ]
+  ],
+  "ci": {
+    "last_verified_code_commit": "dcbb875d0163ea4ce30965b4b044df83fa7899c5",
+    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44294608991",
+    "conclusion": "success",
+    "date": "2026-11-18",
+    "game_validation": "not_performed"
+  }
 }
