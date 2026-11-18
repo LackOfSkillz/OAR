@@ -570,7 +570,7 @@ local function dungeonRows()
     local out = {}
     for _, u in ipairs(ups) do
       if (u.later and true or false) == (later and true or false) then
-        out[#out + 1] = { itemID = u.itemID, text = string.format("|cff7fff7f+%d%%|r %s", math.floor(u.pct + 0.5), tostring(u.name)),
+        out[#out + 1] = { itemID = u.itemID, text = string.format("|cff7fff7f%s|r %s", ns.GearScore.UpText(u.pct), tostring(u.name)),
           note = (u.boss and ("Drops from " .. u.boss) or "") .. (u.later and (", usable at " .. u.reqLevel) or "") }
         if #out >= (n or 3) then break end
       end

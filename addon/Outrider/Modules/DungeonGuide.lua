@@ -220,7 +220,7 @@ function M.UpgradeLine(ups, n, later)
   local parts = {}
   for _, u in ipairs(ups) do
     if (u.later and true or false) == (later and true or false) then
-      parts[#parts + 1] = string.format("%s |cff7fff7f+%d%%|r%s (%s)", tostring(u.name), math.floor(u.pct + 0.5),
+      parts[#parts + 1] = string.format("%s |cff7fff7f%s|r%s (%s)", tostring(u.name), ns.GearScore.UpText(u.pct),
         u.later and (" at " .. u.reqLevel) or "", tostring(u.boss or "?"))
       if #parts >= (n or 3) then break end
     end

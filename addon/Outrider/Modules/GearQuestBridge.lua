@@ -24,7 +24,8 @@ local M = ns:NewModule("GearQuestBridge", {
 })
 ns.GearQuestBridge = M
 
-M.SOURCE = { vendor = "sold by", quest_reward = "quest", drop = "dropped by", crafted = "crafted", world_drop = "world drop" }
+M.SOURCE = { vendor = "sold by", quest_reward = "quest", drop = "dropped by", crafted = "crafted", world_drop = "world drop",
+  boss_drop = "boss drop", profession = "crafted", reputation = "reputation reward", pvp = "PvP reward" }
 
 function M:GQ()
   local gq = rawget(_G, "GearQuest")
@@ -64,7 +65,8 @@ function M:Picks()
         end
       end
       out[#out + 1] = { itemID = id, name = fact.name or ("item " .. id), slot = slot, kind = "gearquest",
-        label = (M.SOURCE[fact.sourceType or ""] or tostring(fact.sourceType or "GearQuest")), where = where,
+        -- never a raw token on screen ("boss_drop"): known words, else spaced out
+        label = (M.SOURCE[fact.sourceType or ""] or (tostring(fact.sourceType or "GearQuest"):gsub("_", " "))), where = where,
         zone = fact.zone }
     end
   end

@@ -195,14 +195,15 @@ end
 
 function M.Describe(c)
   local w = c.where or {}
-  local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or "?"
-  local src = (M.KIND_LABEL[c.kind] or c.kind) .. " " .. who
+  -- no "?" when the source has no named NPC ("profession ?" in the tour)
+  local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or nil
+  local src = (M.KIND_LABEL[c.kind] or c.kind) .. (who and (" " .. who) or "")
   if c.kind == "gearquest" then
-    src = "GearQuest: " .. tostring(c.via or "") .. " " .. who .. (c.zone and (", " .. c.zone) or "")
+    src = "GearQuest: " .. tostring(c.via or "") .. (who and (" " .. who) or "") .. (c.zone and (", " .. c.zone) or "")
   end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end
   if w.note then src = src .. ", " .. w.note end
-  return string.format("+%d%%  %s  |cffbbbbbb%s|r", math.floor(c.pct + 0.5), tostring(c.name), src)
+  return string.format("%s  %s  |cffbbbbbb%s|r", ns.GearScore.UpText(c.pct), tostring(c.name), src)
 end
 
 function M:Scan(why)
@@ -268,7 +269,7 @@ function M:CardItems()
     if i > 15 then break end
     local w = c.where or {}
     local src = M.Describe(c):gsub("^%+%d+%%%s+", ""):gsub("^" .. tostring(c.name):gsub("%p", "%%%0") .. "%s*", "")
-    local tags = { { string.format("+%d%%", math.floor(c.pct + 0.5)), "gold" } }
+    local tags = { { ns.GearScore.UpText(c.pct), "gold" } }
     local slot = M.SlotWord(c.itemID)
     if slot and slot ~= "" then tags[#tags + 1] = { slot:gsub("^%l", string.upper), "plain" } end
     local actions = {}

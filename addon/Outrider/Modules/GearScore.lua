@@ -339,6 +339,16 @@ function M.DiffText(diff, max)
   return table.concat(parts, "  ")
 end
 
+-- How big an upgrade reads on screen. Against a weak or empty slot the raw
+-- percentage explodes ("+285%"), which isn't believable (2026-11-18 tour), so
+-- anything past +100% just says "big upgrade".
+function M.UpText(pct)
+  pct = math.floor((tonumber(pct) or 0) + 0.5)
+  if pct >= 100 then return "big upgrade" end
+  if pct >= 1 then return "+" .. pct .. "%" end
+  return pct .. "%"
+end
+
 function M:Verdict(link)
   local r = self:Compare(link)
   if not r then return nil end
@@ -361,6 +371,7 @@ function M:Verdict(link)
     return nil
   end
   if r.capped then return string.format("big upgrade (%s)", role), "good" end
+  if pct >= 100 then return string.format("big upgrade (%s)", role), "good" end
   if pct >= 1 then return string.format("+%d%% upgrade (%s)", pct, role), "good" end
   if pct <= -1 then return string.format("downgrade %d%%", pct), "muted" end
   return "about the same as yours", "muted"
