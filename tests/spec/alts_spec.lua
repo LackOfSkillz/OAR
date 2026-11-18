@@ -84,6 +84,34 @@ T.describe("alts", function()
     T.contains(M.RunLine(r), "30 min")
   end)
 
+  T.it("starts lockout expiry on leaving and supports deleting a wrong lockout", function()
+    local game, ns, M = start()
+    game.now = 4000000
+    game.instance = { name = "Wailing Caverns", map = 43 }
+    game:fire("PLAYER_ENTERING_WORLD", false, false)
+    T.eq(M.inst[1].instanceID, 43)
+    game.now = game.now + 1200
+    game.instance = nil
+    game:fire("PLAYER_ENTERING_WORLD", false, false)
+    T.eq(M.inst[1].left, game.now)
+    game.now = game.now + 3000
+    T.eq(M:Lockouts().hour, 1, "entry expired long ago but exit is recent")
+    game.now = game.now + 601
+    T.eq(M:Lockouts().hour, 0)
+    game:slash("runs list")
+    T.contains(game:chatText(), "instance 43")
+    game:slash("runs delete 1")
+    T.eq(#M.inst, 0)
+  end)
+
+  T.it("the minimap button tooltip reports estimated instance lockouts", function()
+    local game, ns, M = start()
+    local b = ns.MinimapButton.button
+    T.ok(b, "built-in minimap button available")
+    b.__scripts.OnEnter(b)
+    T.contains(table.concat(game.env.GameTooltip.__lines or {}, "|"), "Instances (estimated)")
+  end)
+
   T.it("the page and command work", function()
     local game, ns, M = start()
     ns.Hub:Toggle()
