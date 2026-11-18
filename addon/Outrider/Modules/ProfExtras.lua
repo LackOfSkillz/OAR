@@ -87,6 +87,60 @@ function M:TrainerKinds()
   return out
 end
 
+-- DEEP-29: sourced-only unlearned recipe registry. Full independent
+-- trainer/vendor/drop/quest coverage requires an attributed data pack.
+function M:RecipeSources()
+  ns.db.global.recipeSources = type(ns.db.global.recipeSources) == "table" and ns.db.global.recipeSources or {}
+  return ns.db.global.recipeSources
+end
+function M:RecordRecipeSource(recipeID, name, kind, who, skill)
+  recipeID = tonumber(recipeID)
+  if not recipeID or type(name) ~= "string" or name == "" or
+    not ({ trainer = true, vendor = true, drop = true, quest = true })[kind] then return false end
+  self:RecipeSources()[recipeID] = { id = recipeID, name = name, kind = kind,
+    who = who, skill = tonumber(skill), at = time(), source = "user supplied, unverified" }
+  return true
+end
+function M:UnlearnedRecipes()
+  local known = {}
+  for _, p in pairs(ns.db.char.professions or {}) do
+    for id in pairs(p.recipes or {}) do known[tonumber(id)] = true end
+  end
+  local result = {}
+  for id, r in pairs(self:RecipeSources()) do
+    if not known[id] then result[#result + 1] = r end
+  end
+  table.sort(result, function(a,b) return (a.skill or 0) < (b.skill or 0) end)
+  return result
+end
+function M:ObserveUnlearned()
+  local kind, list = self:ReadTrainer()
+  if not kind then return end
+  ns.db.char.unlearnedTrainer = ns.db.char.unlearnedTrainer or {}
+  for _, r in ipairs(list or {}) do
+    if r.name and r.status == "unavailable" then
+      ns.db.char.unlearnedTrainer[r.name] = { name = r.name, kind = "trainer",
+        trainer = kind, level = r.level, skill = r.skillReq, cost = r.cost,
+        at = time(), source = "observed in trainer UI" }
+    end
+  end
+end
+ns.AddCommand("recipesources", "recipesources list | add <recipeID> <kind> <source>", function(arg)
+  local id, kind, who = tostring(arg or ""):match("^add%s+(%d+)%s+(%a+)%s+(.+)$")
+  if id then
+    local data = C.Call("C_TradeSkillUI.GetRecipeInfo", tonumber(id))
+    local name = type(data) == "table" and C.Readable(data.name) or ("recipe " .. id)
+    ns.Print(M:RecordRecipeSource(id, name, kind, who) and "recipe source saved (unverified)" or "invalid recipe")
+    return
+  end
+  local result = M:UnlearnedRecipes()
+  ns.Print("%d recipes with explicit sources (not a complete recipe database)", #result)
+  for i = 1, math.min(25, #result) do
+    local r = result[i]
+    ns.Print("%s: %s / %s", r.name, r.kind, tostring(r.who))
+  end
+end)
+
 -- ------------------------------------------------------------------ chance
 M.CHANCE = { [0] = "always", [1] = "likely", [2] = "sometimes", [3] = "never" }
 function M.Chance(diff)
@@ -164,7 +218,7 @@ end
 
 -- ------------------------------------------------------------------ module
 function M:OnEnable()
-  self:On("TRAINER_SHOW", function(mod) ns.Timer.After(0.3, function() mod:ReadTrainer() end, "profextras:trainer") end)
+  self:On("TRAINER_SHOW", function(mod) ns.Timer.After(0.3, function() mod:ObserveUnlearned() end, "profextras:trainer") end)
   self:On("TRAINER_UPDATE", function(mod) ns.Throttle("profextras:trainer", 1, function() mod:ReadTrainer() end) end)
   self:On("TRADE_SKILL_SHOW", function(mod) ns.Timer.After(0.5, function() mod:ReadCooldowns() end, "profextras:cd") end)
   self:On("TRADE_SKILL_LIST_UPDATE", function(mod) ns.Throttle("profextras:cd", 2, function() mod:ReadCooldowns() end) end)
