@@ -16,6 +16,12 @@ local M = ns:NewModule("Nearest", {
 })
 ns.Nearest = M
 
+function M:OnInitialize()
+  local global = ns.db.global
+  global.graveyards = type(global.graveyards) == "table" and global.graveyards or {}
+  self.graveyards = global.graveyards
+end
+
 M.ALIASES = {
   spirit = "spirit_healer", healer = "spirit_healer", flight = "flight_master", fly = "flight_master",
   vendor = "vendor", repair = "repair", trainer = "trainer", mail = "mailbox", mailbox = "mailbox",
@@ -27,10 +33,65 @@ M.ALIASES = {
 function M:OnEnable()
   self:On("PLAYER_DEAD", self.OnDead)
   self:On("PLAYER_ALIVE", self.OnAlive)
+  self:On("PLAYER_ALIVE", function(mod) mod:RecordGhostSpawn() end)
   self:On("PLAYER_UNGHOST", self.OnResurrected)
+  self:On("PLAYER_UNGHOST", function(mod) mod:FinishDeathLog() end)
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
     if w == mod.corpseWP and why == "arrived" then mod.corpseArrived = true end
   end)
+end
+
+-- DEEP-18: learn graveyard destinations from real ghost respawns.
+-- Never choose a location based on nearest Euclidean spirit healer:
+-- Forever's subzone bindings may choose a farther graveyard.
+function M:GraveyardKey(mapID, subzone)
+  if type(mapID) ~= "number" or type(subzone) ~= "string" then return nil end
+  return tostring(mapID) .. ":" .. subzone:lower()
+end
+
+function M:PredictedGraveyard(mapID, subzone)
+  local key = self:GraveyardKey(mapID, subzone)
+  local observations = key and self.graveyards and self.graveyards[key]
+  if type(observations) ~= "table" then return nil end
+  local top
+  for _, g in pairs(observations) do
+    if not top or (g.count or 0) > (top.count or 0) then top = g end
+  end
+  return top and { mapID = top.mapID, x = top.x, y = top.y, count = top.count,
+    confidence = "observed, not guaranteed", subzone = subzone } or nil
+end
+
+function M:RecordGhostSpawn()
+  if not self.deathLog or self.deathLog.spawn then return false end
+  local mapID, x, y = C.PlayerPosition("player")
+  if not (mapID and type(x) == "number" and type(y) == "number") then return false end
+  local log = self.deathLog
+  log.spawn = { mapID = mapID, x = x, y = y }
+  local key = self:GraveyardKey(log.mapID, log.subzone)
+  if key then
+    local locations = self.graveyards[key] or {}
+    local name = tostring(mapID) .. ":" .. math.floor(x * 100 + 0.5) .. ":" .. math.floor(y * 100 + 0.5)
+    local entry = locations[name] or { mapID = mapID, x = x, y = y, count = 0 }
+    entry.count = entry.count + 1
+    locations[name] = entry
+    self.graveyards[key] = locations
+  end
+  local p = log.predicted
+  log.correct = p and p.mapID == mapID and math.abs(p.x - x) < 0.02 and math.abs(p.y - y) < 0.02 or nil
+  self:Info("graveyard observed: death %s map %s -> ghost map %d %.1f,%.1f; prior prediction %s",
+    tostring(log.subzone), tostring(log.mapID), mapID, x * 100, y * 100,
+    log.predicted and (log.correct and "matched" or "different") or "unavailable")
+  return true
+end
+
+function M:FinishDeathLog()
+  if self.deathLog then
+    ns.db.global.deathHistory = ns.db.global.deathHistory or {}
+    local history = ns.db.global.deathHistory
+    history[#history + 1] = self.deathLog
+    while #history > 100 do table.remove(history, 1) end
+  end
+  self.deathLog = nil
 end
 
 function M:OnDisable()
@@ -96,6 +157,7 @@ end
 
 function M:OnResurrected()
   self:StopCorpsePolling()
+  self:RecordGhostSpawn()
   local W = ns.Waypoints
   -- Only touch our own corpse waypoint. If the player changed it, leave it.
   local ownCorpse = self.corpseWP and W and W.current == self.corpseWP
@@ -158,6 +220,10 @@ end
 function M:OnDead()
   self:StopCorpsePolling()
   self.dead, self.corpseWP, self.corpseArrived, self.corpseAttempts = true, nil, nil, 0
+  local mapID = C.PlayerPosition("player")
+  local subzone = C.Readable(C.Call("GetSubZoneText"))
+  self.deathLog = { t = time(), mapID = mapID, subzone = subzone,
+    predicted = self:PredictedGraveyard(mapID, subzone) }
   local W = ns.Waypoints
   local w = W and W.current
   self.savedWaypoint = w and { mapID = w.mapID, x = w.x, y = w.y, title = w.title, opts = w.opts } or nil
@@ -175,4 +241,17 @@ ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|
   if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo") return end
   local _, msg = M:Go(kind)
   ns.Print(msg)
+end)
+
+ns.AddCommand("grave", "grave  observed subzone-specific graveyard prediction", function()
+  local mapID = C.PlayerPosition("player")
+  local subzone = C.Readable(C.Call("GetSubZoneText"))
+  local g = M:PredictedGraveyard(mapID, subzone)
+  if not g then
+    ns.Print("graveyard for %s: no verified ghost-spawn observations yet; nearest healer is not a prediction",
+      tostring(subzone or "unknown subzone"))
+  else
+    ns.Print("observed ghost spawn for %s: map %d at %.1f %.1f (%d observations; not guaranteed)",
+      subzone, g.mapID, g.x * 100, g.y * 100, g.count)
+  end
 end)
