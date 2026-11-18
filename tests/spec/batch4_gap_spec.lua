@@ -14,6 +14,8 @@ T.describe("batch4 read-only combat", function()
     local g, ns = session(function(game)
       game.base.UnitRangedDamage = function() return 2.8 end
       game.base.GetUnitSpeed = function() return 7 end
+      rawset(game.env, "UnitRangedDamage", game.base.UnitRangedDamage)
+      rawset(game.env, "GetUnitSpeed", game.base.GetUnitSpeed)
     end)
     local state = ns.HunterFight:ShotReadiness()
     T.eq(state.known, true)
@@ -29,6 +31,7 @@ T.describe("batch4 read-only combat", function()
         if who == "player" then return false, 1, 45 end
         if who == "pet" then return true, 3, 100 end
       end
+      rawset(game.env, "UnitDetailedThreatSituation", game.base.UnitDetailedThreatSituation)
     end)
     local M = ns.RarePlates
     local x = M:ThreatStatus("nameplate1")
@@ -49,6 +52,8 @@ T.describe("batch4 graveyard evidence", function()
     local g, ns = session(function(game)
       game.base.GetSubZoneText = function() return "The Crossroads" end
       game.base.UnitIsGhost = function() return game.ghost or false end
+      rawset(game.env, "GetSubZoneText", game.base.GetSubZoneText)
+      rawset(game.env, "UnitIsGhost", game.base.UnitIsGhost)
     end)
     local M = ns.Nearest
     T.eq(M:PredictedGraveyard(1412, "The Crossroads"), nil)
@@ -77,6 +82,9 @@ T.describe("batch4 training and dungeon data", function()
         return "Cited Test Spell", "Rank 1", "available", nil, nil, nil, 22
       end
       game.base.GetTrainerServiceCost = function() return 550 end
+      rawset(game.env, "GetNumTrainerServices", game.base.GetNumTrainerServices)
+      rawset(game.env, "GetTrainerServiceInfo", game.base.GetTrainerServiceInfo)
+      rawset(game.env, "GetTrainerServiceCost", game.base.GetTrainerServiceCost)
     end)
     T.eq(ns.Spellbook:TrainingAt(22)[1], nil)
     g:fire("TRAINER_SHOW")
@@ -97,6 +105,8 @@ T.describe("batch4 training and dungeon data", function()
       game.base.Outrider_DataQuests = { source = "test", quests = {
         [801] = { "Defeat Boss Nine", 20, { { "npc", 999, "Kill Boss Nine" } } },
       }, info = {}, npcs = {}, objects = {}, items = {} }
+      rawset(game.env, "Outrider_DataDungeons", game.base.Outrider_DataDungeons)
+      rawset(game.env, "Outrider_DataQuests", game.base.Outrider_DataQuests)
     end)
     local q = ns.DungeonGuide:QuestList("Test Dungeon")
     T.eq(#q, 1)
@@ -112,8 +122,10 @@ end)
 T.describe("batch4 route, gear and map notes", function()
   T.it("queues only known rare spawn coordinates and reuses waypoint queue", function()
     local g, ns = session()
-    ns.Data:Register("rare", "test route", { { npcID = 77119, name = "Route Rare", mapID = 1412,
-      spawns = { { x = 0.55, y = 0.46 } } } })
+    ns.MapPins.BuildPins = function() return {
+      { kind = "rare", id = "rare-77119", npcID = 77119, name = "Route Rare",
+        mapID = 1412, x = 0.55, y = 0.46 },
+    } end
     local points = ns.Modules:Get("RareScan"):Route(1412, false)
     T.ok(#points >= 1)
     T.ok(#ns.Waypoints:Settings().queue >= 1)
