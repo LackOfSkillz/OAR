@@ -1,7 +1,7 @@
 # Outrider /loop — verified gap-closure ledger
 
 **Branch:** `p1-foundation` (do not merge to main without passing tests and live validation).  
-**Created:** 2026-11-18.  
+**Created:** 2026-11-18. **Latest source code gate:** [658 Lua passed / Python passed](https://github.com/LackOfSkillz/OAR/actions/runs/44297903933) at `19b124ce`.  
 **Primary plan:** `docs/GAP_ANALYSIS_DEEP_2026-11-18.md` (38 ranked builds) and raw option-by-option checks. The broader GPT roadmap carries 107 named sub-gaps, many overlapping the deep plan.  
 **Important:** The following changes were committed using a GitHub repository connector; there was **no access to the Windows local WoW client**. Windows GitHub Actions now executes the full Lua + companion suite, and the latest source build passed automated CI on 2026-11-18 at commit `dcbb875d` ([run](https://github.com/LackOfSkillz/OAR/actions/runs/44294608991)). Actual Forever gameplay remains unverified. Never mark anything `WORKS` before in-game checks.
 
@@ -11,11 +11,11 @@
 | #2 | Layer bar + visited history | TESTS GREEN / NEEDS GAME | `Modules/Layers.lua`, `Modules/InfoBar.lua` | `tests/spec/layers_spec.lua`, `tests/spec/infobar_spec.lua` | Test zone changes, instances, uncertainty, recent-visit timestamp, restart, and text layout in-game |
 | #3 | Corpse arrow | TESTS GREEN / NEEDS GAME | `Modules/Nearest.lua`, `tests/lib/wowmock.lua` | `tests/spec/waypoints_spec.lua` | Verify `C_DeathInfo.GetCorpseMapPosition` returns expected coordinates on Forever; release, ghost navigation, resurrection, old waypoint restore; ensure no regression |
 | #4 | Sell-approved, sell-once and never-sell vendor lists | TESTS GREEN / NEEDS GAME; PARTIAL depth | `Modules/Merchant.lua`, `tests/lib/wowmock.lua` | `tests/spec/merchant_spec.lua`; Windows CI 44294608991 passed | Live vendor checks, non-grey quest-item protection, controls/feedback; automatic learned selling and policy explanations are not implemented |
-| #5 | Vendor restock with item targets, gold reserve and player-click batch | IMPLEMENTED / CI PENDING | `Modules/Merchant.lua`, `tests/lib/wowmock.lua` | `tests/spec/merchant_spec.lua` | Verify merchant return shape, bag-space and spending behavior in Forever |
-| #6 | Waypoint queue, arrival advance, saved stops and named-zone/map commands | IMPLEMENTED / CI PENDING | `Modules/Waypoints.lua` | `tests/spec/waypoints_spec.lua` | Confirm persistence, Travel zone lookup, game arrow ownership and death overlay |
-| #7 | Cursor coordinates on visible world map | IMPLEMENTED / CI PENDING | `Modules/Coords.lua` | `tests/spec/waypoints_spec.lua` | Confirm map canvas geometry on Forever, UI positioning and scale |
-| #8 | Combat tooltip suppression, Shift exception, quest objective remaining lines | IMPLEMENTED / CI PENDING | `Modules/Tooltips.lua`, `UI/TooltipLines.lua` | `tests/spec/tooltiplines_spec.lua` | Verify hooks, no protected/secret taint, quest line types, compatibility |
-| #9 | Hunter missing/Cheetah/Pack aspect and group Growl warnings | IMPLEMENTED / CI PENDING | `Modules/PetStatus.lua` | `tests/spec/petstatus_spec.lua` | Test with real hunter and party; API values/localization and rate limiting |
+| #5 | Vendor restock with item targets, gold reserve and player-click batch | TESTS GREEN / NEEDS GAME | `Modules/Merchant.lua`, `tests/lib/wowmock.lua` | `tests/spec/merchant_spec.lua` | Verify merchant return shape, bag-space and spending behavior in Forever |
+| #6 | Waypoint queue, arrival advance, saved stops and named-zone/map commands | TESTS GREEN / NEEDS GAME | `Modules/Waypoints.lua` | `tests/spec/waypoints_spec.lua` | Confirm persistence, Travel zone lookup, game arrow ownership and death overlay |
+| #7 | Cursor coordinates on visible world map | TESTS GREEN / NEEDS GAME | `Modules/Coords.lua` | `tests/spec/waypoints_spec.lua` | Confirm map canvas geometry on Forever, UI positioning and scale |
+| #8 | Combat tooltip suppression, Shift exception, quest objective remaining lines | TESTS GREEN / NEEDS GAME | `Modules/Tooltips.lua`, `UI/TooltipLines.lua` | `tests/spec/tooltiplines_spec.lua` | Verify hooks, no protected/secret taint, quest line types, compatibility |
+| #9 | Hunter missing/Cheetah/Pack aspect and group Growl warnings | TESTS GREEN / NEEDS GAME | `Modules/PetStatus.lua` | `tests/spec/petstatus_spec.lua` | Test with real hunter and party; API values/localization and rate limiting |
 | #10–15 | Tracker scrolling, chat, instance, map, mail and settings wins | NOT STARTED | — | — | Feature-by-feature |
 | #16/17/25 | Auto Shot, threat, damage-meter probes | NOT STARTED / PROBE | — | — | Real client API readings; no combat log |
 | #18 | Subzone-aware graveyard map | NOT STARTED | — | — | Death capture/ground truth; distinct from #3 corpse arrow |
@@ -32,3 +32,12 @@
 ## Restrictions
 
 Never infer completeness from filename, documentation claims or mock tests alone. Keep `main` untouched; do not bypass secret-value/taint safeguards, do not read combat logs, do not automate player actions, and use opt-in privacy rules. No personal/account data in commits. Externally maintained guide/data licenses need their own review.
+
+## Quick wins 5-9: operation and client acceptance
+
+- **#5 Restock:** at the vendor use `/ride restock add <itemID> <desired bag count>`, `/ride restock reserve <gold>`, then click **Restock** (up to three item types per click). Test normal stack bundles, costs, missing stock, limited supplies, insufficient funds and extended-cost merchants. Never purchases on vendor open.
+- **#6 Queue:** `/ride way add 60 37 First`, `/ride way add 1412 70 37 Second`, `/ride way start` then `next|pause|resume|list|clearqueue`. Verify arrival advancement, SavedVariables persistence, manual override, corpse navigation and map IDs.
+- **#7 Cursor:** show the full world map, move over the map and verify the reported coordinates against manual location tests on scaled panels; unknown outside canvas.
+- **#8 Tooltip:** combat tooltip hidden by default, Shift allows it, quest NPC tooltip includes typed objective remaining count. Verify on Forever and with conflicting tooltip addons enabled.
+- **#9 Hunter:** missing aspect and Cheetah/Pack-in-combat warnings, plus Growl autocast with a group. Verify warnings do not spam and never change ability state.
+- **Evidence policy:** all five are **TESTS GREEN / NEEDS GAME**, not `WORKS` or `MATCHES`. A live player must verify purchase and game API behavior before claiming parity.
