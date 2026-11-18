@@ -58,6 +58,25 @@ T.describe("waypoints", function()
   end)
 end)
 
+T.describe("world map cursor coordinates", function()
+  T.it("shows cursor position relative to the open map canvas, not player coords", function()
+    local game, ns = session()
+    game.mapShownID = 1412
+    game.env.WorldMapFrame:Show()
+    game.cursorX, game.cursorY = 600, 350
+    local M = ns.Modules:Get("Coords")
+    local mapID, x, y = M:CursorPosition()
+    T.eq(mapID, 1412)
+    T.eq(x, 0.5)
+    T.eq(y, 0.5)
+    M:UpdateCursor()
+    T.contains(M.cursorText:GetText(), "50.00, 50.00")
+    game.cursorX = 3000
+    M:UpdateCursor()
+    T.contains(M.cursorText:GetText(), "Cursor: --")
+  end)
+end)
+
 T.describe("waypoint queue", function()
   T.it("enqueues two stops, advances on arrival and persists the remainder", function()
     local game, ns = session()
