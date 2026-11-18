@@ -120,3 +120,21 @@ No `main` changes. **Ranks #35–38 remain not started.** "Implementation" is no
 - **#9** Item tooltip reverse quest references are indexed across all known quests, not only active quests. The private, Questie-derived pack is **not** in Git. Regenerate using `python tools/import_questie_quests.py --deploy` from the user's local QuestieDB source, then restart the game.
 
 This is an **additional research-feature batch**, not a change to the existing 38-gap acceptance count. The Works, Matches and Surpasses client/competitor gates remain unfulfilled; do not claim launch-ready parity.
+
+## Premium UI rebuild (Claude, 2026-11-18, docs/UI_PREMIUM_PLAN_2026-11-18.md)
+
+**Status: TESTS GREEN / NEEDS GAME.** 721 Lua tests and the companion tests pass. Deployed as build 20261118-153448-72c872a. A /reload is enough. Gary will test after this round. Nothing here is marked WORKS until it's seen in game.
+
+| Area | What changed | Files | Tests |
+|---|---|---|---|
+| System | Full-width forms with a scroll bar and bottom fade; stat strip block; ON/OFF switches; clean card titles; cards reserve the button column; scroll bars on every list; sortable table widget; one time formatter (`ns.Ago`); coin-icon money (`ns.Prices.Coins`) | UI/Form.lua, UI/Premium.lua, UI/Widgets.lua, UI/WidgetsExtra.lua, UI/Theme.lua, Core/Init.lua | statstrip_spec, table_spec, prices_spec |
+| Bugs from the tour | Sidebar highlight follows the page; rare profiles never key on secret spells (rule 4); fishing HUD no longer blocked in combat (rule 5); the game's quest tracker is hidden while ours shows; login notices go to the Feed; Feed collapses repeats; best quests skip red quests and list each quest once; quest completion decided by objectives (fixes "done at 1/5"); arrow moves to the turn-in when a quest becomes ready | UI/Hub.lua, Modules/RareProfile.lua, FishingHUD.lua, QuestTracker.lua, Feed.lua, Finder.lua, QuestObjectives.lua | questobjectives_spec, finder_spec, herbhelper_spec, rarescan_spec |
+| Gallery ideas | Quest pin tooltips grouped by NPC (Questie); two-column Vendor/Auction price rows (Auctionator); rare pins coloured by state and a 3D rare portrait in alerts (RareScanner); Journal page (Questie Journey); grouped settings search with ON/OFF (Leatrix) | Modules/MapPins.lua, Prices.lua, RareAlerts.lua, QuestInfo.lua, UI/Toast.lua, UI/Pages.lua, UI/Form.lua | questtooltip_spec, journal_spec, settingssearch_spec, mappinsmenu_spec |
+| Pages | Rares (status rows, star, waypoint), Gear (paper-doll), Status (health line and tiles), Tools (groups and error table), Players & guilds (sortable tables), Advisor (three steps), Crafting (three columns), Modules (one block per group), Map (grouped pins), and stat strips on Quests, My characters, Census, Fishing, Feed, Money, Forecasts, Errands, Professions, Waypoints | Modules/RaresTab.lua, Nearby.lua, Census.lua, Advisor.lua, CraftQueue.lua, MapTab.lua, UI/Hub.lua, UI/Pages.lua | rarestab_spec, gearpage_spec, advisorsteps_spec, layers_spec, hub_spec |
+| Art | Batch 4 requests for GPT (page pictures, section banners, 21 map pin glyphs, ornaments, empty states). Pins and banners switch to it automatically when delivered | docs/ART_REQUESTS.md, tools/art.py, Modules/MapPins.lua, UI/Hub.lua | — |
+
+**Still open:**
+- Chat word chips, Characters cards, the Help topic grid, the Hunter page layout, Census charts higher up, and Settings sub-tabs.
+- Map gathering squares need Gary's decision: hide unless you have the profession, or show only when zoomed in.
+- Loot strips and price tables need drop and price data.
+- Leftover "..." map circles need Gary to hover one.

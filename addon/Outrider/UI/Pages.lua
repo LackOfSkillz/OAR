@@ -206,6 +206,18 @@ end)
 ns.Hub:AddTab("waypoints", "Waypoints", function(p)
   UI:FormPage(p, {
     { "header", "Waypoint" },
+    -- where the arrow points, at a glance (premium rebuild 2026-11-18)
+    { "stats", function()
+      local W = ns.Waypoints
+      local w = W.current
+      local d = w and W:Distance()
+      local q = W:Settings().queue or {}
+      return {
+        { cap = "Arrow to", value = w and tostring(w.title or "a spot") or "Nothing", color = w and "gold" or nil },
+        { cap = "Distance", value = d and (math.floor(d + 0.5) .. " yd") or "—" },
+        { cap = "Queued stops", value = tostring(#q), note = #q > 0 and "the arrow moves on by itself" or "none" },
+      }
+    end },
     { "note", function()
       local w = ns.Waypoints.current
       return w and ("Arrow to " .. tostring(w.title) .. ", " .. tostring(ns.Waypoints:Activity())) or "No waypoint set."
@@ -399,6 +411,18 @@ local function profRows()
   local function make(prof) return function() if ns.Crafter then ns.Crafter:Make(prof) end end end
   local rows = {}
   local function r(t) rows[#rows + 1] = t end
+  -- a skill bar per profession you have (premium rebuild 2026-11-18)
+  r({ "stats", function()
+    local out = {}
+    for name, d in pairs(ns.db.char.professions or {}) do
+      if type(d) == "table" and d.skill then
+        out[#out + 1] = { cap = name, value = d.skill .. " / " .. tostring(d.max or "?"), color = "gold",
+          fill = d.max and d.max > 0 and d.skill / d.max or nil }
+      end
+    end
+    table.sort(out, function(x, y) return x.cap < y.cap end)
+    return out
+  end })
   local crafts = {}
   if owned.Cooking then crafts[#crafts + 1] = { "Cook", make("Cooking") } end
   if owned.Alchemy then crafts[#crafts + 1] = { "Brew", make("Alchemy") } end
@@ -485,6 +509,19 @@ local function moneyRows()
   end
   local level = ns.Compat.Call("UnitLevel", "player") or 1
   r({ "header", "Money" })
+  r({ "stats", function()
+    local L, F = ns.Ledger, ns.Forecasts
+    local net, perHour = 0, 0
+    if L and L.Summary then net, perHour = L:Summary() end
+    local g = F and F.Gold and F.Gold(ns.db.char.ledger)
+    local coins = ns.Prices.Coins
+    return {
+      { cap = "Gold", value = coins(tonumber(ns.Compat.Readable(ns.Compat.Call("GetMoney"))) or 0), color = "gold" },
+      { cap = "This session", value = (net < 0 and "-" or "+") .. coins(math.abs(net)), color = net > 0 and "good" or net < 0 and "bad" or nil },
+      { cap = "Usual per hour", value = g and coins(math.floor(math.abs(g.perHour))) or "—",
+        note = g and (g.sessions .. " sessions" .. (g.trend and (", " .. g.trend) or "")) or "log out once to start" },
+    }
+  end })
   r({ "header", "Best ways to earn at level " .. level })
   r({ "note", "Ranked for your level and professions. Guide numbers are early Forever reports (unverified); after 15 minutes of a kind of earning your own gold per hour replaces them." })
   local ranked = G:Rank(level)
@@ -982,8 +1019,8 @@ end)
 -- -------------------------------------------------------------- Sharing
 ns.Hub:AddTab("sharing", "Sharing", function(p)
   UI:FormPage(p, {
-    { "header", "Share with your guild or party (all off by default)" },
-    { "note", "Only other Outrider users see these messages. Nothing leaves the game." },
+    { "header", "Share with your guild or party" },
+    { "note", "|cfff1d58eNothing is shared until you turn it on.|r  Only other Outrider users see these messages, over guild, party or whisper. Nothing leaves the game." },
     { "check", "Say hello to other Outrider users", function() return set("Comm").hello end,
       function(on) ns.Slash:Run("share hello " .. onoff(on)) end },
     { "check", "Rares: guild", function() return set("RareShare").guild end, function(on) ns.Slash:Run("share rares guild " .. onoff(on)) end },

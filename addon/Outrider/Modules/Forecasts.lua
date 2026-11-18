@@ -106,8 +106,11 @@ function M:Activity()
 end
 
 ns.Hub:AddTab("forecasts", "Forecasts", function(p)
+  p.stats = UI:StatStrip(p)
+  p.stats:SetPoint("TOPLEFT", 0, 0)
+  p.stats:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   p.gold = UI.Text(p, "normal", "text")
-  p.gold:SetPoint("TOPLEFT", 0, 0)
+  p.gold:SetPoint("TOPLEFT", 0, -80)
   p.gold:SetPoint("RIGHT", p, "RIGHT", -4, 0) p.gold:SetJustifyH("LEFT")
   p.list = UI:ScrollList(p, {
     rows = 12, rowHeight = 22,
@@ -116,8 +119,16 @@ ns.Hub:AddTab("forecasts", "Forecasts", function(p)
   p.list:SetPoint("TOPLEFT", p.gold, "BOTTOMLEFT", 0, -10)
   p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   function p:Refresh()
+    local g = M.Gold(ns.db.char.ledger)
+    local lines = M:RespawnLines()
+    self.stats:SetItems({
+      { cap = "Gold per hour", value = g and ns.Prices.Coins(math.floor(math.abs(g.perHour))) or "—", color = g and "gold" or nil,
+        note = g and ("over " .. g.sessions .. " sessions") or "log out once to save a session" },
+      { cap = "Trend", value = g and g.trend and ns.TitleCase(g.trend) or "—", color = g and g.trend == "up" and "good" or g and g.trend == "down" and "bad" or nil },
+      { cap = "Rares with a forecast", value = tostring(#lines), note = #lines == 0 and "needs sightings" or "respawn times below" },
+    })
     self.gold:SetText(M:GoldLine())
-    self.list:SetItems(M:RespawnLines())
+    self.list:SetItems(lines)
   end
 end, 49)
 

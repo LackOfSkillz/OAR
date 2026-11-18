@@ -104,6 +104,28 @@ ns.Hub:AddTab("map", "Map", function(p)
   head:SetPoint("TOPLEFT", 0, 0)
   head:SetText("Pins shown on the world map and minimap")
   p.checks = {}
+  -- pins grouped (premium rebuild 2026-11-18): each group under its own
+  -- heading with its map colour, groups flowed into three columns
+  local MP = ns.MapPins
+  local byGroup, groups = {}, {}
+  for _, kind in ipairs(KINDS) do
+    local g = MP.Group(kind)
+    if not byGroup[g] then byGroup[g] = {} groups[#groups + 1] = g end
+    table.insert(byGroup[g], kind)
+  end
+  local colY, COLW, place = { -24, -24, -24 }, 250, {}
+  for _, g in ipairs(groups) do
+    local col = 1
+    for i = 2, 3 do if colY[i] > colY[col] then col = i end end
+    local h = UI.Text(p, "small", "muted")
+    h:SetPoint("TOPLEFT", (col - 1) * COLW, colY[col] - 4)
+    local c3 = MP.GROUP_COLOR and MP.GROUP_COLOR[g]
+    h:SetText(string.upper(MP.GROUP_LABEL and MP.GROUP_LABEL[g] or g))
+    if c3 then h:SetTextColor(c3[1], c3[2], c3[3]) end
+    colY[col] = colY[col] - 20
+    for _, kind in ipairs(byGroup[g]) do place[kind] = { col = col, y = colY[col] } colY[col] = colY[col] - 22 end
+    colY[col] = colY[col] - 8
+  end
   for i, kind in ipairs(KINDS) do
     local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
     local c = UI:Check(p, ns.MapPins.LABELS[kind] or kind,
@@ -113,11 +135,12 @@ ns.Hub:AddTab("map", "Map", function(p)
         ns.MapPins:Invalidate()
         ns.Modules:Get("MinimapPins"):Update()
       end)
-    c:SetPoint("TOPLEFT", col * 260, -24 - row * 22)
-    c:SetWidth(250)
+    local at = place[kind]
+    c:SetPoint("TOPLEFT", (at.col - 1) * COLW, at.y)
+    c:SetWidth(COLW - 10)
     p.checks[#p.checks + 1] = c
   end
-  local y = -24 - math.ceil(#KINDS / 2) * 22 - 14
+  local y = math.min(colY[1], colY[2], colY[3]) - 14
   local head2 = UI.Display(p, "side", "goldText")
   head2:SetPoint("TOPLEFT", 0, y)
   head2:SetText("Recording (account-wide, never leaves this PC)")

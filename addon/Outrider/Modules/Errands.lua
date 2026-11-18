@@ -104,6 +104,17 @@ M.KIND_ICON = { repair = "Trade_BlackSmithing", vendor = "INV_Misc_Bag_08", ammo
 ns.Hub:AddTab("errands", "Errands", function(p)
   UI:FormPage(p, {
     { "header", "Errands" },
+    { "stats", function()
+      local n = #M:List()
+      local dura = M.Durability and M.Durability()
+      local free = ns.InfoBar and ns.InfoBar.Bags and ns.InfoBar.Bags()
+      return {
+        { cap = "Errands", value = tostring(n), color = n > 0 and "gold" or "good", note = n == 0 and "nothing to do in town" or "below" },
+        { cap = "Gear condition", value = dura and (math.floor(dura * 100) .. "%") or "—", fill = dura,
+          color = dura and dura < 0.3 and "bad" or nil },
+        { cap = "Free bag slots", value = free and tostring(free) or "—", color = free and free <= 4 and "warn" or nil },
+      }
+    end },
     { "header", "Things to do in town", icon = "INV_Misc_Bag_08" },
     { "cards", function()
       local out = {}
