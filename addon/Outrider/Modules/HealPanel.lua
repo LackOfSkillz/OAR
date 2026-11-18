@@ -381,20 +381,65 @@ end
 
 function M:ShowEditor()
   if not self.editor then
-    local f = ns.UI:Window("Outrider_HealEditor", "Heal bindings", 480, 320, ns.db.char.healEditorPos or {})
-    f.list = ns.UI:ScrollList(f.content, {
-      rows = 8, rowHeight = 27,
+    local UI = ns.UI
+    local f = UI:Window("Outrider_HealEditor", "Heal bindings", 540, 370, ns.db.char.healEditorPos or {})
+    f.keys = { "1", "2", "shift-1", "shift-2", "ctrl-1", "ctrl-2", "alt-1", "alt-2" }
+    f.keyIndex = 1
+    f.spells = {}
+    for _, c in ipairs(M.CLICKS[ns.PlayerClass()] or {}) do
+      for _, name in ipairs(c[3]) do
+        if known(name) then f.spells[#f.spells + 1] = name end
+      end
+    end
+    -- All other known class spells may be added by typing /ride heal bind;
+    -- this editor offers the safe healing spells observed in the class table.
+    table.sort(f.spells)
+    f.spellIndex = 1
+    local intro = UI.Text(f.content, "small", "muted")
+    intro:SetPoint("TOPLEFT", 5, -2)
+    intro:SetWidth(510)
+    intro:SetText("Choose a click and a known spell. Applying changes defers secure attributes until combat ends.")
+    f.list = UI:ScrollList(f.content, {
+      rows = 9, rowHeight = 25,
       render = function(row, entry) row.text:SetText(entry.label .. ": " .. entry.spell) end,
     })
-    f.list:SetPoint("TOPLEFT", 5, -8)
+    f.list:SetPoint("TOPLEFT", 5, -31)
     f.list:SetPoint("RIGHT", -5, 0)
+    f.bindingButton = UI:Button(f.content, "Click: 1", 130, function()
+      f.keyIndex = f.keyIndex % #f.keys + 1
+      f.bindingButton.label:SetText("Click: " .. f.keys[f.keyIndex])
+    end)
+    f.bindingButton:SetPoint("BOTTOMLEFT", 5, 7)
+    UI.Tip(f.bindingButton, "Choose heal binding", "Cycle left/right click with Shift, Ctrl or Alt modifier.")
+    f.spellButton = UI:Button(f.content, "Spell: choose", 170, function()
+      if #f.spells == 0 then return end
+      f.spellIndex = f.spellIndex % #f.spells + 1
+      f.spellButton.label:SetText(f.spells[f.spellIndex])
+    end)
+    f.spellButton:SetPoint("LEFT", f.bindingButton, "RIGHT", 7, 0)
+    UI.Tip(f.spellButton, "Choose known spell", "Cycle the available known spells for this class.")
+    if #f.spells > 0 then f.spellButton.label:SetText(f.spells[1]) end
+    f.apply = UI:Button(f.content, "Apply", 84, function()
+      local key, spell = f.keys[f.keyIndex], f.spells[f.spellIndex]
+      local ok, reason = M:SetBinding(key, spell)
+      if not ok then ns.Print("heal editor: %s", reason) return end
+      ns.Print("heal binding %s -> %s; secure layout queued until out of combat", key, spell)
+      M:RefreshEditor()
+    end)
+    f.apply:SetPoint("LEFT", f.spellButton, "RIGHT", 7, 0)
+    UI.Tip(f.apply, "Apply binding", "Applies the selected spell to the selected click. Secure changes wait until combat ends.")
     f:Hide()
     self.editor = f
   end
+  self:RefreshEditor()
+  self.editor:SetShown(not self.editor:IsShown())
+end
+
+function M:RefreshEditor()
+  if not self.editor then return end
   local rows = self:Clicks()
   table.sort(rows, function(a,b) return a.label < b.label end)
   self.editor.list:SetItems(rows)
-  self.editor:SetShown(not self.editor:IsShown())
 end
 
 ns.AddCommand("heal", "[assign <name>|unassign <name>|clear|always|group|off|self on|off]  click-to-heal bars", function(arg)
