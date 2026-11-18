@@ -58,18 +58,11 @@ function M.Log()
   local out = {}
   local n = tonumber(readable(C.Call("C_QuestLog.GetNumQuestLogEntries"))) or 0
   local info = C.Resolve("C_QuestLog.GetInfo")
-  local objs = C.Resolve("C_QuestLog.GetQuestObjectives")
   if type(info) ~= "function" then return out end
   for i = 1, math.min(n, 60) do
     local ok, q = pcall(info, i)
     if ok and type(q) == "table" and not q.isHeader and q.questID then
-      local list = {}
-      if type(objs) == "function" then
-        local ok2, o = pcall(objs, q.questID)
-        for _, e in ipairs(ok2 and type(o) == "table" and o or {}) do
-          list[#list + 1] = { text = readable(e.text) or "", finished = readable(e.finished) and true or false }
-        end
-      end
+      local list = M.Objectives(q.questID)
       out[#out + 1] = { questID = q.questID, title = readable(q.title) or "?", objectives = list,
         complete = M.IsDone(q.questID, q, list) }
     end
@@ -77,18 +70,58 @@ function M.Log()
   return out
 end
 
--- Is a quest ready to hand in? The modern client can leave GetInfo's
--- isComplete empty (Gary, 2026-11-18: the marker vanished once all items were
--- gathered and no turn-in showed), so ask every signal there is: the info
--- field, C_QuestLog.IsComplete, ReadyForTurnIn, and "every objective done".
+-- A quest's objectives with a trustworthy "finished": the client's flag must
+-- agree with the counts (numFulfilled/numRequired, else the "1/5" in the
+-- text). Gary, 2026-11-18: with 1 of 5 Crisp Spider Meat the quest showed as
+-- done; a count below what's needed is never finished, whatever a flag says.
+local function counts(e, text)
+  local have, need = tonumber(readable(e.numFulfilled)), tonumber(readable(e.numRequired))
+  if not (have and need and need > 0) and type(text) == "string" then
+    local a, b = text:match("(%d+)%s*/%s*(%d+)")
+    have, need = tonumber(a), tonumber(b)
+  end
+  if have and need and need > 0 then return have >= need end
+  return nil -- no counts known (talk to, explore...)
+end
+
+function M.Objectives(questID)
+  local list = {}
+  local objs = C.Resolve("C_QuestLog.GetQuestObjectives")
+  if type(objs) ~= "function" then return list end
+  local ok, o = pcall(objs, questID)
+  for _, e in ipairs(ok and type(o) == "table" and o or {}) do
+    if type(e) == "table" then
+      local text = readable(e.text) or ""
+      local flag, enough = readable(e.finished), counts(e, text)
+      local finished
+      if enough == false then finished = false
+      elseif flag == true or flag == 1 then finished = true
+      else finished = enough == true end
+      list[#list + 1] = { text = text, finished = finished }
+    end
+  end
+  return list
+end
+
+-- Is a quest ready to hand in? The objectives decide when there are any: all
+-- finished = ready, one short = not ready, whatever the other signals say
+-- (old Classic values like -1 "failed" or 0 are truthy in Lua and wrongly
+-- marked quests done). Quests without objectives (talk to someone) use the
+-- client's own signals, counted only as a real true or 1. The modern client
+-- can leave GetInfo's isComplete empty, so that alone never means "not done".
+local function yes(v)
+  v = readable(v)
+  return v == true or v == 1
+end
+
 function M.IsDone(questID, info, objectives)
-  if type(info) == "table" and readable(info.isComplete) then return true end
-  if readable(C.Call("C_QuestLog.IsComplete", questID)) then return true end
-  if readable(C.Call("C_QuestLog.ReadyForTurnIn", questID)) then return true end
   if type(objectives) == "table" and #objectives > 0 then
     for _, o in ipairs(objectives) do if not o.finished then return false end end
     return true
   end
+  if type(info) == "table" and yes(info.isComplete) then return true end
+  if yes(C.Call("C_QuestLog.IsComplete", questID)) then return true end
+  if yes(C.Call("C_QuestLog.ReadyForTurnIn", questID)) then return true end
   return false
 end
 
@@ -387,6 +420,11 @@ function M:CheckReady()
   local W = ns.Waypoints
   for id, q in pairs(now) do
     if not before[id] then
+      local info = {}
+      for i, o in ipairs(q.objectives or {}) do info[i] = o.text .. (o.finished and " [done]" or "") end
+      self:Info("quest %d ready: %s | objectives: %s | IsComplete=%s ReadyForTurnIn=%s", id, q.title,
+        table.concat(info, "; "), tostring(readable(C.Call("C_QuestLog.IsComplete", id))),
+        tostring(readable(C.Call("C_QuestLog.ReadyForTurnIn", id))))
       local cur = W and W.current
       local ours = cur == nil or (self.guideWP ~= nil and cur == self.guideWP)
       if ours and self:Guide(id) then

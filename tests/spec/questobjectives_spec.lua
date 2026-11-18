@@ -118,6 +118,38 @@ T.describe("quest objectives: Questie parity", function()
     T.eq(ns.QuestTracker.Read()[1].quests[1].complete, true, "tracker agrees")
   end)
 
+  T.it("1 of 5 collected is never done, whatever the flags or other signals say (every quest)", function()
+    local game, ns, M = start()
+    local CQ = game.env.C_QuestLog
+    -- the client's flag says finished but the count says 1/5
+    game.questObjectives[3741] = { { text = "Crisp Spider Meat: 1/5", finished = true } }
+    T.eq(M.Objectives(3741)[1].finished, false)
+    T.eq(M:Nearest(3741).label, "Hilary's Necklace", "still points at the objective")
+    -- counts from numFulfilled/numRequired win over the text and the flag
+    game.questObjectives[3741] = { { text = "Crisp Spider Meat", finished = true, numFulfilled = 1, numRequired = 5 } }
+    T.eq(M.Objectives(3741)[1].finished, false)
+    -- old Classic-style values from the other signals (-1 failed, 0) never mark it done
+    game.questObjectives[3741] = { { text = "Crisp Spider Meat: 1/5", finished = false } }
+    CQ.IsComplete = function() return -1 end
+    CQ.ReadyForTurnIn = function() return 0 end
+    game.questLog[1].isComplete = 1
+    T.eq(M.Log()[1].complete, false, "an unfinished objective vetoes every other signal")
+    T.eq(ns.QuestTracker.Read()[1].quests[1].complete, false, "tracker agrees")
+    -- 5/5 with no flag at all is done
+    game.questObjectives[3741] = { { text = "Crisp Spider Meat: 5/5" } }
+    T.eq(M.Log()[1].complete, true)
+  end)
+
+  T.it("a quest without objectives counts as done only on a real true or 1", function()
+    local game, ns, M = start()
+    local CQ = game.env.C_QuestLog
+    game.questObjectives[3741] = {}
+    CQ.IsComplete = function() return -1 end
+    T.eq(M.Log()[1].complete, false, "-1 is failed, not done")
+    CQ.IsComplete = function() return 1 end
+    T.eq(M.Log()[1].complete, true)
+  end)
+
   T.it("when a quest becomes ready the arrow moves to its turn-in, but never over your own waypoint", function()
     local game, ns, M = start()
     game:fire("QUEST_LOG_UPDATE") game:advance(1)

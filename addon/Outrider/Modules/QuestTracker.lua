@@ -29,7 +29,6 @@ function M.Read()
   local zones, cur = {}, nil
   local n = tonumber(readable(C.Call("C_QuestLog.GetNumQuestLogEntries"))) or 0
   local info = C.Resolve("C_QuestLog.GetInfo")
-  local objs = C.Resolve("C_QuestLog.GetQuestObjectives")
   if type(info) ~= "function" then return zones end
   for i = 1, math.min(n, 80) do
     local ok, q = pcall(info, i)
@@ -39,16 +38,12 @@ function M.Read()
         zones[#zones + 1] = cur
       elseif q.questID then
         if not cur then cur = { zone = "Quests", quests = {} } zones[#zones + 1] = cur end
-        local list = {}
-        if type(objs) == "function" then
-          local ok2, o = pcall(objs, q.questID)
-          for _, e in ipairs(ok2 and type(o) == "table" and o or {}) do
-            list[#list + 1] = { text = readable(e.text) or "", finished = readable(e.finished) and true or false }
-          end
-        end
+        local QO = ns.QuestObjectives
+        local list = QO and QO.Objectives(q.questID) or {}
+        local complete
+        if QO then complete = QO.IsDone(q.questID, q, list) else complete = readable(q.isComplete) == true end
         cur.quests[#cur.quests + 1] = { questID = q.questID, title = readable(q.title) or "?", level = readable(q.level) or 0,
-          complete = ns.QuestObjectives and ns.QuestObjectives.IsDone(q.questID, q, list)
-            or (readable(q.isComplete) and true or false), objectives = list }
+          complete = complete, objectives = list }
       end
     end
   end
