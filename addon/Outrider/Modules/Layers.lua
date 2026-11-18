@@ -13,11 +13,12 @@ local M = ns:NewModule("Layers", {
   title = "Layer detection",
   phase = "P2",
   order = 22,
-  defaults = {},
+  defaults = { history = {} },
 })
 ns.Layers = M
 
 M.WINDOW, M.MIN, M.SHARE = 20, 3, 0.6
+M.HISTORY_MAX = 40
 
 function M:OnInitialize()
   self:Reset()
@@ -37,12 +38,12 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:ZoneChanged() end)
 end
 
--- A new zone has its own zone UIDs: start the window over, but keep the
--- last known layer id so a change can still be reported against it.
+-- Different maps can reuse or remap zone UIDs. Never show the previous
+-- zone's layer as current while waiting for fresh creature evidence.
 function M:ZoneChanged()
   self.window, self.seen = {}, {}
   self.mapID = C.PlayerPosition("player")
-  self.confidence = 0
+  self.current, self.confidence = nil, 0
 end
 
 function M:Observe(unit)
@@ -62,6 +63,40 @@ function M:Observe(unit)
   self:Evaluate()
 end
 
+-- Keep bounded, per-character visit history; identical observations refresh
+-- at most once every 30 seconds so the saved file remains small.
+function M:Remember(id, confidence)
+  if not (self.mapID and id) then return end
+  local settings = self:Settings()
+  local history = settings.history
+  if type(history) ~= "table" then history = {} settings.history = history end
+  local now = time()
+  for i = #history, 1, -1 do
+    local h = history[i]
+    if type(h) ~= "table" then
+      table.remove(history, i)
+    elseif h.mapID == self.mapID and h.id == id then
+      if now - (tonumber(h.at) or 0) < 30 then return end
+      table.remove(history, i)
+    end
+  end
+  history[#history + 1] = { id = id, mapID = self.mapID, at = now, confidence = confidence }
+  while #history > self.HISTORY_MAX do table.remove(history, 1) end
+end
+
+function M:History(mapID, limit)
+  local history = self:Settings().history or {}
+  local out = {}
+  for i = #history, 1, -1 do
+    local h = history[i]
+    if type(h) == "table" and (not mapID or h.mapID == mapID) then
+      out[#out + 1] = h
+      if #out >= (limit or 8) then break end
+    end
+  end
+  return out
+end
+
 function M:Evaluate()
   local w = self.window
   if #w < self.MIN then return end
@@ -71,7 +106,7 @@ function M:Evaluate()
     if counts[o.uid] > bestN then best, bestN = o.uid, counts[o.uid] end
   end
   local share = bestN / #w
-  if share < self.SHARE then return end
+  if share < self.SHARE then self.confidence = 0 return end
   self.confidence = share
   if best ~= self.current then
     local old = self.current
@@ -84,6 +119,7 @@ function M:Evaluate()
       self:Info("layer %s (%.0f%% of %d creatures, map %s)", self.Label(best), share * 100, #w, tostring(self.mapID))
     end
   end
+  self:Remember(best, share)
 end
 
 function M.Label(id)
@@ -93,14 +129,20 @@ end
 
 -- Current layer id, confidence 0..1, display label.
 function M:Current()
+  if C.Call("IsInInstance") then return nil, 0, "?" end
+  local mapID = C.PlayerPosition("player")
+  if mapID and self.mapID and mapID ~= self.mapID then return nil, 0, "?" end
+  if not self.current or self.confidence < self.SHARE then return nil, self.confidence, "?" end
   return self.current, self.confidence, self.Label(self.current)
 end
 
 function M:Snapshot()
-  return { layer = self.current, label = self.Label(self.current), confidence = self.confidence }
+  local id, confidence, label = self:Current()
+  return { layer = id, label = label, confidence = confidence }
 end
 
 function M:Activity()
-  if not self.current then return string.format("learning (%d of %d mobs seen)", #self.window, self.MIN) end
-  return string.format("you are on %s (%.0f%% sure)", self.Label(self.current), self.confidence * 100)
+  local id, conf, label = self:Current()
+  if not id then return string.format("learning (%d of %d mobs seen)", #self.window, self.MIN) end
+  return string.format("you are on %s (%.0f%% sure)", label, conf * 100)
 end
