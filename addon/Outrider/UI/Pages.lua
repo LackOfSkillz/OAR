@@ -485,6 +485,19 @@ local function moneyRows()
   end
   local level = ns.Compat.Call("UnitLevel", "player") or 1
   r({ "header", "Money" })
+  r({ "stats", function()
+    local L, F = ns.Ledger, ns.Forecasts
+    local net, perHour = 0, 0
+    if L and L.Summary then net, perHour = L:Summary() end
+    local g = F and F.Gold and F.Gold(ns.db.char.ledger)
+    local coins = ns.Prices.Coins
+    return {
+      { cap = "Gold", value = coins(tonumber(ns.Compat.Readable(ns.Compat.Call("GetMoney"))) or 0), color = "gold" },
+      { cap = "This session", value = (net < 0 and "-" or "+") .. coins(math.abs(net)), color = net > 0 and "good" or net < 0 and "bad" or nil },
+      { cap = "Usual per hour", value = g and coins(math.floor(math.abs(g.perHour))) or "—",
+        note = g and (g.sessions .. " sessions" .. (g.trend and (", " .. g.trend) or "")) or "log out once to start" },
+    }
+  end })
   r({ "header", "Best ways to earn at level " .. level })
   r({ "note", "Ranked for your level and professions. Guide numbers are early Forever reports (unverified); after 15 minutes of a kind of earning your own gold per hour replaces them." })
   local ranked = G:Rank(level)
@@ -982,8 +995,8 @@ end)
 -- -------------------------------------------------------------- Sharing
 ns.Hub:AddTab("sharing", "Sharing", function(p)
   UI:FormPage(p, {
-    { "header", "Share with your guild or party (all off by default)" },
-    { "note", "Only other Outrider users see these messages. Nothing leaves the game." },
+    { "header", "Share with your guild or party" },
+    { "note", "|cfff1d58eNothing is shared until you turn it on.|r  Only other Outrider users see these messages, over guild, party or whisper. Nothing leaves the game." },
     { "check", "Say hello to other Outrider users", function() return set("Comm").hello end,
       function(on) ns.Slash:Run("share hello " .. onoff(on)) end },
     { "check", "Rares: guild", function() return set("RareShare").guild end, function(on) ns.Slash:Run("share rares guild " .. onoff(on)) end },

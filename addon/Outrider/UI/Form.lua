@@ -145,7 +145,8 @@ function UI:Form(parent, rows)
   for _, r in ipairs(rows) do
     local kind = r[1]
     -- rows between the page title and the first section get an untitled card
-    if kind ~= "header" and titled and not card then openCard(nil) end
+    -- (a stat strip sits straight under the page title, outside any card)
+    if kind ~= "header" and kind ~= "stats" and titled and not card then openCard(nil) end
     if kind == "header" then
       -- the page's first heading is its title: in the hub's title strip when
       -- the page has one, else large in the display font; later headings
