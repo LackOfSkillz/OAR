@@ -74,8 +74,10 @@ local function card(list, i)
   c.pic:SetPoint("TOPLEFT", 2, -2)
   c.pic:SetPoint("BOTTOMRIGHT", -2, 2)
   local left = PIC + 30
-  c.title = UI.Display(c, "card", "text")
+  c.title = UI.Display(c, "card", "goldText")
   c.title:SetPoint("TOPLEFT", left, -12)
+  c.title:SetJustifyH("LEFT")
+  if c.title.SetWordWrap then c.title:SetWordWrap(false) end
   c.tags = {}
   c.line = UI.Text(c, "normal", "body")
   c.line:SetPoint("TOPLEFT", left, -38)
@@ -99,11 +101,27 @@ local function card(list, i)
   c.chips = {}
   c.buttons = {}
   c.Place = function(self)
-    -- tags after the title
-    local prev = self.title
+    -- Title and tags never run under the buttons on the right (premium plan
+    -- B6): the room is the card minus the picture and the button column;
+    -- the title takes what it needs up to 70% of it, tags that don't fit hide.
+    local reserve = (self.nButtons or 0) > 0 and 190 or 20
+    local room = (self:GetWidth() or 600) - left - reserve
+    if room < 120 then room = 120 end
+    local sw = self.title.GetStringWidth and tonumber((self.title:GetStringWidth())) or 0
+    local tw = math.min(sw > 0 and sw + 2 or room, room)
+    if #self.tags > 0 then tw = math.min(tw, math.floor(room * 0.7)) end
+    self.title:SetWidth(tw)
+    local prev, used = self.title, tw
     for _, t in ipairs(self.tags) do
-      if t:IsShown() then t:ClearAllPoints() t:SetPoint("LEFT", prev, "RIGHT", 8, 0) prev = t end
+      if t:IsShown() then
+        local w = (t.GetWidth and t:GetWidth()) or 60
+        if used + 8 + w > room then t:Hide()
+        else t:ClearAllPoints() t:SetPoint("LEFT", prev, "RIGHT", 8, 0) prev, used = t, used + 8 + w end
+      end
     end
+    self.line:ClearAllPoints()
+    self.line:SetPoint("TOPLEFT", left, -38)
+    self.line:SetPoint("RIGHT", self, "RIGHT", -reserve, 0)
   end
   return c
 end
@@ -172,6 +190,8 @@ function UI:CardList(parent)
         b:Show()
       end
       for k = #(it.actions or {}) + 1, #c.buttons do c.buttons[k]:Hide() end
+      c.nButtons = #(it.actions or {})
+      c:Place()
       c:Show()
     end
     for i = #self.items + 1, #self.cards do self.cards[i]:Hide() end

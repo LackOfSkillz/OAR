@@ -77,8 +77,18 @@ end
 -- Display type for page and card titles: the game's own fantasy serif
 -- (Morpheus). If the client lacks it, SetFont fails and the normal font stays.
 Theme.display = { path = "Fonts\\MORPHEUS.TTF", page = 26, card = 17, brand = 20, side = 15 }
+-- Premium plan S2 (2026-11-18): Morpheus only for the big page and brand
+-- titles; its lowercase reads poorly at card size, so card titles use the
+-- clean font, a step larger, with a hair of letter weight.
+Theme.cardTitle = 15
 function Theme:StyleDisplay(fs, size, colorName)
   if not fs then return end
+  if (size or "card") == "card" then
+    fs:SetFont(self.font.path, self.cardTitle, "")
+    fs:SetTextColor(self:Color(colorName or "text"))
+    if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) end
+    return
+  end
   local px = self.display[size or "card"] or size or self.display.card
   local ok = fs:SetFont(self.display.path, px, "")
   if ok == false then
