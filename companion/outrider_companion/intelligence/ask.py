@@ -19,7 +19,7 @@ import os
 import sys
 
 from .. import clipboard, codes
-from . import context, orchestrator, providers
+from . import context, orchestrator, providers, coach_v3, schemas_v3
 
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -47,6 +47,10 @@ def main(argv=None):
     ap.add_argument("--out")
     ap.add_argument("--no-model", action="store_true")
     ap.add_argument("--config")
+    ap.add_argument("--v3", action="store_true",
+                    help="use source-bound Intelligence 2.0 advice v3 (opt-in)")
+    ap.add_argument("--task", choices=tuple(schemas_v3.TASK_CATEGORIES), default="general",
+                    help="select the evidence category for v3 questions")
     ap.add_argument("--preview", action="store_true",
                     help="print exactly what would be sent to the model, send nothing")
     a = ap.parse_args(argv)
@@ -58,6 +62,10 @@ def main(argv=None):
             print("Nothing to preview: %s" % e, file=sys.stderr)
             return 1
         msgs = orchestrator._messages(a.question or env.get("question") or "What should I do next?", env)
+        if a.v3:
+            v3, _ = schemas_v3.envelope_v3(codes.import_code(code), task=a.task)
+            msgs = [{"role": "system", "content": coach_v3.SYSTEM},
+                    {"role": "user", "content": json.dumps(v3, ensure_ascii=False)}]
         print("This is everything the model would receive (nothing was sent):")
         print()
         for m in msgs:
@@ -73,8 +81,8 @@ def main(argv=None):
                 code = f.read()
         else:
             code = clipboard.read()
-        out, advice, report = run(code, a.question, provider)
-    except (codes.CodeError, context.ContextError, providers.ProviderError, OSError, ValueError) as e:
+        out, advice, report = coach_v3.run(code, a.question, provider, task=a.task) if a.v3 else run(code, a.question, provider)
+    except (codes.CodeError, context.ContextError, schemas_v3.ContractError, providers.ProviderError, OSError, ValueError) as e:
         print("Not answered: %s" % e, file=sys.stderr)
         return 1
     if a.out:
@@ -82,8 +90,15 @@ def main(argv=None):
             f.write(out)
     else:
         clipboard.write(out)
-    ans = advice["answer"]
+    ans = advice if a.v3 else advice["answer"]
     print(ans.get("headline") or "")
+    if a.v3:
+        for i, cid in enumerate(advice["rankedCandidateIds"], 1):
+            print("  %d. %s" % (i, cid))
+        for note in advice["limitations"]:
+            print("  note: %s" % note)
+        print("[v3 %s] paste code in Advisor (manual copy, no live sync)" % report["mode"])
+        return 0
     if ans.get("plan"):
         print("Plan: about %d minutes%s" % (ans.get("planMinutes", 0),
                                            (" of %d" % ans["budget"]) if ans.get("budget") else ""))
