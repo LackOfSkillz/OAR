@@ -62,6 +62,7 @@ Data\StatWeights.lua
 Data\Herbs.lua
 Data\Transports.lua
 Data\MapOverlays.lua
+Data\Fishing.lua
 Data\Money.lua
 Data\Dungeons.lua
 Data\Talents.lua
@@ -100,6 +101,7 @@ Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
 Modules\FishingHUD.lua
+Modules\FishingGuide.lua
 Modules\LootLog.lua
 Modules\HerbHelper.lua
 Modules\NodePack.lua
@@ -151,6 +153,7 @@ Modules\TameHelper.lua
 Modules\PetStatus.lua
 Modules\Ammo.lua
 Modules\BeastInfo.lua
+Modules\PlayerInfo.lua
 Modules\NPCPack.lua
 Modules\Waypoints.lua
 Modules\POICapture.lua
@@ -159,6 +162,9 @@ Modules\Trail.lua
 Modules\MapPins.lua
 Modules\MapReveal.lua
 Modules\QuestObjectives.lua
+Modules\QuestInfo.lua
+Modules\QuestTracker.lua
+Modules\PartyQuests.lua
 Modules\ZoneLevels.lua
 Modules\MinimapPins.lua
 Modules\MapTab.lua

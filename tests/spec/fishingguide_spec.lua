@@ -1,0 +1,75 @@
+-- Fishing page: stats, skill-up predictor, milestones, zones, gear, Extravaganza (2026-11-17).
+local T, mock = ...
+
+local function start(opts)
+  local game = mock.new(opts or { class = "HUNTER", level = 20 })
+  local ns = game:loadAddon()
+  game:login()
+  return game, ns, ns.FishingGuide
+end
+
+T.describe("fishing guide", function()
+  T.it("counts lifetime catches and predicts catches to the next point from your own skill-ups", function()
+    local game, ns, M = start()
+    local function catch(n) for _ = 1, n do ns.Events:Fire("OTR_LOOT", "fish", { { id = 6291, name = "Raw Brilliant Smallfish", count = 1 } }) end end
+    T.eq(M:NextPoint(), nil)
+    catch(4) game:fire("CHAT_MSG_SKILL", "Your skill in Fishing has increased to 51.")
+    catch(6) game:fire("CHAT_MSG_SKILL", "Your skill in Fishing has increased to 52.")
+    catch(2)
+    local left, avg = M:NextPoint()
+    T.eq(avg, 5)
+    T.eq(left, 3)
+    T.eq(M.stats.catches, 12)
+    T.eq(M.stats.fish[6291].n, 12)
+    game:fire("CHAT_MSG_SKILL", "Your skill in Cooking has increased to 80.")
+    T.eq(#M:Char().per, 2, "other skills don't count")
+  end)
+
+  T.it("names the next milestone and the zones for your skill", function()
+    local game, ns, M = start()
+    local m = M:Milestone(60, 75, 12)
+    T.contains(m.title, "Journeyman")
+    T.eq(m.ready, true)
+    m = M:Milestone(130, 150, 18)
+    T.contains(m.title, "Expert")
+    T.eq(m.ready, false)
+    T.contains(m.why, "level 20")
+    T.eq(M:Milestone(250, 300, 40), nil)
+    local t = M:Tier(80)
+    T.eq(t.lo, 75)
+    T.eq(M:Tier(30).zones[7], "Zephras Isle")
+  end)
+
+  T.it("lists trainers and vendors for your faction only", function()
+    local game, ns, M = start({ class = "HUNTER", level = 20, faction = "Horde" })
+    local names = {}
+    for _, x in ipairs(M:People("trainers")) do names[x.name] = true end
+    T.ok(names["Uthan Stillwater"])
+    T.ok(not names["Lee Brown"])
+    T.ok(names["Baelann Swiftcurrent"], "Zephras Isle trainers serve both")
+  end)
+
+  T.it("Extravaganza countdown on Sunday afternoons, server time", function()
+    local game, ns, M = start()
+    -- a Sunday at 15:00 local/server time
+    local sunday = os.time({ year = 2026, month = 11, day = 15, hour = 15, min = 0, sec = 0 })
+    local secs, on = M:Extravaganza(sunday)
+    T.eq(on, true)
+    T.eq(secs, 0)
+    local saturday = os.time({ year = 2026, month = 11, day = 14, hour = 14, min = 0, sec = 0 })
+    secs, on = M:Extravaganza(saturday)
+    T.eq(on, false)
+    T.eq(secs, 86400)
+  end)
+
+  T.it("the page builds; gear swap says why when there's nothing to wear", function()
+    local game, ns, M = start()
+    local ok, why = M:GearOn()
+    T.eq(ok, false)
+    T.contains(why, "no fishing pole")
+    T.eq(select(2, M:GearOff()), "nothing to put back")
+    ns.Hub:Toggle()
+    ns.Hub:ShowTab("fishing")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

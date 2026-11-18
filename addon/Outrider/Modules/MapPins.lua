@@ -29,7 +29,7 @@ local LABELS = {
   stable_master = "Stable master", mailbox = "Mailbox", innkeeper = "Innkeeper", guild_master = "Guild master",
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
-  dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in",
+  dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in", qpath = "Quest NPC path",
 }
 M.LABELS = LABELS
 
@@ -43,7 +43,7 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
-  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest",
+  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
 }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
@@ -166,7 +166,9 @@ ns.Events:On("OTR_POI_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_SIGHTING_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_DATA_CHANGED", M, function() M:Invalidate() end)
 
+local NONE = {}
 function M:PinsFor(mapID)
+  if self:Settings().off then return NONE end
   if ns.LocationShare and ns.LocationShare:Prune() then self:Invalidate() end
   -- also rebuild if places were added or removed without an event
   local n = 0
@@ -301,12 +303,17 @@ function M:BuildPins(mapID)
       if (rank == 2 or rank == 4) and pts and pts[1] then
         local label = string.format("%s (%s, level %d)", r[2], rank == 2 and "rare elite" or "rare", r[4])
         local many = #pts > 2
+        -- Every spawn spot, also for a rare already seen (Gary, 2026-11-17:
+        -- Den'dralass's other spots were hidden behind her one sighting).
+        local first = 3
         if not seen[r[1]] then
           addRare(r[1], many and (label .. ", spawn spot 1") or label, pts[1], pts[2])
-          for i = 3, #pts - 1, 2 do
-            out[#out + 1] = { id = "rare-" .. r[1] .. "-" .. ((i + 1) / 2), kind = "rare", mapID = mapID, x = pts[i], y = pts[i + 1],
-              name = label .. ", spawn spot " .. ((i + 1) / 2), npcID = r[1], rare = true }
-          end
+        else
+          first = 1
+        end
+        for i = first, #pts - 1, 2 do
+          out[#out + 1] = { id = "rare-" .. r[1] .. "-" .. ((i + 1) / 2), kind = "rare", mapID = mapID, x = pts[i], y = pts[i + 1],
+            name = label .. ", spawn spot " .. ((i + 1) / 2), npcID = r[1], rare = true }
         end
       end
     end
@@ -315,13 +322,96 @@ function M:BuildPins(mapID)
   return out
 end
 
+-- ------------------------------------------------------------ show / hide
+-- (Gary, 2026-11-17: "be able to hide them or show them in the ui") A
+-- "Pins" button on the world map opens switches per group of pins and one
+-- for all of them; the same settings as the Map page, per character, also
+-- for the minimap.
+M.MENU = {
+  { "Rares", { "rare" } },
+  { "Quests", { "quest_giver", "objective", "turnin", "qpath" } },
+  { "Vendors and repair", { "vendor", "repair" } },
+  { "Trainers", { "trainer" } },
+  { "Services", { "innkeeper", "bank", "auction", "flight_master", "stable_master", "mailbox", "guild_master", "tabard", "spirit_healer" } },
+  { "Herbs, ore and fish", { "herb", "ore", "fish", "pool" } },
+  { "Travel and dungeons", { "transport", "ride", "dungeon" } },
+  { "Your trail", { "trail" } },
+  { "Guildmates", { "guildmate" } },
+}
+
+function M:AllShown() return not self:Settings().off end
+
+function M:GroupShown(kinds)
+  local hidden = self:Settings().hidden
+  for _, k in ipairs(kinds) do if not hidden[k] then return true end end
+  return false
+end
+
+function M:Changed()
+  self:Invalidate()
+  if self.map and self.map:IsShown() then self:Refresh() end
+  local mini = ns.Modules:Get("MinimapPins")
+  if mini and mini.enabled and mini.Update then mini:Update() end
+  if self.menu and self.menu:IsShown() then self.menu:Sync() end
+end
+
+function M:SetGroup(kinds, on)
+  local hidden = self:Settings().hidden
+  for _, k in ipairs(kinds) do hidden[k] = (not on) or nil end
+  self:Changed()
+end
+
+function M:SetAll(on)
+  self:Settings().off = (not on) or nil
+  self:Changed()
+end
+
+function M:ToggleMenu()
+  if not self.menu then
+    local f = CreateFrame("Frame", "Outrider_MapPinsMenu", self.map, ns.Theme:BackdropTemplate())
+    ns.Theme:ApplyPanel(f, "raised", "border")
+    f:SetFrameStrata("DIALOG")
+    f:SetSize(240, 40 + (#M.MENU + 1) * 26)
+    f:SetPoint("TOPRIGHT", self.button, "BOTTOMRIGHT", 0, -4)
+    local head = ns.UI.Text(f, "normal", "goldText")
+    head:SetPoint("TOPLEFT", 10, -10)
+    head:SetText("Outrider pins")
+    f.rows = {}
+    local all = ns.UI:Check(f, "All Outrider pins", function() return M:AllShown() end, function(on) M:SetAll(on) end)
+    all:SetPoint("TOPLEFT", 6, -30)
+    all:SetWidth(228)
+    f.rows[1] = all
+    for i, g in ipairs(M.MENU) do
+      local kinds = g[2]
+      local row = ns.UI:Check(f, g[1], function() return M:GroupShown(kinds) end, function(on) M:SetGroup(kinds, on) end)
+      row:SetPoint("TOPLEFT", 6, -30 - i * 26)
+      row:SetWidth(228)
+      f.rows[#f.rows + 1] = row
+    end
+    function f:Sync() for _, r in ipairs(self.rows) do r:Refresh() end end
+    f:Hide()
+    self.menu = f
+  end
+  self.menu:SetShown(not self.menu:IsShown())
+  if self.menu:IsShown() then self.menu:Sync() end
+end
+
+function M:MakeButton()
+  if self.button or not self.map then return end
+  local b = ns.UI:Button(self.map, "Pins", 60, function() M:ToggleMenu() end)
+  b:SetFrameStrata("HIGH")
+  local anchor = self.map.ScrollContainer or self.map
+  b:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", -8, -8)
+  self.button = b
+end
+
 function M:OnEnable()
   local map = rawget(_G, "WorldMapFrame")
   if not map or not map.GetCanvas then self:Warn("no world map canvas: pins off") return end
   self.map = map
   if not self.hooked then
     self.hooked = true
-    map:HookScript("OnShow", function() if M.enabled then M:Refresh() end end)
+    map:HookScript("OnShow", function() if M.enabled then M:MakeButton() M:Refresh() end end)
     if type(map.OnMapChanged) == "function" then
       hooksecurefunc(map, "OnMapChanged", function() if M.enabled then M:Refresh() end end)
     end
@@ -333,6 +423,7 @@ end
 
 function M:OnDisable()
   self:ReleaseAll()
+  if self.menu then self.menu:Hide() end
   if self.card then self.card:Hide() end
 end
 
@@ -377,6 +468,20 @@ function M.Declutter(pins, px, py)
   return out
 end
 
+-- Frame level for our pins (Gary, 2026-11-17: Zephras Isle map showed none
+-- of 300 built pins). "canvas level + 1" can sit under Blizzard's map art
+-- layers; the map's own pin level manager knows the real order. Our pins go
+-- just under the town/area icons (and so under the player arrow).
+function M:PinLevel(canvas)
+  local map = self.map
+  local mgr = map and map.GetPinFrameLevelsManager and select(2, pcall(map.GetPinFrameLevelsManager, map))
+  if type(mgr) == "table" and mgr.GetValidFrameLevel then
+    local ok, lvl = pcall(mgr.GetValidFrameLevel, mgr, "PIN_FRAME_LEVEL_AREA_POI")
+    if ok and type(lvl) == "number" and lvl > 1 then return lvl - 1, "manager" end
+  end
+  return (canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 1, "canvas"
+end
+
 function M:AcquirePin(canvas)
   local pin = table.remove(self.pool)
   if not pin then
@@ -405,7 +510,7 @@ function M:AcquirePin(canvas)
   end
   pin:SetParent(canvas)
   -- just above the map art, below Blizzard's own pins (player arrow, party, quests)
-  pin:SetFrameLevel((canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + 1)
+  pin:SetFrameLevel((self:PinLevel(canvas)))
   self.used[#self.used + 1] = pin
   return pin
 end
@@ -431,7 +536,19 @@ function M:Refresh()
     pin:Show()
   end
   self.shown = #self.used
-  if not self.logged then self.logged = true self:Info("map %d opened: %d pins", mapID, self.shown)
+  if not self.logged then
+    self.logged = true
+    self:Info("map %d opened: %d pins", mapID, self.shown)
+    -- where the pins really are, to check they're visible (one line a session)
+    local lvl, how = self:PinLevel(canvas)
+    local first = self.used[1]
+    local fx, fy = first and first.GetCenter and first:GetCenter()
+    local cl, cb, cw, ch = canvas.GetRect and canvas:GetRect()
+    local max = self.map.IsMaximized and select(2, pcall(self.map.IsMaximized, self.map))
+    self:Info("map pins drawn: level %s (%s, canvas %s), canvas %sx%s at scale %.2f, first pin at %s,%s (canvas %s,%s %sx%s), maximized %s",
+      tostring(lvl), how, tostring(canvas.GetFrameLevel and canvas:GetFrameLevel()), tostring(w), tostring(h), scale,
+      tostring(fx and math.floor(fx)), tostring(fy and math.floor(fy)), tostring(cl and math.floor(cl)), tostring(cb and math.floor(cb)),
+      tostring(cw and math.floor(cw)), tostring(ch and math.floor(ch)), tostring(max))
   else self:Debug("map %d: %d pins", mapID, self.shown) end
 end
 

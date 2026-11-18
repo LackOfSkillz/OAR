@@ -60,7 +60,7 @@ Two macros per character that follow your spellbook for its whole life: drag key
 ## Hunter tools
 
 - **Pet panel.** Pet name, level, XP, health, focus, abilities, attack speed and damage. The Feed button feeds your pet a food it eats (Outrider learns the diet as you feed).
-- **Tame helper.** /ride tamemacro <Beast Name> writes a macro: press to send the pet in, Shift-press to dismiss it, press again to tame. 'solo' tames without a pet.
+- **Tame helper.** /ride tamemacro <Beast Name> writes a macro: press to send the pet in, Shift-press to dismiss it, press again to tame. 'solo' tames without a pet; 'trap' lays a Freezing Trap, pulls the beast onto it, tames, and Wing Clips then tames again if the tame breaks.
 - **Ammo warnings.** One warning when ammo drops under 200 and again under 50. Errands remind you to buy more in town.
 - **Beast tooltips.** Family, level, tameable, and for known rares the last sighting and respawn window. Hold Shift for attack speed and abilities.
 
@@ -107,6 +107,11 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 - **Skill-up planner.** /ride skillup [profession]: the cheapest recipes per skill point.
 - **Crafting page.** A craft queue and the shopping list it needs.
 - **Fishing.** Pick a key (/ride fishkey F): it casts and hooks the bobber. A small HUD shows skill and lure time, and catches are logged per zone.
+- **Fishing page.** Your skill, lifetime casts and catches, how many catches to your next point (measured from your own catches), the next milestone (Journeyman, the Expert book, Nat Pagle), the zones for your skill with what you've caught there, one-click fishing gear and back, fishing trainers and supply vendors with an arrow, and the Stranglethorn Fishing Extravaganza countdown. Zone and NPC data from a WoW Forever fishing guide (unverified).
+- **Player tooltips.** Mouse over another player: attack speed, health and mana, PvP flag and rank, the professions they've linked in trade chat, when and where you last saw them, and whether it's your alt. Out of combat and close by, Outrider also looks at their gear once (average item level, epics and blues, weapon) and their talent build. Other players' stats can't be read, so none are shown. A rough PvP odds line weighs level, health, gear and class matchup, and learns from the duels you win and lose. Rares, rare elites, elites and bosses get their health, attack speed and rough fight odds (level, health, elite, your pet and group), learning from the fights you win and lose. /ride module PlayerInfo off turns it off.
+- **Party quest announcements.** In a party, Outrider tells the party when you finish a quest objective, when a quest is ready to hand in and when you hand it in (like Questie; it stays quiet if you run Questie yourself). When everyone in the party who has the quest is done, it says so once: 'Everyone is done with [quest], go hand it in!'. It knows party members' progress from Outrider (a party addon message) and from Questie's own party announcements. /ride module PartyQuests off turns it off.
+- **Quest tracker.** Outrider's own quest tracker: your quests by zone, nearest first (or by level), each objective with your party's progress under it. Click a quest for the arrow, right-click to fold it, drag the title to move it. /ride tracker on|off|reset|level|nearest. It steps aside when Questie is installed.
+- **Quest details.** Quest cards, the tracker and quest givers show quest chains (Part 2 of 4, next quest), breadcrumbs, reputation rewards and categories (Darkmoon Faire, profession, class, repeatable). Taking a quest whose breadcrumb you skipped gives one warning. Quest links in chat show their level. A short sound plays when an objective or quest is done. The Quests page keeps a dated history of the quests you take, hand in and abandon. Escort and patrol NPCs of your quests walk a dotted path on the map. Quest-giver pins hide holiday quests and profession quests for professions you don't have (switches on the Quests page). Data from QuestieDB, unverified.
 - **Money page.** The best ways to earn gold at your level and with your professions, and your own earnings per hour.
 - **Gold ledger.** Where your gold came from and went, per session and character.
 - **Merchant's Favor.** Waylaid Crates: what each crate needs and your Favor balance. /ride favor.
@@ -235,7 +240,8 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride spells` | [filter]  list the spells Outrider sees in your spellbook |
 | `/ride status` | character, saved-settings check, modules, errors |
 | `/ride talents` | [build <id>\|on\|off]  your next talent points from the levelling build |
-| `/ride tamemacro` | [solo] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks) |
+| `/ride tamemacro` | [solo\|trap] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks; trap: Freezing Trap first) |
+| `/ride tracker` | Outrider's quest tracker: /ride tracker on\|off\|reset\|level\|nearest |
 | `/ride trail` | [clear\|clear here]  breadcrumbs: the paths you walked, on the map |
 | `/ride undercut` | <N%> \| <copper>c  how much under the market to suggest |
 | `/ride unwatch` | <name or npcID>  stop watching |
