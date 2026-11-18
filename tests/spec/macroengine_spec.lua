@@ -16,6 +16,25 @@ T.describe("macro engine", function()
     T.same(missing, { "FOOD" })
   end)
 
+  T.it("rejects command injection through placeholders", function()
+    local E = engine()
+    local body, missing = E.Fill("/targetexact {TARGET}", { TARGET = "Rare\n/cast Spell" })
+    T.eq(body, "/targetexact {TARGET}")
+    T.same(missing, { "TARGET" })
+    local bad, no = E.Fill("{RARE_LINES}", {
+      RARE_LINES = "/targetexact Test Beast\n/script malicious()"
+    })
+    T.eq(bad, "{RARE_LINES}")
+    T.same(no, { "RARE_LINES" })
+    local good, clean = E.Fill("{RARE_LINES}", {
+      RARE_LINES = "/targetexact Rare One\n/targetexact Rare Two"
+    })
+    T.eq(good, "/targetexact Rare One\n/targetexact Rare Two")
+    T.eq(#clean, 0)
+    local accented = E.Fill("/targetexact {TARGET}", { TARGET = "Den'dralass" })
+    T.eq(accented, "/targetexact Den'dralass")
+  end)
+
   T.it("every macro in every pack validates with no errors", function()
     local E, ns = engine()
     local n = 0

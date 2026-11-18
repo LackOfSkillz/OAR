@@ -11,13 +11,31 @@ local E = { MAX = 255 }
 ns.MacroEngine = E
 
 -- --------------------------------------------------------------- Fill
+-- Values can originate in NPC names or the player's watchlist. Never allow
+-- a placeholder to introduce new slash-command lines or WoW markup.
+local function safeValue(key, v)
+  if type(v) ~= "string" and type(v) ~= "number" then return nil end
+  v = tostring(v)
+  if key == "RARE_LINES" then
+    if #v == 0 or #v > 250 or v:find("[\r|]") then return nil end
+    local count = 0
+    for line in (v .. "\n"):gmatch("(.-)\n") do
+      if not line:match("^/targetexact [^%c|]+$") then return nil end
+      count = count + 1
+      if count > 15 then return nil end
+    end
+    return count > 0 and v or nil
+  end
+  if #v == 0 or #v > 120 or v:find("[%c|]") then return nil end
+  return v
+end
 function E.Fill(body, values)
   values = values or {}
   local missing = {}
   local out = body:gsub("{([%u_]+)}", function(key)
-    local v = values[key]
-    if v == nil then missing[#missing + 1] = key return "{" .. key .. "}" end
-    return tostring(v)
+    local v = safeValue(key, values[key])
+    if not v then missing[#missing + 1] = key return "{" .. key .. "}" end
+    return v
   end)
   return out, missing
 end
