@@ -57,3 +57,22 @@ Never infer completeness from filename, documentation claims or mock tests alone
 **Current status:** 14 of 38 ranked builds have passing automated CI; 24 remain to implement. No feature has achieved in-game acceptance gates from this remote review.
 
 **Next ranked item:** #15 Settings search box. Then Tier 2 #16 Auto Shot timer and #17 threat overlays, both requiring explicit Forever API probes first.
+
+## Batch 4 — DEEP-15 through DEEP-24 (2026-11-18)
+
+**Status: IMPLEMENTED / CI PENDING, NOT ACCEPTED.** Ten implementation slices are committed to `p1-foundation`. The first full [CI run](https://github.com/LackOfSkillz/OAR/actions/runs/44304072219) passed 666 Lua tests, failed eight and had zero syntax errors. Corrections for fixtures, tooltips and test harness declarations were pushed; the corrected [run](https://github.com/LackOfSkillz/OAR/actions/runs/44304709374) was cancelled before receiving jobs while an older job remained in progress. **The last corrected source has NOT passed CI.** Run the entire suite when Actions is available, triage failures, and test on WoW Forever. Do not merge to `main` or mark Works/Matches/Surpasses without evidence.
+
+| Rank | Implementation | Important remaining gate |
+|---|---|---|
+| #15 | Settings page search by control labels, jump and next match; `UI/Form.lua`, `UI/Pages.lua` | Corrected test file and UI.Tip changes need CI, real UI search navigation |
+| #16 | Read-only moving/out-of-range Auto Shot hint anchored to native `SwingTimerRanged`; `Modules/HunterFight.lua` | True shot timing & dead-zone probe, frame creation during client load, range accuracy |
+| #17 | Independent threat indicator below nameplates showing YOU/PET %, with pet-blue coloring; `Modules/RarePlates.lua` | Verify real `UnitDetailedThreatSituation` in combat, no taint; still lacks small threat list |
+| #18 | Subzone-death log and actual observed ghost graveyard map positions; `Modules/Nearest.lua`, `/ride grave` | Actual Forever ghost events, sample enough subzones, add hover map before parity |
+| #19 | Dungeon quest lookup from Questie boss NPC objectives, with manual links; `Modules/DungeonGuide.lua`, `/ride dungeonquests` | Join ALL quests, givers, chains, rewards; load private QuestieDB dataset |
+| #20 | Trainer UI observations create class level-up notices and future cost cards; `Modules/Spellbook.lua`, `/ride training` | Need cited standalone 1–60 spell-rank-cost pack to work before **first** trainer visit. Modern Forever trainer API may differ |
+| #21 | Queue all/watched rare spawn pins via existing waypoint queue; `Modules/RareScan.lua`, `/ride rareroute` | Real map paths, de-dupe, routes may exceed 30 queue stops and aren't guaranteed optimal |
+| #22 | Zone quest XP estimates and greying count; `Modules/Journey.lua`, `/ride zones` | Chain future XP, multi-level projections, best abandon recommendations, data coverage |
+| #23 | Personal gear wish list, bag Alt-click, tooltips, boss loot lookup; `Modules/BagExtras.lua`, `Modules/DungeonGuide.lua` | Test secure bag behavior, complete private dungeon data, boss drop percentages |
+| #24 | Editable character map notes via Map tab and `/ride note`, world/minimap pin integration; `Modules/MapTab.lua`, `Modules/MapPins.lua`, `Modules/Coords.lua` | Real cursor/map UI and saved-variables/reload verification |
+
+**Current count:** 14/38 rank items with earlier green automated tests, 10 new implementation slices with CI pending, 14 ranked builds not started. This is **not** 24/38 complete under the three acceptance gates.
