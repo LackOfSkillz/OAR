@@ -1,6 +1,6 @@
 # QuestieDB-derived datapacks: public redistribution review (2026-11-18)
 
-**Decision status: REQUIRES RIGHTS REVIEW. No public-copy action authorized by this document.**
+**Decision status (updated 2026-11-18): Gary Mix explicitly chose GPLv3 for original Outrider and authorized publication of derived data and quest packs. Rights/provenance review is still required; no generated local pack files have yet been uploaded to this repository.**
 
 Gary raised the possibility of committing the generated QuestieDB-based data packs to the public OAR repository. The upstream repository is public and has a GPLv3 license document, but its *own license expressly flags unresolved historic contributor rights*. Do not turn a license file into a blanket assurance that all the source data may be redistributed.
 
@@ -33,3 +33,7 @@ QuestieDB states (paraphrased) that historical Questie contributions were import
 **Safer interim approach:** keep the generated packs in `private/` while publishing original Outrider code, the conversion tooling and this rights audit. Alternatively, rely on QuestieDB's supported public API as an optional installed dependency until redistribution rights are reviewed.
 
 This document is an engineering provenance checklist, **not legal advice**.
+
+## Owner decision recorded (2026-11-18)
+
+Gary Mix elected to publish the quest and other QuestieDB-derived data packs publicly, and selected GPL-3.0-only for original Outrider source. `LICENSE` and `COPYRIGHT.md` now exist at the repository root. This changes the earlier **owner decision**, but does not extinguish any independent third-party copyrights or historical-contributor uncertainty. The source build outputs currently live on Gary's Windows machine under `private/` and were not attached or made accessible through the GitHub repository; no absent generated data has been represented as committed. Import these only from the actual local outputs with provenance and corresponding licenses after reviewing source provenance.
