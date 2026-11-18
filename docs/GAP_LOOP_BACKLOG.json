@@ -3,7 +3,7 @@
   "branch": "p1-foundation",
   "source_head": "54f36218b6a6265fe71976e6241696287c45c8f8",
   "generated": "2026-11-18",
-  "warning": "Ranks 1-14 have automated tests green but no in-game certification. Remaining 24 ranked builds plus cross-addon acceptance still open; do not call Works or Matches without game evidence.",
+  "warning": "Ranks 1-14 have prior passing CI; ranks 15-24 have implementation slices pushed but consolidated CI has not passed (last full 666 pass 8 fail before fixes). Zero in-game Works/Matches/Surpasses accepted.",
   "statuses": [
     "not_started",
     "implemented_unverified",
@@ -246,7 +246,7 @@
       "details": "",
       "competitors": "Leatrix Plus",
       "notes": "[UI01]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -262,7 +262,7 @@
       "details": "\"stop moving\" mark and dead-zone/range marker on Blizzard's own ranged swing bar (Forever has it, PROBE_RESULTS:113)",
       "competitors": "Quiver, Improved Auto Shot Timer, DaylightUI",
       "notes": "NEW. PROBE `UnitRangedDamage` and `C_Spell.IsSpellInRange` in combat",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -278,7 +278,7 @@
       "details": "with pet threat (blue), plus a small threat list",
       "competitors": "ThreatTint, ThreatClassic2",
       "notes": "NEW. PROBE `UnitDetailedThreatSituation` on nameplates in combat. ThreatTint working on Forever is a good sign",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -294,7 +294,7 @@
       "details": "\"you'd respawn at X\" box, map hover, and death logging (predicted vs actual) so it learns. Subzone from the game's own data",
       "competitors": "Deathskip",
       "notes": "NEW. High value on Forever",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -312,7 +312,7 @@
       "details": "per dungeon, givers, chains, rewards, map spot; live progress inside",
       "competitors": "DungeonJournal, Polestar, Forever Route",
       "notes": "[D01 part]. QuestieDB already has the data",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -328,7 +328,7 @@
       "details": "without a trainer visit: spells and cost per level",
       "competitors": "What's Training, Polestar",
       "notes": "[P01 part]. Needs a cited spell/rank/cost pack (rule 7)",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -344,7 +344,7 @@
       "details": "through all, or only watched, rares on the map, as a waypoint queue",
       "competitors": "RareScanner",
       "notes": "[R02]. Needs #6",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -362,7 +362,7 @@
       "details": "XP left per zone, the level you'd reach, chains about to go grey, abandon list (quests that never pay off)",
       "competitors": "Forever Route, Polestar",
       "notes": "[Q02 part]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -378,7 +378,7 @@
       "details": "Alt+click to save, owned marker, tooltip tag; full loot table of any boss",
       "competitors": "AtlasLoot",
       "notes": "[D02, G04]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -394,7 +394,7 @@
       "details": "(click to add, edit, minimap)",
       "competitors": "HandyNotes",
       "notes": "[M02]",
-      "status": "not_started",
+      "status": "implemented_ci_pending",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -1535,5 +1535,26 @@
       "Exploration names unavailable from overlay data, reports positions; Faire dates sourced from current community/Forever guides, realm hours unverified",
       "Auction mail category inference depends on English sender/subject, free-slot reserve only for attachment pickup"
     ]
+  },
+  "batch4": {
+    "range": [
+      15,
+      24
+    ],
+    "status": "implemented_ci_pending",
+    "source_commit": "0250cb319f0284b46ced20007d4e74da40e4e1ca",
+    "last_full_test_run": "https://github.com/LackOfSkillz/OAR/actions/runs/44304072219",
+    "last_full_test_result": "666 passed, 8 failed, 0 syntax errors before fixture and tooltip fixes",
+    "runner_issue": "Subsequent corrected run https://github.com/LackOfSkillz/OAR/actions/runs/44304709374 was cancelled before jobs; older run https://github.com/LackOfSkillz/OAR/actions/runs/44304695006 remained in_progress without steps",
+    "requires": "rerun Windows GitHub Actions and fix any remaining failures, then in-game tests; do not count as tested-green",
+    "major_outstanding": {
+      "16": "read-only hints, not full Auto Shot swing calibration or dead zone",
+      "17": "nameplate marker but not full threat list",
+      "18": "observed spawn predictions but no complete graveyard hover UI",
+      "19": "only boss objectives and manual quest links, full dungeon coverage missing",
+      "20": "training observed from old trainer API only; full independent sourced spell/cost dataset missing",
+      "22": "known-quest XP band only, abandon-list and multi-level projection absent",
+      "23": "wishlist and boss loot dependent on private dungeon pack; loot data coverage not assured"
+    }
   }
 }
