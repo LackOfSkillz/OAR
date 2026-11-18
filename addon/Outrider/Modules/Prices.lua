@@ -181,6 +181,21 @@ function M.Money(copper)
   return string.format("%dc", c)
 end
 
+-- Money with the game's coin icons (like Auctionator: "12 [g] 5 [s]"), for
+-- on-screen UI; M.Money stays plain text for chat and logs.
+local COIN = "|TInterface\\MoneyFrame\\UI-%sIcon:0:0:1:0|t"
+function M.Coins(copper)
+  copper = math.floor(tonumber(copper) or 0)
+  local neg = copper < 0
+  if neg then copper = -copper end
+  local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
+  local out = {}
+  if g > 0 then out[#out + 1] = "|cffffd100" .. g .. "|r" .. COIN:format("Gold") end
+  if s > 0 or g > 0 then out[#out + 1] = s .. COIN:format("Silver") end
+  if g == 0 then out[#out + 1] = c .. COIN:format("Copper") end
+  return (neg and "-" or "") .. table.concat(out, " ")
+end
+
 function M:TooltipLines(itemID)
   local ah, source, vendor = self:Get(itemID)
   if not ah and not vendor then return {} end

@@ -253,3 +253,51 @@ Each page's redesign uses the system above. Bug numbers refer to section 1.
 5. **Re-run `/ride tour`** after each batch and compare before and after.
 
 **Timing:** GPT is still editing modules and `UI/Pages.lua`. Per Gary's rule, the page work waits until GPT has finished. Bugs B3/B4 and the system layer (S1–S6) touch files GPT hasn't changed recently, but check `git log` before starting.
+
+---
+
+## 5. Ideas from the leading addons' screenshots (Gary's links, 2026-11-18)
+
+From the CurseForge galleries of RareScanner, Questie, Auctionator and Leatrix Plus. Each idea notes where it goes in Outrider.
+
+### RareScanner
+- **The alert shows the rare itself.** A 3D model (PlayerModel / ModelScene) sits above a slim name bar that says "Click to target NPC", with a close button.
+  - **Where:** RareAlerts toast. The model fails soft to the portrait or icon if the client won't draw it.
+- **Loot strip.** A row of small item icons under the alert, each with its real item tooltip on hover.
+  - **Where:** RareAlerts and the rare's map tooltip. This needs a cited drop list (rule 7).
+- **Map tooltip with a loot grid** and "Seen before: 16 days 22:10:35".
+  - **Where:** the rare pin tooltip, using `ns.Ago` and the loot grid.
+- **Pin colour by state.** Skull and chest variants: red = alive, original = unknown, pink = already done/looted.
+  - **Where:** rare pins coloured by Sightings state (alive / dead / unknown). This fits the pin art in batch 4c.
+
+### Questie
+- **Map tooltip grouped by quest giver.** The NPC's name in green, then each quest as "[15] Dry Times" with the level coloured by difficulty, and the state right-aligned ("Available", "Complete").
+  - **Where:** quest-giver and turn-in pin tooltips.
+- **Journey window: two panes.** A dated "recent history" list on top. Below, a timeline list (Reached level 9, Quest completed …) beside a detail pane, plus "Add adventure note".
+  - **Where:** our quest history (QuestInfo) becomes a "Journal" page with this layout. Map notes can double as adventure notes.
+- **Tabs inside one window** (My Journey / Quests by Zone / Advanced Search).
+  - **Where:** pages with sub-views (Quests: Log / By zone / History; Settings sub-nav).
+
+### Auctionator
+- **Coin icons for money.** Done 2026-11-18: `ns.Prices.Coins` on the info bar and in stat strips.
+- **Price tables.** Right-aligned tabular columns with coin icons, the cheapest row highlighted gold, a "You?" column for your own auctions.
+  - **Where:** Money, Crafting and the auction helper tables.
+- **Bag items as an icon grid grouped by category** (Consumable 11, Glyph 4, Trade Goods 15), with counts on the icons.
+  - **Where:** the bag window (Tier 3 #34) and the "sell" review list.
+- **Two-column tooltip block.** "Vendor" and "Auction" labels in gold on the left, coin amounts right-aligned.
+  - **Where:** Prices' tooltip lines. Currently "AH 25s | vendor 5c" on one line.
+
+### Leatrix Plus
+- **Settings search across every page.** Results grouped by section, each showing On or Off in green, right-aligned. Click a result to jump to it.
+  - **Where:** our settings search (GPT's #15) gets grouped results with live On/Off.
+- **Info cards.** Press a key over anything to see a big card: a 3D model for characters, with a Wowhead link.
+  - **Where:** PlayerInfo / BeastInfo. A larger card on a key, with the model.
+- **Hero style.** A gold glow on near-black, one big headline and one line of text. It matches the direction we've taken: the hero banners and stat strips.
+
+### Build order for these
+1. Questie-style **grouped quest-giver tooltips** (small, and seen all day).
+2. **Two-column price tooltip** with coin icons.
+3. **Rare toast with a 3D model**, plus rare **pin colour by state**.
+4. A **Journal page** with Questie's two-pane history.
+5. **Grouped settings-search results** with On/Off.
+6. **Loot strips** and **price tables** (these need data: drop sources, scans).

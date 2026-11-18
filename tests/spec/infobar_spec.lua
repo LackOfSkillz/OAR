@@ -15,7 +15,7 @@ T.describe("info bar", function()
     game.durability = { [1] = { 10, 100 }, [5] = { 100, 100 } }
     game.xp, game.xpMax, game.rested = 500, 1000, 250
     game.latency = 87
-    T.contains(M:Text("gold"), "12g")
+    T.contains(M:Text("gold"), "UI-GoldIcon") T.contains(M:Text("gold"), "12")
     T.contains(M:Text("dura"), "%")
     T.contains(M:Text("xp"), "XP 50%")
     T.contains(M:Text("xp"), "+25% rested")

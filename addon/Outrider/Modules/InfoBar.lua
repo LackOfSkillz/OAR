@@ -24,6 +24,7 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 -- ------------------------------------------------------------------ values
 function M.GoldText(copper)
   copper = tonumber(copper) or 0
+  if ns.Prices and ns.Prices.Coins then return ns.Prices.Coins(copper) end
   local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
   if g > 0 then return string.format("|cffffd100%dg|r %ds", g, s) end
   if s > 0 then return string.format("%ds %dc", s, c) end
