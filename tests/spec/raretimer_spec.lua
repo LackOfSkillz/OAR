@@ -30,6 +30,6 @@ T.describe("rare timer", function()
     game:login()
     ns.RareTimer:Tick()
     for _, l in ipairs(ns.Log:Tail(20)) do T.ok(not ns.Log:FormatLine(l):find("window soon", 1, true)) end
-    T.contains(ns.RareTimer:Activity(), "not supported")
+    T.contains(ns.RareTimer:Activity(), "no fixed timer") T.contains(ns.RareTimer:Activity(), "Nov 13")
   end)
 end)

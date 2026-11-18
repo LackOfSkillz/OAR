@@ -498,8 +498,9 @@ Hub:AddTab("modules", L.modules, function(p)
       end)
     row:SetPoint("TOPLEFT", 14, -36 - (i - 1) * 21)
     row:SetWidth(PANEL_W - 28)
-    row.label:SetWidth(210) row.label:SetJustifyH("LEFT") row.label:SetWordWrap(false)
-    row.note:SetWidth(PANEL_W - 240) row.note:SetJustifyH("LEFT") row.note:SetWordWrap(false)
+    -- names get room to show in full (they were cut mid-word at 210 px)
+    row.label:SetWidth(330) row.label:SetJustifyH("LEFT") row.label:SetWordWrap(false)
+    row.note:SetWidth(PANEL_W - 370) row.note:SetJustifyH("LEFT") row.note:SetWordWrap(false)
     row.head = UI.Text(row, "normal", "accent")
     row.head:SetPoint("LEFT", 0, 0)
     row:SetScript("OnEnter", function(self)
@@ -515,7 +516,9 @@ Hub:AddTab("modules", L.modules, function(p)
   p:EnableMouseWheel(true)
   p:SetScript("OnMouseWheel", function(self, delta) self.offset = (self.offset or 0) - delta * 3 self:Refresh() end)
   function p:Refresh()
-    local lines, last = {}, nil
+    -- one block per group, each group once (the tour showed "Rares and class
+    -- tools" twice because modules came in load order), with "n of m on"
+    local lines, byGroup, order = {}, {}, {}
     local myClass = ns.PlayerClass()
     for _, s in ipairs(ns.Modules:Status()) do
       local mod = ns.Modules:Get(s.name)
@@ -523,9 +526,18 @@ Hub:AddTab("modules", L.modules, function(p)
       if classes and not classes[myClass] then mod = nil end -- other classes' modules stay out of sight
       local group = mod and (GROUPS[mod.spec.phase or ""] or "Other")
       if group then
-        if group ~= last then lines[#lines + 1] = { header = group } last = group end
-        lines[#lines + 1] = s
+        if not byGroup[group] then byGroup[group] = {} order[#order + 1] = group end
+        table.insert(byGroup[group], s)
       end
+    end
+    local rank = { Core = 1, ["Rares and class tools"] = 2, ["Maps and places"] = 3, Macros = 4,
+      ["Professions and gold"] = 5, Gear = 6, Interface = 7, ["Sharing and town"] = 8, Advisor = 9, Other = 10 }
+    table.sort(order, function(a, b) return (rank[a] or 99) < (rank[b] or 99) end)
+    for _, g in ipairs(order) do
+      local on = 0
+      for _, s in ipairs(byGroup[g]) do if s.enabled then on = on + 1 end end
+      lines[#lines + 1] = { header = string.format("%s   |cff8f96a6%d of %d on|r", g, on, #byGroup[g]) }
+      for _, s in ipairs(byGroup[g]) do lines[#lines + 1] = s end
     end
     local status = lines
     self.offset = math.max(0, math.min(self.offset or 0, #status - #self.rows))

@@ -98,7 +98,13 @@ end
 function M:Activity()
   local lines = {}
   for npcID, t in pairs(ns.db.global.rareTimers) do
-    lines[#lines + 1] = self:Line(npcID) or (t.result and (tostring(t.name) .. " timer off: " .. t.result)) or nil
+    -- in words, not a status code (2026-11-18 tour): "Mystmane: no fixed
+    -- timer. The claimed 3-hour windows were tested and missed (Nov 13)."
+    local why = t.result and tostring(t.result):gsub("^not supported: ", ""):gsub("(%d%d%d%d)%-(%d%d)%-(%d%d)", function(y, mo, d)
+      local names = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }
+      return (names[tonumber(mo)] or mo) .. " " .. tonumber(d)
+    end)
+    lines[#lines + 1] = self:Line(npcID) or (why and string.format("%s: no fixed timer. The claimed windows were tested and %s.", tostring(t.name), why)) or nil
   end
   return #lines > 0 and table.concat(lines, "; ") or "no rare timers"
 end
