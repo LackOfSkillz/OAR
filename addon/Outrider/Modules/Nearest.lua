@@ -235,6 +235,11 @@ end
 -- Feign Death may emit death-like events while still alive. A false event
 -- must never contaminate graveyard learning, death history, or corpse routing.
 function M:ActualDeath()
+  -- Feign Death's spell ID is 5384. Treat positive detection as a veto,
+  -- even if a client reports UnitIsDead during the feign animation.
+  if C.Readable(C.Call("UnitIsFeignDeath", "player")) == true then return false end
+  local feign = C.Call("C_UnitAuras.GetPlayerAuraBySpellID", 5384)
+  if type(feign) == "table" and C.Readable(feign.spellId or feign.spellID) == 5384 then return false end
   local ghost = C.Readable(C.Call("UnitIsGhost", "player"))
   if ghost == true then return true end
   local dead = C.Readable(C.Call("UnitIsDeadOrGhost", "player"))
