@@ -19,9 +19,16 @@ if ($code -eq 0 -and -not $Filter) {
     foreach ($testFile in (Get-ChildItem -Path $testDir -Filter 'test_*.py' | Sort-Object Name)) {
       # unittest reports on stderr; run through cmd so Windows PowerShell does not turn that into errors
       $out = cmd /c "`"$($py.Source)`" -I `"$($testFile.FullName)`" 2>&1"
-      if ($LASTEXITCODE -ne 0) { $pyFailed = $true }
+      $testExit = $LASTEXITCODE
+      if ($testExit -ne 0) { $pyFailed = $true }
       Write-Host ("{0}: " -f $testFile.Name) -NoNewline
-      ($out | Select-Object -Last 3) | Out-Host
+      if ($testExit -ne 0) {
+        # A three-line tail hides Python's failed assertion and traceback.
+        # Emit full output only on failures for actionable CI diagnostics.
+        $out | Out-Host
+      } else {
+        ($out | Select-Object -Last 3) | Out-Host
+      }
     }
     if ($pyFailed) { Write-Host "Companion tests failed." -ForegroundColor Red; $code = 1 }
     else { Write-Host "companion tests passed" }
