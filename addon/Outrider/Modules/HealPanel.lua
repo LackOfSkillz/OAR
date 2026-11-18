@@ -27,12 +27,12 @@ local M = ns:NewModule("HealPanel", {
   order = 66,
   classes = { PRIEST = true, HUNTER = true, DRUID = true, PALADIN = true, SHAMAN = true },
   yieldsTo = { "HealBot", "VuhDo", "Grid2", "Clique", "NeoHeal", "Healium", "Cell" },
-  defaults = { show = "group", assigned = {}, withSelf = true, pos = {} },
+  defaults = { show = "group", assigned = {}, withSelf = true, pos = {}, bindings = {} },
 })
 ns.HealPanel = M
 
-M.MAX = 10          -- bars (a party is 5; a raid shows assigned players, or the first 10)
-M.W, M.H, M.GAP = 150, 22, 2
+M.MAX = 40          -- 5 columns by 8 rows, created only outside combat
+M.W, M.H, M.GAP, M.COLS = 150, 22, 2, 5
 M.LOW = 0.5         -- red edge below half health (when readable)
 
 -- Clicks per class: { attribute suffix, label, spells (first known wins) }.
@@ -66,15 +66,46 @@ local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= n
 
 -- { { mod, button, label, spell } } for this character, known spells only.
 function M:Clicks()
-  local out = {}
+  local out, overrides = {}, self:Settings().bindings or {}
   for _, c in ipairs(M.CLICKS[ns.PlayerClass()] or {}) do
     local mod, button = "", c[1]
     if c[4] then mod, button = c[1], c[4] end
     for _, sp in ipairs(c[3]) do
-      if known(sp) then out[#out + 1] = { mod = mod, button = button, label = c[2], spell = sp } break end
+      if known(sp) then
+        if not overrides[mod .. button] then
+          out[#out + 1] = { mod = mod, button = button, label = c[2], spell = sp }
+        end
+        break
+      end
+    end
+  end
+  for key, spell in pairs(overrides) do
+    local mod, button = self:ParseBinding(key)
+    if mod and known(spell) then
+      out[#out + 1] = { mod = mod, button = button, label = key, spell = spell }
     end
   end
   return out
+end
+
+function M:ParseBinding(key)
+  if type(key) ~= "string" then return nil end
+  if key == "1" or key == "2" then return "", key end
+  local mod, button = key:match("^(shift%-)([12])$")
+  if not mod then mod, button = key:match("^(ctrl%-)([12])$") end
+  if not mod then mod, button = key:match("^(alt%-)([12])$") end
+  return mod, button
+end
+
+function M:SetBinding(key, spell)
+  local mod = self:ParseBinding(key)
+  if not mod then return false, "expected 1, 2, shift-1, ctrl-2 or alt-1" end
+  if spell ~= nil and (type(spell) ~= "string" or not known(spell)) then
+    return false, "spell not known by this character"
+  end
+  self:Settings().bindings[key] = spell
+  self:Layout("binding changed")
+  return true
 end
 
 local function nameOf(unit)
@@ -148,7 +179,7 @@ function M:Panel()
   if self.panel then return self.panel end
   local s = self:Settings()
   local f = CreateFrame("Frame", "Outrider_HealPanel", UIParent)
-  f:SetSize(M.W, M.H)
+  f:SetSize(M.W * M.COLS + (M.COLS - 1) * M.GAP, M.H)
   f:SetClampedToScreen(true)
   f:SetMovable(true)
   f:EnableMouse(true)
@@ -233,7 +264,10 @@ function M:Layout(why)
         local u = units[i]
         b.unit = u
         b:SetAttribute("unit", u)
-        for _, k in ipairs({ "type1", "spell1", "type2", "spell2", "shift-type1", "shift-spell1", "shift-type2", "shift-spell2" }) do
+        for _, k in ipairs({ "type1", "spell1", "type2", "spell2",
+          "shift-type1", "shift-spell1", "shift-type2", "shift-spell2",
+          "ctrl-type1", "ctrl-spell1", "ctrl-type2", "ctrl-spell2",
+          "alt-type1", "alt-spell1", "alt-type2", "alt-spell2" }) do
           b:SetAttribute(k, nil)
         end
         if u then
@@ -242,14 +276,15 @@ function M:Layout(why)
             b:SetAttribute(c.mod .. "spell" .. c.button, c.spell)
           end
           b:ClearAllPoints()
-          b:SetPoint("TOPLEFT", f, "TOPLEFT", 0, -(i - 1) * (M.H + M.GAP))
+          local col, row = (i - 1) % M.COLS, math.floor((i - 1) / M.COLS)
+          b:SetPoint("TOPLEFT", f, "TOPLEFT", col * (M.W + M.GAP), -row * (M.H + M.GAP))
           b:Show()
         else
           b:Hide()
         end
       end
     end
-    f:SetHeight(math.max(M.H, #units * (M.H + M.GAP)))
+    f:SetHeight(math.max(M.H, math.ceil(#units / M.COLS) * (M.H + M.GAP)))
     f:SetShown(#units > 0)
     f.head:SetText(focused and "Assigned" or "Group")
     self.shown = units
@@ -344,10 +379,38 @@ function M:Activity()
     local n = 0 for _ in pairs(self:Assigned()) do n = n + 1 end return n end)())
 end
 
+function M:ShowEditor()
+  if not self.editor then
+    local f = ns.UI:Window("Outrider_HealEditor", "Heal bindings", 480, 320, ns.db.char.healEditorPos or {})
+    f.list = ns.UI:ScrollList(f.content, {
+      rows = 8, rowHeight = 27,
+      render = function(row, entry) row.text:SetText(entry.label .. ": " .. entry.spell) end,
+    })
+    f.list:SetPoint("TOPLEFT", 5, -8)
+    f.list:SetPoint("RIGHT", -5, 0)
+    f:Hide()
+    self.editor = f
+  end
+  local rows = self:Clicks()
+  table.sort(rows, function(a,b) return a.label < b.label end)
+  self.editor.list:SetItems(rows)
+  self.editor:SetShown(not self.editor:IsShown())
+end
+
 ns.AddCommand("heal", "[assign <name>|unassign <name>|clear|always|group|off|self on|off]  click-to-heal bars", function(arg)
   local cmd, rest = (arg or ""):match("^(%S*)%s*(.-)%s*$")
   local s = M:Settings()
-  if cmd == "assign" or cmd == "unassign" then
+  if cmd == "bind" then
+    local button, spell = rest:match("^(%S+)%s+(.+)$")
+    local ok, reason = M:SetBinding(button, spell)
+    ns.Print(ok and ("heal binding " .. button .. ": " .. spell) or tostring(reason))
+    return
+  elseif cmd == "unbind" then
+    local ok, reason = M:SetBinding(rest, nil)
+    ns.Print(ok and ("heal binding " .. rest .. " reset") or tostring(reason))
+    return
+  elseif cmd == "editor" then M:ShowEditor() return
+  elseif cmd == "assign" or cmd == "unassign" then
     if rest == "" and cmd == "assign" then rest = nameOf("target") or "" end
     if not M:Assign(rest, cmd == "assign") then ns.Print("Who? /ride heal assign <name> (or target them)") return end
   elseif cmd == "clear" then M:ClearAssigned()
