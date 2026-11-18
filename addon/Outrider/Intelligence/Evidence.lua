@@ -28,13 +28,13 @@ local function plain(v, depth)
   return out
 end
 function E:Register(id, capability)
-  if type(id) ~= "string" or not id:match("^[%w_%-]+$") or #id > 48 then return false end
+  if ns.Compat.IsSecret(id) or type(id) ~= "string" or not id:match("^[%w_%-]+$") or #id > 48 then return false end
   self.sources[id] = { status = capability or "ready", updated = time() }
   return true
 end
 function E:Record(source, key, category, value, label, ttl)
   if type(source) ~= "string" or not self.sources[source] then return nil end
-  if type(key) ~= "string" or #key < 1 or #key > 120 or key:find("[%c|]") or not key:find("%S") then return nil end
+  if ns.Compat.IsSecret(key) or type(key) ~= "string" or #key < 1 or #key > 120 or key:find("[%c|]") or not key:find("%S") then return nil end
   if not self.TTL[category] then return nil end
   if label ~= "observed" and label ~= "verified" and label ~= "community" and label ~= "inferred" then return nil end
   local safe = plain(value, 0)

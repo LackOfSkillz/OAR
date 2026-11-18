@@ -3,10 +3,16 @@ local _, ns = ...
 local O = { SCHEMA = 3 }
 ns.IntelOpportunity = O
 local function finite(n) return type(n) == "number" and n == n and n >= 0 and n < math.huge end
+local function plain(s, max)
+  if ns.Compat.IsSecret(s) or type(s) ~= "string" then return nil end
+  s = s:gsub("|", ""):gsub("[%z\1-\31]", " ")
+  return s:sub(1, max)
+end
 function O:FromWhatNow(candidate, profile, evidence)
-  if type(candidate) ~= "table" or type(candidate.key) ~= "string" or
+  if type(candidate) ~= "table" or ns.Compat.IsSecret(candidate.key) or
+    type(candidate.key) ~= "string" or
     #candidate.key > 120 or candidate.key:find("[%c|]") or not candidate.key:find("%S") or
-    type(candidate.kind) ~= "string" or type(candidate.title) ~= "string" or #candidate.title > 180 or
+    type(candidate.kind) ~= "string" or not plain(candidate.title, 180) or #candidate.title > 180 or
     not finite(candidate.benefit) or candidate.benefit > 1 or
     not finite(candidate.confidence or 1) or (candidate.confidence or 1) > 1 then return nil end
   if not ns.ClassProfiles.Allows(profile.class, profile.role, candidate.roleHint) then return nil end
@@ -14,8 +20,9 @@ function O:FromWhatNow(candidate, profile, evidence)
   if label ~= "observed" and label ~= "verified" and label ~= "community" and label ~= "inferred" then return nil end
   if not evidence then return nil end
   return { schema = O.SCHEMA, candidateId = candidate.key, kind = candidate.kind,
-    title = candidate.title, why = type(candidate.why) == "string" and candidate.why:sub(1, 300) or "Suggested from available evidence",
-    where = type(candidate.where) == "string" and candidate.where:sub(1, 120) or "Unknown",
+    title = plain(candidate.title, 180),
+    why = plain(candidate.why, 300) or "Suggested from available evidence",
+    where = plain(candidate.where, 120) or "Unknown",
     score = ns.WhatNow.Score(candidate, ns.WhatNow:Goal()),
     evidenceId = evidence.id, label = label, observedAt = evidence.observedAt,
     expiresAt = evidence.expiresAt, role = profile.role, source = "WhatNow",

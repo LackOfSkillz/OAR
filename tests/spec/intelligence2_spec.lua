@@ -92,6 +92,30 @@ T.describe("intelligence 2.0 evidence", function()
   end)
 end)
 T.describe("intelligence 2.0 native radar", function()
+  T.it("offers Why, Later, Useful, Wrong, Done, Dismiss and Mute controls", function()
+    local game, ns = session()
+    local R = ns.OpportunityRadar
+    ns.Modules:SetEnabled("OpportunityRadar", true)
+    local original = ns.WhatNow.Candidates
+    ns.WhatNow.Candidates = function()
+      return {{ key="quest:First Step", kind="quest", title="Quest |cff00ff00One|r",
+        benefit=1, confidence=1, label="observed", go=function() return true end }}, {}
+    end
+    R:Open()
+    local row = R.window.rows[1]
+    T.ok(row.why and row.go and row.later and row.useful and row.wrong)
+    T.ok(row.done and row.dismiss and row.mute)
+    T.eq(row.card.title:find("|", 1, true), nil)
+    row.useful:Click()
+    T.eq(ns.db.char.radarFeedback["quest:First Step"].verdict, "useful")
+    row.mute:Click()
+    T.ok(R:Settings().muted.quest)
+    T.eq(#R:Cards(), 0)
+    R:ClearFeedback()
+    T.eq(R:FeedbackCount(), 0)
+    ns.WhatNow.Candidates = original
+    T.eq(#ns.Errors.list, 0)
+  end)
   T.it("coalesces bursts and unregisters on disable", function()
     local game, ns = session("WARRIOR")
     local R = ns.OpportunityRadar

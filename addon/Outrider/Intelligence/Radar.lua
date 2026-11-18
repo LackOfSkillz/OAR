@@ -17,7 +17,7 @@ local function visible(c, now)
   return not (f and f.untilAt and now < f.untilAt)
 end
 function M:Feedback(card, verdict)
-  if not (card and type(card.candidateId) == "string") then return false end
+  if not (card and type(card.candidateId) == "string" and O:Valid(card)) then return false end
   if verdict ~= "useful" and verdict ~= "wrong" and verdict ~= "done" and verdict ~= "snooze" and verdict ~= "dismiss" then return false end
   local store, now = state(), time()
   if not store[card.candidateId] and self:FeedbackCount() >= 80 then
@@ -32,7 +32,24 @@ function M:Feedback(card, verdict)
       or verdict == "snooze" and (now + 900) or nil }
   -- Existing WhatNow skip is retained for wrong/dismiss outcomes.
   if verdict == "wrong" or verdict == "dismiss" then ns.WhatNow:Skip({key = card.candidateId}) end
+  self.dirty = true
   return true
+end
+function M:Mute(kind, on)
+  if type(kind) ~= "string" or #kind < 1 or #kind > 40 or kind:find("[%c|]") then return false end
+  self:Settings().muted[kind] = on and true or nil
+  self.dirty = true
+  return true
+end
+function M:ClearFeedback()
+  ns.db.char.radarFeedback = {}
+  self.dirty = true
+  -- Keep WhatNow's independently authored skip history.
+end
+function M:GoCard(card)
+  if not self.enabled or ns.Compat.InCombat() or not O:Valid(card) or
+      not (card._candidate and card._candidate.go) then return false end
+  return ns.WhatNow:Go(card._candidate)
 end
 function M:FeedbackCount()
   local n = 0
@@ -111,20 +128,33 @@ function M:Open()
       row.label:SetPoint("TOPLEFT", 6, -8 - (i - 1) * 80)
       row.label:SetWidth(430)
       row.label:SetJustifyH("LEFT")
-      row.why = ns.UI:Button(p.content, "Why?", 65, function()
+      local x = 6
+      local function control(name, label, w, cb)
+        local b = ns.UI:Button(p.content, label, w, cb)
+        b:SetPoint("TOPLEFT", x, -35 - (i - 1) * 80)
+        x = x + w + 5
+        row[name] = b
+      end
+      local function verdict(action)
+        if row.card then
+          M:Feedback(row.card, action)
+          M:Render()
+        end
+      end
+      control("why", "Why?", 48, function()
         local c = row.card
-        if c then ns.Print("%s — %s [%s]", c.title, c.why, c.label) end
+        if c then ns.Print("%s: %s [%s, %s]", c.title, c.why, c.label,
+          c.evidenceId or "no evidence") end
       end)
-      row.why:SetPoint("TOPLEFT", 6, -35 - (i - 1) * 80)
-      row.go = ns.UI:Button(p.content, "Go", 55, function()
-        local c = row.card
-        if c and O:Valid(c) then ns.WhatNow:Go(c._candidate) end
+      control("go", "Go", 38, function() M:GoCard(row.card) end)
+      control("later", "Later", 48, function() verdict("snooze") end)
+      control("useful", "Useful", 53, function() verdict("useful") end)
+      control("wrong", "Wrong", 51, function() verdict("wrong") end)
+      control("done", "Done", 45, function() verdict("done") end)
+      control("dismiss", "Dismiss", 62, function() verdict("dismiss") end)
+      control("mute", "Mute", 50, function()
+        if row.card then M:Mute(row.card.kind, true) M:Render() end
       end)
-      row.go:SetPoint("LEFT", row.why, "RIGHT", 8, 0)
-      row.later = ns.UI:Button(p.content, "Later", 62, function()
-        if row.card then M:Feedback(row.card, "snooze") M:Refresh() M:Render() end
-      end)
-      row.later:SetPoint("LEFT", row.go, "RIGHT", 8, 0)
       p.rows[i] = row
     end
     self.window = p
@@ -143,6 +173,11 @@ function M:Render()
     row.why:SetShown(c ~= nil)
     row.go:SetShown(c ~= nil and c._candidate.go ~= nil)
     row.later:SetShown(c ~= nil)
+    row.useful:SetShown(c ~= nil)
+    row.wrong:SetShown(c ~= nil)
+    row.done:SetShown(c ~= nil)
+    row.dismiss:SetShown(c ~= nil)
+    row.mute:SetShown(c ~= nil)
   end
 end
 function M:OnEnable()
@@ -150,7 +185,8 @@ function M:OnEnable()
   self.dirty = true
   -- Event registration is strictly opt-in; the disabled module uses no timers.
   for name, category in pairs(self.EVENT_CATEGORY) do
-    self:On(name, function(mod) mod:Signal(category) end)
+    local categoryForEvent = category
+    self:On(name, function(mod) mod:Signal(categoryForEvent) end)
   end
   self:On("OTR_INTELLIGENCE_PROFILE_CHANGED", function(mod) mod:Signal("talent") end)
   self:On("PLAYER_REGEN_ENABLED", function(mod)
