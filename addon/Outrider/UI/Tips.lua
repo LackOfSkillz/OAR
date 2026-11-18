@@ -203,6 +203,7 @@ local controls = {
   ["Add map note"] = "Hover a point on the world map, type a note and click to save it there.",
   ["Find next"] = "Jumps to the next setting whose name matches what you typed.",
   ["Arrow to the turn-in when a quest is done"] = "When the last objective of a quest is done, the arrow moves to the NPC you hand it in to. A waypoint you set yourself is never replaced.",
+  ["Waypoint"] = "Sets the arrow on the spot this was last seen.",
   ["Make macro"] = "Writes a tame macro for the beast you typed: press to send the pet, Shift to dismiss, again to tame.",
   ["Show the pet panel"] = "The small panel with your pet's health, XP, focus and the Feed button.",
   ["Show the heal bars in a group"] = "Click-to-heal bars for your group appear when you join one.",

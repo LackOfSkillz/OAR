@@ -1028,7 +1028,7 @@ ns.Hub:AddTab("settings", "Settings", function(p)
         rows = 8, rowHeight = 22,
         render = function(r, m)
           local state = m.on == true and "  |cff66d980ON|r" or m.on == false and "  |cff8f96a6OFF|r" or ""
-          r.text:SetText(string.format("|cff8f96a6%s ›|r  %s%s", m.section ~= "" and m.section or "Settings", m.label, state))
+          r.text:SetText(string.format("|cff8f96a6%s:|r  %s%s", m.section ~= "" and m.section or "Settings", m.label, state))
         end,
         onClick = function(m) p.form:JumpTo(m.y) p.searchResults:Hide() end,
       })
