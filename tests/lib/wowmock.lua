@@ -541,7 +541,7 @@ function M.new(opts)
   base.GetInboxHeaderInfo = function(i)
     local m = game.inbox[i]
     local n = 0 for _ in pairs(m.items or {}) do n = n + 1 end
-    return nil, nil, "Sender", "Subject", m.money or 0, m.cod or 0, m.days or 30, n
+    return nil, nil, m.sender or "Sender", m.subject or "Subject", m.money or 0, m.cod or 0, m.days or 30, n
   end
   base.GetInboxItemLink = function(i, a) local id = game.inbox[i].items and game.inbox[i].items[a] return id and ("|Hitem:" .. id .. "::|h[x]|h") end
   base.TakeInboxMoney = function(i) game.money = (game.money or player.money) + game.inbox[i].money game.inbox[i].money = 0 end
