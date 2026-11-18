@@ -13,7 +13,7 @@ T.describe("intelligence 2.0 Deal Desk", function()
     local game, ns = session()
     local D = ns.DealDesk
     T.no(D.enabled)
-    T.eq(D:ConsiderLot({itemID=2504},{now=time()}), nil)
+    T.eq(D:ConsiderLot({itemID=2504},{now=game.now}), nil)
     ns.Modules:SetEnabled("DealDesk", true)
     T.eq(D:ConsiderLot({},{}), nil)
     T.eq(#D:Rows(), 0)
