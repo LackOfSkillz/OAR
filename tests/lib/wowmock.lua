@@ -795,6 +795,10 @@ function M.new(opts)
   base.UnitPowerMax = function(unit) return u(unit) and u(unit).focusMax end
   base.GetPetExperience = function() local p = u("pet") if p then return p.xp or 0, p.xpMax or 0 end return 0, 0 end
   base.HasPetUI = function() return u("pet") ~= nil end
+  base.GetPetActionInfo = function(i)
+    local a = game.petActions and game.petActions[i]
+    if a then return a.name, nil, a.token or false, nil, a.allowed ~= false, a.auto or false end
+  end
   base.C_UnitAuras = { GetAuraDataByIndex = function(unit, i)
     local a = u(unit) and u(unit).auras and u(unit).auras[i]
     if a then return { name = a.name, spellId = a.spellId } end
