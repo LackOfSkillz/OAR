@@ -1,0 +1,26 @@
+name: Outrider test gates
+
+on:
+  push:
+    branches: [main, p1-foundation]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  addon-and-companion-tests:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Lua 5.1 runtime binding
+        run: python -m pip install --disable-pip-version-check lupa
+        shell: pwsh
+      - name: Run full Lua and Python suite
+        shell: pwsh
+        run: ./tools/test.ps1 -RequirePython
