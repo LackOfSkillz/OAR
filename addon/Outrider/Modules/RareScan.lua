@@ -190,6 +190,51 @@ function M:Check(unit, how)
   return info
 end
 
+-- DEEP-21: rare-route planner from the *already visible map pin set*.
+-- No invented spawns; every stop comes from a rare pin in the active map.
+function M:Route(mapID, watchedOnly)
+  if not (mapID and ns.MapPins and ns.Waypoints) then return {}, "no current map" end
+  local s = ns.Waypoints:Settings()
+  local queue = s.queue or {}
+  local capacity = math.max(0, (ns.Waypoints.QUEUE_MAX or 30) - #queue)
+  if capacity == 0 then return {}, "waypoint queue full" end
+  local list, seen = {}, {}
+  for _, p in ipairs(ns.MapPins:BuildPins(mapID)) do
+    local isRare = p.kind == "rare" and type(p.x) == "number" and type(p.y) == "number"
+    if isRare and (not watchedOnly or self:IsWatched(p.npcID, p.name)) then
+      local key = string.format("%d:%d", math.floor(p.x * 10000 + 0.5), math.floor(p.y * 10000 + 0.5))
+      if not seen[key] then
+        seen[key] = true
+        list[#list + 1] = p
+      end
+    end
+  end
+  local _, x, y = C.PlayerPosition("player")
+  x, y = x or 0.5, y or 0.5
+  local result = {}
+  while #list > 0 and #result < capacity do
+    local best, bestD
+    for i, p in ipairs(list) do
+      local d = (p.x - x) ^ 2 + (p.y - y) ^ 2
+      if not bestD or d < bestD then best, bestD = i, d end
+    end
+    local p = table.remove(list, best)
+    local ok = ns.Waypoints:QueueAdd(mapID, p.x, p.y, p.name)
+    if not ok then break end
+    result[#result + 1] = p
+    x, y = p.x, p.y
+  end
+  return result
+end
+
+ns.AddCommand("rareroute", "rareroute all|watched  queue nearest known rare spawns on this map", function(arg)
+  local watched = tostring(arg or ""):lower() == "watched"
+  local mapID = C.PlayerPosition("player")
+  local list, why = M:Route(mapID, watched)
+  ns.Print("rare route: %d known spawn points queued%s", #list, why and (" (" .. why .. ")") or "")
+  if #list > 0 then ns.Print("use /ride way start to begin, /ride way next to skip") end
+end)
+
 ns.AddCommand("watch", "<name or npcID>  alert for this NPC on this character", function(arg)
   if not arg then ns.Print("usage: /ride watch <name or npcID>") return end
   local ok, k = M:Watch(arg, true)
