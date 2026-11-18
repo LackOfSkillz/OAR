@@ -157,11 +157,49 @@ function M:Activity()
   return M.REASON_TEXT[why] or tostring(why)
 end
 
+-- Which of the three steps you're on (premium rebuild 2026-11-18): 1 ask,
+-- 2 copy the snapshot to your AI, 3 paste its advice. done = how many are done.
+function M:Step()
+  local items, _, answer = self:Items()
+  if answer or #items > 0 then return 3, 3 end
+  local asked = ns.Snapshot and ns.Snapshot.askedThisSession or ns.db.char.askPending
+  if asked then return 3, 2 end
+  return 1, 0
+end
+
 ns.Hub:AddTab("advisor", "Advisor", function(p)
+  -- the three steps as a strip of numbered tiles
+  p.steps = {}
+  local STEPS = { { "Ask", "Type a question, then Ask" }, { "Copy", "Copy the code into your AI" }, { "Paste", "Paste its advice back" } }
+  for i, st in ipairs(STEPS) do
+    local t = CreateFrame("Frame", nil, p, ns.Theme:BackdropTemplate())
+    t:SetHeight(44)
+    t.num = UI.Display(t, "page", "goldText")
+    t.num:SetPoint("LEFT", 12, 0)
+    t.num:SetText(tostring(i))
+    t.title = UI.Text(t, "large", "text")
+    t.title:SetPoint("TOPLEFT", 44, -7)
+    t.title:SetText(st[1])
+    t.hint = UI.Text(t, "small", "muted")
+    t.hint:SetPoint("TOPLEFT", t.title, "BOTTOMLEFT", 0, -2)
+    t.hint:SetText(st[2])
+    p.steps[i] = t
+  end
+  local function placeSteps()
+    local w = (p:GetWidth() or 900) - 4
+    local tw = math.floor((w - 20) / 3)
+    for i, t in ipairs(p.steps) do
+      t:ClearAllPoints()
+      t:SetPoint("TOPLEFT", (i - 1) * (tw + 10), 0)
+      t:SetWidth(tw)
+    end
+  end
+  placeSteps()
+  if p.HookScript then p:HookScript("OnSizeChanged", placeSteps) end
   -- your question and time (AI03): they go into the snapshot, so the
   -- companion answers what you asked in game
   p.q = UI:SearchBox(p, 360, "Your question, e.g. what should I do next?")
-  p.q:SetPoint("TOPLEFT", 0, 0)
+  p.q:SetPoint("TOPLEFT", 0, -56)
   p.q:SetText(ns.db.char.askQuestion or "")
   p.q:HookScript("OnTextChanged", function(box) ns.db.char.askQuestion = (box:GetText() or ""):sub(1, 200) end)
   p.mins = UI:SearchBox(p, 70, "minutes")
@@ -175,7 +213,8 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   -- the answer (schema 2): headline, summary and what it couldn't check
   p.answer = UI:Card(p, true)
   p.answer:SetPoint("TOPLEFT", p.q, "BOTTOMLEFT", 0, -10)
-  p.answer:SetSize(560, 124)
+  p.answer:SetHeight(124)
+  p.answer:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   p.answer.headline = UI.Display(p.answer, "card", "text")
   p.answer.headline:SetPoint("TOPLEFT", 12, -10)
   p.answer.headline:SetPoint("RIGHT", p.answer, "RIGHT", -12, 0)
@@ -233,6 +272,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   p.ask:SetPoint("LEFT", p.paste, "RIGHT", 8, 0)
   -- feedback on the card you last clicked (AI03-05), kept on this PC
   local prev = p.ask
+  p.feedback = {}
   for _, f in ipairs(M.FEEDBACK) do
     local b = UI:Button(p, f[2], 96, function()
       local ok, msg = M:Feedback(p.selected, f[1])
@@ -240,9 +280,19 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
     end)
     b:SetPoint("LEFT", prev, "RIGHT", 8, 0)
     prev = b
+    p.feedback[#p.feedback + 1] = b
   end
   function p:Refresh()
     local items, why, answer = M:Items()
+    -- steps: done ones green, the current one gold, the rest quiet
+    local cur, done = M:Step()
+    for i, t in ipairs(self.steps) do
+      local state = i <= done and "good" or i == cur and "gold" or "border"
+      ns.Theme:ApplyPanel(t, i == cur and "goldSoft" or "raised", state)
+      t.num:SetTextColor(ns.Theme:Color(i <= done and "good" or i == cur and "goldText" or "muted"))
+    end
+    -- feedback only means something once there is advice to rate
+    for _, b in ipairs(self.feedback) do b:SetShown(#items > 0) end
     if answer then
       self.answer:Show()
       self.answer.headline:SetText(answer.headline or "")
