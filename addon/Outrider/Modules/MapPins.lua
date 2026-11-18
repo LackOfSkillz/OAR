@@ -126,6 +126,17 @@ function M.Paint(frame, pin)
     end
     return
   end
+  -- Focus dims *other quest pins*, not unrelated rares, vendors or gathering.
+  -- Both world-map and minimap pins use this single painting routine.
+  local focus = ns.QuestTracker and ns.QuestTracker.enabled and ns.QuestTracker:Settings().focus
+  local isQuest = pin.kind == "objective" or pin.kind == "turnin" or pin.kind == "qpath" or pin.kind == "quest_giver"
+  local isFocused = pin.questID == focus
+  if focus and isQuest and pin.quests then
+    for _, quest in ipairs(pin.quests) do
+      if quest.id == focus or quest.questID == focus then isFocused = true break end
+    end
+  end
+  frame:SetAlpha(focus and isQuest and not isFocused and 0.3 or 1)
   frame.ring:Show() frame.icon:Show()
   if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
   local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
