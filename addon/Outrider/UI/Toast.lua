@@ -61,6 +61,15 @@ local function build(self)
   f.icon = f:CreateTexture(nil, "ARTWORK")
   f.icon:SetSize(40, 40)
   f.icon:SetPoint("LEFT", 8, 0)
+  -- the creature itself, as a small 3D portrait, when the toast is about one
+  -- (gallery idea from RareScanner, 2026-11-18). Fails soft to the icon.
+  local okModel, model = pcall(CreateFrame, "PlayerModel", nil, f)
+  if okModel and model then
+    model:SetSize(44, 44)
+    model:SetPoint("CENTER", f.icon, "CENTER", 0, 0)
+    model:Hide()
+    f.model = model
+  end
   f.title = ns.UI.Display(f, "side", "text")
   f.title:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 8, -2)
   f.title:SetPoint("RIGHT", -8, 0)
@@ -148,6 +157,21 @@ function Toast:Show(opts)
   f.title:SetText(opts.title or "")
   local body = opts.text or ""
   f.icon:SetTexture(opts.icon or "Interface\\Icons\\INV_Misc_Map_01")
+  f.icon:Show()
+  if f.model then
+    f.model:Hide()
+    local shown = false
+    if opts.creature and f.model.SetCreature then
+      shown = pcall(f.model.SetCreature, f.model, opts.creature)
+    elseif opts.unit and f.model.SetUnit then
+      shown = pcall(f.model.SetUnit, f.model, opts.unit)
+    end
+    if shown then
+      if f.model.SetPortraitZoom then pcall(f.model.SetPortraitZoom, f.model, 0.85) end
+      f.model:Show()
+      f.icon:Hide()
+    end
+  end
   if opts.color and f.SetBackdropBorderColor then
     f:SetBackdropBorderColor(ns.Theme:Color(opts.color))
   elseif f.SetBackdropBorderColor then

@@ -79,6 +79,7 @@ function M:OnRareSeen(_, info)
   if s.toast and info.name then
     ns.Toast:Show({
       title = "Rare: " .. info.name,
+      creature = info.npcID,
       text = note and (self:Text(info) .. ". " .. note) or self:Text(info),
       color = "warn",
       sound = s.sound and ns.Toast:SoundID(s.soundName) or nil,

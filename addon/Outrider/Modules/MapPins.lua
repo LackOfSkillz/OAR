@@ -45,6 +45,7 @@ local GROUP = {
   rare = "rare", note = "service", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
   trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
 }
+M.RARE_STATE = { alive = { 1, 0.25, 0.25 }, open = { 1, 0.78, 0.3 }, dead = { 0.5, 0.5, 0.55 }, waiting = { 0.5, 0.5, 0.55 } }
 M.GROUP_COLOR = {
   merchant = { 1.00, 0.80, 0.25 }, trainer = { 0.35, 0.65, 1.00 }, service = { 0.40, 0.85, 0.45 }, rare = { 1.00, 0.30, 0.30 },
   quest = { 0.75, 0.45, 1.00 }, gather = { 0.80, 0.60, 0.35 }, guild = { 0.25, 1.00, 0.25 },
@@ -165,6 +166,7 @@ function M.Paint(frame, pin)
   if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
   local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
   frame.ring:SetColorTexture(c[1], c[2], c[3], (pin.questColor or pin.ringColor) and 0.95 or 0.55)
+  if pin.faded then frame:SetAlpha(0.55) end -- a dead rare fades; focus dimming above stays
   local ok = frame.icon:SetTexture(M.IconFor(pin))
   if ok == false then
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1) -- missing file: plain round dot
@@ -384,6 +386,26 @@ function M:BuildPins(mapID)
         end
       end
     end
+    -- Rare pins coloured by what Outrider knows on your layer (gallery idea from
+    -- RareScanner, 2026-11-18): red = alive now, amber = respawn window open,
+    -- grey and faded = dead or waiting; the tooltip says it in words.
+    local S, layer = ns.Sightings, ns.Layers and ns.Layers.current
+    if S and S.Window then
+      for _, pin in ipairs(out) do
+        if pin.kind == "rare" and pin.npcID then
+          local ok, w = pcall(S.Window, S, pin.npcID, layer)
+          local st = ok and type(w) == "table" and w.state or nil
+          -- "alive" sticks to the last sighting: red only if that was recent
+          if st == "alive" and not (w.last and w.last.t and time() - w.last.t < 900) then st = "stale" end
+          pin.ringColor = M.RARE_STATE[st or ""]
+          pin.faded = st == "dead" or st == "waiting"
+          if st and st ~= "unknown" and S.Describe then
+            local ok2, line = pcall(S.Describe, S, pin.npcID, layer)
+            if ok2 then pin.stateLine = line end
+          end
+        end
+      end
+    end
   end
   table.sort(out, function(a, b) return a.id < b.id end)
   return out
@@ -566,6 +588,7 @@ function M:AcquirePin(canvas)
       local first, second = ns.POI.Describe(self.data.poi or self.data, LABELS[self.data.kind] or self.data.kind)
       GameTooltip:AddLine(first, ns.Theme:Color("muted"))
       if second then GameTooltip:AddLine(second, ns.Theme:Color("text")) end
+      if self.data.stateLine then GameTooltip:AddLine(ns.TitleCase(self.data.stateLine:sub(1, 1)) .. self.data.stateLine:sub(2), ns.Theme:Color(self.data.ringColor and "goldText" or "muted")) end
       for _, l in ipairs(M.QuestLines(self.data)) do GameTooltip:AddLine(l) end
       if M.GATHER[self.data.kind] and ns.LootLog then
         local line, color = ns.LootLog:StateLine(self.data)
