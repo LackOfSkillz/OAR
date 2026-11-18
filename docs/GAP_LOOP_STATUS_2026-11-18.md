@@ -76,3 +76,22 @@ Never infer completeness from filename, documentation claims or mock tests alone
 | #24 | Editable character map notes via Map tab and `/ride note`, world/minimap pin integration; `Modules/MapTab.lua`, `Modules/MapPins.lua`, `Modules/Coords.lua` | Real cursor/map UI and saved-variables/reload verification |
 
 **Current count:** 14/38 rank items with earlier green automated tests, 10 new implementation slices with CI pending, 14 ranked builds not started. This is **not** 24/38 complete under the three acceptance gates.
+
+## Batch 5 — DEEP-25 through DEEP-34 (2026-11-18)
+
+**Status: IMPLEMENTED / CI PENDING, NOT LIVE-ACCEPTED.** Ten ranked slices now have code and `tests/spec/batch5_gap_spec.lua`. The initial full run passed **691/693** tests with **zero syntax errors**; it caught a missing auction-ID case and command-smoke samples. Corrections were committed after that run. Do not merge until final CI and in-game checks are green.
+
+| Rank | Implemented | Outstanding parity / safety gate |
+|---|---|---|
+| 25 | Read-only `FightMeter.lua`: post-combat `C_DamageMeter` sessions, DPS history, optional toast, `/ride fights` | Validate real combat sessions in Forever, pet-split disclosure; no live Details parity |
+| 26 | `BagFood.lua`: prefer and never lists, Well Fed hint, obsolete food review (`/ride foodrules`) | No delete-old-food button; safe user confirmation UI and official buff data needed |
+| 27 | `GearScore.lua`: editable named stat scales and validated Pawn subset importer (`/ride scale`) | Full per-spec visual editor, complete Pawn format parser and gear benchmark |
+| 28 | `AuctionHelper.lua`: sellable bags preview, selected owned-auction cancel click, audit of disappeared auctions (`/ride auctions`) | Never infer sale vs expiry vs cancellation; explicit event/ledger proof and native AH UI test |
+| 29 | `ProfExtras.lua`: learned/unknown recipes from observed trainer or user-supplied registry (`/ride recipesources`) | Cited recipe vendor/drop/quest/level range pack not available; incomplete independent coverage |
+| 30 | `Alts.lua`: cached reputation, known recipes and bag details (`/ride altdetail`) | Snapshots require logging in on each alt, not remote live inspection; recipe tooltip parity |
+| 31 | `GearSets.lua`: visual set window with item icons, missing bag item report and explicit equip click (`/ride gearwindow`) | Real-game secure equip behavior and icon availability |
+| 32 | `RareAlerts.lua`: 3D `PlayerModel` preview when a sourced display ID is known; falls back to icon; sourced loot listing (`/ride rareloot`) | No complete rare display-ID or drop dataset yet; real client fallback test |
+| 33 | `LevelRoutes.lua`: original multi-step system (quest, quest-linked kill, loot, place) with persistence, manual skip/undo and Horde 1–20 quest-data candidate seed (`/ride levelroute`) | A *curated full* Horde 1–20 in-zone route was not produced; available NPC-pack quests are incomplete and level-dependent; route timings and steps require human verification |
+| 34 | `BagExtras.lua`: optional separate inventory browser, categories, BoE marks, bag/bank/alt snapshots and search highlighting (`/ride bags`) | Read-only browser instead of full native bag replacement, verify bank/stale inventory presentation and yielding to bag add-ons |
+
+No `main` changes. **Ranks #35–38 remain not started.** "Implementation" is not the same as Works/Matches/Surpasses acceptance.
