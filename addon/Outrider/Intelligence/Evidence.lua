@@ -34,7 +34,7 @@ function E:Register(id, capability)
 end
 function E:Record(source, key, category, value, label, ttl)
   if type(source) ~= "string" or not self.sources[source] then return nil end
-  if type(key) ~= "string" or #key < 1 or #key > 100 or not key:match("^[%w_:%-%.]+$") then return nil end
+  if type(key) ~= "string" or #key < 1 or #key > 120 or key:find("[%c|]") or not key:find("%S") then return nil end
   if not self.TTL[category] then return nil end
   if label ~= "observed" and label ~= "verified" and label ~= "community" and label ~= "inferred" then return nil end
   local safe = plain(value, 0)
@@ -65,6 +65,23 @@ function E:Invalidate(category)
   for id, row in pairs(self.observations) do
     if row.category == category then self.observations[id] = nil end
   end
+end
+-- Only sanitized explicit facts may enter an exported explanation.
+function E:Exportable(ids)
+  local out, seen = {}, {}
+  for _, id in ipairs(ids or {}) do
+    if #out >= 16 then break end
+    if type(id) == "string" and not seen[id] then
+      seen[id] = true
+      local row = self:Get(id)
+      if row then
+        out[#out + 1] = { evidenceId = row.id, kind = row.category,
+          observedAt = row.observedAt, gameBuild = row.build,
+          confidence = row.label, source = row.source }
+      end
+    end
+  end
+  return out
 end
 function E:Clear()
   self.observations = {}

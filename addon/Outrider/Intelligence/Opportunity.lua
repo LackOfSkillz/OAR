@@ -5,7 +5,7 @@ ns.IntelOpportunity = O
 local function finite(n) return type(n) == "number" and n == n and n >= 0 and n < math.huge end
 function O:FromWhatNow(candidate, profile, evidence)
   if type(candidate) ~= "table" or type(candidate.key) ~= "string" or
-    not candidate.key:match("^[%w_:%-%.]+$") or #candidate.key > 100 or
+    #candidate.key > 120 or candidate.key:find("[%c|]") or not candidate.key:find("%S") or
     type(candidate.kind) ~= "string" or type(candidate.title) ~= "string" or #candidate.title > 180 or
     not finite(candidate.benefit) or candidate.benefit > 1 or
     not finite(candidate.confidence or 1) or (candidate.confidence or 1) > 1 then return nil end

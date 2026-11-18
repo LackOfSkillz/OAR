@@ -41,7 +41,9 @@ function M:FeedbackCount()
 end
 function M:Refresh()
   if not self.enabled then return {} end
-  if ns.Compat.InCombat() then return self.cards or {} end
+  if ns.Compat.InCombat() then self.dirty = true return self.cards or {} end
+  self.dirty = false
+  self.recomputeCount = (self.recomputeCount or 0) + 1
   E:Clear()
   E:Register("WhatNow", "ready")
   local profile = ns.ClassProfiles.Current()
@@ -67,8 +69,35 @@ function M:Refresh()
 end
 function M:Cards()
   if not self.enabled then return {} end
-  if not self.cards or time() - (self.refreshedAt or 0) > 30 then return self:Refresh() end
+  if ns.Compat.InCombat() then return {} end
+  if self.dirty or not self.cards or time() - (self.refreshedAt or 0) > 30 then return self:Refresh() end
+  -- A card can expire before our normal refresh interval. Never show stale actions.
+  for _, card in ipairs(self.cards) do
+    if not O:Valid(card) then return self:Refresh() end
+  end
   return self.cards
+end
+-- Coalesce native game events into a single update; no background polling.
+M.EVENT_CATEGORY = {
+  BAG_UPDATE_DELAYED = "bag", PLAYER_EQUIPMENT_CHANGED = "gear",
+  QUEST_LOG_UPDATE = "quest", QUEST_TURNED_IN = "quest",
+  PLAYER_LEVEL_UP = "generic", ZONE_CHANGED_NEW_AREA = "location",
+  PLAYER_TALENT_UPDATE = "talent", ACTIVE_TALENT_GROUP_CHANGED = "talent",
+  AUCTION_HOUSE_CLOSED = "auction",
+}
+function M:Signal(category)
+  if not self.enabled then return end
+  self.dirty = true
+  if category then E:Invalidate(category) end
+  if ns.Compat.InCombat() then return end
+  if self.pending then return end
+  self.pending = ns.Timer.After(2, function()
+    self.pending = nil
+    if not self.enabled then return end
+    if ns.Compat.InCombat() then return end
+    self:Refresh()
+    if self.window and self.window:IsShown() then self:Render() end
+  end, "I2 radar coalesced refresh")
 end
 function M:Open()
   if not self.enabled then ns.Print("Opportunity Radar is off. Enable it under Outrider features.") return end
@@ -93,7 +122,7 @@ function M:Open()
       end)
       row.go:SetPoint("LEFT", row.why, "RIGHT", 8, 0)
       row.later = ns.UI:Button(p.content, "Later", 62, function()
-        if row.card then M:Feedback(row.card, "snooze") M:Render() end
+        if row.card then M:Feedback(row.card, "snooze") M:Refresh() M:Render() end
       end)
       row.later:SetPoint("LEFT", row.go, "RIGHT", 8, 0)
       p.rows[i] = row
@@ -105,7 +134,7 @@ function M:Open()
 end
 function M:Render()
   if not self.window then return end
-  local cards = self:Refresh()
+  local cards = self:Cards()
   for i, row in ipairs(self.window.rows) do
     local c = cards[i]
     row.card = c
@@ -118,8 +147,19 @@ function M:Render()
 end
 function M:OnEnable()
   self.cards = nil
+  self.dirty = true
+  -- Event registration is strictly opt-in; the disabled module uses no timers.
+  for name, category in pairs(self.EVENT_CATEGORY) do
+    self:On(name, function(mod) mod:Signal(category) end)
+  end
+  self:On("OTR_INTELLIGENCE_PROFILE_CHANGED", function(mod) mod:Signal("talent") end)
+  self:On("PLAYER_REGEN_ENABLED", function(mod)
+    if mod.dirty then mod:Signal() end
+  end)
 end
 function M:OnDisable()
+  if self.pending then self.pending:Cancel() self.pending = nil end
+  self.dirty = false
   E:Clear()
   self.cards = nil
   if self.window then self.window:Hide() end
