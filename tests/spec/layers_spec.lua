@@ -64,4 +64,34 @@ T.describe("layers", function()
     ns.Hub.frame.tabBar:Select("overview")
     T.contains(ns.Hub.byId.overview.panel.layer:GetText(), "L321")
   end)
+
+  T.it("shows the layer on the info bar and records visit history", function()
+    local game, ns = session()
+    T.contains(ns.InfoBar:Text("layer"), "Layer ?")
+    for _ = 1, 3 do see(game, 4321) end
+    T.contains(ns.InfoBar:Text("layer"), "L321")
+    local history = ns.Layers:History(1412)
+    T.eq(#history, 1)
+    T.eq(history[1].id, 4321)
+    T.eq(history[1].mapID, 1412)
+  end)
+
+  T.it("never displays a stale layer after entering a new zone", function()
+    local game, ns = session()
+    for _ = 1, 3 do see(game, 4321) end
+    T.eq(ns.Layers:Current(), 4321)
+    ns.Layers:ZoneChanged()
+    T.eq(ns.Layers:Current(), nil)
+    T.contains(ns.InfoBar:Text("layer"), "Layer ?")
+    T.eq(#ns.Layers:History(1412), 1)
+  end)
+
+  T.it("shows unknown when the sampled creatures disagree", function()
+    local game, ns = session()
+    for _ = 1, 3 do see(game, 1111) end
+    T.eq(ns.Layers:Current(), 1111)
+    for _ = 1, 3 do see(game, 2222) end
+    T.eq(ns.Layers:Current(), nil)
+    T.contains(ns.InfoBar:Text("layer"), "Layer ?")
+  end)
 end)
