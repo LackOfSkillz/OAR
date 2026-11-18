@@ -12,6 +12,78 @@ local KINDS = { "rare", "vendor", "repair", "trainer", "flight_master", "spirit_
 local T = { name = "maptab" }
 ns.MapTab = T
 
+-- Personal map notes, player-authored and retained in character settings.
+function T:Notes()
+  ns.db.char.mapNotes = type(ns.db.char.mapNotes) == "table" and ns.db.char.mapNotes or {}
+  return ns.db.char.mapNotes
+end
+function T:ChangedNotes()
+  if ns.MapPins then
+    ns.MapPins:Invalidate()
+    if ns.MapPins.map and ns.MapPins.map:IsShown() then ns.MapPins:Refresh() end
+  end
+  local mini = ns.Modules:Get("MinimapPins")
+  if mini and mini.enabled then mini:Update() end
+end
+function T:AddNote(mapID, x, y, name)
+  if type(mapID) ~= "number" or type(x) ~= "number" or type(y) ~= "number"
+    or x < 0 or x > 1 or y < 0 or y > 1
+    or type(name) ~= "string" or name == "" or #name > 100 then return nil end
+  local notes = self:Notes()
+  if #notes >= 200 then return nil end
+  local id = (ns.db.char.mapNoteNext or 0) + 1
+  ns.db.char.mapNoteNext = id
+  notes[#notes + 1] = { id = id, mapID = mapID, x = x, y = y, name = name }
+  self:ChangedNotes()
+  return id
+end
+function T:EditNote(id, name)
+  if type(name) ~= "string" or name == "" or #name > 100 then return false end
+  for _, p in ipairs(self:Notes()) do
+    if p.id == tonumber(id) then p.name = name self:ChangedNotes() return true end
+  end
+  return false
+end
+function T:RemoveNote(id)
+  for i, p in ipairs(self:Notes()) do
+    if p.id == tonumber(id) then table.remove(self:Notes(), i) self:ChangedNotes() return true end
+  end
+  return false
+end
+function T:NotesFor(mapID)
+  local out = {}
+  for _, p in ipairs(self:Notes()) do
+    if p.mapID == mapID then
+      out[#out + 1] = { kind = "note", id = "note-" .. p.id, noteID = p.id,
+        icon = "Interface\\\\Icons\\\\INV_Misc_Note_01",
+        mapID = mapID, x = p.x, y = p.y, name = p.name }
+    end
+  end
+  return out
+end
+
+ns.AddCommand("note", "note add <map> <x> <y> <text> | edit <id> <text> | remove <id> | list", function(arg)
+  arg = tostring(arg or "")
+  local map, x, y, label = arg:match("^add%s+(%d+)%s+([%d%.]+)%s+([%d%.]+)%s+(.+)$")
+  if map then
+    local id = T:AddNote(tonumber(map), tonumber(x)/100, tonumber(y)/100, label)
+    ns.Print(id and ("map note #" .. id .. " added") or "invalid map note or note limit")
+    return
+  end
+  local id, title = arg:match("^edit%s+(%d+)%s+(.+)$")
+  if id then ns.Print(T:EditNote(id, title) and "note edited" or "note not found") return end
+  id = arg:match("^remove%s+(%d+)$")
+  if id then ns.Print(T:RemoveNote(id) and "note removed" or "note not found") return end
+  if arg == "list" then
+    for i, note in ipairs(T:Notes()) do
+      if i > 40 then break end
+      ns.Print("#%d map %d %.1f %.1f %s", note.id, note.mapID, note.x * 100, note.y * 100, note.name)
+    end
+    return
+  end
+  ns.Print("usage: /ride note add <mapID> <x> <y> <text> | edit <id> <text> | remove <id> | list")
+end)
+
 function T:ClearAll()
   local g = ns.db.global
   local n = 0
@@ -72,6 +144,16 @@ ns.Hub:AddTab("map", "Map", function(p)
     end
   end)
   p.clear:SetPoint("TOPLEFT", 0, y - 100)
+  p.noteBox = UI:SearchBox(p, 200, "Your note text")
+  p.noteBox:SetPoint("TOPLEFT", 0, y - 162)
+  p.noteAdd = UI:Button(p, "Add map note", 140, function()
+    local point = ns.Coords and ns.Coords.lastHovered
+    if not point then ns.Print("hover over the world map first to capture a coordinate") return end
+    local id = T:AddNote(point.mapID, point.x, point.y, p.noteBox:GetText() or "")
+    ns.Print(id and ("map note #" .. id .. " added") or "enter a short map note")
+    p:Refresh()
+  end)
+  p.noteAdd:SetPoint("LEFT", p.noteBox, "RIGHT", 6, 0)
   -- legend: group colours
   local lx = 0
   for _, g in ipairs({ "merchant", "trainer", "service", "quest", "rare", "gather" }) do
