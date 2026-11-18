@@ -189,6 +189,124 @@ function M:Hook()
   end
 end
 
+-- DEEP-34: an optional categorized inventory browser. It does NOT replace
+-- protected Blizzard bag frames or intercept bag clicks; yields to bag addons.
+-- For bank/alts, only last observed count snapshots are available.
+M.CATEGORIES = { "all", "gear", "consumables", "trade", "quest", "other" }
+function M:Category(itemID)
+  local info = C.ItemInfo(itemID)
+  if not info then return "other" end
+  if info.equipLoc and info.equipLoc ~= "" then return "gear" end
+  if info.class == 0 then return "consumables" end
+  if info.class == 7 then return "trade" end
+  if info.class == 12 then return "quest" end
+  return "other"
+end
+
+function M:BagRows(where, character, query, category)
+  local rows = {}
+  local term = type(query) == "string" and query:lower() or ""
+  category = category or "all"
+  character = character or ns.db.key
+  local function push(id, count, bag, slot, source)
+    local info = C.ItemInfo(id)
+    local name = info and info.name or ("Item " .. tostring(id))
+    local kind = self:Category(id)
+    local match = term == "" or name:lower():find(term, 1, true) ~= nil
+    if category == "all" or kind == category then
+      rows[#rows + 1] = { id = id, count = count, name = name, bag = bag, slot = slot,
+        source = source, category = kind, match = match, boe = info and info.bindType == 2 }
+    end
+  end
+  if character == ns.db.key and where == "bags" then
+    for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
+      for slot = 1, C.NumSlots(bag) do
+        local count, id = C.ItemCountAt(bag, slot)
+        if id and count and count > 0 then push(id, count, bag, slot, "live bags") end
+      end
+    end
+  else
+    local inv = ns.Inventory and ns.Inventory.db and ns.Inventory.db[character]
+    for id, count in pairs(inv and inv[where] or {}) do
+      if count > 0 then push(id, count, nil, nil, "last observed") end
+    end
+  end
+  table.sort(rows, function(a,b)
+    if a.match ~= b.match then return a.match end
+    if a.category ~= b.category then return a.category < b.category end
+    return a.name < b.name
+  end)
+  return rows
+end
+
+function M:BuildBagWindow()
+  if self.bagWindow then return self.bagWindow end
+  local UI = ns.UI
+  local f = UI:Window("Outrider_BagBrowser", "Inventory browser", 620, 540, ns.db.char.bagWindow or {})
+  self.bagWindow = f
+  f.view, f.category, f.char = "bags", "all", ns.db.key
+  f.search = UI:SearchBox(f.content, 240, "Highlight item name...")
+  f.search:SetPoint("TOPLEFT", 4, -6)
+  f.search:SetScript("OnTextChanged", function() M:RefreshBagWindow() end)
+  f.viewButton = UI:Button(f.content, "Bags / bank", 110, function()
+    f.view = f.view == "bags" and "bank" or "bags"
+    M:RefreshBagWindow()
+  end)
+  f.viewButton:SetPoint("LEFT", f.search, "RIGHT", 6, 0)
+  UI.Tip(f.viewButton, "Bags / bank", "Toggle between live bags and last observed bank inventory.")
+  f.categoryButton = UI:Button(f.content, "Category: all", 120, function()
+    local idx = 1
+    for i, v in ipairs(M.CATEGORIES) do if v == f.category then idx = i break end end
+    f.category = M.CATEGORIES[idx % #M.CATEGORIES + 1]
+    f.categoryButton:SetText("Category: " .. f.category)
+    M:RefreshBagWindow()
+  end)
+  f.categoryButton:SetPoint("LEFT", f.viewButton, "RIGHT", 6, 0)
+  UI.Tip(f.categoryButton, "Filter category", "Cycle gear, consumables, trade goods, quest and other.")
+  f.character = UI:Button(f.content, "Next character", 120, function()
+    local chars = {}
+    for key in pairs(ns.Inventory and ns.Inventory.db or {}) do chars[#chars + 1] = key end
+    table.sort(chars)
+    for i, key in ipairs(chars) do
+      if key == f.char then f.char = chars[i % #chars + 1] break end
+    end
+    M:RefreshBagWindow()
+  end)
+  f.character:SetPoint("TOPLEFT", 4, -39)
+  UI.Tip(f.character, "Next character", "Browse this character's last recorded bags or bank; never reads offline live data.")
+  f.count = UI.Text(f.content, "small", "muted")
+  f.count:SetPoint("LEFT", f.character, "RIGHT", 8, 0)
+  f.list = UI:ScrollList(f.content, {
+    rows = 13, rowHeight = 28,
+    render = function(row, entry)
+      row.text:SetText(string.format("%s%s x%d  |cffaaaaaa[%s]%s %s|r",
+        entry.match and "" or "|cff777777", entry.name, entry.count,
+        entry.category, entry.boe and " BoE" or "",
+        entry.source == "last observed" and "(cached)" or ""))
+    end,
+  })
+  f.list:SetPoint("TOPLEFT", 4, -70)
+  f.list:SetPoint("RIGHT", -4, 0)
+  f:Hide()
+  return f
+end
+function M:RefreshBagWindow()
+  local f = self.bagWindow
+  if not f or not f.list then return end
+  local rows = self:BagRows(f.view, f.char, f.search:GetText(), f.category)
+  f.list:SetItems(rows)
+  f.count:SetText(string.format("%s | %s | %d rows; search matches highlighted",
+    f.char, f.view, #rows))
+end
+
+ns.AddCommand("bags", "bags [open|close]  categorized inventory browser", function(arg)
+  if not M.enabled then ns.Print("Outrider's bag browser is disabled (possibly yielding to another bag addon)") return end
+  local f = M:BuildBagWindow()
+  if arg == "close" then f:Hide() return end
+  if arg == "open" then f:Show() else f:SetShown(not f:IsShown()) end
+  M:RefreshBagWindow()
+end)
+
 -- ------------------------------------------------------------------ search
 -- items whose name contains text, with where every character keeps them:
 -- { {itemID, name, total, per = { {char, count, where} } } }
@@ -234,7 +352,7 @@ end
 
 function M:OnEnable()
   self:Hook()
-  self:On("BAG_UPDATE_DELAYED", function(mod) mod:UpdateAll() end)
+  self:On("BAG_UPDATE_DELAYED", function(mod) mod:UpdateAll() mod:RefreshBagWindow() end)
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod) mod:UpdateAll() end)
 end
 
