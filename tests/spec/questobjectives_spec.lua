@@ -109,4 +109,30 @@ T.describe("quest objectives: Questie parity", function()
     ns.Hub:ShowTab("quests")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("a quest whose objectives are all done counts as ready even when the client leaves isComplete empty", function()
+    local game, ns, M = start()
+    game.questObjectives[3741] = { { text = "Hilary's Necklace: 1/1", finished = true } }
+    local spot = M:Nearest(3741)
+    T.contains(spot.label, "Hand in", "the turn-in, not a vanished marker")
+    T.eq(ns.QuestTracker.Read()[1].quests[1].complete, true, "tracker agrees")
+  end)
+
+  T.it("when a quest becomes ready the arrow moves to its turn-in, but never over your own waypoint", function()
+    local game, ns, M = start()
+    game:fire("QUEST_LOG_UPDATE") game:advance(1)
+    T.ok(M:Guide(3741), "arrow on the necklace")
+    T.eq(ns.Waypoints.current.title, "Hilary's Necklace")
+    game.questObjectives[3741] = { { text = "Hilary's Necklace: 1/1", finished = true } }
+    game:fire("QUEST_LOG_UPDATE") game:advance(1)
+    T.contains(ns.Waypoints.current.title, "Hand in", "arrow moved to the turn-in by itself")
+    -- your own waypoint stays put
+    local game2, ns2, M2 = start()
+    game2:fire("QUEST_LOG_UPDATE") game2:advance(1)
+    ns2.Waypoints:Set(1433, 0.5, 0.5, "My spot")
+    game2.questObjectives[3741] = { { text = "Hilary's Necklace: 1/1", finished = true } }
+    game2:fire("QUEST_LOG_UPDATE") game2:advance(1)
+    T.eq(ns2.Waypoints.current.title, "My spot")
+    T.eq(#ns.Errors.list + #ns2.Errors.list, 0)
+  end)
 end)

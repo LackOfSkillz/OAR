@@ -26,7 +26,7 @@ local M = ns:NewModule("QuestObjectives", {
   title = "Quest objectives on the map",
   phase = "P3",
   order = 36,
-  defaults = { show = true, hoverAlert = true },
+  defaults = { show = true, hoverAlert = true, arrowToTurnIn = true },
   yieldsTo = { "Questie" },
 })
 ns.QuestObjectives = M
@@ -71,10 +71,25 @@ function M.Log()
         end
       end
       out[#out + 1] = { questID = q.questID, title = readable(q.title) or "?", objectives = list,
-        complete = readable(q.isComplete) and true or false }
+        complete = M.IsDone(q.questID, q, list) }
     end
   end
   return out
+end
+
+-- Is a quest ready to hand in? The modern client can leave GetInfo's
+-- isComplete empty (Gary, 2026-11-18: the marker vanished once all items were
+-- gathered and no turn-in showed), so ask every signal there is: the info
+-- field, C_QuestLog.IsComplete, ReadyForTurnIn, and "every objective done".
+function M.IsDone(questID, info, objectives)
+  if type(info) == "table" and readable(info.isComplete) then return true end
+  if readable(C.Call("C_QuestLog.IsComplete", questID)) then return true end
+  if readable(C.Call("C_QuestLog.ReadyForTurnIn", questID)) then return true end
+  if type(objectives) == "table" and #objectives > 0 then
+    for _, o in ipairs(objectives) do if not o.finished then return false end end
+    return true
+  end
+  return false
 end
 
 -- is the objective about `name` already done in the client's list?
@@ -355,13 +370,39 @@ end
 function M:Guide(questID)
   local spot = self:Nearest(questID)
   if not (spot and ns.Waypoints) then return false end
-  ns.Waypoints:Set(spot.mapID, spot.x, spot.y, spot.label)
-  return true
+  local ok, w = ns.Waypoints:Set(spot.mapID, spot.x, spot.y, spot.label)
+  if ok then self.guideWP, self.guideQuest = w, questID end
+  return ok and true or false
+end
+
+-- When a quest becomes ready, move the arrow to its turn-in right away
+-- (Gary, 2026-11-18). Only when the arrow is free or still on one of our
+-- quest spots; a waypoint Gary set himself (/way, a map note, a rare) stays.
+function M:CheckReady()
+  local now = {}
+  for _, q in ipairs(M.Log()) do if q.complete then now[q.questID] = q end end
+  local before = self.readySet
+  self.readySet = now
+  if not before or not self:Settings().arrowToTurnIn then return end -- first look after login: remember only
+  local W = ns.Waypoints
+  for id, q in pairs(now) do
+    if not before[id] then
+      local cur = W and W.current
+      local ours = cur == nil or (self.guideWP ~= nil and cur == self.guideWP)
+      if ours and self:Guide(id) then
+        self:Info("quest ready: arrow to the turn-in of %s", q.title)
+        return
+      elseif not ours then
+        self:Info("quest ready: %s (arrow kept on your own waypoint)", q.title)
+      end
+    end
+  end
 end
 
 -- ------------------------------------------------------------------ module
 function M:OnEnable()
   self:On("QUEST_LOG_UPDATE", function()
+    ns.Throttle("questobjectives:ready", 0.3, function() M:CheckReady() end)
     ns.Throttle("questobjectives:refresh", 2, function()
       if ns.MapPins and ns.MapPins.Invalidate then ns.MapPins:Invalidate() end
     end)
@@ -408,6 +449,8 @@ ns.Hub:AddTab("quests", "Quests", function(p)
     { "header", "Quest tracker", icon = "INV_Misc_Spyglass_02" },
     { "check", "Show Outrider's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().show end,
       function(on) if ns.QuestTracker then ns.QuestTracker:Settings().show = on ns.QuestTracker:Refresh() end end },
+    { "check", "Arrow to the turn-in when a quest is done", function() return M:Settings().arrowToTurnIn end,
+      function(on) M:Settings().arrowToTurnIn = on end },
     { "check", "Hide the game's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().hideBlizzard end,
       function(on) if ns.QuestTracker then ns.QuestTracker:Settings().hideBlizzard = on ns.QuestTracker:Refresh() end end },
     { "note", "Click a quest for the arrow, right-click to fold it, drag the title to move. /ride tracker level or nearest sorts it." },

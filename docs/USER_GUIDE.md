@@ -110,7 +110,7 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 - **Fishing page.** Your skill, lifetime casts and catches, how many catches to your next point (measured from your own catches), the next milestone (Journeyman, the Expert book, Nat Pagle), the zones for your skill with what you've caught there, one-click fishing gear and back, fishing trainers and supply vendors with an arrow, and the Stranglethorn Fishing Extravaganza countdown. Zone and NPC data from a WoW Forever fishing guide (unverified).
 - **Player tooltips.** Mouse over another player: attack speed, health and mana, PvP flag and rank, the professions they've linked in trade chat, when and where you last saw them, and whether it's your alt. Out of combat and close by, Outrider also looks at their gear once (average item level, epics and blues, weapon) and their talent build. Other players' stats can't be read, so none are shown. A rough PvP odds line weighs level, health, gear and class matchup, and learns from the duels you win and lose. Rares, rare elites, elites and bosses get their health, attack speed and rough fight odds (level, health, elite, your pet and group), learning from the fights you win and lose. /ride module PlayerInfo off turns it off.
 - **Party quest announcements.** In a party, Outrider tells the party when you finish a quest objective, when a quest is ready to hand in and when you hand it in (like Questie; it stays quiet if you run Questie yourself). When everyone in the party who has the quest is done, it says so once: 'Everyone is done with [quest], go hand it in!'. It knows party members' progress from Outrider (a party addon message) and from Questie's own party announcements. /ride module PartyQuests off turns it off.
-- **Quest tracker.** Outrider's own quest tracker: your quests by zone, nearest first (or by level), each objective with your party's progress under it. Click a quest for the arrow, right-click to fold it, drag the title to move it. /ride tracker on|off|reset|level|nearest. It steps aside when Questie is installed.
+- **Quest tracker.** Outrider's own quest tracker: your quests by zone, nearest first (or by level), each objective with your party's progress under it. Click a quest for the arrow (a finished quest points at its turn-in; when you finish one, the arrow moves there by itself unless you set your own waypoint), right-click to fold it, drag the title to move it. /ride tracker on|off|reset|level|nearest. It steps aside when Questie is installed.
 - **Quest details.** Quest cards, the tracker and quest givers show quest chains (Part 2 of 4, next quest), breadcrumbs, reputation rewards and categories (Darkmoon Faire, profession, class, repeatable). Taking a quest whose breadcrumb you skipped gives one warning. Quest links in chat show their level. A short sound plays when an objective or quest is done. The Quests page keeps a dated history of the quests you take, hand in and abandon. Escort and patrol NPCs of your quests walk a dotted path on the map. Quest-giver pins hide holiday quests and profession quests for professions you don't have (switches on the Quests page). Data from QuestieDB, unverified.
 - **Money page.** The best ways to earn gold at your level and with your professions, and your own earnings per hour.
 - **Gold ledger.** Where your gold came from and went, per session and character.
@@ -189,6 +189,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride access` | font\|scale <n> \| colorblind\|contrast\|motion on\|off  (applies after /reload) |
 | `/ride ask` | [reload]  snapshot for your advisor: shows a code to copy (or 'reload' to save it to disk) |
 | `/ride bar` | the info bar: /ride bar on\|off\|reset (Shift-drag it to move) |
+| `/ride bossloot` | bossloot <boss name>  known boss drops, with wishlist markers |
 | `/ride census` | who's playing: most common level, class, race, profession (/ride census who searches the next group, reset clears) |
 | `/ride chars` | list characters Outrider knows on this account |
 | `/ride chat` | word add\|remove <text> \| spam on\|off \| lfgtab on\|off \| time on\|off  chat options |
@@ -197,6 +198,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride copychat` | copy the last 100 lines of the main chat window |
 | `/ride debug` | on\|off  verbose logging to the saved log |
 | `/ride discovered` | [n]  last n NPCs Outrider recorded (default 10) |
+| `/ride dungeonquests` | dungeonquests <dungeon name> \| link <questID> <dungeon name> |
 | `/ride errands` | what to do in town for this character |
 | `/ride errors` | [clear]  show recent Outrider errors |
 | `/ride export` | show this character's settings as a string |
@@ -207,15 +209,19 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride fishkey` | <KEY>\|off  the key that casts Fishing and hooks the bobber |
 | `/ride forecast` | respawn and gold forecasts |
 | `/ride gear` | save <name> \| <name> \| list \| delete <name>  gear sets |
+| `/ride grave` | grave  observed subzone-specific graveyard prediction |
 | `/ride heal` | [assign <name>\|unassign <name>\|clear\|always\|group\|off\|self on\|off]  click-to-heal bars |
 | `/ride help` | list commands |
 | `/ride herbs` | where each herb grows and the skill it needs (from guides, unverified) |
+| `/ride history` | history [player] [count]  show stored chat or whisper messages |
 | `/ride hub` | open or close the hub (same as /ride) |
 | `/ride import` | paste a settings string |
 | `/ride journey` | [kind] [search] \| <number> \| stop  find anything (gear item quest rare mob npc place); a number guides you there |
 | `/ride layout` | [<situation> <layout name>\|off]  Edit Mode layout per situation |
 | `/ride log` | [n]  show the last n log lines (default 10) |
+| `/ride mail` | mail all\|sold\|won\|expired \| free <slots> |
 | `/ride make` | [Profession]  make what you have ingredients for (no name: create the Cook / Brew / Herb macros) |
+| `/ride mapextras` | mapextras missing\|fishing\|faire |
 | `/ride mark` | <text>  write a marker line so Claude can find this point in the log |
 | `/ride minimap` | on\|off  show or hide the minimap button |
 | `/ride minipins` | <number> \| quests on\|off  how many places the minimap shows |
@@ -223,15 +229,19 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride modules` | list modules and why each is on or off |
 | `/ride near` | <spirit\|flight\|vendor\|repair\|trainer\|mail\|bank\|ah\|stable\|inn\|guild\|ammo>  waypoint to the nearest one |
 | `/ride nearby` | upgrades you can get in this zone |
+| `/ride note` | note add <map> <x> <y> <text> \| edit <id> <text> \| remove <id> \| list |
 | `/ride now` | level\|gold\|gear\|professions\|explore\|mix  What now? next steps (optional goal) |
 | `/ride paste` | open the Paste advice box (Ctrl+V applies it) |
 | `/ride perf` | memory, events, timers and modules (then /reload) |
 | `/ride probe` | record which game APIs exist (then /reload) |
 | `/ride questpins` | grey on\|off  show quests too low to give XP |
+| `/ride rareroute` | rareroute all\|watched  queue nearest known rare spawns on this map |
 | `/ride reset` | char\|all confirm  wipe settings (needs the word confirm) |
-| `/ride runs` | dungeon lockouts this hour and today, and your last runs |
+| `/ride restock` | restock add <itemID> <count> \| remove <itemID> \| reserve <gold> \| list |
+| `/ride runs` | dungeon lockouts; /ride runs list\|delete <index> |
 | `/ride score` | <item link>  compare an item with what you wear |
 | `/ride selftest` | error\|combat\|button\|toast\|widgets  checks for the test pipeline |
+| `/ride sell` | sell always\|once\|keep\|unmark <item ID> \| list |
 | `/ride setup` | open the first-run setup (features and accessibility) |
 | `/ride share` | hello on\|off \| rares guild\|party on\|off \| nodes on\|off \| location on\|off  sharing (all off by default) |
 | `/ride skillup` | [profession] [target]  cheapest recipes per skill point |
@@ -241,14 +251,17 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride status` | character, saved-settings check, modules, errors |
 | `/ride talents` | [build <id>\|on\|off]  your next talent points from the levelling build |
 | `/ride tamemacro` | [solo\|trap] <Beast Name>  write a pull + tame macro (solo: no pet, Wing Clip if the tame breaks; trap: Freezing Trap first) |
-| `/ride tracker` | Outrider's quest tracker: /ride tracker on\|off\|reset\|level\|nearest |
+| `/ride tracker` | Outrider quest tracker: on\|off\|reset\|level\|nearest\|up\|down\|focus <questID>\|unfocus |
 | `/ride trail` | [clear\|clear here]  breadcrumbs: the paths you walked, on the map |
+| `/ride training` | training [level]  spells observed at your class trainer |
 | `/ride undercut` | <N%> \| <copper>c  how much under the market to suggest |
 | `/ride unwatch` | <name or npcID>  stop watching |
 | `/ride version` | addon version, build stamp and client build |
 | `/ride watch` | <name or npcID>  alert for this NPC on this character |
-| `/ride way` | <x> <y> [title] \| clear  waypoint on the current map (map numbers 0-100) |
+| `/ride way` | <x> <y> [title] \| <zone> <x> <y> \| add <zone> <x> <y> \| start\|pause\|next\|list\|clearqueue |
 | `/ride weights` | show the stat weights used for this character |
 | `/ride where` | where your characters keep an item: /ride where <item name> |
+| `/ride wish` | wish add\|remove <itemID> \| list |
 | `/ride wowhead` | the Wowhead address of what you're hovering (item, NPC, spell), to copy |
 | `/ride zonelevels` | [on\|off]  level ranges over zones on the world map |
+| `/ride zones` | zones  known available quest XP by zone (estimates) |

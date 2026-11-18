@@ -47,7 +47,8 @@ function M.Read()
           end
         end
         cur.quests[#cur.quests + 1] = { questID = q.questID, title = readable(q.title) or "?", level = readable(q.level) or 0,
-          complete = readable(q.isComplete) and true or false, objectives = list }
+          complete = ns.QuestObjectives and ns.QuestObjectives.IsDone(q.questID, q, list)
+            or (readable(q.isComplete) and true or false), objectives = list }
       end
     end
   end
