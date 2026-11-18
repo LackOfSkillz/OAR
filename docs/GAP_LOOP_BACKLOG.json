@@ -3,7 +3,7 @@
   "branch": "p1-foundation",
   "source_head": "54f36218b6a6265fe71976e6241696287c45c8f8",
   "generated": "2026-11-18",
-  "warning": "Quick wins 5-9 committed on p1-foundation, but no passing CI result or in-game evidence for this batch at ledger update. Do not mark Works/Matches/Surpasses until checks pass.",
+  "warning": "Quick wins 1-9 have passing automated CI but none has passed real WoW Forever in-game gate. No Works/Matches/Surpasses claim should be recorded without live evidence.",
   "statuses": [
     "not_started",
     "implemented_unverified",
@@ -86,7 +86,7 @@
       "details": "at the vendor: buy ammo, food and water up to set amounts, with a gold reserve",
       "competitors": "Rucksack, TSM",
       "notes": "NEW. One click per purchase batch, Gary presses it",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -102,7 +102,7 @@
       "details": "several waypoints, auto-advance on arrival, kept across sessions, `/ride way <zone> x y`",
       "competitors": "TomTom",
       "notes": "NEW. Rare routes need this",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -118,7 +118,7 @@
       "details": "on the world map",
       "competitors": "Leatrix Maps, TomTom",
       "notes": "NEW",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -134,7 +134,7 @@
       "details": "hide in combat (Shift shows it); quest \"4 left\" on mob tooltips",
       "competitors": "MouseOverTooltip",
       "notes": "NEW",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -150,7 +150,7 @@
       "details": "(no aspect, or Cheetah/Pack in combat) and **Growl left on in a group**",
       "competitors": "ZHunterMod, Quiver",
       "notes": "NEW",
-      "status": "implemented_unverified",
+      "status": "tests_green_needs_game",
       "acceptance": {
         "works": "Requires passing full suite and a real Forever client test without competing addon",
         "matches": "All applicable competitor option rows from raw research checked in game",
@@ -1489,8 +1489,8 @@
     }
   ],
   "ci": {
-    "last_verified_code_commit": "dcbb875d0163ea4ce30965b4b044df83fa7899c5",
-    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44294608991",
+    "last_verified_code_commit": "19b124ced2c1340c29e44213b8b588dd058299d3",
+    "last_verified_run_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44297903933",
     "conclusion": "success",
     "date": "2026-11-18",
     "game_validation": "not_performed"
@@ -1500,10 +1500,16 @@
       5,
       9
     ],
-    "state": "implemented_unverified",
-    "code_head": "c1973b78bac359292d1d952f3474923f56585328",
-    "ci_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44297329628",
-    "ci_status": "pending",
+    "state": "tests_green_needs_game",
+    "code_head": "19b124ced2c1340c29e44213b8b588dd058299d3",
+    "ci_url": "https://github.com/LackOfSkillz/OAR/actions/runs/44297903933",
+    "ci_status": "success",
+    "lua_tests": {
+      "passed": 658,
+      "failed": 0,
+      "syntax_errors": 0
+    },
+    "python_tests": "passed",
     "game_validation": "not_performed"
   }
 }
