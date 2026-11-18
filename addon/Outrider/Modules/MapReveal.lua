@@ -113,6 +113,79 @@ function M:Missing(mapID)
   return out
 end
 
+-- Map extras: count and enumerate missing exploration overlays. The client
+-- overlay data has no textual area names, so report coordinates, not fake names.
+function M:MissingSummary(mapID)
+  local missing, known = self:Missing(mapID), M.Known(mapID)
+  local out = {}
+  for _, e in ipairs(missing) do
+    out[#out + 1] = { x = e.x, y = e.y, key = M.Key(e) }
+  end
+  return { mapID = mapID, missing = #out, totalKnown = #known, locations = out,
+    source = #known > 0 and "client overlays" or "account observations only" }
+end
+
+function M:FishingAdvice(mapID)
+  local info = C.Call("C_Map.GetMapInfo", mapID)
+  local name = info and readable(info.name)
+  if not name then return nil end
+  for _, tier in ipairs(ns.FishingData and ns.FishingData.tiers or {}) do
+    for _, z in ipairs(tier.zones) do
+      if z == name then
+        return { zone = name, from = tier.lo, to = tier.hi, verified = false }
+      end
+    end
+  end
+end
+
+-- Calendar dates from Wowhead's Forever guide, Nov 2026 (verify realm hours
+-- in the client calendar; schedule may change). No speculative future dates.
+M.FAIRES = {
+  { year = 2026, month = 11, day = 9, closeDay = 16, zone = "Elwynn Forest", mapID = 1429, x = 0.42, y = 0.70 },
+  { year = 2026, month = 12, day = 7, closeDay = 14, zone = "Mulgore", mapID = 1412, x = 0.37, y = 0.38 },
+  { year = 2027, month = 1, day = 4, closeDay = 11, zone = "Elwynn Forest", mapID = 1429, x = 0.42, y = 0.70 },
+  { year = 2027, month = 2, day = 8, closeDay = 15, zone = "Mulgore", mapID = 1412, x = 0.37, y = 0.38 },
+  { year = 2027, month = 3, day = 8, closeDay = 15, zone = "Elwynn Forest", mapID = 1429, x = 0.42, y = 0.70 },
+}
+function M:NextFaire(now)
+  now = now or time()
+  for _, e in ipairs(M.FAIRES) do
+    local starts = time({ year = e.year, month = e.month, day = e.day, hour = 0 })
+    local ends = time({ year = e.year, month = e.month, day = e.closeDay, hour = 0 })
+    if now < ends then
+      return { zone = e.zone, mapID = e.mapID, x = e.x, y = e.y,
+        opens = starts, closes = ends, active = now >= starts, verified = false,
+        note = "Reported Forever calendar dates; verify exact realm time in-game." }
+    end
+  end
+end
+
+ns.AddCommand("mapextras", "mapextras missing|fishing|faire", function(arg)
+  local cmd = tostring(arg or "missing"):lower()
+  if cmd == "" then cmd = "missing" end
+  local mapID = C.PlayerPosition("player")
+  if cmd == "missing" then
+    if not mapID then ns.Print("no map position available") return end
+    local data = M:MissingSummary(mapID)
+    ns.Print("exploration map %d: %d areas not explored (%d in full data pack, %s)",
+      mapID, data.missing, data.totalKnown, data.source)
+    for i = 1, math.min(10, #data.locations) do
+      local p = data.locations[i]
+      ns.Print("  missing tile %d near overlay pixel %d, %d", i, p.x, p.y)
+    end
+  elseif cmd == "fishing" then
+    local info = mapID and M:FishingAdvice(mapID)
+    if info then ns.Print("%s: suggested Fishing %d-%d (guide data, not verified in-game)", info.zone, info.from, info.to)
+    else ns.Print("no verified fishing skill advice for this zone") end
+  elseif cmd == "faire" then
+    local f = M:NextFaire()
+    if not f then ns.Print("no dated Faire entries remaining; check in-game calendar") return end
+    ns.Print("Darkmoon Faire: %s from %s to %s, approx %.0f, %.0f on map %d (%s)",
+      f.zone, date("%d %b %Y", f.opens), date("%d %b %Y", f.closes),
+      f.x * 100, f.y * 100, f.mapID, f.note)
+  else ns.Print("usage: /ride mapextras missing|fishing|faire") end
+end)
+
 -- ------------------------------------------------------------------ drawing
 -- tiles of one overlay, like Blizzard's MapExplorationPin: { {id, x, y, w, h, u, v} }
 function M.Tiles(e, tileW, tileH)
