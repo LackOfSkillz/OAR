@@ -28,6 +28,9 @@ function M:OnEnable()
   self:On("PLAYER_DEAD", self.OnDead)
   self:On("PLAYER_ALIVE", self.OnAlive)
   self:On("PLAYER_UNGHOST", self.OnResurrected)
+  self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
+    if w == mod.corpseWP and why == "arrived" then mod.corpseArrived = true end
+  end)
 end
 
 function M:OnDisable()
@@ -95,12 +98,14 @@ function M:OnResurrected()
   self:StopCorpsePolling()
   local W = ns.Waypoints
   -- Only touch our own corpse waypoint. If the player changed it, leave it.
-  if self.corpseWP and W and W.current == self.corpseWP then
-    W:Clear("resurrected")
+  local ownCorpse = self.corpseWP and W and W.current == self.corpseWP
+  local arrivedCorpse = self.corpseArrived and W and W.current == nil
+  if ownCorpse or arrivedCorpse then
+    if ownCorpse then W:Clear("resurrected") end
     local previous = self.savedWaypoint
     if previous then W:Set(previous.mapID, previous.x, previous.y, previous.title, previous.opts) end
   end
-  self.corpseWP, self.savedWaypoint, self.dead, self.corpseAttempts = nil, nil, nil, nil
+  self.corpseWP, self.corpseArrived, self.savedWaypoint, self.dead, self.corpseAttempts = nil, nil, nil, nil, nil
 end
 
 -- Returns poi, yards (or nil, reason).
@@ -152,7 +157,7 @@ end
 
 function M:OnDead()
   self:StopCorpsePolling()
-  self.dead, self.corpseWP, self.corpseAttempts = true, nil, 0
+  self.dead, self.corpseWP, self.corpseArrived, self.corpseAttempts = true, nil, nil, 0
   local W = ns.Waypoints
   local w = W and W.current
   self.savedWaypoint = w and { mapID = w.mapID, x = w.x, y = w.y, title = w.title, opts = w.opts } or nil
