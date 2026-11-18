@@ -84,17 +84,108 @@ function M:Suggest(itemID, qty)
 end
 
 -- Gary's own auctions priced above the lowest seen today.
+-- DEEP-28: bounded auction snapshots and explicit user-confirmed cancels.
+-- The AH's GetOwnedAuctions may be absent or restricted; never guess status.
+function M:Owned()
+  local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
+  if type(list) ~= "table" then return {} end
+  local out = {}
+  for _, a in ipairs(list) do
+    local id = a.itemKey and C.Readable(a.itemKey.itemID)
+    local amount = tonumber(C.Readable(a.buyoutAmount))
+    local auctionID = tonumber(C.Readable(a.auctionID))
+    if type(id) == "number" and auctionID and amount then
+      out[#out + 1] = { itemID = id, auctionID = auctionID, amount = amount, status = C.Readable(a.status) }
+    end
+  end
+  return out
+end
+
+function M:SalesLedger()
+  ns.db.char.auctionSales = type(ns.db.char.auctionSales) == "table" and ns.db.char.auctionSales or {}
+  return ns.db.char.auctionSales
+end
+
+function M:RecordOwned()
+  local seen = {}
+  for _, a in ipairs(self:Owned()) do seen[a.auctionID] = a end
+  if self.previousAuctions then
+    for id, a in pairs(self.previousAuctions) do
+      if not seen[id] then
+        local ledger = self:SalesLedger()
+        ledger[#ledger + 1] = { auctionID = id, itemID = a.itemID, amount = a.amount,
+          t = time(), result = "disappeared (sale/expiry/cancel unverified)" }
+        while #ledger > 100 do table.remove(ledger, 1) end
+      end
+    end
+  end
+  self.previousAuctions = seen
+end
+
+function M:SellableBags()
+  local rows = {}
+  for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
+    for slot = 1, C.NumSlots(bag) do
+      local n, id = C.ItemCountAt(bag, slot)
+      local item = id and C.ItemInfo(id)
+      if item and n and n > 0 and (item.quality or 0) > 0 then
+        local guess = self:Suggest(id, n)
+        rows[#rows + 1] = { bag = bag, slot = slot, itemID = id, name = item.name,
+          qty = n, suggested = guess.price, warnings = guess.warnings }
+      end
+    end
+  end
+  table.sort(rows, function(a, b) return a.name < b.name end)
+  return rows
+end
+
+-- A cancel request must originate from a player click, not an event handler.
+function M:CancelAuction(id)
+  if not self.open or C.InCombat() then return false, "open auction house out of combat" end
+  id = tonumber(id)
+  if not id then return false, "invalid auction" end
+  local exists
+  for _, a in ipairs(self:Owned()) do if a.auctionID == id then exists = true break end end
+  if not exists then return false, "auction no longer in owned list" end
+  local cancel = C.Resolve("C_AuctionHouse.CancelAuction")
+  if type(cancel) ~= "function" then return false, "client cancel API missing" end
+  local ok = pcall(cancel, id)
+  return ok, ok and "cancel requested" or "cancel denied by client"
+end
+
+ns.AddCommand("auctions", "auctions bags|owned|history|cancel <auctionID>  review and cancel your auctions", function(arg)
+  arg = tostring(arg or "owned")
+  if arg == "bags" then
+    local rows = M:SellableBags()
+    ns.Print("%d sellable bag stacks; post through Blizzard's sell window", #rows)
+    for i = 1, math.min(20, #rows) do
+      local r = rows[i]
+      ns.Print("%s x%d, suggested %s", r.name, r.qty, r.suggested and ns.Prices.Money(r.suggested) or "price unknown")
+    end
+  elseif arg == "owned" then
+    for _, a in ipairs(M:Owned()) do ns.Print("auction %d: item %d, buyout %s", a.auctionID, a.itemID, ns.Prices.Money(a.amount)) end
+  elseif arg == "history" then
+    for i, e in ipairs(M:SalesLedger()) do
+      if i > 25 then break end
+      ns.Print("auction %d: %s", e.auctionID, e.result)
+    end
+  else
+    local id = arg:match("^cancel%s+(%d+)$")
+    local ok, msg = M:CancelAuction(id)
+    ns.Print("%s", msg)
+  end
+end)
+
 function M:Undercut()
   local out = {}
-  local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
-  if type(list) ~= "table" then return out end
+  local list = self:Owned()
   for _, a in ipairs(list) do
-    local id = a.itemKey and a.itemKey.itemID
-    local mine = C.Readable(a.buyoutAmount)
+    local id = a.itemID
+    local mine = a.amount
     local low = id and ns.Prices:History(id)
     if type(mine) == "number" and low and low < mine and (a.status == nil or a.status == 0) then
       local info = C.ItemInfo(id)
-      out[#out + 1] = { itemID = id, name = info and info.name or ("item " .. id), mine = mine, low = low }
+      out[#out + 1] = { itemID = id, auctionID = a.auctionID, name = info and info.name or ("item " .. id), mine = mine, low = low }
     end
   end
   return out
@@ -120,11 +211,27 @@ function M:Build()
   local anchor = rawget(_G, "AuctionHouseFrame") or UIParent
   local f = CreateFrame("Frame", "Outrider_AuctionHelper", anchor, ns.Theme:BackdropTemplate())
   ns.Theme:ApplyPanel(f, "panel")
-  f:SetSize(240, 170)
+  f:SetSize(300, 235)
   f:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 6, 0)
   f.text = UI.Text(f, "small", "text")
   f.text:SetPoint("TOPLEFT", 8, -8)
-  f.text:SetWidth(224) f.text:SetJustifyH("LEFT")
+  f.text:SetWidth(278) f.text:SetJustifyH("LEFT")
+  local cancel = UI:Button(f, "Cancel selected", 135, function()
+    if not M.selectedAuction then ns.Print("select an undercut auction first") return end
+    local ok, message = M:CancelAuction(M.selectedAuction)
+    ns.Print("%s", message)
+  end)
+  cancel:SetPoint("BOTTOMLEFT", 8, 8)
+  UI.Tip(cancel, "Cancel undercut", "Cancels the selected auction on your click; never auto-cancels.")
+  f.cancel = cancel
+  f.next = UI:Button(f, "Next undercut", 125, function()
+    local list = M:Undercut()
+    M.nextIndex = ((M.nextIndex or 0) % math.max(1, #list)) + 1
+    M.selectedAuction = list[M.nextIndex] and list[M.nextIndex].auctionID
+    M:Refresh()
+  end)
+  f.next:SetPoint("LEFT", cancel, "RIGHT", 5, 0)
+  UI.Tip(f.next, "Next undercut", "Choose the next owned auction that appears undercut.")
   self.frame = f
   return f
 end
@@ -148,6 +255,9 @@ function M:Refresh()
       lines[#lines + 1] = string.format("  %s %s < yours %s", u.name, ns.Prices.Money(u.low), ns.Prices.Money(u.mine))
     end
   end
+  local bags = self:SellableBags()
+  lines[#lines + 1] = string.format("Sellable bag stacks: %d (use /ride auctions bags)", #bags)
+  if self.selectedAuction then lines[#lines + 1] = "Selected auction: #" .. self.selectedAuction end
   f.text:SetText(table.concat(lines, "\n"))
   f:SetShown(#lines > 1)
 end
@@ -156,6 +266,7 @@ function M:OnEnable()
   self:On("AUCTION_HOUSE_SHOW", function(mod) mod.open = true mod:Refresh() end)
   self:On("AUCTION_HOUSE_CLOSED", function(mod) mod.open = false if mod.frame then mod.frame:Hide() end end)
   self:On("OWNED_AUCTIONS_UPDATED", function(mod)
+    mod:RecordOwned()
     local n = #mod:Undercut()
     if n > 0 then mod:Info("undercut: %d of your auctions", n) end
     mod:Refresh()
