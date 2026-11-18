@@ -41,7 +41,7 @@ local M = ns:NewModule("HunterFight", {
   classes = { HUNTER = true, MAGE = true, PRIEST = true, WARRIOR = true, ROGUE = true, WARLOCK = true,
     DRUID = true, PALADIN = true, SHAMAN = true }, -- the six others: Modules/ClassFight.lua
   defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", healName = "Heal",
-    concussive = false, wingclip = true, pet = true }, -- Concussive off: guides keep it for when the pet loses aggro
+    concussive = false, wingclip = true, pet = true, shotHints = true }, -- Concussive off: guides keep it for when the pet loses aggro
 })
 ns.HunterFight = M
 
