@@ -131,6 +131,30 @@ T.describe("pet status", function()
     T.eq(M:GrowlAutocast(), nil)
   end)
 
+  T.it("Feed shows only when the pet is below Happy (happiness from stable info)", function()
+    local game, ns, M = session()
+    local level = 3
+    local function stable(slot)
+      if slot == 1 then return { name = "Rex", happinessLevel = level, loyaltyName = "Submissive" } end
+      if slot == 2 then return { name = "Other", happinessLevel = 1 } end
+    end
+    game.base.C_StableInfo = { GetStablePetInfo = stable }
+    rawset(game.env, "C_StableInfo", game.base.C_StableInfo)
+    game.units.pet = pet()
+    game.units.pet.name = "Rex"
+    game:fire("UNIT_PET", "player")
+    game:advance(0.5)
+    T.eq(M.happiness, 3)
+    T.contains(M.frame.line4:GetText(), "Happy")
+    T.contains(M.frame.line4:GetText(), "Submissive")
+    T.no(M.feed:IsShown(), "happy pet: no Feed button")
+    level = 2
+    game:fire("UNIT_AURA", "pet")
+    game:advance(0.5)
+    T.ok(M.feed:IsShown(), "content pet: Feed appears")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("panel grows to fit wrapped text so nothing overlaps", function()
     local game, ns, M = session()
     game.units.pet = pet()

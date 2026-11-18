@@ -33,6 +33,8 @@ local HAPPY = { [1] = "Unhappy", [2] = "Content", [3] = "Happy" }
 function M:OnEnable()
   self:On("UNIT_PET", function(mod, _, unit) if unit == "player" then mod:Update("pet changed") end end)
   self:On("UNIT_PET_EXPERIENCE", function(mod) mod:Update() end)
+  self:On("UNIT_HAPPINESS", function(mod) mod:Update() end) -- if the client has it
+  self:On("PET_STABLE_UPDATE", function(mod) mod:Update() end)
   self:On("UNIT_HEALTH", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
   self:On("UNIT_POWER_UPDATE", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
   self:On("UNIT_AURA", function(mod, _, unit) if unit == "pet" then mod:Update() end end)
@@ -218,7 +220,8 @@ function M:Read()
   d.dmgLo, d.dmgHi = C.Readable(lo), C.Readable(hi)
   local _, armor = C.Call("UnitArmor", "pet")
   d.armor = C.Readable(armor)
-  d.happiness = C.Call("GetPetHappiness")
+  d.happiness = tonumber(C.Readable(C.Call("GetPetHappiness")))
+  if not d.happiness then d.happiness, d.loyalty = self:StableInfo(d.name) end
   d.npcID = C.UnitNpcID("pet")
   return d
 end
@@ -333,7 +336,36 @@ function M:PlaceFeed()
     ns.SecureButtons:Place(self.feed, "BOTTOMRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 8, cy - h / 2 + 8)
   end
   ns.SecureButtons:Raise(self.feed, "FULLSCREEN") -- above the panel (DIALOG), or the panel eats the click
-  ns.SecureButtons:SetShown(self.feed, true)
+  ns.SecureButtons:SetShown(self.feed, self:NeedsFood())
+end
+
+-- Feed shows only when the pet could use food (Gary, 2026-11-18: "hide the
+-- feed button til the pet needs to be fed"): happiness below Happy. When the
+-- client gives no happiness at all, Feed stays visible, as before.
+function M:NeedsFood()
+  local h = self.happiness
+  return h == nil or h < 3
+end
+
+-- Forever has no GetPetHappiness, but C_StableInfo.GetStablePetInfo(slot)
+-- carries happinessLevel (1-3) and loyaltyName (seen in the log 2026-11-18:
+-- MystMane happinessLevel=3 loyaltyName=Submissive). The pet out is the slot
+-- with its name; a name used twice gives no answer rather than a guess.
+function M:StableInfo(name)
+  local get = C.Resolve("C_StableInfo.GetStablePetInfo")
+  if type(get) ~= "function" or type(name) ~= "string" then return nil end
+  local found
+  for slot = 1, 5 do
+    local ok, info = pcall(get, slot)
+    if ok and type(info) == "table" and C.Readable(info.name) == name then
+      if found then return nil end
+      found = info
+    end
+  end
+  if not found then return nil end
+  local h = tonumber(C.Readable(found.happinessLevel))
+  if h and (h < 1 or h > 3) then h = nil end
+  return h, C.Readable(found.loyaltyName)
 end
 
 -- Write the Feed button's macro for the food to offer (out of combat; the
@@ -355,7 +387,8 @@ M.OPEN_H, M.HEADER_H = 200, 34 -- folded height fits Feed and the arrow side by 
 M.TEXT_W = 256
 
 -- Open height from the text actually shown: header and content inset (36),
--- the three fixed lines (46), each wrapped block, and a row for Feed (34).
+-- the three fixed lines (46), each wrapped block, and a row for Feed (38)
+-- when it shows.
 function M:FitHeight()
   local f = self.frame
   if not f then return M.OPEN_H end
@@ -365,7 +398,7 @@ function M:FitHeight()
     local sh = fs.GetStringHeight and tonumber((fs:GetStringHeight())) or 0
     if text and text ~= "" then h = h + math.max(sh, 12) + 4 end
   end
-  return math.max(120, math.floor(h + 34 + 0.5))
+  return math.max(110, math.floor(h + (self:NeedsFood() and 38 or 8) + 0.5))
 end
 
 -- Fold to the header bar or open again. The header's top-left corner stays
@@ -425,7 +458,12 @@ function M:Refresh(why)
   M.ShowRaw(f.hpVal, d.rawHp)
   f.hpMax:SetText("/ " .. tostring(d.hpMax or "?"))
   M.ShowRaw(f.focusVal, d.rawFocus)
-  f.line4:SetText(d.happiness and ("Happiness: " .. (HAPPY[d.happiness] or tostring(d.happiness))) or "")
+  if d.happiness ~= self.happiness and self.happiness and d.happiness then
+    self:Info("pet happiness %s -> %s", tostring(HAPPY[self.happiness]), tostring(HAPPY[d.happiness]))
+  end
+  self.happiness = d.happiness
+  f.line4:SetText(d.happiness and ("Happiness: " .. (HAPPY[d.happiness] or tostring(d.happiness))
+    .. (d.loyalty and ("   Loyalty: " .. d.loyalty) or "")) or "")
   self.family = d.family
   if d.xp and d.xpMax and d.xpMax > 0 then
     f.line2:SetText(string.format("XP %d / %d (%.0f%%), %d to level %d", d.xp, d.xpMax, d.xp / d.xpMax * 100,
