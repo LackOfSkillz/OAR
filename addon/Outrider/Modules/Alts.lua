@@ -133,8 +133,14 @@ function M:Record(why)
   a.dura, a.duraLow = dura and math.floor(dura + 0.5), low and math.floor(low + 0.5)
   a.ammo = IB and IB.Ammo() or nil
   a.profs = profs
-  a.reputations = self:ReadReputations()
-  a.recipes = self:SnapshotRecipes()
+  -- Reputation APIs can walk hundreds of rows; do not rescan every coin or
+  -- XP update. Refresh on login/logout and at most every five minutes.
+  local now = time()
+  if not self.lastDetailsAt or now - self.lastDetailsAt >= 300 or why == "logout" then
+    a.reputations = self:ReadReputations()
+    a.recipes = self:SnapshotRecipes()
+    self.lastDetailsAt = now
+  end
   a.zone = readable(C.Call("GetZoneText")) or a.zone
   a.t = time()
   self.alts[key] = a
