@@ -332,7 +332,7 @@ function M.new(opts)
   base.UISpecialFrames = {}
   base.SlashCmdList = {}
   base.BackdropTemplateMixin = {}
-  base.GetCursorPosition = function() return 100, 100 end
+  base.GetCursorPosition = function() return game.cursorX or 200, game.cursorY or 650 end
   base.HideUIPanel = noop
   base.PlaySound = function(id, channel) game.sounds[#game.sounds + 1] = id end
   base.RAID_CLASS_COLORS = { HUNTER = { r = 0.67, g = 0.83, b = 0.45 }, PRIEST = { r = 1, g = 1, b = 1 }, MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
