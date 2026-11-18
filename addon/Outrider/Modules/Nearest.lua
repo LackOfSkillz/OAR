@@ -1,8 +1,10 @@
 -- Modules/Nearest.lua  (P3-07)
 -- /ride near <kind>: nearest known place of that kind on this continent
 -- (world yards), same faction or neutral, sets a waypoint and says how far.
--- On death (PLAYER_DEAD) it sets the waypoint to the nearest spirit healer by
--- itself (setting; a waypoint is not a protected action, it only shows the way).
+-- When dead, a corpse arrow uses the actual corpse position from
+-- C_DeathInfo.GetCorpseMapPosition; the nearest spirit healer is NOT the
+-- guaranteed respawn point (Forever graveyards depend on subzones).
+-- No corpse coordinates: preserve the previous waypoint and report unknown.
 
 local _, ns = ...
 local C = ns.Compat
@@ -10,7 +12,7 @@ local M = ns:NewModule("Nearest", {
   title = "Nearest place (/ride near)",
   phase = "P3",
   order = 52,
-  defaults = { spiritOnDeath = true },
+  defaults = { spiritOnDeath = false, corpseArrow = true },
 })
 ns.Nearest = M
 
@@ -24,6 +26,81 @@ M.ALIASES = {
 
 function M:OnEnable()
   self:On("PLAYER_DEAD", self.OnDead)
+  self:On("PLAYER_ALIVE", self.OnAlive)
+  self:On("PLAYER_UNGHOST", self.OnResurrected)
+end
+
+function M:OnDisable()
+  self:StopCorpsePolling()
+  self.dead = nil
+end
+
+function M:StopCorpsePolling()
+  if self.corpseTicker then self.corpseTicker:Cancel() self.corpseTicker = nil end
+end
+
+-- Modern Forever API. The old global GetCorpseMapPosition was removed.
+-- Readable vector2 is required; never run numeric operations on secret values.
+function M:CorpsePosition()
+  local mapID = C.PlayerPosition("player")
+  if not mapID then return nil end
+  local pos = C.Call("C_DeathInfo.GetCorpseMapPosition", mapID)
+  if not pos then return nil end
+  local x, y
+  if type(pos) == "table" and type(pos.GetXY) == "function" then
+    local ok, a, b = pcall(pos.GetXY, pos)
+    if ok then x, y = a, b end
+  elseif type(pos) == "table" then
+    x, y = pos.x, pos.y
+  end
+  x, y = tonumber(C.Readable(x)), tonumber(C.Readable(y))
+  if not (x and y and x > 0 and x < 1 and y > 0 and y < 1) then return nil end
+  return mapID, x, y
+end
+
+function M:TryCorpse()
+  if not self.dead or self.corpseWP or not self:Settings().corpseArrow then return false end
+  local mapID, x, y = self:CorpsePosition()
+  if not mapID then return false end
+  local W = ns.Waypoints
+  if not W then return false end
+  local ok, wp = W:Set(mapID, x, y, "Your corpse")
+  if not ok then return false end
+  self.corpseWP = wp
+  self:StopCorpsePolling()
+  self:Info("corpse arrow on map %d at %.1f, %.1f", mapID, x * 100, y * 100)
+  return true
+end
+
+function M:PollCorpse()
+  if self:TryCorpse() then return end
+  self.corpseAttempts = (self.corpseAttempts or 0) + 1
+  if self.corpseAttempts >= 15 then
+    self:StopCorpsePolling()
+    self:Info("corpse location unavailable; old waypoint was left unchanged")
+  end
+end
+
+function M:OnAlive()
+  if not self.dead and not C.Call("UnitIsGhost", "player") then return end
+  self.dead = true
+  if self:TryCorpse() then return end
+  if not self.corpseTicker then
+    self.corpseAttempts = 0
+    self.corpseTicker = ns.Timer.Ticker(2, function() M:PollCorpse() end, "nearest:corpse")
+  end
+end
+
+function M:OnResurrected()
+  self:StopCorpsePolling()
+  local W = ns.Waypoints
+  -- Only touch our own corpse waypoint. If the player changed it, leave it.
+  if self.corpseWP and W and W.current == self.corpseWP then
+    W:Clear("resurrected")
+    local previous = self.savedWaypoint
+    if previous then W:Set(previous.mapID, previous.x, previous.y, previous.title, previous.opts) end
+  end
+  self.corpseWP, self.savedWaypoint, self.dead, self.corpseAttempts = nil, nil, nil, nil
 end
 
 -- Returns poi, yards (or nil, reason).
@@ -74,9 +151,14 @@ function M:Go(kind)
 end
 
 function M:OnDead()
-  if not self:Settings().spiritOnDeath then return end
-  local ok, msg = self:Go("spirit_healer")
-  if ok then ns.Print("nearest spirit healer: %s", msg) end
+  self:StopCorpsePolling()
+  self.dead, self.corpseWP, self.corpseAttempts = true, nil, 0
+  local W = ns.Waypoints
+  local w = W and W.current
+  self.savedWaypoint = w and { mapID = w.mapID, x = w.x, y = w.y, title = w.title, opts = w.opts } or nil
+  -- The corpse often becomes addressable only after release. Do not replace
+  -- a player waypoint with an incorrect nearest-graveyard guess.
+  self:TryCorpse()
 end
 
 function M:Activity()
