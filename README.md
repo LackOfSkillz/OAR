@@ -66,6 +66,16 @@ NPC, gear, creature, node, quest and dungeon packs are derived from [QuestieDB](
 
 **Public-pack decision (2026-11-18):** Gary Mix elected to publish the data and quest packs. However, the GitHub repo presently contains only the Words data addon; QuestieDB-derived generated files remain under the local git-ignored `private/` folder. They have **not been imported into this GitHub repository**. Publishing those generated files requires accessing the local build outputs, reviewing their provenance, and committing them with per-pack notices and GPLv3 documents. Public availability of the repository itself does not make missing pack files downloadable.
 
+## Outrider Intelligence 2.0 — engineering design
+
+The proposed next-generation AI coaching edition supports **all nine original classes and their applicable roles**, not just Hunter. It centers on native, offline-capable Opportunity Radar, role-aware gear/quest/profession planning, deterministic vendor-arbitrage analysis, and optional grounded local/cloud model explanations. No automated gameplay or unapproved live external bridge is included.
+
+- **[Complete universal AI engineering blueprint](docs/intelligence/OUTRIDER_INTELLIGENCE_2_0_UNIVERSAL_ENGINEERING_BLUEPRINT.md)**
+- **[77-step engineering implementation backlog](docs/intelligence/OUTRIDER_INTELLIGENCE_2_0_IMPLEMENTATION_BACKLOG.md)**
+- [Current AI v1 plan](docs/intelligence/OUTRIDER_INTELLIGENCE_ENGINEERING_SPEC.md)
+
+These are **new design documents**, not a claim that Intelligence 2.0 is already implemented or that real-client compatibility has been certified.
+
 ## Developers
 
 - `CLAUDE.md`: the rulebook (hard rules, the build, test and deploy loop, commands). Read it first.
