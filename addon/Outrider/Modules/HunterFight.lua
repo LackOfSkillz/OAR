@@ -446,6 +446,7 @@ function M:AssistedCombat()
 end
 
 function M:OnEnable()
+  self:ShotOverlay()
   -- One time: Gary asked to turn Wing Clip back on (2026-11-12). After this,
   -- /ride fight wingclip on|off is his to change again.
   local s = self:Settings()
@@ -495,6 +496,58 @@ function M:OnEnable()
 end
 
 function M:OnDisable() ns.ThrottleCancel("hunterfight") end
+
+-- DEEP-16: a read-only overlay by the client's own ranged swing timer.
+-- The game retains all swing timing and Edit Mode layout ownership.
+function M:ShotReadiness()
+  if ns.PlayerClass() ~= "HUNTER" then return nil end
+  local get = C.Resolve("UnitRangedDamage")
+  if type(get) ~= "function" then return { known = false } end
+  local ok, speed = pcall(get, "player")
+  speed = ok and tonumber(C.Readable(speed)) or nil
+  if not speed or speed <= 0 then return { known = false } end
+  local moving = C.Readable(C.Call("GetUnitSpeed", "player"))
+  local enemy = C.Readable(C.Call("UnitExists", "target"))
+  local inRange
+  local check = C.Resolve("C_Spell.IsSpellInRange")
+  local spell = ns.Spellbook and ns.Spellbook:Known("Auto Shot")
+  if enemy and spell and spell.id and type(check) == "function" then
+    local success, r = pcall(check, spell.id, "target")
+    r = success and C.Readable(r)
+    if type(r) == "boolean" then inRange = r end
+  end
+  return { known = true, speed = speed, moving = type(moving) == "number" and moving > 0 or false,
+    inRange = inRange }
+end
+
+function M:ShotOverlay()
+  local bar = rawget(_G, "SwingTimerRanged")
+  if not (bar and self:Supported() and ns.PlayerClass() == "HUNTER") then return nil end
+  if self.shotOverlay then return self.shotOverlay end
+  local frame = CreateFrame("Frame", nil, bar)
+  frame:SetPoint("BOTTOM", bar, "TOP", 0, 3)
+  frame:SetSize(190, 18)
+  local text = ns.UI.Text(frame, "small", "warn")
+  text:SetPoint("CENTER")
+  frame.label = text
+  self.shotOverlay = frame
+  frame:SetScript("OnUpdate", function(_, dt)
+    M.shotElapsed = (M.shotElapsed or 0) + (dt or 0)
+    if M.shotElapsed >= 0.25 then M.shotElapsed = 0 M:UpdateShotOverlay() end
+  end)
+  return frame
+end
+
+function M:UpdateShotOverlay()
+  local status = self:ShotReadiness()
+  local frame = self:ShotOverlay()
+  if not frame then return end
+  if not self:Settings().shotHints or not status or not status.known then frame.label:SetText("") return end
+  local hints = {}
+  if status.moving then hints[#hints + 1] = "Stop moving for Auto Shot" end
+  if status.inRange == false then hints[#hints + 1] = "Target out of Auto Shot range" end
+  frame.label:SetText(table.concat(hints, " | "))
+end
 
 function M:Activity()
   local parts = {}
