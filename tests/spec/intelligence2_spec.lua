@@ -169,7 +169,7 @@ T.describe("intelligence 2.0 native radar", function()
           { key = "gear:two", kind = "gear", title = "Gear two", benefit = 0.8, confidence = 0.8, label = "community" },
           { key = "errand:three", kind = "errand", title = "Repair", benefit = 0.7, confidence = 1, label = "observed" },
           { key = "gold:four", kind = "gold", title = "Gold", benefit = 0.5, confidence = 1, label = "inferred" },
-          { key = "bad id", kind = "quest", title = "Bad", benefit = 1, confidence = 1, label = "observed" },
+          { key = "bad|id", kind = "quest", title = "Bad", benefit = 1, confidence = 1, label = "observed" },
           { key = "class:wrong", kind = "gear", title = "Wrong class", benefit = 1, confidence = 1, label = "observed", roleHint = {class = "PRIEST", role = "healer"} },
         }, {}
       end
@@ -177,7 +177,7 @@ T.describe("intelligence 2.0 native radar", function()
       T.eq(#cards, 3)
       for _, card in ipairs(cards) do
         T.ok(ns.IntelOpportunity:Valid(card))
-        T.no(card.candidateId == "bad id")
+        T.no(card.candidateId == "bad|id")
         T.no(card.candidateId == "class:wrong")
       end
       T.ok(ns.OpportunityRadar:Feedback(cards[1], "snooze"))
