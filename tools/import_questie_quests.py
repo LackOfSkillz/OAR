@@ -163,7 +163,10 @@ def main():
                     objs.append(("object", e[0], e[1] if len(e) > 1 and isinstance(e[1], str) else None))
             for e in Q.lua_array(o.get(3) or []):
                 e = Q.lua_array(e)
-                if e and isinstance(e[0], int) and need_item(e[0]):
+                if e and isinstance(e[0], int) and e[0] > 0:
+                    # Preserve objective links even if no drop location is
+                    # known. Missing drop data must not hide tooltip usage.
+                    need_item(e[0])
                     objs.append(("item", e[0], e[1] if len(e) > 1 and isinstance(e[1], str) else None))
             for e in Q.lua_array(o.get(5) or []):
                 e = Q.lua_array(e)
