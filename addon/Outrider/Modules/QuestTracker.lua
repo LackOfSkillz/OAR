@@ -251,7 +251,7 @@ function M:Refresh()
     #lines > 0 and s.scrollOffset + 1 or 0, math.min(#lines, s.scrollOffset + M.MAX_ROWS), #lines,
     s.focus and " [focused]" or ""))
   f.sort.label:SetText(s.sort == "distance" and "Nearest" or "Level")
-  local shown = math.min(#lines, M.MAX_ROWS)
+  local shown = math.min(math.max(0, #lines - s.scrollOffset), M.MAX_ROWS)
   for i = 1, shown do
     local r = self:Row(i)
     local l = lines[i + s.scrollOffset]
