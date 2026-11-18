@@ -23,12 +23,18 @@ local function said(game, text)
 end
 
 T.describe("herb helper", function()
-  T.it("says once when Find Herbs is off, and logs the tracking list", function()
+  T.it("notes once in the Feed (not chat) when Find Herbs is off, and logs the tracking list", function()
     local game, ns = session({ { name = "Find Herbs", active = false }, { name = "Track Beasts", active = true } })
-    T.eq(said(game, "Find Herbs is off"), 1)
+    local function inFeed()
+      local n = 0
+      for _, e in ipairs(ns.Feed.list) do if e.title == "Find Herbs is off" then n = n + (e.count or 1) end end
+      return n
+    end
+    T.eq(inFeed(), 1)
+    T.eq(said(game, "Find Herbs is off"), 0, "login chat stays quiet")
     game:fire("PLAYER_ENTERING_WORLD", false, true)
     game:advance(6)
-    T.eq(said(game, "Find Herbs is off"), 1, "once per session")
+    T.eq(inFeed(), 1, "once per session")
     local logged
     for _, l in ipairs(ns.Log:Tail(40)) do
       if ns.Log:FormatLine(l):find("minimap tracking: Find Herbs, Track Beasts (on)", 1, true) then logged = true end

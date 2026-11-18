@@ -316,8 +316,9 @@ function Hub:Build()
     ns.db.char.hub.shown = true
     Hub:UpdateWho()
     f.tabBar:Select(ns.db.char.hub.tab or "home")
+    ns.Events:Fire("OTR_HUB_SHOWN")
   end)
-  f:SetScript("OnHide", function() ns.db.char.hub.shown = false end)
+  f:SetScript("OnHide", function() ns.db.char.hub.shown = false ns.Events:Fire("OTR_HUB_HIDDEN") end)
   return f
 end
 

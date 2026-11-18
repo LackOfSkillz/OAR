@@ -124,7 +124,7 @@ end
 
 function M.Label(id)
   if not id then return "?" end
-  return string.format("L%03d", id % 1000)
+  return string.format("Layer %d", id % 1000) -- "Layer 21", not "L021" (premium plan S5)
 end
 
 -- Current layer id, confidence 0..1, display label.

@@ -139,18 +139,17 @@ function M:Window(npcID, layer, now)
   return { state = "overdue", last = last, source = source }
 end
 
-local function mins(sec) return math.floor(sec / 60 + 0.5) end
 
 function M:Describe(npcID, layer, now)
   now = now or time()
   local w = self:Window(npcID, layer, now)
   if w.state == "unknown" then return "never seen" end
-  local ago = mins(now - w.last.t)
-  if w.state == "alive" then return string.format("alive, seen %d min ago", ago) end
-  if w.state == "dead" then return string.format("%s %d min ago, no respawn data yet", w.last.state, ago) end
-  if w.state == "waiting" then return string.format("window opens in %d min (%s)", mins(w.opensIn), w.source) end
-  if w.state == "open" then return string.format("window open now, %d min left (%s)", mins(w.closesIn), w.source) end
-  return string.format("window passed, %s %d min ago (%s)", w.last.state, ago, w.source)
+  local ago = ns.Ago(now - w.last.t)
+  if w.state == "alive" then return string.format("alive, seen %s", ago) end
+  if w.state == "dead" then return string.format("%s %s, no respawn data yet", w.last.state, ago) end
+  if w.state == "waiting" then return string.format("window opens in %s (%s)", ns.Duration(w.opensIn), w.source) end
+  if w.state == "open" then return string.format("window open now, %s left (%s)", ns.Duration(w.closesIn), w.source) end
+  return string.format("window passed, %s %s (%s)", w.last.state, ago, w.source)
 end
 
 -- P9-01: last sighting per rare (newest 25) with its respawn window state

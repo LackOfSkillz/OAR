@@ -55,7 +55,9 @@ function M:CheckTracking()
         if t.name == spell and not t.active and self:Settings().remind and not (self.reminded or {})[spell] then
           self.reminded = self.reminded or {}
           self.reminded[spell] = true
-          ns.Print("%s is off, so herb and ore dots won't show on the minimap. Press your Herb button (/ride make creates it) or use the minimap's magnifier.", spell)
+          -- to the Feed, not chat: login stays quiet (rule 6, premium plan B18)
+          if ns.Feed then ns.Feed:Add(nil, { title = spell .. " is off", color = "warn",
+            text = "Herb and ore dots won't show on the minimap. Press your Herb button or use the minimap's magnifier." }) end
           self:Info("%s tracking is off", spell)
         end
       end

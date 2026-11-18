@@ -16,7 +16,7 @@ local M = ns:NewModule("QuestTracker", {
   title = "Quest tracker",
   phase = "P4",
   order = 48,
-  defaults = { show = true, sort = "distance", folded = {}, foldedZones = {}, hideBlizzard = false, scrollOffset = 0, focus = nil },
+  defaults = { show = true, sort = "distance", folded = {}, foldedZones = {}, hideBlizzard = true, scrollOffset = 0, focus = nil },
   yieldsTo = { "Questie" },
 })
 ns.QuestTracker = M
@@ -110,7 +110,7 @@ function M:Build()
   if self.frame then return self.frame end
   local f = CreateFrame("Frame", "Outrider_QuestTracker", UIParent, ns.Theme:BackdropTemplate())
   ns.Theme:ApplyPanel(f, "bg", "border")
-  f:SetAlpha(0.92)
+  f:SetAlpha(1)
   f:SetSize(M.WIDTH, 60)
   f:SetFrameStrata("MEDIUM")
   f:SetMovable(true)
@@ -282,6 +282,15 @@ function M:Blizzard()
 end
 
 function M:OnEnable()
+  -- One owner per frame (rule 8; premium plan B5): the two trackers drew on
+  -- top of each other, so the game's is hidden while Outrider's shows. Once,
+  -- for characters that saved the old default; the switch on the Quests page
+  -- still brings it back.
+  local s = self:Settings()
+  if not s.trackerOwnerV2 then s.trackerOwnerV2, s.hideBlizzard = true, true end
+  -- out of the way while the Outrider window is open (it sat under the hub's edge)
+  self:On("OTR_HUB_SHOWN", function(mod) if mod.frame then mod.frame:SetAlpha(0) end end)
+  self:On("OTR_HUB_HIDDEN", function(mod) if mod.frame then mod.frame:SetAlpha(1) end end)
   local function later() ns.Throttle("questtracker:refresh", 0.5, function() M:Refresh() end) end
   for _, e in ipairs({ "QUEST_LOG_UPDATE", "QUEST_ACCEPTED", "QUEST_REMOVED", "ZONE_CHANGED_NEW_AREA", "PLAYER_REGEN_ENABLED" }) do
     self:On(e, later)

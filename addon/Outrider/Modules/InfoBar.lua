@@ -100,8 +100,9 @@ function M:Text(id)
   if id == "layer" then
     local layers = ns.Layers
     if not (layers and layers.enabled) or C.Call("IsInInstance") then return nil end
-    local _, _, label = layers:Current()
-    return "Layer " .. (label or "?")
+    local id, _, label = layers:Current()
+    if not id then return "|cff8f96a6Layer —|r" end
+    return label
   end
   if id == "gold" then return M.GoldText(C.Call("GetMoney")) end
   if id == "bags" then
@@ -168,7 +169,7 @@ function M:Tip(id, tt)
       if #history > 0 then tt:AddLine("Recently observed on this map:", 1, 0.82, 0) end
       for _, h in ipairs(history) do
         local age = math.max(0, time() - (tonumber(h.at) or time()))
-        tt:AddDoubleLine(layers.Label(h.id), string.format("%d min ago", math.floor(age / 60)), 1, 1, 1, 0.7, 0.7, 0.7)
+        tt:AddDoubleLine(layers.Label(h.id), ns.Ago(age), 1, 1, 1, 0.7, 0.7, 0.7)
       end
     end
   elseif id == "gold" then

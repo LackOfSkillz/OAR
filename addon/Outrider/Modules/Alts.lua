@@ -308,12 +308,7 @@ function M:Activity()
 end
 
 -- ------------------------------------------------------------------ page
-local function ago(t)
-  local d = time() - (t or 0)
-  if d < 3600 then return math.max(1, math.floor(d / 60)) .. " min ago" end
-  if d < 86400 then return math.floor(d / 3600) .. " h ago" end
-  return math.floor(d / 86400) .. " days ago"
-end
+local function ago(t) return ns.Ago(time() - (t or 0)) end
 
 ns.Hub:AddTab("alts", "My characters", function(p)
   local UI = ns.UI

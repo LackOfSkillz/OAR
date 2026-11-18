@@ -32,7 +32,20 @@ function M:Add(_, opts)
   if type(text) ~= "string" then text = nil end
   local g = ns.db.global
   g.feedN = g.feedN + 1
-  table.insert(self.list, 1, { n = g.feedN, t = time(), title = tostring(opts.title or ""), text = text, color = opts.color, who = ns.db.key })
+  local title = tostring(opts.title or "")
+  -- the same notice again within 6 hours: one entry, counted (x3), moved to the
+  -- top (premium plan B13: "No hunter aspect active" was listed three times)
+  for i = 1, math.min(8, #self.list) do
+    local e = self.list[i]
+    if e.title == title and e.text == text and time() - (e.t or 0) < 6 * 3600 then
+      table.remove(self.list, i)
+      e.count, e.t, e.n = (e.count or 1) + 1, time(), g.feedN
+      table.insert(self.list, 1, e)
+      ns.Hub:Refresh()
+      return
+    end
+  end
+  table.insert(self.list, 1, { n = g.feedN, t = time(), title = title, text = text, color = opts.color, who = ns.db.key })
   while #self.list > self.CAP do table.remove(self.list) end
   ns.Hub:Refresh()
 end
@@ -66,9 +79,10 @@ ns.Hub:AddTab("feed", "Feed", function(p)
       for i, e in ipairs(M.list) do
         if i > 20 then break end
         local tags = { { when(e.t) .. " ago", "plain" } }
+        if (e.count or 1) > 1 then tags[#tags + 1] = { "x" .. e.count, "gold" } end
         if e.who and e.who ~= ns.db.key then tags[#tags + 1] = { e.who:match("^[^-]+") or e.who, "gold" } end
         local t = tostring(e.title or ""):lower()
-        local icon = t:find("rare") and "Ability_Hunter_SniperShot" or t:find("upgrade") and "INV_Chest_Chain"
+        local icon = t:find("rare") and "Ability_Hunter_SniperShot" or t:find("upgrade") and "Spell_ChargePositive"
           or t:find("ammo") and "INV_Ammo_Arrow_02" or t:find("errand") and "INV_Misc_Bag_08" or "INV_Letter_15"
         out[#out + 1] = { pic = "Interface\\Icons\\" .. icon, title = e.title, tags = tags,
           line = e.text and e.text:gsub("\n", " ") or "" }

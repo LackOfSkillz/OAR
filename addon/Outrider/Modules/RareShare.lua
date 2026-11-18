@@ -53,10 +53,7 @@ function M.Reject(d, now)
   if d.mapID ~= nil and type(d.mapID) ~= "number" then return "map" end
 end
 
-local function ago(sec)
-  if sec < 90 then return "just now" end
-  return string.format("%d min ago", math.floor(sec / 60 + 0.5))
-end
+local function ago(sec) return ns.Ago(sec) end
 
 function M:OnComm(_, kind, d, sender, channel)
   if kind ~= "RARE" then return end

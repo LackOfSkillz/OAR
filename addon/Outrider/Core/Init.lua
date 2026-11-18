@@ -54,6 +54,27 @@ end
 function ns.TitleCase(s)
   return (tostring(s):gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end))
 end
+-- How long, in words (premium plan S5): "45 sec", "12 min", "3 h 20 min",
+-- "1 day 17 h", "3 days". Never "2459 min" or "1 days".
+function ns.Duration(sec)
+  sec = math.max(0, math.floor(tonumber(sec) or 0))
+  if sec < 60 then return sec .. " sec" end
+  local m = math.floor(sec / 60 + 0.5)
+  if m < 60 then return m .. " min" end
+  local h, rm = math.floor(m / 60), m % 60
+  if h < 24 then return rm > 0 and (h .. " h " .. rm .. " min") or (h .. " h") end
+  local d, rh = math.floor(h / 24), h % 24
+  local days = d == 1 and "1 day" or (d .. " days")
+  if d < 7 and rh > 0 then return days .. " " .. rh .. " h" end
+  return days
+end
+-- "just now", "12 min ago", "1 day 17 h ago"
+function ns.Ago(sec)
+  sec = tonumber(sec) or 0
+  if sec < 60 then return "just now" end
+  return ns.Duration(sec) .. " ago"
+end
+
 function ns.Print(msg, ...)
   if select("#", ...) > 0 then msg = string.format(msg, ...) end
   local line = "|cff8fd1ffOutrider|r " .. tostring(msg)
