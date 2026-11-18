@@ -41,4 +41,33 @@ T.describe("intelligence 2.0 vendor arbitrage", function()
     T.eq(E.VendorFloor(lot, ctx), nil)
     T.no(E.HistoricalHint(101, 100, 2).actionable)
   end)
+
+T.describe("intelligence 2.0 speculative economics", function()
+  T.it("labels AH resale estimates as hypotheses and declines unknown fees", function()
+    local E = economy()
+    local sample = {itemID=51, quantity=3, totalCostCopper=300,
+                    expectedUnitCopper=200}
+    local h = E.ResaleHypothesis(sample)
+    T.no(h.actionable)
+    T.eq(h.possibleNetCopper, nil)
+    T.eq(h.liquidity, "unknown")
+    sample.feeCopper, sample.depositCopper = 25, 10
+    h = E.ResaleHypothesis(sample)
+    T.eq(h.expectedGrossCopper, 600)
+    T.eq(h.possibleNetCopper, 265)
+    T.no(h.actionable)
+  end)
+  T.it("only stores bounded explicitly confirmed outcomes and observed rates", function()
+    local E = economy()
+    local c = {}
+    T.no(E.RecordOutcome(c, {kind="vendor",itemID=1,netCopper=100}))
+    T.ok(E.RecordOutcome(c, {kind="vendor",itemID=1,netCopper=100,confirmed=true}))
+    T.eq(#c.intelEconomyOutcomes, 1)
+    T.eq(c.intelEconomyOutcomes[1].netCopper, 100)
+    T.eq(E.GoldPerHour(100, 100, "estimated"), nil)
+    T.eq(E.GoldPerHour(100, 100, "observed"), 3600)
+    T.eq(E.GoldPerHour(100, 0, "observed"), nil)
+  end)
+end)
+
 end)

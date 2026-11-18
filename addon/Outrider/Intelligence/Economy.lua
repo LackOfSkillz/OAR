@@ -43,3 +43,49 @@ function E.HistoricalHint(itemID, price, ageDays)
   return { itemID = itemID, priceCopper = price, ageDays = ageDays, actionable = false,
     note = "Historical price; check a live listing before buying" }
 end
+
+-- AH resale and crafting are hypotheses, never guaranteed profits. Do not
+-- invent sale probability, time to sell, deposits, fees or liquidity.
+function E.ResaleHypothesis(input)
+  if type(input) ~= "table" then return nil, "missing resale facts" end
+  for _, key in ipairs({"itemID", "quantity", "totalCostCopper", "expectedUnitCopper"}) do
+    if not money(input[key]) then return nil, "invalid " .. key end
+  end
+  if input.itemID == 0 or input.quantity == 0 or input.quantity > 100000 then return nil, "invalid lot" end
+  local value = input.quantity * input.expectedUnitCopper
+  if value >= 1000000000000 then return nil, "overflow" end
+  local known = money(input.feeCopper) and money(input.depositCopper)
+  local net = known and (value - input.feeCopper - input.depositCopper - input.totalCostCopper) or nil
+  return { itemID = input.itemID, quantity = input.quantity,
+    totalCostCopper = input.totalCostCopper, expectedGrossCopper = value,
+    possibleNetCopper = net, liquidity = "unknown", actionable = false,
+    certainty = "hypothesis", reason = known and
+      "No verified probability or timing for resale" or
+      "Unknown fees/deposits and no verified resale probability" }
+end
+
+-- Only record player-confirmed outcomes. Never turn a disappeared owned
+-- auction into a sale, profit, or learned success.
+function E.RecordOutcome(char, outcome)
+  if type(char) ~= "table" or type(outcome) ~= "table" or outcome.confirmed ~= true then return false end
+  if type(outcome.kind) ~= "string" or
+     (outcome.kind ~= "vendor" and outcome.kind ~= "resale" and outcome.kind ~= "craft") then return false end
+  if not money(outcome.itemID) or outcome.itemID == 0 or
+     type(outcome.netCopper) ~= "number" or outcome.netCopper ~= outcome.netCopper or
+     math.abs(outcome.netCopper) >= 1000000000000 then return false end
+  local st = type(char.intelEconomyOutcomes) == "table" and char.intelEconomyOutcomes or {}
+  char.intelEconomyOutcomes = st
+  st[#st + 1] = { kind = outcome.kind, itemID = outcome.itemID,
+    netCopper = math.floor(outcome.netCopper), at = time(), confirmed = true }
+  while #st > 100 do table.remove(st, 1) end
+  return true
+end
+
+function E.GoldPerHour(profitCopper, elapsedSeconds, timingSource)
+  if type(profitCopper) ~= "number" or profitCopper ~= profitCopper or
+     not money(elapsedSeconds) or elapsedSeconds < 60 or
+     timingSource ~= "observed" then return nil end
+  local v = profitCopper * 3600 / elapsedSeconds
+  if math.abs(v) >= 1000000000000 then return nil end
+  return math.floor(v + (v >= 0 and 0.5 or -0.5))
+end
