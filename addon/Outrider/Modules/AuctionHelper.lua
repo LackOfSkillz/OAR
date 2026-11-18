@@ -178,10 +178,12 @@ end)
 
 function M:Undercut()
   local out = {}
-  local list = self:Owned()
-  for _, a in ipairs(list) do
-    local id = a.itemID
-    local mine = a.amount
+  -- Some Forever client revisions provide prices but no auction IDs.
+  -- Keep those in the read-only undercut list; cancel is disabled without ID.
+  local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
+  for _, a in ipairs(type(list) == "table" and list or {}) do
+    local id = a.itemKey and C.Readable(a.itemKey.itemID)
+    local mine = tonumber(C.Readable(a.buyoutAmount))
     local low = id and ns.Prices:History(id)
     if type(mine) == "number" and low and low < mine and (a.status == nil or a.status == 0) then
       local info = C.ItemInfo(id)
