@@ -139,7 +139,7 @@ M.PAWN = { Agility = "ITEM_MOD_AGILITY_SHORT", Strength = "ITEM_MOD_STRENGTH_SHO
   MeleeDps = "meleeDPS", RangedDps = "rangedDPS" }
 function M:ValidWeight(k, v)
   return type(k) == "string" and type(v) == "number" and v >= 0 and v <= 1000
-    and (k:match("^ITEM_MOD_[%w_]+$") or k == "rangedDPS" or k == "meleeDPS") ~= nil
+    and (k:match("^ITEM_MOD_[%w_]+$") ~= nil or k == "rangedDPS" or k == "meleeDPS")
 end
 function M:SaveScale(name, weights)
   if type(name) ~= "string" or #name < 1 or #name > 45 or type(weights) ~= "table" then return false end
