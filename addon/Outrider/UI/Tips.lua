@@ -284,6 +284,8 @@ local controls = {
   ["Ask"] = "Shows a code describing this character: copy it (Ctrl+C) and give it to your advisor.",
   ["Ask (copy snapshot)"] = "Shows a code describing this character: copy it (Ctrl+C) and give it to your advisor.",
   ["Paste advice"] = "Paste the advice code you got back (Ctrl+V); it shows on the Advisor page.",
+  ["AI Advisor"] = "On: Outrider keeps a private log of your XP, quests and zones on this PC. After you log out the companion app plans your next hour; it shows here at the next login. Off: nothing is recorded.",
+  ["Next hour plan"] = "Opens the plan the companion made from your last session. Nothing happens on its own.",
   ["Useful"] = "Tell the advisor this advice helped.",
   ["Wrong data"] = "Tell the advisor this advice was based on something wrong.",
 }
