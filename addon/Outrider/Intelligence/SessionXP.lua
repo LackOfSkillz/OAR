@@ -153,6 +153,10 @@ end
 function M:OnEnable()
   self:Start()
   self:RefreshCandidateSnapshot()
+  -- Low-frequency, opt-in native bookkeeping; never external AI monitoring.
+  self.candidateTicker = ns.Timer.Ticker(300, function()
+    if M.enabled then M:RefreshCandidateSnapshot() end
+  end, "XP60 candidate refresh")
   self:On("PLAYER_XP_UPDATE", function(mod) mod:Sample() end)
   self:On("PLAYER_LEVEL_UP", function(mod) mod:Sample() end)
   self:On("QUEST_TURNED_IN", self.OnQuest)
@@ -164,6 +168,7 @@ function M:OnEnable()
   self:On("PLAYER_LOGOUT", function(mod) mod:Checkpoint(true) end)
 end
 function M:OnDisable()
+  if self.candidateTicker then self.candidateTicker:Cancel() self.candidateTicker = nil end
   self:Checkpoint(false)
 end
 function M:Snapshot()
