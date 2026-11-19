@@ -459,3 +459,11 @@ The fix: every rogue Fight bracket, all builds, PvE and PvP, levels 1 to 60, now
 - **Strike key:** `Stealth;[stealth] Pick Pocket`. The flow is Strike to sneak, Strike again to pick a humanoid's pocket, then Fight to open.
 - **`FightPlan:Lines`** now drops a `/cast` clause for a spell not learned yet, using `KnownLine`. `KnownLine` keeps the line's own `;` separator.
 - **HunterFight** prints one line per session when it rewrites a fight key for new spells.
+
+**Pull key (same day):** the rogue and warrior Pull keys were hard-coded to Shoot Bow. They now pick the shot from what's equipped:
+
+    /cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun
+
+The warrior version has no `[nostealth]`.
+- **Rogues can use bows:** Jekar's spellbook on Forever has both Shoot Bow (2480) and Throw (2764). Classic rogues use bows, crossbows, guns and thrown weapons.
+- **Not seen on Forever yet:** the Shoot Crossbow and Shoot Gun spell names. They're harmless, because a clause for a shot you haven't learned drops out.

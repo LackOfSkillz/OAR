@@ -2905,18 +2905,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -2999,18 +2999,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -3107,18 +3107,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -3243,18 +3243,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -3361,18 +3361,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -3508,18 +3508,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -3635,18 +3635,18 @@ catalog.WARRIOR = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull (Skyborne warriors start with Bows and Thrown)" },
+              { line = "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out)" },
             } },
             { from = 4, slots = {
               "/targetenemy [noharm][dead]",
               { line = "/cast [nocombat] Charge", spells = { "Charge" }, kind = "opener", keep = 2, why = "opens from range (Battle Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
             { from = 30, slots = {
               "/targetenemy [noharm][dead]",
               "/cast [nocombat] Charge",
               { line = "/cast [combat] Intercept", spells = { "Intercept" }, kind = "cooldown", keep = 3, why = "in a fight: close the gap (Berserker Stance)" },
-              "/cast Shoot Bow",
+              "/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
             } },
           },
           melee = {
@@ -3828,7 +3828,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
@@ -3911,7 +3911,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
@@ -4004,7 +4004,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
@@ -4103,7 +4103,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
@@ -4196,7 +4196,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
@@ -4297,7 +4297,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
@@ -4399,7 +4399,7 @@ catalog.ROGUE = {
           ranged = {
             { from = 1, slots = {
               { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-              { line = "/cast [nostealth] Shoot Bow", spells = { "Shoot Bow" }, kind = "filler", keep = 2, why = "ranged weapon pull, not from Stealth" },
+              { line = "/cast [nostealth,equipped:Thrown] Throw; [nostealth,equipped:Bows] Shoot Bow; [nostealth,equipped:Crossbows] Shoot Crossbow; [nostealth,equipped:Guns] Shoot Gun", spells = {  }, kind = "filler", keep = 2, why = "pulls with whatever ranged weapon you have on: throwing knives, bow, crossbow or gun (the macro checks at the press, so swapping weapons needs no rewrite; a shot you haven't learned drops out); not from Stealth" },
             } },
           },
           melee = {
