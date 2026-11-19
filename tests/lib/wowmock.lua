@@ -298,7 +298,9 @@ function M.new(opts)
   base.GetServerTime = function() return game.now end
   base.debugstack = function() return "[mock stack]" end
   base.debugprofilestop = function() return game.clock * 1000 end
-  base.geterrorhandler = function() return function(e) error(e) end end
+  game.errorhandler = function(e) error(e) end
+  base.geterrorhandler = function() return game.errorhandler end
+  base.seterrorhandler = function(f) game.errorhandler = f end
   base.hooksecurefunc = function(a, b, c)
     if type(a) == "table" then
       local old = a[b]

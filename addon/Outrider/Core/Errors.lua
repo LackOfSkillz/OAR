@@ -1,7 +1,8 @@
 -- Core/Errors.lua
 -- Catches errors from OUR code (everything we run goes through ns.Safe) and
--- taint reports that name our addon. We never replace the global error
--- handler, so BugGrabber/BugSack keep working alongside us.
+-- taint reports that name our addon. HookGlobal wraps (never replaces) the
+-- global error handler: we note the error, then hand it to the handler that
+-- was there before, so Blizzard's pop-up, BugGrabber and BugSack still see it.
 
 local ADDON, ns = ...
 local Errors = { name = "errors", MAX = 50, list = {}, byKey = {}, warnedThisSession = false }
@@ -90,5 +91,36 @@ function Errors:HookBugGrabber()
       if ns.Log then ns.Log:Error("buggrabber", "%s", short(bug.message)) end
     end
   end)
+  return ok
+end
+
+-- Errors that never pass through ns.Safe (frame scripts like OnUpdate/OnClick,
+-- tooltips, other addons) went straight to the game's handler, and Gary got
+-- "Your AddOns are experiencing a large number of errors" with nothing in our
+-- log (2026-11-19). Now each one is recorded once per message (the same error
+-- again only counts up) under "lua:<addon folder>", then passed on unchanged.
+function Errors:HookGlobal()
+  if self.globalHooked then return true end
+  local get, set = rawget(_G, "geterrorhandler"), rawget(_G, "seterrorhandler")
+  if type(get) ~= "function" or type(set) ~= "function" then return false end
+  local prev = get()
+  local busy = false
+  local function handler(msg, ...)
+    if not busy then
+      busy = true
+      pcall(function()
+        local text = short(msg)
+        local folder = text:match("^([%w_%-]+)[\\/]") or "unknown"
+        local where = "lua:" .. folder
+        local trace
+        if not Errors.byKey[where .. "|" .. text] and type(debugstack) == "function" then trace = debugstack(3, 12, 0) end
+        Errors:Record(where, text, trace)
+      end)
+      busy = false
+    end
+    if type(prev) == "function" then return prev(msg, ...) end
+  end
+  local ok = pcall(set, handler)
+  self.globalHooked = ok
   return ok
 end
