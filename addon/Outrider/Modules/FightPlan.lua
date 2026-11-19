@@ -161,9 +161,13 @@ function M:Lines(kind, add)
       -- a buff already up is left out (the line comes back when it drops)
       for _, sp in ipairs(sl.spells or {}) do if F.AuraOn(sp:gsub("^!", "")) then skip = true end end
     end
+    -- a clause for a spell not learned yet drops out of the line (the rogue
+    -- Strike key's Pick Pocket before level 4); a line with nothing left is skipped
+    local text = not skip and M.KnownLine(sl.line)
+    if not text then skip = true end
     if not skip then
-      add(sl.keep or 5, sl.line, sl.why)
-      if not sl.line:find("^/targetenemy") and not sl.line:find("^/startattack") and not sl.line:find("^/petattack") then casts = casts + 1 end
+      add(sl.keep or 5, text, sl.why)
+      if not text:find("^/targetenemy") and not text:find("^/startattack") and not text:find("^/petattack") then casts = casts + 1 end
     end
   end
   return casts > 0
@@ -217,7 +221,9 @@ function M.KnownLine(l)
   if #keep == 0 then return nil end
   -- Preserve the modifier even if only that clause is known; stripping it
   -- would turn a Shift-only panic action into an unmodified key press.
-  return verb .. " " .. table.concat(keep, "; ")
+  -- keep the line's own separator: the rogue Stealth line is written with ";"
+  -- (no space) to stay within 255 characters
+  return verb .. " " .. table.concat(keep, rest:find("; ", 1, true) and "; " or ";")
 end
 
 -- The kinds HunterFight should write for this class: its own plus the plan's

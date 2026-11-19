@@ -186,8 +186,16 @@ T.describe("fight plans: rogue Stealth on the Fight key", function()
     T.contains(fight, "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike")
     T.eq(#ns.Errors.list, 0)
   end)
+  T.it("level 4: Backstab opens from Stealth with a dagger; the Strike key Pick Pockets while sneaking, not before you learn it", function()
+    local ns = rogue(2, { "Sinister Strike", "Eviscerate", "Stealth" }, {})
+    T.no(ns.HunterFight:Body("melee"):find("Pick Pocket", 1, true), "level 2: no Pick Pocket yet")
+    ns = rogue(4, { "Sinister Strike", "Eviscerate", "Stealth", "Backstab", "Pick Pocket" }, {})
+    T.contains(ns.HunterFight:Body("ranged"), "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike")
+    T.contains(ns.HunterFight:Body("melee"), "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket")
+    T.eq(#ns.Errors.list, 0)
+  end)
   T.it("every level from 1 to 60 and every build keeps Stealth and a Stealth opener within 255 characters", function()
-    local all = { "Sinister Strike", "Eviscerate", "Stealth", "Backstab", "Gouge", "Evasion", "Slice and Dice", "Sprint", "Kick",
+    local all = { "Sinister Strike", "Eviscerate", "Stealth", "Backstab", "Pick Pocket", "Gouge", "Evasion", "Slice and Dice", "Sprint", "Kick",
       "Garrote", "Ambush", "Riposte", "Rupture", "Vanish", "Shank", "Cold Blood", "Ghostly Strike", "Cheap Shot", "Blade Flurry",
       "Hemorrhage", "Kidney Shot", "Blind", "Adrenaline Rush", "Mutilate" }
     for _, tree in ipairs({ 0, 1, 2, 3 }) do

@@ -3120,9 +3120,15 @@ C.specs["assassination"] = {
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         "/startattack [nostealth]",
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Slice and Dice,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Slice and Dice", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3161,14 +3167,14 @@ C.specs["assassination"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
@@ -3179,6 +3185,12 @@ C.specs["assassination"] = {
       { from = 1, slots = {
         { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
         { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3218,31 +3230,31 @@ C.specs["assassination"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 6, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge", spells = { "Gouge" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
       { from = 30, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge; [mod:alt] Kidney Shot", spells = { "Gouge", "Kidney Shot" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
         "/cast [combat] Kick",
         "/cast [combat] Evasion",
       } },
       { from = 34, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge; [mod:ctrl] Blind; [mod:alt] Kidney Shot", spells = { "Gouge", "Blind", "Kidney Shot" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
         "/cast [combat] Kick",
         "/cast [combat] Evasion",
@@ -3259,9 +3271,15 @@ C.specs["combat"] = {
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         "/startattack [nostealth]",
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Slice and Dice,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Slice and Dice", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3294,19 +3312,19 @@ C.specs["combat"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
       { from = 20, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [combat] Kick",
         { line = "/cast [combat] Riposte", spells = { "Riposte" }, kind = "reactive", keep = 4, why = "after you parry" },
         "/cast [combat] Evasion",
@@ -3318,6 +3336,12 @@ C.specs["combat"] = {
       { from = 1, slots = {
         { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
         { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3350,39 +3374,39 @@ C.specs["combat"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 6, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge", spells = { "Gouge" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
       { from = 20, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         "/cast [combat] Kick",
         { line = "/cast [combat] Riposte", spells = { "Riposte" }, kind = "reactive", keep = 4, why = "after you parry" },
         "/cast [combat] Evasion",
       } },
       { from = 30, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge; [mod:alt] Kidney Shot", spells = { "Gouge", "Kidney Shot" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
         "/cast [combat] Kick",
         "/cast [combat] Riposte",
         "/cast [combat] Evasion",
       } },
       { from = 34, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge; [mod:ctrl] Blind; [mod:alt] Kidney Shot", spells = { "Gouge", "Blind", "Kidney Shot" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
         "/cast [combat] Kick",
         "/cast [combat] Riposte",
@@ -3400,9 +3424,15 @@ C.specs["levelling"] = {
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         "/startattack [nostealth]",
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Slice and Dice,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Slice and Dice", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3435,14 +3465,14 @@ C.specs["levelling"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
@@ -3458,9 +3488,15 @@ C.specs["subtlety"] = {
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         "/startattack [nostealth]",
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Slice and Dice,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Slice and Dice", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3508,14 +3544,14 @@ C.specs["subtlety"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
@@ -3526,6 +3562,12 @@ C.specs["subtlety"] = {
       { from = 1, slots = {
         { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
         { line = "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike", spells = { "Stealth", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth, next press opens with Sinister Strike (one line to fit 255; Gary, 2026-11-19); Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
+        { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
+        { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
+      } },
+      { from = 4, slots = {
+        { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike", spells = { "Stealth", "Backstab", "Sinister Strike" }, kind = "opener", keep = 2, why = "out of combat: first press Stealth; next press opens with Backstab when you hold a dagger (from behind), else Sinister Strike; Garrote at 14, Ambush at 18, Cheap Shot at 26 take over" },
         { line = "/startattack [nostealth]", spells = {  }, kind = "control", keep = 1, why = "keeps swinging (not while sneaking)" },
         { line = "/castsequence [nostealth] reset=combat/target Sinister Strike,Sinister Strike,Sinister Strike,Eviscerate", spells = { "Sinister Strike", "Sinister Strike", "Sinister Strike", "Eviscerate" }, kind = "filler", keep = 2, why = "builders, finisher, round and round" },
       } },
@@ -3575,31 +3617,31 @@ C.specs["subtlety"] = {
     },
     utility = {
       { from = 1, slots = {
-        { line = "/cast [nocombat,nostealth] Stealth", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth" },
+        { line = "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket", spells = { "Stealth" }, kind = "utility", keep = 2, why = "out of combat: Stealth; pressed again while sneaking: Pick Pocket on a humanoid (4), then open with Fight" },
       } },
       { from = 6, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge", spells = { "Gouge" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
       } },
       { from = 8, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         { line = "/cast [combat] Evasion", spells = { "Evasion" }, kind = "cooldown", keep = 5, why = "when Kick is cooling down" },
       } },
       { from = 12, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         "/cast [mod:shift] Gouge",
         { line = "/cast [combat] Kick", spells = { "Kick" }, kind = "cooldown", keep = 2, why = "interrupts a cast" },
         "/cast [combat] Evasion",
       } },
       { from = 30, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge; [mod:alt] Kidney Shot", spells = { "Gouge", "Kidney Shot" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
         "/cast [combat] Kick",
         "/cast [combat] Evasion",
       } },
       { from = 34, slots = {
-        "/cast [nocombat,nostealth] Stealth",
+        "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket",
         { line = "/cast [mod:shift] Gouge; [mod:ctrl] Blind; [mod:alt] Kidney Shot", spells = { "Gouge", "Blind", "Kidney Shot" }, kind = "utility", keep = 3, why = "Shift: Gouge; Ctrl: Blind; Alt: Kidney Shot" },
         "/cast [combat] Kick",
         "/cast [combat] Evasion",

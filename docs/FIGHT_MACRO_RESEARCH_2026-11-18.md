@@ -453,3 +453,9 @@ The fix: every rogue Fight bracket, all builds, PvE and PvP, levels 1 to 60, now
 - **Why one line:** a separate Stealth line pushed the level 10 key past 255 characters.
 - **Positional openers are not verified on Forever.** In Classic, Garrote and Ambush need you behind the target. If you're in front, the opener fails and you stay in Stealth until you move behind.
 - **Test:** `tests/spec/fightplan_spec.lua`, "rogue Stealth on the Fight key". It checks every build at levels 1, 10, 14, 18, 26, 30, 40 and 60, in PvE and PvP.
+
+**Level 4 (same day):** Gary learned Backstab and Pick Pocket at level 4, but nothing changed, because the rogue plan had no level 4 step. Pick Pocket wasn't in the catalogue at all (now `{ 4, "GA" }`, seen in game).
+- **Fight key opener from level 4 to 13:** `Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike`. Backstab is used with a dagger; Classic needs you behind the target, which is unverified on Forever. Otherwise it opens with Sinister Strike.
+- **Strike key:** `Stealth;[stealth] Pick Pocket`. The flow is Strike to sneak, Strike again to pick a humanoid's pocket, then Fight to open.
+- **`FightPlan:Lines`** now drops a `/cast` clause for a spell not learned yet, using `KnownLine`. `KnownLine` keeps the line's own `;` separator.
+- **HunterFight** prints one line per session when it rewrites a fight key for new spells.

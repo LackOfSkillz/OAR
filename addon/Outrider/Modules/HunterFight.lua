@@ -347,6 +347,13 @@ function M:Update(why)
     if why == "command" and #made > 0 then
       ns.Print("macros %s ready: open the macro window (/macro), Character tab, and drag them to your bar",
         table.concat(made, " and "))
+    elseif #made > 0 and not self.toldRewrite then
+      -- Gary, 2026-11-19: a silent rewrite at level-up looked like nothing
+      -- happened. One line per session (rule 6); the macro on your bar is the
+      -- same slot, only its text changed.
+      self.toldRewrite = true
+      ns.Print("%s updated for your new spells (same button on your bar; Macros page shows each line)",
+        table.concat(made, " and "))
     end
   end, "hunterfight")
 end
