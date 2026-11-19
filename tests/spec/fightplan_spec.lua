@@ -152,3 +152,20 @@ T.describe("fight plans: world PvP", function()
     T.eq(FP:Mode(), "pve", "a fixed choice wins")
   end)
 end)
+
+T.describe("fight plans: hunter PvP from the Forever guides", function()
+  T.it("PvP Fight skips Serpent Sting (it breaks your own trap), kites with Multi-Shot, Shift for Aimed Shot, Ctrl for Intimidation", function()
+    local spells = {}
+    for _, n in ipairs(HUNTER20) do spells[#spells + 1] = n end
+    for _, n in ipairs({ "Summon Hawk", "Intimidation", "Bestial Wrath", "Rapid Fire" }) do spells[#spells + 1] = n end
+    local _, _, FP, F = hunter(44, spells, { { name = "Beast Mastery", talents = points(31) }, { name = "Marksmanship", talents = points(0) },
+      { name = "Survival", talents = points(0) } })
+    FP:Settings().mode = "pvp"
+    local fight = F:Body("ranged")
+    T.no(fight:find("Serpent Sting", 1, true), "no Serpent Sting in PvP")
+    T.contains(fight, "[mod:shift] Aimed Shot; Multi-Shot")
+    T.contains(fight, "[mod:ctrl] Intimidation")
+    T.no(fight:find("Bestial Wrath", 1, true), "Bestial Wrath stays on the Burst key")
+    T.ok(#fight <= 255, #fight .. " characters")
+  end)
+end)

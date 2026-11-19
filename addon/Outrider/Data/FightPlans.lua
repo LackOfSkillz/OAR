@@ -173,28 +173,24 @@ C.specs["bm"] = {
     ranged = {
       { from = 1, slots = {
         { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-        { line = "/castsequence reset=combat/target !Auto Shot,null", spells = { "!Auto Shot" }, kind = "once", keep = 2, why = "Mark, start Auto Shot, Serpent Sting: once each per pull and per new target" },
-      } },
-      { from = 4, slots = {
-        "/targetenemy [noharm][dead]",
-        { line = "/castsequence reset=combat/target !Auto Shot,Serpent Sting,null", spells = { "!Auto Shot", "Serpent Sting" }, kind = "once", keep = 2, why = "Mark, start Auto Shot, Serpent Sting: once each per pull and per new target" },
+        { line = "/castsequence reset=combat/target !Auto Shot,null", spells = { "!Auto Shot" }, kind = "once", keep = 2, why = "start Auto Shot once per fight and per new target" },
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null", spells = { "Hunter's Mark", "!Auto Shot", "Serpent Sting" }, kind = "once", keep = 2, why = "Mark, start Auto Shot, Serpent Sting: once each per pull and per new target" },
-        { line = "/cast Arcane Shot", spells = { "Arcane Shot" }, kind = "cooldown", keep = 4, why = "whenever it is off cooldown" },
+        { line = "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null", spells = { "Hunter's Mark", "!Auto Shot" }, kind = "once", keep = 2, why = "PvP: Mark, then Auto Shot; no Serpent Sting, it would break your own Freezing Trap (Mobalytics Forever PvP guide (Feor))" },
+        { line = "/cast Arcane Shot", spells = { "Arcane Shot" }, kind = "cooldown", keep = 4, why = "instant: on the move or right after Aimed Shot" },
       } },
       { from = 8, slots = {
         "/targetenemy [noharm][dead]",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
-        { line = "/cast Concussive Shot", spells = { "Concussive Shot" }, kind = "cooldown", keep = 3, why = "PvP: keep them slowed, every time it is ready" },
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
+        { line = "/cast Concussive Shot", spells = { "Concussive Shot" }, kind = "cooldown", keep = 3, why = "PvP: slow them first so a melee can't close the gap (Mobalytics Forever PvP guide (Feor))" },
         "/cast Arcane Shot",
       } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
         { line = "/petattack [pet,harm]", spells = {  }, kind = "control", keep = 4, why = "sends the pet at your target every press" },
-        { line = "/cast [nocombat] !Aspect of the Hawk", spells = { "!Aspect of the Hawk" }, kind = "buff", keep = 6, why = "before the pull: Hawk on (left out while Hawk is already up)" },
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        { line = "/cast [nocombat] !Aspect of the Hawk", spells = { "!Aspect of the Hawk" }, kind = "buff", keep = 6, why = "before the fight: Hawk on (left out while Hawk is already up)" },
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
         "/cast Arcane Shot",
         { line = "/cast [combat] !Aspect of the Hawk", spells = { "!Aspect of the Hawk" }, kind = "filler", keep = 7, why = "nothing else ready: back to Hawk after Strike put Monkey up" },
@@ -203,9 +199,9 @@ C.specs["bm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        { line = "/cast [mod:shift] Multi-Shot", spells = { "Multi-Shot" }, kind = "cooldown", keep = 3, why = "Aimed Shot on cooldown; Shift: Multi-Shot on a pack (they share a cooldown on Forever)" },
+        { line = "/cast Multi-Shot", spells = { "Multi-Shot" }, kind = "cooldown", keep = 3, why = "PvP: Multi-Shot while you kite or chase (short cast)" },
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
       } },
@@ -213,9 +209,9 @@ C.specs["bm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        { line = "/cast [mod:shift] Multi-Shot; Aimed Shot", spells = { "Multi-Shot", "Aimed Shot" }, kind = "cooldown", keep = 3, why = "Aimed Shot on cooldown; Shift: Multi-Shot on a pack (they share a cooldown on Forever)" },
+        { line = "/cast [mod:shift] Aimed Shot; Multi-Shot", spells = { "Aimed Shot", "Multi-Shot" }, kind = "cooldown", keep = 3, why = "Multi-Shot while you kite or chase; Shift: Aimed Shot when you can stand still or they are trapped (shared cooldown) (Mobalytics Forever PvP guide (Feor))" },
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
       } },
@@ -223,10 +219,10 @@ C.specs["bm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        "/cast [mod:shift] Multi-Shot; Aimed Shot",
-        { line = "/cast Summon Hawk", spells = { "Summon Hawk" }, kind = "cooldown", keep = 4, why = "keep two hawks out (shares Arcane Shot's cooldown)" },
+        "/cast [mod:shift] Aimed Shot; Multi-Shot",
+        { line = "/cast Summon Hawk", spells = { "Summon Hawk" }, kind = "cooldown", keep = 4, why = "pressure on casters (shares Arcane Shot's cooldown)" },
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
       } },
@@ -234,23 +230,10 @@ C.specs["bm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        { line = "/cast Intimidation", spells = { "Intimidation" }, kind = "cooldown", keep = 5, why = "stun on cooldown (Forever: also deals damage)" },
-        "/cast [mod:shift] Multi-Shot; Aimed Shot",
-        "/cast Summon Hawk",
-        "/cast Arcane Shot",
-        "/cast [combat] !Aspect of the Hawk",
-      } },
-      { from = 44, slots = {
-        "/targetenemy [noharm][dead]",
-        "/petattack [pet,harm]",
-        "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
-        "/cast Concussive Shot",
-        "/cast Intimidation",
-        { line = "/cast Bestial Wrath", spells = { "Bestial Wrath" }, kind = "cooldown", keep = 3, why = "pet burst on cooldown (guides: when the pet can attack the full 18 s)" },
-        "/cast [mod:shift] Multi-Shot; Aimed Shot",
+        { line = "/cast [mod:ctrl] Intimidation", spells = { "Intimidation" }, kind = "cooldown", keep = 5, why = "Ctrl: stun or interrupt a caster, the pet has to reach them; never wasted on a plain press. Bestial Wrath is on the Burst key: save it for after their Ice Block or Divine Shield (Mobalytics Forever PvP guide (Feor))" },
+        "/cast [mod:shift] Aimed Shot; Multi-Shot",
         "/cast Summon Hawk",
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
@@ -499,28 +482,24 @@ C.specs["mm"] = {
     ranged = {
       { from = 1, slots = {
         { line = "/targetenemy [noharm][dead]", spells = {  }, kind = "target", keep = 1, why = "picks the nearest enemy when you have none" },
-        { line = "/castsequence reset=combat/target !Auto Shot,null", spells = { "!Auto Shot" }, kind = "once", keep = 2, why = "Mark, start Auto Shot, Serpent Sting: once each per pull and per new target" },
-      } },
-      { from = 4, slots = {
-        "/targetenemy [noharm][dead]",
-        { line = "/castsequence reset=combat/target !Auto Shot,Serpent Sting,null", spells = { "!Auto Shot", "Serpent Sting" }, kind = "once", keep = 2, why = "Mark, start Auto Shot, Serpent Sting: once each per pull and per new target" },
+        { line = "/castsequence reset=combat/target !Auto Shot,null", spells = { "!Auto Shot" }, kind = "once", keep = 2, why = "start Auto Shot once per fight and per new target" },
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null", spells = { "Hunter's Mark", "!Auto Shot", "Serpent Sting" }, kind = "once", keep = 2, why = "Mark, start Auto Shot, Serpent Sting: once each per pull and per new target" },
-        { line = "/cast Arcane Shot", spells = { "Arcane Shot" }, kind = "cooldown", keep = 4, why = "whenever it is off cooldown" },
+        { line = "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null", spells = { "Hunter's Mark", "!Auto Shot" }, kind = "once", keep = 2, why = "PvP: Mark, then Auto Shot; no Serpent Sting, it would break your own Freezing Trap (Mobalytics Forever PvP guide (Feor))" },
+        { line = "/cast Arcane Shot", spells = { "Arcane Shot" }, kind = "cooldown", keep = 4, why = "instant: on the move or right after Aimed Shot" },
       } },
       { from = 8, slots = {
         "/targetenemy [noharm][dead]",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
-        { line = "/cast Concussive Shot", spells = { "Concussive Shot" }, kind = "cooldown", keep = 3, why = "PvP: keep them slowed, every time it is ready" },
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
+        { line = "/cast Concussive Shot", spells = { "Concussive Shot" }, kind = "cooldown", keep = 3, why = "PvP: slow them first so a melee can't close the gap (Mobalytics Forever PvP guide (Feor))" },
         "/cast Arcane Shot",
       } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
-        { line = "/petattack [pet,harm]", spells = {  }, kind = "control", keep = 8, why = "sends the pet at your target every press" },
-        { line = "/cast [nocombat] !Aspect of the Hawk", spells = { "!Aspect of the Hawk" }, kind = "buff", keep = 6, why = "before the pull: Hawk on (left out while Hawk is already up)" },
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        { line = "/petattack [pet,harm]", spells = {  }, kind = "control", keep = 4, why = "sends the pet at your target every press" },
+        { line = "/cast [nocombat] !Aspect of the Hawk", spells = { "!Aspect of the Hawk" }, kind = "buff", keep = 6, why = "before the fight: Hawk on (left out while Hawk is already up)" },
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
         "/cast Arcane Shot",
         { line = "/cast [combat] !Aspect of the Hawk", spells = { "!Aspect of the Hawk" }, kind = "filler", keep = 7, why = "nothing else ready: back to Hawk after Strike put Monkey up" },
@@ -529,9 +508,9 @@ C.specs["mm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        { line = "/cast [mod:shift] Multi-Shot", spells = { "Multi-Shot" }, kind = "cooldown", keep = 3, why = "Aimed Shot on cooldown; Shift: Multi-Shot on a pack (they share a cooldown on Forever)" },
+        { line = "/cast Multi-Shot", spells = { "Multi-Shot" }, kind = "cooldown", keep = 3, why = "PvP: Multi-Shot while you kite or chase (short cast)" },
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
       } },
@@ -539,9 +518,9 @@ C.specs["mm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        { line = "/cast [mod:shift] Multi-Shot; Aimed Shot", spells = { "Multi-Shot", "Aimed Shot" }, kind = "cooldown", keep = 3, why = "Aimed Shot on cooldown; Shift: Multi-Shot on a pack (they share a cooldown on Forever)" },
+        { line = "/cast [mod:shift] Aimed Shot; Multi-Shot", spells = { "Aimed Shot", "Multi-Shot" }, kind = "cooldown", keep = 3, why = "Multi-Shot while you kite or chase; Shift: Aimed Shot when you can stand still or they are trapped (shared cooldown) (Mobalytics Forever PvP guide (Feor))" },
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
       } },
@@ -549,10 +528,22 @@ C.specs["mm"] = {
         "/targetenemy [noharm][dead]",
         "/petattack [pet,harm]",
         "/cast [nocombat] !Aspect of the Hawk",
-        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,Serpent Sting,null",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
         "/cast Concussive Shot",
-        { line = "/cast Sniper Shot", spells = { "Sniper Shot" }, kind = "cooldown", keep = 4, why = "Marksmanship strike on cooldown (priority unconfirmed)" },
-        "/cast [mod:shift] Multi-Shot; Aimed Shot",
+        { line = "/cast [mod:ctrl] Sniper Shot", spells = { "Sniper Shot" }, kind = "cooldown", keep = 4, why = "Ctrl: 4-second cast, only on a trapped, rooted or unaware target (Mobalytics Forever PvP guide (Feor))" },
+        "/cast [mod:shift] Aimed Shot; Multi-Shot",
+        "/cast Arcane Shot",
+        "/cast [combat] !Aspect of the Hawk",
+      } },
+      { from = 36, slots = {
+        "/targetenemy [noharm][dead]",
+        "/petattack [pet,harm]",
+        "/cast [nocombat] !Aspect of the Hawk",
+        "/castsequence reset=combat/target Hunter's Mark,!Auto Shot,null",
+        "/cast Concussive Shot",
+        "/cast [mod:ctrl] Sniper Shot",
+        { line = "/cast [mod:alt] Viper Sting", spells = { "Viper Sting" }, kind = "cooldown", keep = 5, why = "Alt: drain a caster's mana (15 s cooldown on Forever) (Mobalytics Forever PvP guide (Feor))" },
+        "/cast [mod:shift] Aimed Shot; Multi-Shot",
         "/cast Arcane Shot",
         "/cast [combat] !Aspect of the Hawk",
       } },
@@ -773,25 +764,25 @@ C.specs["sv"] = {
   },
 }
 table.insert(C.utility, { id = "hunter-burst-human", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/use 13\n/use 14", why = "Human: one press per cooldown; each line falls through while it cools down", race = "Human", spec = nil })
-table.insert(C.utility, { id = "hunter-break-human", name = "Break", text = "#showtooltip\n/cast [nomod] Will to Survive\n/cast [mod:shift] Feign Death", why = "Human: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Human", spec = nil })
+table.insert(C.utility, { id = "hunter-break-human", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [nomod] Will to Survive\n/cast [mod:shift] Feign Death", why = "Human: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Human", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-dwarf", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/use 13\n/use 14", why = "Dwarf: one press per cooldown; each line falls through while it cools down", race = "Dwarf", spec = nil })
-table.insert(C.utility, { id = "hunter-break-dwarf", name = "Break", text = "#showtooltip\n/cast [nomod] Stoneform\n/cast [mod:shift] Feign Death", why = "Dwarf: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Dwarf", spec = nil })
+table.insert(C.utility, { id = "hunter-break-dwarf", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [nomod] Stoneform\n/cast [mod:shift] Feign Death", why = "Dwarf: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Dwarf", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-nightelf", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/cast Elune's Light\n/use 13\n/use 14", why = "NightElf: one press per cooldown; each line falls through while it cools down", race = "NightElf", spec = nil })
-table.insert(C.utility, { id = "hunter-break-nightelf", name = "Break", text = "#showtooltip\n/cast [mod:shift] Feign Death", why = "NightElf: racial escape or stun; Shift: the class panic button (Feign Death)", race = "NightElf", spec = nil })
+table.insert(C.utility, { id = "hunter-break-nightelf", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [nomod] Shadowmeld\n/cast [mod:shift] Feign Death", why = "NightElf: Shadowmeld works in combat on Forever and drops spells cast at you; Shift: Feign Death", race = "NightElf", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-skybornealliance", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/use 13\n/use 14", why = "SkyborneAlliance: one press per cooldown; each line falls through while it cools down", race = "SkyborneAlliance", spec = nil })
-table.insert(C.utility, { id = "hunter-break-skybornealliance", name = "Break", text = "#showtooltip\n/cast [mod:shift] Feign Death", why = "SkyborneAlliance: racial escape or stun; Shift: the class panic button (Feign Death)", race = "SkyborneAlliance", spec = nil })
+table.insert(C.utility, { id = "hunter-break-skybornealliance", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [mod:shift] Feign Death", why = "SkyborneAlliance: racial escape or stun; Shift: the class panic button (Feign Death)", race = "SkyborneAlliance", spec = nil })
 table.insert(C.utility, { id = "hunter-recover-skybornealliance", name = "Recover", text = "#showtooltip\n/cast [nocombat] Read Ley Line", why = "SkyborneAlliance: out of combat only (Read Ley Line)", race = "SkyborneAlliance", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-orc", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/cast Blood Fury\n/use 13\n/use 14", why = "Orc: one press per cooldown; each line falls through while it cools down", race = "Orc", spec = nil })
-table.insert(C.utility, { id = "hunter-break-orc", name = "Break", text = "#showtooltip\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Feign Death", why = "Orc: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Orc", spec = nil })
+table.insert(C.utility, { id = "hunter-break-orc", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Feign Death", why = "Orc: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Orc", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-troll", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "hunter-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Feign Death", why = "Troll: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "hunter-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "hunter-break-troll", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [mod:shift] Feign Death", why = "Troll: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "hunter-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-tauren", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/use 13\n/use 14", why = "Tauren: one press per cooldown; each line falls through while it cools down", race = "Tauren", spec = nil })
-table.insert(C.utility, { id = "hunter-break-tauren", name = "Break", text = "#showtooltip\n/cast [nomod] War Stomp\n/cast [mod:shift] Feign Death", why = "Tauren: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Tauren", spec = nil })
+table.insert(C.utility, { id = "hunter-break-tauren", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [nomod] War Stomp\n/cast [mod:shift] Feign Death", why = "Tauren: racial escape or stun; Shift: the class panic button (Feign Death)", race = "Tauren", spec = nil })
 table.insert(C.utility, { id = "hunter-burst-skybornehorde", name = "Burst", text = "#showtooltip\n/cast Bestial Wrath\n/cast Rapid Fire\n/use 13\n/use 14", why = "SkyborneHorde: one press per cooldown; each line falls through while it cools down", race = "SkyborneHorde", spec = nil })
-table.insert(C.utility, { id = "hunter-break-skybornehorde", name = "Break", text = "#showtooltip\n/cast [mod:shift] Feign Death", why = "SkyborneHorde: racial escape or stun; Shift: the class panic button (Feign Death)", race = "SkyborneHorde", spec = nil })
+table.insert(C.utility, { id = "hunter-break-skybornehorde", name = "Break", text = "#showtooltip\n/stopcasting\n/cast [mod:shift] Feign Death", why = "SkyborneHorde: racial escape or stun; Shift: the class panic button (Feign Death)", race = "SkyborneHorde", spec = nil })
 table.insert(C.utility, { id = "hunter-trap", name = "Trap", text = "#showtooltip\n/cast [mod:shift] Frost Trap; [mod:ctrl] Explosive Trap; Freezing Trap", why = "plain press: Freezing Trap at your feet for the add running at you; Shift: Frost Trap (slow); Ctrl: Explosive Trap (pack)", race = nil, spec = nil })
-table.insert(C.utility, { id = "hunter-trap-pvp", name = "Trap", text = "#showtooltip\n/cast [mod:shift] Frost Trap; [mod:ctrl] Scatter Shot; Freezing Trap", why = "PvP: Freezing Trap, Shift Frost Trap, Ctrl Scatter Shot (Marksmanship) to set it up", race = nil, spec = nil })
+table.insert(C.utility, { id = "hunter-trap-pvp", name = "Trap", text = "#showtooltip\n/stopattack\n/cast [mod:shift] Frost Trap; [mod:ctrl] Scatter Shot; Freezing Trap", why = "PvP: stops your shots so they don't break your own Scatter or trap; Freezing Trap, Shift Frost Trap, Ctrl Scatter Shot (Marksmanship) to set it up", race = nil, spec = nil })
 table.insert(C.utility, { id = "hunter-stings", name = "Stings", text = "#showtooltip\n/cast [mod:shift] Viper Sting; [mod:ctrl] Scorpid Sting; Serpent Sting", why = "PvP sting choice off the Fight key: Viper on a caster (36), Scorpid on a melee (22), else Serpent (one sting per hunter per target)", race = nil, spec = nil })
 table.insert(C.utility, { id = "hunter-feign", name = "Feign", text = "#showtooltip Feign Death\n/petfollow\n/cast Feign Death", why = "drops aggro: pet comes back, Feign Death (30). Traps no longer need it on Forever", race = nil, spec = nil })
 table.insert(C.utility, { id = "hunter-intim", name = "Intim", text = "#showtooltip\n/cast [@pet,nodead] Intimidation\n/petattack", why = "Beast Mastery: stun plus pet threat on demand", race = nil, spec = nil })
@@ -1762,7 +1753,7 @@ table.insert(C.utility, { id = "priest-burst-gnome", name = "Burst", text = "#sh
 table.insert(C.utility, { id = "priest-break-gnome", name = "Break", text = "#showtooltip\n/cast [nomod] Escape Artist\n/cast [mod:shift] Fade", why = "Gnome: racial escape or stun; Shift: the class panic button (Fade)", race = "Gnome", spec = nil })
 table.insert(C.utility, { id = "priest-burst-troll", name = "Burst", text = "#showtooltip\n/cast Power Infusion\n/cast Inner Focus\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "priest-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Fade", why = "Troll: racial escape or stun; Shift: the class panic button (Fade)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "priest-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "priest-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "priest-burst-undead", name = "Burst", text = "#showtooltip\n/cast Power Infusion\n/cast Inner Focus\n/use 13\n/use 14", why = "Undead: one press per cooldown; each line falls through while it cools down", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "priest-break-undead", name = "Break", text = "#showtooltip\n/cast [nomod] Will of the Forsaken\n/cast [mod:shift] Fade", why = "Undead: racial escape or stun; Shift: the class panic button (Fade)", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "priest-recover-undead", name = "Recover", text = "#showtooltip\n/cast [nocombat] Cannibalize", why = "Undead: out of combat only (Cannibalize)", race = "Undead", spec = nil })
@@ -2339,7 +2330,7 @@ table.insert(C.utility, { id = "mage-burst-orc", name = "Burst", text = "#showto
 table.insert(C.utility, { id = "mage-break-orc", name = "Break", text = "#showtooltip\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Ice Block", why = "Orc: racial escape or stun; Shift: the class panic button (Ice Block)", race = "Orc", spec = nil })
 table.insert(C.utility, { id = "mage-burst-troll", name = "Burst", text = "#showtooltip\n/cast Arcane Power\n/cast Presence of Mind\n/cast Combustion\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "mage-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Ice Block", why = "Troll: racial escape or stun; Shift: the class panic button (Ice Block)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "mage-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "mage-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "mage-burst-undead", name = "Burst", text = "#showtooltip\n/cast Arcane Power\n/cast Presence of Mind\n/cast Combustion\n/use 13\n/use 14", why = "Undead: one press per cooldown; each line falls through while it cools down", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "mage-break-undead", name = "Break", text = "#showtooltip\n/cast [nomod] Will of the Forsaken\n/cast [mod:shift] Ice Block", why = "Undead: racial escape or stun; Shift: the class panic button (Ice Block)", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "mage-recover-undead", name = "Recover", text = "#showtooltip\n/cast [nocombat] Cannibalize", why = "Undead: out of combat only (Cannibalize)", race = "Undead", spec = nil })
@@ -3108,7 +3099,7 @@ table.insert(C.utility, { id = "warrior-burst-orc", name = "Burst", text = "#sho
 table.insert(C.utility, { id = "warrior-break-orc", name = "Break", text = "#showtooltip\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Intimidating Shout", why = "Orc: racial escape or stun; Shift: the class panic button (Intimidating Shout)", race = "Orc", spec = nil })
 table.insert(C.utility, { id = "warrior-burst-troll", name = "Burst", text = "#showtooltip\n/cast Bloodrage\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "warrior-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Intimidating Shout", why = "Troll: racial escape or stun; Shift: the class panic button (Intimidating Shout)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "warrior-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "warrior-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "warrior-burst-undead", name = "Burst", text = "#showtooltip\n/cast Bloodrage\n/use 13\n/use 14", why = "Undead: one press per cooldown; each line falls through while it cools down", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "warrior-break-undead", name = "Break", text = "#showtooltip\n/cast [nomod] Will of the Forsaken\n/cast [mod:shift] Intimidating Shout", why = "Undead: racial escape or stun; Shift: the class panic button (Intimidating Shout)", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "warrior-recover-undead", name = "Recover", text = "#showtooltip\n/cast [nocombat] Cannibalize", why = "Undead: out of combat only (Cannibalize)", race = "Undead", spec = nil })
@@ -3620,7 +3611,7 @@ table.insert(C.utility, { id = "rogue-burst-orc", name = "Burst", text = "#showt
 table.insert(C.utility, { id = "rogue-break-orc", name = "Break", text = "#showtooltip\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Vanish", why = "Orc: racial escape or stun; Shift: the class panic button (Vanish)", race = "Orc", spec = nil })
 table.insert(C.utility, { id = "rogue-burst-troll", name = "Burst", text = "#showtooltip\n/cast Cold Blood\n/cast Adrenaline Rush\n/cast Blade Flurry\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "rogue-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Vanish", why = "Troll: racial escape or stun; Shift: the class panic button (Vanish)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "rogue-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "rogue-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "rogue-burst-undead", name = "Burst", text = "#showtooltip\n/cast Cold Blood\n/cast Adrenaline Rush\n/cast Blade Flurry\n/use 13\n/use 14", why = "Undead: one press per cooldown; each line falls through while it cools down", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "rogue-break-undead", name = "Break", text = "#showtooltip\n/cast [nomod] Will of the Forsaken\n/cast [mod:shift] Vanish", why = "Undead: racial escape or stun; Shift: the class panic button (Vanish)", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "rogue-recover-undead", name = "Recover", text = "#showtooltip\n/cast [nocombat] Cannibalize", why = "Undead: out of combat only (Cannibalize)", race = "Undead", spec = nil })
@@ -4414,7 +4405,7 @@ table.insert(C.utility, { id = "warlock-burst-orc", name = "Burst", text = "#sho
 table.insert(C.utility, { id = "warlock-break-orc", name = "Break", text = "#showtooltip\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Death Coil", why = "Orc: racial escape or stun; Shift: the class panic button (Death Coil)", race = "Orc", spec = nil })
 table.insert(C.utility, { id = "warlock-burst-troll", name = "Burst", text = "#showtooltip\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "warlock-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Death Coil", why = "Troll: racial escape or stun; Shift: the class panic button (Death Coil)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "warlock-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "warlock-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "warlock-break-undead", name = "Break", text = "#showtooltip\n/cast [nomod] Will of the Forsaken\n/cast [mod:shift] Death Coil", why = "Undead: racial escape or stun; Shift: the class panic button (Death Coil)", race = "Undead", spec = nil })
 table.insert(C.utility, { id = "warlock-recover-undead", name = "Recover", text = "#showtooltip\n/cast [nocombat] Cannibalize", why = "Undead: out of combat only (Cannibalize)", race = "Undead", spec = nil })
 return C
@@ -6456,7 +6447,7 @@ table.insert(C.utility, { id = "shaman-burst-orc", name = "Burst", text = "#show
 table.insert(C.utility, { id = "shaman-break-orc", name = "Break", text = "#showtooltip\n/cast [nomod] Shatter Curse\n/cast [mod:shift] Earthbind Totem", why = "Orc: racial escape or stun; Shift: the class panic button (Earthbind Totem)", race = "Orc", spec = nil })
 table.insert(C.utility, { id = "shaman-burst-troll", name = "Burst", text = "#showtooltip\n/cast Berserking\n/use 13\n/use 14", why = "Troll: one press per cooldown; each line falls through while it cools down", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "shaman-break-troll", name = "Break", text = "#showtooltip\n/cast [mod:shift] Earthbind Totem", why = "Troll: racial escape or stun; Shift: the class panic button (Earthbind Totem)", race = "Troll", spec = nil })
-table.insert(C.utility, { id = "shaman-recover-troll", name = "Recover", text = "#showtooltip\n/cast [nocombat] Rapid Regeneration", why = "Troll: out of combat only (Rapid Regeneration)", race = "Troll", spec = nil })
+table.insert(C.utility, { id = "shaman-recover-troll", name = "Recover", text = "#showtooltip\n/cast Rapid Regeneration", why = "Troll: heal over time, also mid-fight while your target is trapped or crowd-controlled", race = "Troll", spec = nil })
 table.insert(C.utility, { id = "shaman-break-tauren", name = "Break", text = "#showtooltip\n/cast [nomod] War Stomp\n/cast [mod:shift] Earthbind Totem", why = "Tauren: racial escape or stun; Shift: the class panic button (Earthbind Totem)", race = "Tauren", spec = nil })
 table.insert(C.utility, { id = "shaman-break-skybornehorde", name = "Break", text = "#showtooltip\n/cast [mod:shift] Earthbind Totem", why = "SkyborneHorde: racial escape or stun; Shift: the class panic button (Earthbind Totem)", race = "SkyborneHorde", spec = nil })
 return C

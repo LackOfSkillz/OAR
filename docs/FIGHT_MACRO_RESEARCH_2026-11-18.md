@@ -412,3 +412,28 @@ Self-collecting, as Gary's rule asks: the fight log the addon already writes (UN
 - Not reachable this session: Icy Veins Forever pages (403), Method's Forever shaman guide (404).
 
 **How the draft was made:** a scratch generator (not in the repo) holds the layer data: the learn table, ordered slots per spec, mode and key, and the race table. It resolves every level from 1 to 60, writes a bracket wherever the text changes, prints the macros, and counts each one against 255 using the same shrink rule as `HunterFight M:Body`. Result: 803 macros, longest 255, none over. 47 low-priority lines were dropped to fit, each listed in its macro's `dropped` field (mostly the "back to Hawk" line, pet attack on Marksmanship and Survival, Counterattack, and PvP extras).
+
+## Update 2026-11-18 (evening): sources Gary supplied
+
+Gary pasted three pages. Still `verified = false` until seen in game.
+
+**Mobalytics, Forever Beast Mastery Hunter PvP and Marksmanship Hunter PvP (Feor, Nov 7 / Oct 21 2026).** Changes to the hunter `bm` and `mm` PvP Fight keys:
+- No Serpent Sting in the PvP opener: a target with a sting on it can't be trapped.
+- Multi-Shot is the default while kiting or chasing; Shift gives Aimed Shot when you can stand still or the target is trapped (they share a cooldown).
+- Concussive Shot goes before the big shots, so a melee can't close the gap.
+- BM: Intimidation moves to Ctrl, used to stun or interrupt a caster. Bestial Wrath is off the Fight key and lives on Burst only; the guide says to save it for after Ice Block or Divine Shield.
+- MM: Sniper Shot moves to Ctrl (a 4-second cast, only on a trapped, rooted or unaware target). Viper Sting goes on Alt from 36 (15 s cooldown on Forever).
+- Burst = Rapid Fire plus the damage racial, which matches the guide's macro.
+- PvP Trap key starts with `/stopattack`, so your own shots don't break Scatter Shot or the trap.
+- Every hunter Break key starts with `/stopcasting`, from the guide's Feign Death macro.
+
+**Racials:**
+- Night Elf Shadowmeld works in combat on Forever and acts like Feign Death against spells being cast at you, so it is now on the Night Elf Break key (plain press; Shift = Feign Death).
+- Troll Rapid Regeneration is used mid-fight while the target is trapped, so the `[nocombat]` guard came off every class's Troll Recover key.
+- Tauren War Stomp has a 90 s cooldown (Mobalytics).
+
+**Warcraft Tavern, Forever Racial Abilities Guide (Val Hull)** confirms the race table: two active and two passive racials per race.
+- Windshaper (Horde) Skyborne: Walk on Air and Skysight.
+- High Order (Alliance) Skyborne: Walk on Air and Read Ley Line.
+- The priest racials match the draft.
+- The page gives **no cooldowns or levels**, so those stay open, along with the PvP rotations for the other classes.
