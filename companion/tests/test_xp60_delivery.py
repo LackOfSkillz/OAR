@@ -29,7 +29,7 @@ class Delivery(unittest.TestCase):
                     "schema": 1, "history": [recording()]}}}}) +
                 luadata.dumps("Outrider_Snapshots", {
                     "Test-Realm": {"modules": {"WhatNow": {"seenAt": 13580, "candidates": [
-                        {"candidateId": "quest:possible", "label": "community"}]}}}}),
+                        {"candidateId": "quest:possible", "kind": "quest", "label": "community"}]}}}}),
                 encoding="utf-8")
             result = session_reader.read_sessions(p)
             plan = D.create_plan(result, "Test-Realm", now=1795000000)
