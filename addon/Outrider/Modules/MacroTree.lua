@@ -733,8 +733,8 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   p.import:SetPoint("RIGHT", p.export, "LEFT", -6, 0)
 
   local function hookButton(b)
-    b:SetScript("OnClick", function(self) p:Show(self.item) end)
-    b:SetScript("OnDragStart", function(self) p:Show(self.item) p:PickCurrent() end)
+    b:SetScript("OnClick", function(self) p:ShowItem(self.item) end)
+    b:SetScript("OnDragStart", function(self) p:ShowItem(self.item) p:PickCurrent() end)
     b:SetScript("OnEnter", function(self)
       local it = self.item
       if not it then return end
@@ -812,7 +812,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     d.msg:SetText("")
   end
 
-  function p:Show(it)
+  function p:ShowItem(it)
     if not it then return end
     self.current, self.own = it, nil
     d.useOurs:Hide() d.keep:Hide()
@@ -990,9 +990,9 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     self.ownBtn:SetShown(#own > 0)
     if not keepMsg then d.msg:SetText("") end
     if self.own then self:ShowOwn(self.own)
-    elseif self.current then self:Show(self.current)
-    elseif list[1] then self:Show(keys.btns[1].item)
-    elseif tree.pool[1] and tree.pool[1]:IsShown() then self:Show(tree.pool[1].item) end
+    elseif self.current then self:ShowItem(self.current)
+    elseif list[1] then self:ShowItem(keys.btns[1].item)
+    elseif tree.pool[1] and tree.pool[1]:IsShown() then self:ShowItem(tree.pool[1].item) end
   end
 end, 42)
 

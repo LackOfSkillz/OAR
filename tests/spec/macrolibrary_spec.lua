@@ -94,7 +94,7 @@ T.describe("macro library", function()
     local item
     for _, it in ipairs(ns.MacroTree:Items("pve")) do if it.id == "hunter-autoshot" then item = it end end
     T.ok(item, "the library macro is in the tree")
-    p:Show(item)
+    p:ShowItem(item)
     T.contains(p.detail.text:GetText(), "Cast Auto Shot (a second press won't stop it)")
     p.detail.pick.__scripts.OnClick(p.detail.pick)
     T.eq(game.macros[1].name, "AutoShot")
