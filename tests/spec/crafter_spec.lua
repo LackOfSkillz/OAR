@@ -138,7 +138,8 @@ T.describe("crafter herb button", function()
     ns.MacroLibrary:Settings().installed.Herb = { id = "craft-herbalism", body = "#showtooltip Herbalism\n/ride make Herbalism", t = 0 }
     game:fire("PLAYER_ENTERING_WORLD", false, true)
     game:advance(1)
-    T.eq(game.macros[1].body, "#showtooltip Find Herbs\n/cast !Find Herbs")
+    -- quiet presses add their line at the end (2026-11-19)
+    T.eq(game.macros[1].body, ns.HandyKeys.Final("#showtooltip Find Herbs\n/cast !Find Herbs"))
   end)
 
   T.it("leaves a Herb macro Gary edited alone", function()

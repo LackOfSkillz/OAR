@@ -1128,6 +1128,8 @@ ns.Hub:AddTab("settings", "Settings", function(p)
       function(on) set("BuffRow").on = on if ns.BuffRow then ns.BuffRow:Update("settings") end end },
     { "check", "Outrider's explanation in macro tooltips on your bars", function() return set("MacroTree").tooltips end,
       function(on) set("MacroTree").tooltips = on end },
+    { "check", "Quiet presses: no 'not ready yet' text or voice", function() return set("HandyKeys").quiet end,
+      function(on) if ns.HandyKeys then ns.HandyKeys:SetQuiet(on) end end },
     { "header", "Info bar" },
     { "check", "Show the info bar", function() return ns.InfoBar:Settings().shown end, function(on) ns.Slash:Run("bar " .. onoff(on)) end },
     { "check", "Bar: gold", function() return ns.InfoBar:Settings().gold ~= false end, function(on) ns.InfoBar:Settings().gold = on ns.InfoBar:Apply() end },

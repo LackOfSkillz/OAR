@@ -18,6 +18,12 @@ local M = ns:NewModule("MacroLibrary", {
 })
 ns.MacroLibrary = M
 
+-- The text Outrider writes: quiet presses add a line to clear the "not ready
+-- yet" text when it fits (Modules/HandyKeys.lua).
+function M.Final(body)
+  return ns.HandyKeys and ns.HandyKeys.Final(body) or body
+end
+
 -- A profession macro (Disenchant, Find) is for a character with that profession.
 function M.HasProfession(e)
   if not e.profession then return true end
@@ -149,7 +155,7 @@ function M:State(entry)
     if index == 0 then self:Settings().installed[entry.name] = nil
     else
       local _, _, body = C.Call("GetMacroInfo", index)
-      local want = E.Fill(entry.body, self:Values())
+      local want = M.Final((E.Fill(entry.body, self:Values())))
       if not E.Same(body, rec.body) and not self.mismatchLogged then
         self.mismatchLogged = true
         self:Debug("macro %s: game text %d chars, written %d chars", entry.name, type(body) == "string" and #body or -1, #rec.body)
@@ -165,7 +171,7 @@ function M:Install(entry, force)
   if C.InCombat() then return false, "not in combat" end
   local why = self:Missing(entry)
   if why then return false, why end
-  local body = E.Fill(entry.body, self:Values())
+  local body = M.Final((E.Fill(entry.body, self:Values())))
   if E.Errors(body) > 0 then return false, "macro has errors" end
   local installed = self:Settings().installed
   local index = C.Call("GetMacroIndexByName", entry.name) or 0

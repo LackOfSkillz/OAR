@@ -369,9 +369,15 @@ function T:Grid(mode)
   local grid = {}
   for b = 1, #T.BANDS do grid[b] = {} for c = 1, #cols do grid[b][c] = {} end end
   for _, it in ipairs(self:Items(mode)) do
+    -- handy keys sit with your keys, not in the tree
+    if it.tags[1] == "handy" then
+      grid.handy = grid.handy or {}
+      grid.handy[#grid.handy + 1] = it
+    else
     local col = index[it.tree or "every"] or 1
     local cell = grid[T.Band(it.level)][col]
     cell[#cell + 1] = it
+    end
   end
   return grid, cols
 end
@@ -528,6 +534,8 @@ function T.Icon(it)
     local tex = rec and C.SpellIcon(rec.id or sp)
     if tex then return tex, true end
   end
+  -- a macro's own icon (the handy keys)
+  if it.entry and it.entry.icon then return "Interface\\Icons\\" .. it.entry.icon, true end
   -- the spell's own game icon, from the client's spellbook data, before you know it
   for _, sp in ipairs(it.spells or {}) do
     local info = T.Info(sp)
@@ -896,6 +904,31 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     end
     keys.flow:SetText(#flow > 0 and (main.name .. ", press by press:  " .. table.concat(flow, "  >  ")) or
       (#list == 0 and "Fight keys for your class come with the fight plans." or ""))
+
+    -- handy keys, on the right of your keys
+    local handy = (T:Grid(self.mode)).handy or {}
+    keys.handy = keys.handy or {}
+    if not keys.handyHead then
+      keys.handyHead = UI.Text(keys, "small", "goldText")
+      keys.handyHead:SetText("Handy keys")
+    end
+    keys.handyHead:ClearAllPoints()
+    keys.handyHead:SetPoint("TOPRIGHT", keys, "TOPRIGHT", -16 - math.max(0, #handy * 48 - 70), -10)
+    for i, it in ipairs(handy) do
+      local b = keys.handy[i]
+      if not b then
+        b = slotButton(keys, 40)
+        b.cap = UI.Text(keys, "small", "text")
+        b.cap:SetPoint("TOP", b, "BOTTOM", 0, -3)
+        hookButton(b)
+        keys.handy[i] = b
+      end
+      b:ClearAllPoints()
+      b:SetPoint("TOPRIGHT", keys, "TOPRIGHT", -16 - (#handy - i) * 56, -32)
+      paint(b, it, onBars, 40)
+      b.cap:SetText(it.name)
+      b.cap:Show()
+    end
 
     -- tree
     for _, b in ipairs(tree.pool) do b:Hide() end

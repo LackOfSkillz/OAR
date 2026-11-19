@@ -157,6 +157,7 @@ With the auction house open, Outrider's shopping panel sits beside it. Buying is
 - **Spell check.** Misspelled words underlined while you type in chat, with suggestions. /ride spell add <word>.
 - **Accessibility.** Bigger fonts, UI scale, colour-blind colours, high contrast, less motion. /ride access.
 - **Macro tree.** Macros page, laid out like the talent window. On top, your keys (Fight, Pull, Strike...): put them on your bar once and Outrider rewrites them as you learn spells; the line under them says what Fight does press by press. Below, a tree: rows are level bands (1-10 up to 51-60), columns are every build of your class and one per talent tree. Grey icons with a number unlock at that level; gold ones are on your bar. Click an icon to read when to press it and every line in plain words; drag it (or Pick up) onto your action bar. PvE / PvP switches the tree to the PvP versions. Before 10 talent points, the build menu at the top picks the build you're heading for. The page also counts your 18 character macro slots, marks newly unlocked macros as new, offers to clear the macros of your old build after a respec, and checks your own macros for spells Forever renamed and for copies (/ride macrocheck).
+- **Handy keys and quiet presses.** Top right of the Macros page: Nameplates (enemy nameplates on or off, so rares are seen from further away), Vendor (at a merchant: sell grey junk and repair), Status (XP to level, rested XP, durability, bags, gold this session) and Next Step (the best thing to do next, with the arrow). Drag them to a bar. Quiet presses: Outrider's casting macros clear the red 'not ready yet' text (when it fits in 255 characters) and the game's error voice is off; switch it on the Settings page or with /ride quiet on|off.
 - **Macro tooltips and missing buffs.** Hover one of Outrider's macros on your action bar: under the spell's tooltip it says when to press it and what it does. A small row of icons above your bars shows your own buffs that are missing or about to run out; click one to put it on you (out of combat it updates; /ride buffs on|off). Both switch off on the Settings page.
 
 ## Sharing (all off by default)
@@ -239,18 +240,22 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride mapextras` | mapextras missing\|fishing\|faire |
 | `/ride mark` | <text>  write a marker line so Claude can find this point in the log |
 | `/ride market` | market <itemID> \| add <group> <id> <qty> [targetCopper] \| list <group> \| groups |
+| `/ride me` | rested XP, XP to level, durability, bags and gold this session |
 | `/ride minimap` | on\|off  show or hide the minimap button |
 | `/ride minipins` | <number> \| quests on\|off  how many places the minimap shows |
 | `/ride module` | <name> on\|off  switch a module for this character |
 | `/ride modules` | list modules and why each is on or off |
 | `/ride near` | <spirit\|flight\|vendor\|repair\|trainer\|mail\|bank\|ah\|stable\|inn\|guild\|ammo>  waypoint to the nearest one |
 | `/ride nearby` | upgrades you can get in this zone |
+| `/ride next` | What now?'s top step, with the arrow set |
 | `/ride note` | note add <map> <x> <y> <text> \| edit <id> <text> \| remove <id> \| list |
 | `/ride now` | level\|gold\|gear\|professions\|explore\|mix  What now? next steps (optional goal) |
 | `/ride paste` | open the Paste advice box (Ctrl+V applies it) |
 | `/ride perf` | memory, events, timers and modules (then /reload) |
+| `/ride plates` | enemy nameplates on or off (out of combat) |
 | `/ride probe` | record which game APIs exist (then /reload) |
 | `/ride questpins` | grey on\|off  show quests too low to give XP |
+| `/ride quiet` | on\|off  quiet presses: no 'not ready yet' text or voice |
 | `/ride rareloot` | rareloot <npcID>  sourced known drops, never invented |
 | `/ride rareroute` | rareroute all\|watched  queue nearest known rare spawns on this map |
 | `/ride recipesources` | recipesources list \| add <recipeID> <kind> <source> |
@@ -277,6 +282,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride training` | training [level]  spells observed at your class trainer |
 | `/ride undercut` | <N%> \| <copper>c  how much under the market to suggest |
 | `/ride unwatch` | <name or npcID>  stop watching |
+| `/ride vendor` | at a merchant: sell grey junk and repair |
 | `/ride version` | addon version, build stamp and client build |
 | `/ride watch` | <name or npcID>  alert for this NPC on this character |
 | `/ride way` | <x> <y> [title] \| <zone> <x> <y> \| add <zone> <x> <y> \| start\|pause\|next\|list\|clearqueue |

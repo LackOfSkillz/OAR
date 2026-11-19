@@ -208,6 +208,7 @@ local controls = {
   ["Export settings"] = "Shows this character's Outrider settings as text you can copy and keep.",
   ["Import settings"] = "Paste settings text from Export (another character or a backup) to load it here.",
   ["Not now"] = "Hides this suggestion until your next login.",
+  ["Quiet presses: no 'not ready yet' text or voice"] = "Outrider's casting macros clear the red 'not ready yet' text, and the game's error voice is off. Refusals are still logged.",
   ["Copy text"] = "Shows the macro's text to copy, so you can change it and make your own.",
   ["Clear them"] = "Removes the macros Outrider wrote for your old build. A macro you changed stays.",
   ["Missing-buffs row above your bars"] = "A row of icons for your own buffs that are missing or about to run out; click one to put it on you.",
