@@ -91,10 +91,14 @@ T.describe("macro library", function()
     game:slash("")
     ns.Hub.frame.tabBar:Select("macros")
     local p = ns.Hub.byId.macros.panel
-    p:ShowEntry(entry(ns, "hunter-autoshot"))
-    T.contains(p.detail.explain:GetText(), "Cast Auto Shot (a second press won't stop it)")
-    p.detail.install.__scripts.OnClick(p.detail.install)
+    local item
+    for _, it in ipairs(ns.MacroTree:Items("pve")) do if it.id == "hunter-autoshot" then item = it end end
+    T.ok(item, "the library macro is in the tree")
+    p:Show(item)
+    T.contains(p.detail.text:GetText(), "Cast Auto Shot (a second press won't stop it)")
+    p.detail.pick.__scripts.OnClick(p.detail.pick)
     T.eq(game.macros[1].name, "AutoShot")
+    T.ok(game.cursorMacro, "picked up onto the cursor")
     T.eq(#ns.Errors.list, 0)
   end)
 end)

@@ -12,6 +12,7 @@ function P:Class(cls)
 end
 P.loaders.HUNTER = function()
 local C = { trees = { "bm", "mm", "sv" }, keys = { melee = "Strike", pet = "Pet", ranged = "Fight" }, specs = {}, utility = {} }
+C.learn = { ["Aimed Shot"] = { 20 }, ["Arcane Shot"] = { 6 }, ["Aspect of the Hawk"] = { 10 }, ["Aspect of the Monkey"] = { 4 }, ["Auto Shot"] = { 1 }, ["Bestial Wrath"] = { 44, "bm" }, ["Call Pet"] = { 10 }, ["Concussive Shot"] = { 8 }, ["Counterattack"] = { 30, "sv" }, ["Explosive Trap"] = { 34 }, ["Feign Death"] = { 30 }, ["Freezing Trap"] = { 20 }, ["Frost Trap"] = { 28 }, ["Hunter's Mark"] = { 6 }, ["Immolation Trap"] = { 16 }, ["Intimidation"] = { 35, "bm" }, ["Mend Pet"] = { 12 }, ["Mongoose Bite"] = { 16 }, ["Multi-Shot"] = { 18 }, ["Rapid Fire"] = { 26 }, ["Raptor Strike"] = { 1 }, ["Revive Pet"] = { 10 }, ["Scatter Shot"] = { 20, "mm" }, ["Scorpid Sting"] = { 22 }, ["Serpent Sting"] = { 4 }, ["Sniper Shot"] = { 25, "mm" }, ["Strider Kick"] = { 30, "sv" }, ["Summon Hawk"] = { 25, "bm" }, ["Trueshot Aura"] = { 40, "mm" }, ["Viper Sting"] = { 36 }, ["Wing Clip"] = { 12 } }
 C.specs["bm"] = {
   pve = {
     melee = {
@@ -790,6 +791,7 @@ return C
 end
 P.loaders.PRIEST = function()
 local C = { trees = { "disc", "holy", "shadow" }, keys = { heal = "Heal", melee = "Strike", ranged = "Fight" }, specs = {}, utility = {} }
+C.learn = { ["Binding Heal"] = { 25 }, ["Devouring Plague"] = { 20 }, ["Fade"] = { 8 }, ["Fear Ward"] = { 20 }, ["Flash Heal"] = { 20 }, ["Greater Heal"] = { 40 }, ["Heal"] = { 16 }, ["Holy Fire"] = { 20 }, ["Inner Fire"] = { 12 }, ["Inner Focus"] = { 20 }, ["Lesser Heal"] = { 1 }, ["Mind Blast"] = { 10 }, ["Mind Flay"] = { 20, "shadow" }, ["Penance"] = { 30, "disc" }, ["Power Infusion"] = { 40, "disc" }, ["Power Word: Fortitude"] = { 1 }, ["Power Word: Shield"] = { 6 }, ["Prayer of Mending"] = { 40, "holy" }, ["Psychic Scream"] = { 14 }, ["Renew"] = { 8 }, ["Shadow Word: Death"] = { 32 }, ["Shadow Word: Pain"] = { 4 }, ["Shadowform"] = { 40, "shadow" }, ["Shoot"] = { 5 }, ["Silence"] = { 30, "shadow" }, ["Smite"] = { 1 }, ["Vampiric Embrace"] = { 25, "shadow" } }
 C.specs["disc"] = {
   pve = {
     heal = {
@@ -1762,6 +1764,7 @@ return C
 end
 P.loaders.MAGE = function()
 local C = { trees = { "arcane", "fire", "frost" }, keys = { melee = "Strike", ranged = "Fight" }, specs = {}, utility = {} }
+C.learn = { ["Arcane Blast"] = { 20, "arcane" }, ["Arcane Explosion"] = { 14 }, ["Arcane Intellect"] = { 1 }, ["Arcane Missiles"] = { 8 }, ["Arcane Wrath"] = { 25, "arcane" }, ["Blast Wave"] = { 30, "fire" }, ["Cone of Cold"] = { 26 }, ["Counterspell"] = { 24 }, ["Evocation"] = { 20 }, ["Fire Blast"] = { 6 }, ["Fireball"] = { 1 }, ["Frost Armor"] = { 1 }, ["Frost Nova"] = { 10 }, ["Frostbolt"] = { 4 }, ["Frostfire Bolt"] = { 40 }, ["Ice Armor"] = { 30 }, ["Ice Lance"] = { 20, "frost" }, ["Mage Armor"] = { 34 }, ["Polymorph"] = { 8 }, ["Presence of Mind"] = { 30, "arcane" }, ["Pyroblast"] = { 20, "fire" }, ["Scorch"] = { 22 } }
 C.specs["arcane"] = {
   pve = {
     melee = {
@@ -2338,6 +2341,7 @@ return C
 end
 P.loaders.WARRIOR = function()
 local C = { trees = { "arms", "fury", "prot" }, keys = { melee = "Fight", ranged = "Pull", react = "Strike" }, specs = {}, utility = {} }
+C.learn = { ["Battle Shout"] = { 1 }, ["Bloodrage"] = { 10 }, ["Bloodthirst"] = { 40, "fury" }, ["Charge"] = { 4 }, ["Cleave"] = { 20 }, ["Demoralizing Shout"] = { 14 }, ["Execute"] = { 24 }, ["Hamstring"] = { 8 }, ["Heroic Strike"] = { 1 }, ["Intercept"] = { 30 }, ["Intimidating Shout"] = { 22 }, ["Mortal Strike"] = { 40, "arms" }, ["Overpower"] = { 12 }, ["Pummel"] = { 38 }, ["Rend"] = { 4 }, ["Revenge"] = { 14 }, ["Shield Bash"] = { 12 }, ["Shield Slam"] = { 40, "prot" }, ["Shoot Bow"] = { 1 }, ["Slam"] = { 20 }, ["Sunder Armor"] = { 10 }, ["Throw"] = { 1 }, ["Thunder Clap"] = { 6 }, ["Victory Rush"] = { 20 }, ["Whirlwind"] = { 36 } }
 C.specs["arms"] = {
   pve = {
     melee = {
@@ -3111,6 +3115,7 @@ return C
 end
 P.loaders.ROGUE = function()
 local C = { trees = { "assassination", "combat", "subtlety" }, keys = { melee = "Fight", ranged = "Pull", utility = "Strike" }, specs = {}, utility = {} }
+C.learn = { ["Adrenaline Rush"] = { 40, "combat" }, ["Ambush"] = { 18 }, ["Backstab"] = { 4 }, ["Blade Flurry"] = { 30, "combat" }, ["Blind"] = { 34 }, ["Cheap Shot"] = { 26 }, ["Cold Blood"] = { 25, "assassination" }, ["Evasion"] = { 8 }, ["Eviscerate"] = { 1 }, ["Garrote"] = { 14 }, ["Ghostly Strike"] = { 25, "subtlety" }, ["Gouge"] = { 6 }, ["Hemorrhage"] = { 30, "subtlety" }, ["Kick"] = { 12 }, ["Kidney Shot"] = { 30 }, ["Mutilate"] = { 40, "assassination" }, ["Pick Pocket"] = { 4 }, ["Riposte"] = { 20, "combat" }, ["Rupture"] = { 20 }, ["Shank"] = { 24 }, ["Shoot Bow"] = { 1 }, ["Sinister Strike"] = { 1 }, ["Slice and Dice"] = { 10 }, ["Sprint"] = { 10 }, ["Stealth"] = { 1 }, ["Throw"] = { 1 }, ["Vanish"] = { 22 } }
 C.specs["assassination"] = {
   pve = {
     melee = {
@@ -3672,6 +3677,7 @@ return C
 end
 P.loaders.WARLOCK = function()
 local C = { trees = { "affliction", "demonology", "destruction" }, keys = { melee = "Strike", ranged = "Fight" }, specs = {}, utility = {} }
+C.learn = { ["Bane of Agony"] = { 8 }, ["Conflagrate"] = { 25, "destruction" }, ["Corruption"] = { 4 }, ["Curse of Tongues"] = { 26 }, ["Curse of the Elements"] = { 20 }, ["Death Coil"] = { 42 }, ["Demon Armor"] = { 20 }, ["Demon Skin"] = { 1 }, ["Drain Life"] = { 14 }, ["Fear"] = { 8 }, ["Howl of Terror"] = { 40 }, ["Immolate"] = { 1 }, ["Incinerate"] = { 40, "destruction" }, ["Life Tap"] = { 6 }, ["Searing Pain"] = { 18 }, ["Shadow Bolt"] = { 1 }, ["Shadowburn"] = { 20, "destruction" }, ["Shoot"] = { 5 }, ["Siphon Life"] = { 30, "affliction" }, ["Soul Fire"] = { 48 }, ["Wrack"] = { 47, "affliction" } }
 C.specs["affliction"] = {
   pve = {
     melee = {
@@ -4463,6 +4469,7 @@ return C
 end
 P.loaders.DRUID = function()
 local C = { trees = { "balance", "feral", "resto" }, keys = { heal = "Heal", melee = "Strike", ranged = "Fight" }, specs = {}, utility = {} }
+C.learn = { ["Barkskin"] = { 44 }, ["Bash"] = { 14 }, ["Bear Form"] = { 10 }, ["Cat Form"] = { 20 }, ["Claw"] = { 20 }, ["Demoralizing Roar"] = { 10 }, ["Entangling Roots"] = { 8 }, ["Faerie Fire"] = { 18 }, ["Ferocious Bite"] = { 24 }, ["Healing Touch"] = { 1 }, ["Insect Swarm"] = { 20, "balance" }, ["Mark of the Wild"] = { 1 }, ["Maul"] = { 10 }, ["Moonfire"] = { 4 }, ["Primal Bite"] = { 40, "feral" }, ["Rake"] = { 24 }, ["Regrowth"] = { 10 }, ["Rejuvenation"] = { 4 }, ["Rip"] = { 20 }, ["Starfire"] = { 20 }, ["Swiftmend"] = { 25, "resto" }, ["Swipe"] = { 16 }, ["Thorns"] = { 6 }, ["Wrath"] = { 1 } }
 C.specs["balance"] = {
   pve = {
     heal = {
@@ -5057,6 +5064,7 @@ return C
 end
 P.loaders.PALADIN = function()
 local C = { trees = { "holy", "prot", "ret" }, keys = { heal = "Heal", melee = "Fight", ranged = "Reach" }, specs = {}, utility = {} }
+C.learn = { ["Blessing of Might"] = { 4 }, ["Consecration"] = { 20 }, ["Devotion Aura"] = { 1 }, ["Flash of Light"] = { 20 }, ["Hammer of Justice"] = { 8 }, ["Hammer of Wrath"] = { 44 }, ["Holy Light"] = { 1 }, ["Holy Shield"] = { 40, "prot" }, ["Holy Shock"] = { 40, "holy" }, ["Holy Strike"] = { 6 }, ["Judgement"] = { 4 }, ["Retribution Aura"] = { 16 }, ["Righteous Fury"] = { 16 }, ["Seal of Command"] = { 20, "ret" }, ["Seal of Fury"] = { 10 }, ["Seal of Righteousness"] = { 1 } }
 C.specs["holy"] = {
   pve = {
     heal = {
@@ -5711,6 +5719,7 @@ return C
 end
 P.loaders.SHAMAN = function()
 local C = { trees = { "elemental", "enhancement", "resto" }, keys = { heal = "Heal", melee = "Strike", ranged = "Fight" }, specs = {}, utility = {} }
+C.learn = { ["Call of the Elements"] = { 20 }, ["Chain Lightning"] = { 32 }, ["Earth Shock"] = { 4 }, ["Earthbind Totem"] = { 6 }, ["Flame Shock"] = { 10 }, ["Flametongue Weapon"] = { 10 }, ["Frost Shock"] = { 20 }, ["Healing Wave"] = { 1 }, ["Lava Burst"] = { 30, "elemental" }, ["Lesser Healing Wave"] = { 20 }, ["Lightning Bolt"] = { 1 }, ["Lightning Shield"] = { 8 }, ["Purge"] = { 12 }, ["Rockbiter Weapon"] = { 1 }, ["Searing Totem"] = { 10 }, ["Stormstrike"] = { 25, "enhancement" }, ["Water Shield"] = { 20, "resto" }, ["Windfury Weapon"] = { 30 } }
 C.specs["elemental"] = {
   pve = {
     heal = {

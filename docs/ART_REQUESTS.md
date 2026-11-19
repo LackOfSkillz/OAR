@@ -295,3 +295,67 @@ line at the end of each. Outrider picks them up automatically after
 | `money_cloth.png` | folded bolts of linen and wool cloth, a needle and thread on top |
 | `money_craft.png` | a leatherworker's bench: a half-stitched leather piece, an awl and thread |
 | `money_fish.png` | two fresh fish on a wooden plank beside a coiled fishing line and a red-and-white bobber |
+
+## Batch 6 (the Macros page skill tree, 2026-11-19)
+
+The Macros page is now laid out like the talent window: your keys on top, then
+a tree of macros by level band, one column for every build of your class and
+one per talent tree. These pictures dress it. Until they're delivered, Outrider
+uses the spell's own icon (once you know the spell) or a game icon. Drop them in
+`art/incoming/`, run `python tools/art.py`, and fully restart the game.
+
+### 6a. Your keys (6 files, 1024x1024, final 128x128, opaque)
+Big square buttons at the top of the page. Each: a single bold emblem centered on
+a dark vignette, like an action-bar ability, readable at 54 pixels. Add the
+shared style line.
+
+| File | Emblem |
+|---|---|
+| `macro_key_fight.png` | two crossed blades with a gold spark where they meet |
+| `macro_key_pull.png` | a thrown dagger and an arrow flying side by side toward the viewer |
+| `macro_key_strike.png` | a single gauntleted fist striking, a burst of gold light at the knuckles |
+| `macro_key_heal.png` | an open hand with a soft golden glow rising from the palm |
+| `macro_key_pet.png` | a wolf's head in profile, alert, with a faint gold collar |
+| `macro_key_reach.png` | a glowing hammer of light flying forward, trailing gold |
+
+### 6b. Macro kinds (11 files, 1024x1024, final 128x128, opaque)
+Shown greyed out for macros whose spell you haven't learned yet, so they must
+read well desaturated. Same style as the keys.
+
+| File | Emblem |
+|---|---|
+| `macro_combat.png` | a sword point-down with a small gold flame on the blade |
+| `macro_control.png` | a chain wrapped around a raised fist |
+| `macro_defensive.png` | a round shield with a gold rim, a crack across it |
+| `macro_utility.png` | a leather pouch with a small compass beside it |
+| `macro_heal.png` | a green-gold leaf cradling a drop of light |
+| `macro_pet.png` | a paw print glowing faintly gold |
+| `macro_rare.png` | a silver star above a hunter's eye |
+| `macro_burst.png` | an hourglass cracking open with gold light pouring out |
+| `macro_break.png` | a broken iron shackle, pieces flying apart |
+| `macro_recover.png` | a campfire with a small kettle steaming beside it |
+| `macro_trap.png` | an open iron bear trap half hidden in grass |
+
+### 6c. Tree background (1 file, 1536x1024, final 1024x512, opaque)
+`macro_tree.png`: a dark, quiet backdrop for the tree, shown at 35% behind the
+icons. Faint carved stone panel with three subtle vertical channels (like a
+talent window), very low contrast, darker at the edges. No figures, nothing busy.
+
+### 6d. Build emblems (27 files, 1024x1024, final 64x64, transparent)
+A tiny emblem beside each build's column name, one per talent tree of every
+class. Simple bold silhouette in gold on a transparent background, readable at
+16 pixels: no fine detail. File name: `spec_<class>_<tree>.png`.
+
+| Class | Files and emblem |
+|---|---|
+| Druid | `spec_druid_balance` crescent moon and star · `spec_druid_feral` cat paw with claws · `spec_druid_resto` sprouting seed |
+| Hunter | `spec_hunter_bm` boar head · `spec_hunter_mm` drawn bow · `spec_hunter_sv` crossed knife and trap |
+| Mage | `spec_mage_arcane` arcane rune circle · `spec_mage_fire` flame · `spec_mage_frost` snowflake |
+| Paladin | `spec_paladin_holy` radiant sun · `spec_paladin_prot` shield with a cross · `spec_paladin_ret` winged hammer |
+| Priest | `spec_priest_disc` shield of light · `spec_priest_holy` rising sun with rays · `spec_priest_shadow` shadowy eye |
+| Rogue | `spec_rogue_assassination` dripping dagger · `spec_rogue_combat` two crossed swords · `spec_rogue_subtlety` hooded face in shadow |
+| Shaman | `spec_shaman_elemental` lightning bolt · `spec_shaman_enhancement` fist wreathed in wind · `spec_shaman_resto` water droplet |
+| Warlock | `spec_warlock_affliction` skull with green smoke · `spec_warlock_demonology` horned demon head · `spec_warlock_destruction` falling burning rock |
+| Warrior | `spec_warrior_arms` greatsword · `spec_warrior_fury` two axes crossed · `spec_warrior_prot` tower shield |
+
+Batch 6 is 45 pictures in all; the keys (6a) matter most, then the build emblems.

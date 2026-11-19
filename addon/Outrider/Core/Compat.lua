@@ -111,6 +111,18 @@ function C.SpellName(spell)
   return (C.Call("GetSpellInfo", spell))
 end
 
+-- A spell's icon (file id or path) from its id or name, or nil.
+function C.SpellIcon(spell)
+  if spell == nil then return nil end
+  local tex = C.Call("C_Spell.GetSpellTexture", spell)
+  if tex == nil and C_Spell and C_Spell.GetSpellInfo then
+    local info = C.Call("C_Spell.GetSpellInfo", spell)
+    tex = type(info) == "table" and (info.iconID or info.originalIconID) or nil
+  end
+  if tex == nil then tex = C.Call("GetSpellTexture", spell) end
+  return C.Readable(tex) and tex or nil
+end
+
 -- NPC id from a GUID: "Creature-0-<server>-<instance>-<zoneUID>-<npcID>-<spawnUID>"
 -- zoneUID is what LayerTracker-style layer detection uses.
 function C.ParseGUID(guid)

@@ -118,7 +118,23 @@ local COND = {
   noexists = "there is none", combat = "you are in combat", nocombat = "you are out of combat",
   channeling = "you are channeling", nochanneling = "you are not channeling", stealth = "you are stealthed",
   mounted = "you are mounted", nomounted = "you are not mounted", pet = "you have a pet", nopet = "you have no pet",
+  nostealth = "you are not stealthed", indoors = "you are indoors", outdoors = "you are outdoors",
+  swimming = "you are swimming", flying = "you are flying", party = "you are in a party", raid = "you are in a raid",
 }
+-- weapon words for [equipped:X] (the Macros page explains every line, 2026-11-19)
+local EQUIP = { Thrown = "a thrown weapon", Bows = "a bow", Crossbows = "a crossbow", Guns = "a gun", Daggers = "a dagger",
+  Shields = "a shield", Wands = "a wand" }
+local function condWord(c)
+  if COND[c] then return COND[c] end
+  local what = c:match("^equipped:(.+)$")
+  if what then return "you have " .. (EQUIP[what] or what) .. " equipped" end
+  local no = c:match("^noequipped:(.+)$")
+  if no then return "you don't have " .. (EQUIP[no] or no) .. " equipped" end
+  local form = c:match("^stance:(%d+)$") or c:match("^form:(%d+)$")
+  if form then return form == "0" and "you are in no form" or ("you are in form " .. form) end
+  return c
+end
+E.CondWord = condWord
 local UNIT = { mouseover = "your mouseover", focus = "your focus", pet = "your pet", player = "yourself",
   target = "your target", targettarget = "your target's target" }
 
@@ -156,7 +172,7 @@ local function describeGroup(g)
   local words = {}
   local named = false -- the unit has been named once; later "it is X" -> "X"
   for _, c in ipairs(g.conds) do
-    local w = COND[c] or c
+    local w = condWord(c)
     if w:sub(1, 3) == "it " then
       if named then
         w = w:gsub("^it is ", ""):gsub("^it ", "")

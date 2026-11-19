@@ -78,6 +78,7 @@ Modules\RankCheck.lua
 Modules\HunterFight.lua
 Modules\ClassFight.lua
 Modules\FightPlan.lua
+Modules\MacroTree.lua
 Modules\HealPanel.lua
 Modules\Census.lua
 Modules\InfoBar.lua

@@ -3,7 +3,7 @@
 -- data pack the addon loads: addon/Outrider/Data/FightPlans.lua. Keeps what the
 -- macro builder needs (talent trees, key names, level brackets with their
 -- lines, spells and keep order, utility keys per race); drops the printed
--- example macros and the learn table. Each class is wrapped in a loader, so a
+-- example macros. The learn table stays (spell level and talent tree). Each class is wrapped in a loader, so a
 -- character only builds its own class's tables.
 -- Run: python tools/lua.py tools/build_fight_plans.lua
 local src = "docs/fight_macro_catalog_draft.lua"
@@ -45,6 +45,17 @@ for _, cls in ipairs(CLASSES) do
     local keys = {}
     for _, k in ipairs(kk) do keys[#keys + 1] = k .. " = " .. q(c.keys[k]) end
     line("local C = { trees = { " .. table.concat(trees, ", ") .. " }, keys = { " .. table.concat(keys, ", ") .. " }, specs = {}, utility = {} }")
+    -- learn[spell] = { level, tree or nil }: the Macros page tree places each
+    -- macro in the level band and talent column its spells come from (2026-11-19)
+    local names = {}
+    for n in pairs(c.learn or {}) do names[#names + 1] = n end
+    table.sort(names)
+    local parts = {}
+    for _, n in ipairs(names) do
+      local e = c.learn[n]
+      parts[#parts + 1] = "[" .. q(n) .. "] = { " .. (tonumber(e[1]) or 1) .. (e[3] and (", " .. q(e[3])) or "") .. " }"
+    end
+    line("C.learn = { " .. table.concat(parts, ", ") .. " }")
     local specNames = {}
     for s in pairs(c.specs or {}) do specNames[#specNames + 1] = s end
     table.sort(specNames)

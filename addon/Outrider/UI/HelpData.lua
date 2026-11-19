@@ -135,7 +135,7 @@ ns.HelpData = {
     { "Chat", "Your name and watched words highlighted, repeated spam hidden, LFG lines in their own tab, timestamps. /ride chat; /ride copychat copies the last 100 lines.", page = "chat" },
     { "Spell check", "Misspelled words underlined while you type in chat, with suggestions. /ride spell add <word>.", page = "chat" },
     { "Accessibility", "Bigger fonts, UI scale, colour-blind colours, high contrast, less motion. /ride access.", page = "settings", cmd = "setup" },
-    { "Macro library", "Macros page: ready-made macros for your class, each explained line by line, with Install and Update.", page = "macros" },
+    { "Macro tree", "Macros page, laid out like the talent window. On top, your keys (Fight, Pull, Strike...): put them on your bar once and Outrider rewrites them as you learn spells; the line under them says what Fight does press by press. Below, a tree: rows are level bands (1-10 up to 51-60), columns are every build of your class and one per talent tree. Grey icons with a number unlock at that level; gold ones are on your bar. Click an icon to read when to press it and every line in plain words; drag it (or Pick up) onto your action bar. PvE / PvP switches the tree to the PvP versions.", page = "macros" },
   } },
 
   { icon = "INV_Letter_09", "Sharing (all off by default)", "Only with Outrider users in your guild or party, only what you switch on.", {

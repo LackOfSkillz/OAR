@@ -241,6 +241,12 @@ local controls = {
   ["LFG and Trade in their own tab"] = "Moves LookingForGroup and Trade lines to their own chat tab.",
   ["Time stamps"] = "Adds the time to each chat line.",
   ["Copy the last 100 chat lines"] = "Opens the last 100 lines of chat as text you can copy.",
+  -- macros page (skill tree, 2026-11-19)
+  ["PvE"] = "Macros for questing and dungeons.",
+  ["PvP"] = "The PvP versions, for battlegrounds, duels and world PvP. Only changes this view.",
+  ["Compare"] = "Shows your macro next to Outrider's for the same key.",
+  ["Use Outrider's"] = "Writes Outrider's version into your macros; drag it to your bar in place of yours.",
+  ["Keep mine"] = "Keeps your macro; Outrider won't mention it again unless you change it.",
 
   -- sharing
   ["Say hello to other Outrider users"] = "Lets guild and party Outrider users see you have Outrider and which version.",
