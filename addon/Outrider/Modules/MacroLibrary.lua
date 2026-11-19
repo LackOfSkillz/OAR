@@ -29,7 +29,12 @@ function M:Entries()
   if ns.HunterFight and ns.HunterFight.enabled then
     for _, kind in ipairs(ns.HunterFight:Kinds()) do
       local e = ns.HunterFight:Entry(kind)
-      if not e.empty then out[#out + 1] = e end
+      if not e.empty then
+        -- each line's reason from the fight plan, shown line by line on the page
+        e.kind, e.whys = kind, {}
+        for _, l in ipairs(ns.HunterFight:Lines(kind)) do if l.why and l.why ~= "" then e.whys[l.text] = l.why end end
+        out[#out + 1] = e
+      end
     end
   end
   if ns.Crafter and ns.Crafter.enabled then
@@ -236,6 +241,14 @@ function M:Sections()
     out[#out + 1] = { header = title }
     for _, e in ipairs(list) do out[#out + 1] = e end
   end
+  -- your own macros that miss big parts of your build's rotation (FightPlan check)
+  local own = {}
+  for _, f in ipairs(FP and FP.findings or {}) do
+    if not (FP.dismissed and FP.dismissed[f.name]) then
+      own[#own + 1] = { id = "own:" .. f.name, name = f.name, body = f.body or "", own = true, finding = f, class = ns.PlayerClass() }
+    end
+  end
+  section("Your macros: a better fit is available", own)
   section("Recommended for you", rec)
   section(#rec > 0 and "Also good for your build" or "Recommended for you", recPack)
   section("Not yet (level or spell to learn)", later)
@@ -249,6 +262,10 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     render = function(row, e)
       if e.header then
         row.text:SetText("|cfff1d58e" .. string.upper(e.header) .. "|r")
+        return
+      end
+      if e.own then
+        row.text:SetText(string.format("  |cffffc74d%s|r  |cff8f96a6better fit available|r", e.name))
         return
       end
       local st = M:State(e)
@@ -271,7 +288,15 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   d.explain = UI.Text(d, "small", "muted") d.explain:SetPoint("TOPLEFT", d.body, "BOTTOMLEFT", 0, -10)
   d.explain:SetWidth(320) d.explain:SetJustifyH("LEFT")
   d.msg = UI.Text(d, "small", "warn") d.msg:SetPoint("BOTTOMLEFT", 14, 40) d.msg:SetWidth(320) d.msg:SetJustifyH("LEFT")
-  d.install = UI:Button(d, "Install", 90, function()
+  d.install = UI:Button(d, "Install", 120, function()
+    if p.current and p.current.own then
+      local target = p.ownTarget
+      local ok, res = false, "nothing to install"
+      if target then ok, res = M:Install(target) end
+      d.msg:SetText(ok and ("Outrider's " .. target.name .. " is in your macros. Drag it to your bar in place of yours.") or tostring(res))
+      p:Refresh()
+      return
+    end
     local ok, res = M:Install(p.current)
     d.msg:SetText(ok and "Installed. Pick it up and drop it on a bar." or tostring(res))
     p:Refresh()
@@ -283,11 +308,28 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   end)
   d.pickup:SetPoint("LEFT", d.install, "RIGHT", 6, 0)
   d.remove = UI:Button(d, "Remove", 90, function()
+    if p.current and p.current.own then
+      if ns.FightPlan then ns.FightPlan:KeepMine(p.current.name, p.current.body) end
+      p.current = nil
+      d.msg:SetText("Kept. Outrider won't mention this macro again unless you change it.")
+      p:Refresh()
+      return
+    end
     local ok, res = M:Remove(p.current)
     d.msg:SetText(ok and "Removed." or tostring(res))
     p:Refresh()
   end)
   d.remove:SetPoint("LEFT", d.pickup, "RIGHT", 6, 0)
+  d.notnow = UI:Button(d, "Not now", 90, function()
+    if p.current and p.current.own and ns.FightPlan then
+      ns.FightPlan.dismissed = ns.FightPlan.dismissed or {}
+      ns.FightPlan.dismissed[p.current.name] = true
+    end
+    p.current = nil
+    p:Refresh()
+  end)
+  d.notnow:SetPoint("LEFT", d.remove, "RIGHT", 6, 0)
+  d.notnow:Hide()
   p.export = UI:Button(p, "Export", 110, function()
     local s, err = M:Export()
     if s then UI:TextDialog("Outrider macros (" .. ns.db.key .. ")", s, "copy") else d.msg:SetText(err) end
@@ -304,14 +346,47 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   end)
   p.import:SetPoint("LEFT", p.export, "RIGHT", 6, 0)
 
+  -- Side by side: your macro, what it misses, and Outrider's for the same key
+  -- (Use Outrider's / Keep mine / Not now). Nothing changes without a click.
+  function p:ShowOwn(e)
+    local f, FP, F = e.finding, ns.FightPlan, ns.HunterFight
+    local mine = F and F:Entry(f.kind or "ranged")
+    self.ownTarget = mine
+    d.title:SetText(e.name .. "  |cffffc74d(better fit available)|r")
+    d.body:SetText("|cff8f96a6Yours:|r\n" .. tostring(f.body or "") .. (mine and ("\n\n|cfff1d58eOutrider's " .. mine.name .. ":|r\n" .. mine.body) or ""))
+    local lines = { string.format("Covers about %d%% of your build's %s rotation.", math.floor((f.score or 0) * 100 + 0.5),
+      FP.SPEC_NAMES[FP:Spec()] or FP:Spec()) }
+    if #(f.missing or {}) > 0 then lines[#lines + 1] = "Missing: " .. table.concat(f.missing, ", ") end
+    for _, i in ipairs(f.issues or {}) do lines[#lines + 1] = "Problem: " .. i .. " (needs /stopmacro [channeling])" end
+    d.explain:SetText(table.concat(lines, "\n"))
+    d.install.label:SetText("Use Outrider's")
+    d.install:SetShown(mine ~= nil)
+    d.pickup:Hide()
+    d.remove.label:SetText("Keep mine")
+    d.remove:Show()
+    d.notnow:Show()
+    d.msg:SetText("")
+  end
   function p:ShowEntry(e)
     self.current = e
+    d.notnow:Hide()
+    d.remove.label:SetText("Remove")
+    if e.own then return self:ShowOwn(e) end
     local body = E.Fill(e.body, M:Values())
     d.title:SetText(e.name .. (e.verified and "" or "  (unverified)"))
     d.body:SetText(body)
     local lines = {}
     if e.explain then lines[#lines + 1] = e.explain end
-    for _, l in ipairs(E.Explain(body)) do lines[#lines + 1] = "- " .. l end
+    if e.whys and next(e.whys) then
+      -- the plan's own reason for each line, in order
+      for l in (body .. "\n"):gmatch("(.-)\n") do
+        if l ~= "" and not l:find("^#showtooltip") then
+          lines[#lines + 1] = "- " .. (e.whys[l] and ns.TitleCase(e.whys[l]:sub(1, 1)) .. e.whys[l]:sub(2) or (E.ExplainLine(l) or l))
+        end
+      end
+    else
+      for _, l in ipairs(E.Explain(body)) do lines[#lines + 1] = "- " .. l end
+    end
     for _, pr in ipairs(E.Validate(body)) do lines[#lines + 1] = (pr.level == "error" and "ERROR: " or "Note: ") .. pr.msg end
     d.explain:SetText(table.concat(lines, "\n"))
     local st = M:State(e)

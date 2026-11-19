@@ -28,7 +28,7 @@ local M = ns:NewModule("FightPlan", {
   title = "Fight macros by class, spec, race and level",
   phase = "P4",
   order = 31,
-  defaults = { mode = "auto", suggest = true },
+  defaults = { mode = "auto", suggest = true, kept = {} },
 })
 ns.FightPlan = M
 
@@ -290,11 +290,19 @@ function M:Check(why)
   for i = 1, math.min(n, 138) do
     local name, _, body = C.Call("GetMacroInfo", i)
     name, body = C.Readable(name), C.Readable(body)
-    if type(body) == "string" and type(name) == "string" and not ours[name] then
-      local score, missing, issues = self:Score(body, "ranged")
+    local kept = self:Settings().kept or {}
+    if type(body) == "string" and type(name) == "string" and not ours[name] and kept[name] ~= body then
+      -- compare with whichever of your keys it is closest to (Fight, Strike, Heal...)
+      local best
+      for _, kind in ipairs(F:Kinds()) do
+        if self:Slots(kind) then
+          local score, missing, issues = self:Score(body, kind)
+          if not best or score > best.score then best = { kind = kind, score = score, missing = missing, issues = issues } end
+        end
+      end
       local casts = select(2, body:gsub("/cast", ""))
-      if casts >= 2 and ((score < 0.6 and #missing > 0) or #issues > 0) then
-        found[#found + 1] = { name = name, score = score, missing = missing, issues = issues }
+      if best and casts >= 2 and ((best.score < 0.6 and #best.missing > 0) or #best.issues > 0) then
+        found[#found + 1] = { name = name, body = body, kind = best.kind, score = best.score, missing = best.missing, issues = best.issues }
       end
     end
   end
@@ -314,6 +322,16 @@ function M:Check(why)
         first.name, spec, M.Level(), table.concat(first.missing, ", ", 1, math.min(3, #first.missing)))
     end
   end
+end
+
+-- "Keep mine": this macro, with this exact text, is never mentioned again.
+-- Changing the macro brings the check back.
+function M:KeepMine(name, body)
+  local s = self:Settings()
+  s.kept = type(s.kept) == "table" and s.kept or {}
+  s.kept[name] = body
+  for i = #(self.findings or {}), 1, -1 do if self.findings[i].name == name then table.remove(self.findings, i) end end
+  self:Info("kept the player's own macro '%s'", tostring(name))
 end
 
 function M:OnEnable()
