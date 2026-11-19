@@ -33,7 +33,7 @@ def option(cid, *, seconds=1200, xp=6000, **over):
 class Reader(unittest.TestCase):
     def test_reads_only_stable_plain_lua_and_deduplicates(self):
         with tempfile.TemporaryDirectory() as d:
-            p = Path(d) / "Outrider_DB.lua"
+            p = Path(d) / "Outrider.lua"
             p.write_text(luadata.dumps("Outrider_DB", {"chars": {
                 "A-Realm": {"xp60": {"schema": 1, "history": [
                     session(), session()]}}}}), encoding="utf-8")
@@ -49,7 +49,7 @@ class Reader(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(session_reader.SessionReadError):
                 session_reader.stable_bytes(Path(d) / "SavedVariables.lua")
-            p = Path(d) / "Outrider_DB.lua"
+            p = Path(d) / "Outrider.lua"
             p.write_text("Outrider_DB = {", encoding="utf-8")
             with self.assertRaises(session_reader.SessionReadError):
                 session_reader.read_sessions(p)

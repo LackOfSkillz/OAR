@@ -18,8 +18,8 @@ class SessionReadError(ValueError):
 
 def stable_bytes(path, *, cap=MAX_FILE_BYTES):
     path = Path(path)
-    if path.name.lower() != "outrider_db.lua":
-        raise SessionReadError("select the Outrider_DB.lua SavedVariables file")
+    if path.name.lower() != "outrider.lua":
+        raise SessionReadError("select the Outrider.lua SavedVariables file")
     if not path.is_file() or path.is_symlink():
         raise SessionReadError("saved file is missing or is a symlink")
     first = path.stat()

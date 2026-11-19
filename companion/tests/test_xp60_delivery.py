@@ -23,7 +23,7 @@ def recording():
 class Delivery(unittest.TestCase):
     def test_session_bound_default_plan_never_invents_xp(self):
         with tempfile.TemporaryDirectory() as d:
-            p = Path(d) / "Outrider_DB.lua"
+            p = Path(d) / "Outrider.lua"
             p.write_text(luadata.dumps("Outrider_DB", {
                 "chars": {"Test-Realm": {"xp60": {
                     "schema": 1, "history": [recording()]}}}}) +
