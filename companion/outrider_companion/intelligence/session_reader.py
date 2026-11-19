@@ -46,11 +46,21 @@ def read_sessions(path, *, character=None):
     if not isinstance(saved, dict) or not isinstance(saved.get("chars"), dict):
         raise SessionReadError("Outrider character database is missing")
     records = []
+    preferences = {}
     for key, char in saved["chars"].items():
         if not isinstance(key, str) or (character is not None and key != character):
             continue
         if not isinstance(char, dict):
             continue
+        selected = char.get("xp60Suppressed")
+        if isinstance(selected, dict) and len(selected) <= 80:
+            preferences[key] = {
+                cid: dict(record)
+                for cid, record in selected.items()
+                if isinstance(cid, str) and 0 < len(cid) <= 100
+                and isinstance(record, dict)
+                and record.get("verdict") in ("already_know", "not_interested", "wrong")
+            }
         state = char.get("xp60")
         if not isinstance(state, dict) or state.get("schema") != 1:
             continue
@@ -75,6 +85,7 @@ def read_sessions(path, *, character=None):
         "sourceDigest": hashlib.sha256(data).hexdigest(),
         "sessions": records,
         "snapshots": root.get("Outrider_Snapshots") or {},
+        "preferences": preferences,
     }
 
 

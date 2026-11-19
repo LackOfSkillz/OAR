@@ -54,6 +54,21 @@ class Delivery(unittest.TestCase):
         p = D.create_plan(result, "Test-Realm", now=1795000000)
         self.assertEqual(p["qualitativeCandidateIds"], [])
 
+    def test_player_known_candidate_is_not_repeated_next_session(self):
+        s = recording()
+        result = {
+            "sessions": [("Test-Realm", s)],
+            "sourceDigest": "a" * 64,
+            "snapshots": {"Test-Realm": {"modules": {"WhatNow": {
+                "seenAt": 13580,
+                "candidates": [{"candidateId": "quest:known", "kind": "quest",
+                                "label": "community"}]}}}},
+            "preferences": {"Test-Realm": {"quest:known": {
+                "verdict": "already_know", "at": 1794999990, "level": 20}}},
+        }
+        p = D.create_plan(result, "Test-Realm", now=1795000000)
+        self.assertEqual(p["qualitativeCandidateIds"], [])
+
     def test_never_writes_without_confirmed_game_exit(self):
         with tempfile.TemporaryDirectory() as d:
             addon = Path(d) / "Interface" / "AddOns" / "Outrider"

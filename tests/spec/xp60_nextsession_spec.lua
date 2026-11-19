@@ -38,6 +38,22 @@ T.describe("XP60 next-login session-bound plans", function()
     T.eq(ns.NextSession:Plan(),nil)
     T.eq(#ns.Errors.list,0)
   end)
+  T.it("already-know feedback persists per candidate, not just session ID", function()
+    local game, ns = session()
+    local a = plan(game, ns)
+    game.env.Outrider_Snapshots = { [ns.db.key] = {
+      modules = { WhatNow = { candidates = {
+        { candidateId="quest:one", title="Quest One", kind="quest" }
+      } } }
+    } }
+    a.qualitativeCandidateIds = {"quest:one"}
+    game.env.Outrider_Advice = a
+    T.ok(ns.NextSession:Plan())
+    T.ok(ns.NextSession:Feedback("already_know"))
+    T.eq(ns.db.char.xp60Suppressed["quest:one"].verdict, "already_know")
+    T.eq(ns.db.char.xp60Suppressed["quest:one"].level, 20)
+    T.eq(#ns.Errors.list, 0)
+  end)
   T.it("rejects mismatched sessions, stale plans, model actions and wrong character", function()
     local game, ns = session()
     local original=plan(game,ns)

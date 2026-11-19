@@ -80,9 +80,30 @@ def create_plan(read_result, character, *, now=None):
         for q in (entry.get("questsTurnedIn") or [])
         if isinstance(q, dict) and isinstance(q.get("questID"), int)
     }
+    suppressed = (read_result.get("preferences") or {}).get(character, {})
+    suppressed = suppressed if isinstance(suppressed, dict) else {}
+    def recently_suppressed(candidate_id):
+        row = suppressed.get(candidate_id)
+        if not isinstance(row, dict):
+            return False
+        at = row.get("at")
+        if not isinstance(at, int) or at > now + 300:
+            return False
+        verdict = row.get("verdict")
+        max_age = 30 * 86400 if verdict == "not_interested" else 14 * 86400
+        if verdict == "wrong":
+            max_age = 7 * 86400
+        if now - at > max_age:
+            return False
+        level = row.get("level")
+        if verdict == "already_know" and isinstance(level, int) and isinstance(last.get("levelEnd"), int):
+            if abs(last["levelEnd"] - level) >= 3:
+                return False
+        return verdict in ("already_know", "not_interested", "wrong")
     opportunities = []
     for c in raw if isinstance(raw, list) else []:
-        if not isinstance(c, dict) or not isinstance(c.get("candidateId"), str):
+        if (not isinstance(c, dict) or not isinstance(c.get("candidateId"), str)
+                or recently_suppressed(c["candidateId"])):
             continue
         community = (
             c.get("questID") not in turned_in
@@ -119,7 +140,9 @@ def create_plan(read_result, character, *, now=None):
     qualitative = []
     for c in raw if isinstance(raw, list) else []:
         if (not isinstance(c, dict) or c.get("kind") != "quest"
-                or c.get("questID") in turned_in):
+                or c.get("questID") in turned_in
+                or recently_suppressed(c.get("candidateId"))):
+
             continue
         cid = c.get("candidateId")
         if (isinstance(cid, str) and 1 <= len(cid) <= 100

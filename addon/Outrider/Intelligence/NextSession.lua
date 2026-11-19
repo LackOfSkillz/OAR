@@ -34,6 +34,25 @@ function M:Feedback(verdict)
     for _ in pairs(d) do n = n + 1 end
     if n > 20 then self:Settings().dismissed = { [a.basedOnSessionId] = verdict } end
   end
+  if verdict == "already_know" or verdict == "not_interested" or
+      verdict == "wrong" then
+    local saved = ns.db.char.xp60Suppressed
+    if type(saved) ~= "table" then saved = {} ns.db.char.xp60Suppressed = saved end
+    local level = ns.Compat.Readable(ns.Compat.Call("UnitLevel", "player")) or 0
+    local function remember(id)
+      if type(id) == "string" and #id > 0 and #id <= 100 then
+        saved[id] = { verdict = verdict, at = time(), level = level }
+      end
+    end
+    for _, c in ipairs(a.suggestions or {}) do remember(c.candidateId) end
+    for _, c in ipairs(a.plan or {}) do remember(c.candidateId) end
+    local count = 0
+    for _ in pairs(saved) do count = count + 1 end
+    if count > 80 then
+      -- Strictly bounded and per-character, never global blacklisting.
+      ns.db.char.xp60Suppressed = {}
+    end
+  end
   if verdict == "useful" then
     ns.db.char.xp60PlanUseful = true
   end
