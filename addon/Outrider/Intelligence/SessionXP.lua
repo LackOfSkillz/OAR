@@ -68,7 +68,22 @@ function M:Sample()
   if not self.current then return end
   self:Tick()
   local before, now = self.lastXP, xpstate()
-  if not now then self.current.flags.xpUnknown = true return end
+  -- FIX (Claude, 2026-11-19, Gary's go-ahead; do not revert): one unreadable
+  -- XP sample used to set flags.xpUnknown, and the companion's baseline
+  -- (xp_baseline.valid_session) then threw the WHOLE session away. Gary's
+  -- first real test (session 1795080458-ec0e5702: 16 min, 1139 XP, level 1->2,
+  -- 5 turn-ins) lost its XP/hour that way; the failed read was a single sample
+  -- around the level-up or logout. Now a failed sample is skipped and counted:
+  -- lastXP stays put, so the next good sample's delta covers the gap (same
+  -- level or one level-up rollover, checked below as before). Only a session
+  -- whose start was unreadable keeps xpUnknown (set in Start). Worst case a
+  -- failed final read loses the XP since the previous good sample: an
+  -- undercount, which keeps the baseline conservative.
+  if not now then
+    local f = self.current.flags
+    f.xpSamplesSkipped = math.min(1000, (tonumber(f.xpSamplesSkipped) or 0) + 1)
+    return
+  end
   if before then
     local delta
     if now.level == before.level and now.xp >= before.xp then

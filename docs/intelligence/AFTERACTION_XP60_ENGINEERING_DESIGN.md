@@ -309,3 +309,26 @@ A model sees a sanitized view with anonymous character token and validated candi
 - Blizzard community explanation of SavedVariables write-on-logout/reload behavior: https://us.forums.blizzard.com/en/wow/t/saving-local-variables-between-sessions/380081
 - Historical September–October 2026 Forever beta SavedVariables loading problems were reported by addon developers; Outrider's own November 11 probe later marked its current client round trip working. Always test the actual installed build: https://us.forums.blizzard.com/en/wow/t/uiaddon-settings-wiped-on-client-restart/2353992
 - Internal controlling sources: docs/DECISIONS.md D18/D22; docs/FOREVER_CONSTRAINTS.md C18; docs/PROBE_RESULTS.md; current I2 universal engineering blueprint.
+
+## Fixes after the first real-client test (2026-11-19, Claude, approved by Gary)
+
+**Do not revert these fixes.**
+
+### 1. One unreadable XP sample voided the whole session
+
+**Test:** Gary's first real session, on Jekar (rogue, level 1→2), session `1795080458-ec0e5702`. It recorded 962 s, 1,139 XP and 5 quest turn-ins with their XP. It was saved as `final = true` and `xpVerified = true`.
+
+**Symptom:** the session also carried `flags.xpUnknown = true`, so `xp_baseline.valid_session` rejected it and `baselineXPPerHour` came out `null`.
+
+**Cause:** `SessionXP:Sample()` set `flags.xpUnknown` the first time `xpstate()` returned nil. That one bad read most likely came during the level-up or at logout.
+
+**Fix:**
+- A failed sample is now skipped and counted in `flags.xpSamplesSkipped` (at most 1000), and `lastXP` is kept.
+- The next good sample's delta covers the gap, using the existing same-level or one-level rollover rules.
+- `xpUnknown` is still set when the session's start can't be read (`Start()`).
+- The companion does not treat `xpSamplesSkipped` as disqualifying.
+- If the final read fails, only the XP since the last good sample is lost. That undercounts, which keeps the baseline conservative.
+
+**Regression test:** `tests/spec/xp60_session_spec.lua`, "skips one unreadable XP sample instead of voiding the session".
+
+**Not recoverable:** the test session itself stays rejected, because SavedVariables are never edited by hand (CLAUDE.md rule 2). The next recorded session will count.

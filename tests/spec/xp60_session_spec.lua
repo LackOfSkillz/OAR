@@ -75,4 +75,22 @@ T.describe("XP60 opted-in recorder", function()
     T.eq(#ns.db.char.xp60.history, 0)
     T.eq(#ns.Errors.list, 0)
   end)
+  -- Regression for the 2026-11-19 fix in SessionXP:Sample(): one unreadable
+  -- sample (here XP max reads 0 mid level-up) must not void the session.
+  T.it("skips one unreadable XP sample instead of voiding the session", function()
+    local g, ns = play()
+    g:slash("xp60 on")
+    g:advance(120)
+    g.player.level, g.xp, g.xpMax = 21, 50, 0
+    g:fire("PLAYER_LEVEL_UP", 21)
+    g.xpMax = 1100
+    g:fire("PLAYER_XP_UPDATE", "player")
+    g:logout()
+    local h = ns.db.char.xp60.history[1]
+    T.eq(h.xpEarned, 250, "200 to finish level 20, then 50")
+    T.no(h.flags.xpUnknown, "the session is still usable")
+    T.eq(h.flags.xpSamplesSkipped, 1)
+    T.ok(h.xpVerified)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
