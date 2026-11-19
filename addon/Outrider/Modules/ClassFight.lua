@@ -240,11 +240,11 @@ function CASTER.PALADIN(kind, add)
   add(1, "/startattack", "keeps swinging")
   buffLines("PALADIN", add)
   local seal = (level() >= 20 and twoHander() and first("Seal of Command")) or first("Seal of Righteousness")
-  if seal and known("Judgement") then
-    add(2, "/castsequence reset=combat " .. seal .. ",Judgement", "Seal, Judgement, round and round (re-seals after each Judgement)")
-  elseif seal then
-    add(2, "/castsequence reset=combat " .. seal .. ",null", "Seal once per fight")
-  end
+  -- On Forever Judgement doesn't use up the Seal (research 2026-11-18), so
+  -- re-sealing after each Judgement wasted a global cooldown and mana: Seal
+  -- once per fight, Judgement whenever it's off cooldown.
+  if seal then add(2, "/castsequence reset=combat " .. seal .. ",null", "Seal once per fight (it stays up)") end
+  if seal and known("Judgement") then add(3, "/cast Judgement", "whenever it is off cooldown") end
   for i, n in ipairs({ "Holy Strike", "Crusader Strike", "Consecration" }) do
     if known(n) then add(2 + i, "/cast " .. n, "whenever it is off cooldown") end
   end

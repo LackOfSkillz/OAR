@@ -134,3 +134,21 @@ T.describe("fight plans", function()
     end
   end)
 end)
+
+T.describe("fight plans: world PvP", function()
+  T.it("auto mode picks PvP when a hostile player is targeted, PvE again on a mob", function()
+    local game = mock.new({ class = "HUNTER", level = 20 })
+    game.base.UnitCanAttack = function(_, unit) return game.units and game.units[unit] ~= nil end
+    rawset(game.env, "UnitCanAttack", game.base.UnitCanAttack)
+    local ns = game:loadAddon()
+    game:login()
+    local FP = ns.FightPlan
+    game.units = { target = { name = "Gankster", player = true, guid = "Player-1-0001" } }
+    T.eq(FP:Mode(), "pvp")
+    game.units = { target = { name = "Boar", guid = "Creature-0-1-0-1-113-001" } }
+    T.eq(FP:Mode(), "pve")
+    FP:Settings().mode = "pve"
+    game.units = { target = { name = "Gankster", player = true, guid = "Player-1-0001" } }
+    T.eq(FP:Mode(), "pve", "a fixed choice wins")
+  end)
+end)

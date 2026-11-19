@@ -77,6 +77,8 @@ function M:Mode()
   local _, kind = C.Call("IsInInstance")
   kind = C.Readable(kind)
   if kind == "pvp" or kind == "arena" then return "pvp" end
+  -- world PvP: a hostile player targeted (read out of combat, when macros can change)
+  if C.Readable(C.Call("UnitIsPlayer", "target")) and C.Readable(C.Call("UnitCanAttack", "player", "target")) then return "pvp" end
   return "pve"
 end
 
@@ -338,6 +340,17 @@ function M:OnEnable()
   -- checked at once (no timer left pending); the once-per-session cap keeps it quiet
   self:On("PLAYER_ENTERING_WORLD", function() M:Check("login") end)
   self:On("UPDATE_MACROS", function() M:Check("macros changed") end)
+  -- auto mode follows your target out of combat: a hostile player brings the
+  -- PvP keys, a mob brings PvE back (only rewritten when the set changes)
+  self:On("PLAYER_TARGET_CHANGED", function(mod)
+    if C.InCombat() or mod:Settings().mode ~= "auto" then return end
+    local m = mod:Mode()
+    if m ~= mod.lastMode then
+      local first = mod.lastMode == nil
+      mod.lastMode = m
+      if not first and F.Update then F:Update("mode " .. m) end
+    end
+  end)
   for _, e in ipairs({ "PLAYER_TALENT_UPDATE", "TRAIT_CONFIG_UPDATED", "CHARACTER_POINTS_CHANGED" }) do
     self:On(e, function() if F.Update then F:Update("respec") end M:Check("respec") end)
   end
