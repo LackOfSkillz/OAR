@@ -15,6 +15,7 @@ local function plan(game, ns)
     basedOnSessionId="xp60-1",sourceDigest=string.rep("a",64),
     createdAt=game.now,expiresAt=game.now+3600,gameBuild=tostring(ns.build),
     levelAtPlan=20,goal="xp",budgetSeconds=3600,
+    status="insufficient_evidence",
     headline="Your next hour",summary="Keep your current route.",
     steps={},actions={},limitations={"No verified route improvement"},
   }
