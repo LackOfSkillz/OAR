@@ -1078,4 +1078,22 @@ function Game:chatLine(event, msg, author, frame, base, lineID)
   return false, text
 end
 
+-- Like ChatFrame's MessageEventHandler: a filter that returns new values
+-- replaces ALL 17 message arguments with them (missing ones become nil).
+-- Returns hidden, args (a table indexed 1..17).
+function Game:chatArgs(event, args, frame)
+  local a = {}
+  for i = 1, 17 do a[i] = args[i] end
+  for _, fn in ipairs(self.chatFilters[event] or {}) do
+    local r = { fn(frame, event, unpack(a, 1, 17)) }
+    if r[1] then return true end
+    if r[2] ~= nil then
+      local n = {}
+      for i = 1, 17 do n[i] = r[i + 1] end
+      a = n
+    end
+  end
+  return false, a
+end
+
 return M

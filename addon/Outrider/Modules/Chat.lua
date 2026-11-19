@@ -221,7 +221,12 @@ local function filter(frame, event, ...)
       return true
     end
   end
-  if d.text or d.author then return false, d.text or msg, d.author or author end
+  -- A filter that changes a line must hand back EVERY argument: Blizzard
+  -- replaces all of them with what we return. Returning only text and author
+  -- left channelIndex and the rest nil, and Blizzard's chat code errored on
+  -- every channel line (369 errors and the "large number of errors" pop-up,
+  -- 2026-11-19).
+  if d.text or d.author then return false, d.text or msg, d.author or author, select(3, ...) end
   return false
 end
 
