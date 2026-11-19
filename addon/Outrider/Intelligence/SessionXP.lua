@@ -112,14 +112,17 @@ function M:Start()
   self:SetZone(zone())
   return s
 end
-function M:OnQuest(_, questID)
+function M:OnQuest(_, questID, rewardXP)
   if not self.current then return end
   questID = C.Readable(questID)
   if not integer(questID, 2147483647) or questID == 0 then return end
   self:Sample()
   local list = self.current.questsTurnedIn
   if #list >= M.MAX_QUESTS then self.current.flags.questOverflow = true return end
-  list[#list + 1] = { questID = questID, atOffsetSeconds = math.floor(self.current.durationSeconds) }
+  rewardXP = C.Readable(rewardXP)
+  list[#list + 1] = { questID = questID, atOffsetSeconds = math.floor(self.current.durationSeconds),
+    rewardXP = integer(rewardXP, 1e9) and rewardXP or nil,
+    rewardSource = integer(rewardXP, 1e9) and "QUEST_TURNED_IN" or "unknown" }
 end
 function M:Checkpoint(final)
   if not self.current then return false end

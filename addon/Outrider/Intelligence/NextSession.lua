@@ -21,12 +21,14 @@ end
 
 function M:Feedback(verdict)
   if verdict ~= "already_know" and verdict ~= "not_interested" and
-      verdict ~= "useful" and verdict ~= "dismiss" then return false end
+      verdict ~= "useful" and verdict ~= "wrong" and
+      verdict ~= "dismiss" then return false end
   local a = self:Plan()
   if not a then return false end
   local d = self:Settings().dismissed
   if type(d) ~= "table" then d = {} self:Settings().dismissed = d end
-  if verdict == "dismiss" or verdict == "already_know" or verdict == "not_interested" then
+  if verdict == "dismiss" or verdict == "wrong" or
+     verdict == "already_know" or verdict == "not_interested" then
     d[a.basedOnSessionId] = verdict
     local n = 0
     for _ in pairs(d) do n = n + 1 end
@@ -60,7 +62,17 @@ function M:Open()
       M:Feedback("already_know")
       M:Render()
     end)
-    p.known:SetPoint("LEFT", p.dismiss, "RIGHT", 10, 0)
+    p.known:SetPoint("LEFT", p.dismiss, "RIGHT", 8, 0)
+    p.notInterested = ns.UI:Button(p.content, "Not interested", 118, function()
+      M:Feedback("not_interested")
+      M:Render()
+    end)
+    p.notInterested:SetPoint("LEFT", p.known, "RIGHT", 8, 0)
+    p.useful = ns.UI:Button(p.content, "Useful", 72, function()
+      M:Feedback("useful")
+      ns.Print("Feedback saved. Outrider will compare the next session's results.")
+    end)
+    p.useful:SetPoint("LEFT", p.notInterested, "RIGHT", 8, 0)
     self.window = p
   end
   self:Render(answer, reason)
@@ -75,9 +87,14 @@ function M:Render(answer, reason)
     self.window.details:SetText("Keep your current route. " .. tostring(reason or "No offline analysis yet."))
     self.window.dismiss:SetShown(false)
     self.window.known:SetShown(false)
+    self.window.notInterested:SetShown(false)
+    self.window.useful:SetShown(false)
     return
   end
   local rows = {}
+  if answer.planStatus == "tentative" then
+    rows[#rows + 1] = "Tentative: Classic-derived route timing and XP are unverified."
+  end
   rows[#rows + 1] = answer.summary or "Continue your current route."
   if answer.baselineXPPerHour then
     rows[#rows + 1] = string.format("Last measured XP: %d per wall-clock hour.", answer.baselineXPPerHour)
@@ -99,6 +116,8 @@ function M:Render(answer, reason)
   self.window.details:SetText(table.concat(rows, "\n"))
   self.window.dismiss:SetShown(true)
   self.window.known:SetShown(true)
+  self.window.notInterested:SetShown(true)
+  self.window.useful:SetShown(true)
 end
 
 function M:OnEnable()

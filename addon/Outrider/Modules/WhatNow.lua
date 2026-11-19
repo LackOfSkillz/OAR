@@ -192,7 +192,7 @@ SOURCES.quests = function()
         benefit = benefit, confidence = 0.6, seconds = e.seconds, mapID = e.mapID, label = "community",
         -- Journey uses a Classic-level formula and fixed five-minute task
         -- estimate. These are NOT observed quest XP or completion times.
-        estimatedQuestXP = e.xp, estimatedTripSeconds = e.seconds,
+        questID = e.questID, estimatedQuestXP = e.xp, estimatedTripSeconds = e.seconds,
         estimatedActivitySeconds = ns.Journey.QUEST_TIME, estimateBasis = "journey_community",
         target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
         caveat = "Quest spots come from Classic data and may have moved on Forever.",
@@ -565,7 +565,8 @@ function M:BuildSnapshot()
       score = math.floor((c.score or 0) * 1000 + 0.5) / 1000,
       label = c.label or ((c.confidence or 1) >= 0.7 and "inferred" or "unknown"),
       urgent = c.urgent or nil, itemID = c.itemID, panel = c.panel,
-      target = c.target, estimatedQuestXP = c.estimatedQuestXP,
+      target = c.target, questID = c.questID,
+      estimatedQuestXP = c.estimatedQuestXP,
       estimatedTripSeconds = c.estimatedTripSeconds,
       estimatedActivitySeconds = c.estimatedActivitySeconds,
       estimateBasis = c.estimateBasis,

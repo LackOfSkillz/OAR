@@ -72,12 +72,21 @@ def create_plan(read_result, character, *, now=None):
             or seen_at > latest_end + 300 or latest_end - seen_at > 900):
         raw = []
 
+    # Previously turned-in, non-repeatability-unknown IDs are excluded from
+    # certain next-session picks; never award the same one-time XP twice.
+    turned_in = {
+        q.get("questID")
+        for entry in history
+        for q in (entry.get("questsTurnedIn") or [])
+        if isinstance(q, dict) and isinstance(q.get("questID"), int)
+    }
     opportunities = []
     for c in raw if isinstance(raw, list) else []:
         if not isinstance(c, dict) or not isinstance(c.get("candidateId"), str):
             continue
         community = (
-            c.get("kind") == "quest" and c.get("label") == "community"
+            c.get("questID") not in turned_in
+            and c.get("kind") == "quest" and c.get("label") == "community"
             and c.get("estimateBasis") == "journey_community"
             and isinstance(c.get("estimatedQuestXP"), (int, float))
             and isinstance(c.get("estimatedTripSeconds"), (int, float))
@@ -90,6 +99,7 @@ def create_plan(read_result, character, *, now=None):
             # never reported as verified XP or a proven better route.
             opportunities.append({
                 "candidateId": c["candidateId"], "title": c.get("title"),
+                "questID": c.get("questID"),
                 "kind": "quest", "eligible": True, "completed": False,
                 "origin": "community", "estimateBasis": "journey_community",
                 "travelKnown": True, "mapID": c["target"].get("mapID"),
@@ -108,7 +118,8 @@ def create_plan(read_result, character, *, now=None):
     # steps. Show source-bound candidate IDs qualitatively, with no fake rate.
     qualitative = []
     for c in raw if isinstance(raw, list) else []:
-        if not isinstance(c, dict) or c.get("kind") != "quest":
+        if (not isinstance(c, dict) or c.get("kind") != "quest"
+                or c.get("questID") in turned_in):
             continue
         cid = c.get("candidateId")
         if (isinstance(cid, str) and 1 <= len(cid) <= 100

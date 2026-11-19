@@ -141,7 +141,9 @@ end
 -- XP60 schema 4: plans are DATA, not instructions. No model-defined actions.
 -- Session binding is independent of legacy askedAt, which can survive logout.
 function Advice:CheckNextSession(a)
-  if a.kind ~= "nextSessionPlan" or a.goal ~= "xp" or a.budgetSeconds ~= 3600 then
+  if a.kind ~= "nextSessionPlan" or a.goal ~= "xp" or a.budgetSeconds ~= 3600 or
+      (a.status ~= "tentative" and a.status ~= "evidence_backed" and
+       a.status ~= "insufficient_evidence") then
     return {}, "invalid XP60 contract"
   end
   local allowed = {
@@ -228,7 +230,7 @@ function Advice:CheckNextSession(a)
     summary = plain(a.summary, 600) or "Continue your current route.",
     plan = steps, budget = 60, planMinutes = math.ceil(last/60),
     limits = limits, sources = { "Saved gameplay session" },
-    nextSession = true, suggestions = suggestions,
+    nextSession = true, planStatus = a.status, suggestions = suggestions,
     basedOnSessionId = a.basedOnSessionId,
     baselineXPPerHour = type(a.baselineXPPerHour) == "number" and
       math.floor(math.max(0, a.baselineXPPerHour)) or nil,

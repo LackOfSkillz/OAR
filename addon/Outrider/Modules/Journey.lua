@@ -73,7 +73,8 @@ function M:XPList()
       local t = p and ns.Travel:TimeTo(prep, p)
       if t then
         local xp = M.XP(q.level, level)
-        out[#out + 1] = { kind = "xp", name = q.name, level = q.level, xp = xp, target = p, seconds = t, mapID = q.mapID,
+        out[#out + 1] = { kind = "xp", name = q.name, level = q.level, questID = q.questID,
+          xp = xp, target = p, seconds = t, mapID = q.mapID,
           giver = q.giver, rate = xp / ((t + M.QUEST_TIME) / 60), diff = q.diff }
       end
     end
