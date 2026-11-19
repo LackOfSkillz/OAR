@@ -300,3 +300,19 @@ Acceptance state: IMPLEMENTED | MOCK-GREEN | LIVE-WORKS | MATCHES | SURPASSES
 - [ ] Gary Mix reviews the final UX, setup, beta outcomes and production release notes.
 
 **Do not mark all gates complete simply because the task list is exhausted.**
+
+## Additional approved design scope — Next-session XP60 optimizer (2026-11-18)
+
+See **[AfterAction XP60 Engineering Design](AFTERACTION_XP60_ENGINEERING_DESIGN.md)**. This extends existing I2-01/I2-02/I2-03/I2-05/I2-06/I2-07/I2-08 acceptance obligations rather than silently declaring more of the original 77 items complete.
+
+The product requirement is **maximize supported expected XP gained inside the next 3,600 real-world seconds**, including travel, quest hand-ins and downtime; avoid generic coaching and fabricated percentage improvements. Recommendations must be backed by persisted observed XP/quest/time evidence and safe, versioned, source-validated route candidates.
+
+**Implementation subtasks (all unstarted until separate code and tests exist):**
+
+- [ ] XP60-00 — Instrument opt-in bounded, secret-safe in-game XP/session/quest telemetry; reliable level-up and reload handling.
+- [ ] XP60-01 — Desktop read-only stable SavedVariables watcher, post-logout baseline builder, dedup and privacy controls.
+- [ ] XP60-02 — Deterministic 60-minute quest-cluster/route optimizer with uncertainty bands, eligibility and current-route comparison.
+- [ ] XP60-03 — Separate session-bound next-login data-only plan contract, safe closed-game delivery, quiet UI and stale-plan invalidation.
+- [ ] XP60-04 — Expert-respectful relevance/suppression feedback, negative and performance tests, real-game acceptance.
+
+**New release gates:** no beginner-style filler; no misleading XP/hour; no plan beyond 60 minutes; don't count quest XP until it can be turned in by minute 60; preserve existing Ask/Advice contracts; no live bridge or game automation (D18); all generated player actions remain player-controlled. The latest design document is a spec, **not completed code**.
