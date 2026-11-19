@@ -146,6 +146,7 @@ Modules\Advisor.lua
 Intelligence\Radar.lua
 Intelligence\DealDesk.lua
 Intelligence\SessionXP.lua
+Intelligence\NextSession.lua
 Modules\Skin.lua
 Modules\Tooltips.lua
 Modules\UnitLook.lua
