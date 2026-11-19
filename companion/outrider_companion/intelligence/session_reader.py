@@ -40,7 +40,7 @@ def read_sessions(path, *, character=None):
     data = stable_bytes(path)
     try:
         root = luadata.parse(data.decode("utf-8-sig"))
-    except (UnicodeDecodeError, luadata.LuaDataError) as exc:
+    except (UnicodeDecodeError, luadata.LuaDataError, IndexError) as exc:
         raise SessionReadError("SavedVariables is incomplete or not plain Lua data") from exc
     saved = root.get("Outrider_DB")
     if not isinstance(saved, dict) or not isinstance(saved.get("chars"), dict):

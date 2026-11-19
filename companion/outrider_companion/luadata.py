@@ -126,6 +126,8 @@ class _Reader:
         if depth > 64:
             self.error("nested too deep")
         c = self.peek()
+        if not c:
+            self.error("unexpected end of SavedVariables data")
         if c == "{":
             return self.table(depth)
         if c in "\"'":

@@ -4,7 +4,8 @@ Never edit SavedVariables; never run a command in the game. File installation
 fails closed if running-game detection cannot be completed.
 """
 import os
-import subprocess
+import ctypes
+from ctypes import wintypes
 import sys
 import time
 from pathlib import Path
@@ -20,31 +21,58 @@ class DeliveryError(ValueError):
     pass
 
 
-def game_closed():
-    """False only when the supported process listing positively shows no WoW.
+class _PROCESSENTRY32W(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
+        ("th32ProcessID", wintypes.DWORD), ("th32DefaultHeapID", ctypes.c_void_p),
+        ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD),
+        ("th32ParentProcessID", wintypes.DWORD), ("pcPriClassBase", wintypes.LONG),
+        ("dwFlags", wintypes.DWORD), ("szExeFile", wintypes.WCHAR * 260),
+    ]
 
-    On unsupported platforms, do not assume that an absent process means the
-    client is closed. Caller may supply a test-only process checker.
+
+def game_closed():
+    """Read-only Windows process enumeration, without shell execution.
+
+    Fail closed if the platform or process enumeration is unavailable.
+    Uses documented Toolhelp32Snapshot to inspect process names ONLY;
+    no process is opened, injected into, read from, or controlled.
     """
     if sys.platform != "win32":
         raise DeliveryError("automatic installation requires Windows process verification")
+    kernel = ctypes.windll.kernel32
+    create = kernel.CreateToolhelp32Snapshot
+    create.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    create.restype = ctypes.c_void_p
+    first = kernel.Process32FirstW
+    first.argtypes = [ctypes.c_void_p, ctypes.POINTER(_PROCESSENTRY32W)]
+    first.restype = wintypes.BOOL
+    advance = kernel.Process32NextW
+    advance.argtypes = first.argtypes
+    advance.restype = wintypes.BOOL
+    close = kernel.CloseHandle
+    close.argtypes = [ctypes.c_void_p]
+    close.restype = wintypes.BOOL
+    handle = create(0x00000002, 0)
+    if not handle or handle == ctypes.c_void_p(-1).value:
+        raise DeliveryError("cannot enumerate running processes")
     try:
-        result = subprocess.run(["tasklist", "/FO", "CSV", "/NH"],
-                                capture_output=True, text=True, timeout=8, check=True)
-    except (OSError, subprocess.TimeoutExpired, subprocess.CalledProcessError) as exc:
-        raise DeliveryError("cannot verify WoW has exited") from exc
-    import csv
-    from io import StringIO
-    try:
-        rows = list(csv.reader(StringIO(result.stdout)))
-    except csv.Error as exc:
-        raise DeliveryError("unparseable Windows process list") from exc
-    if not rows or any(not row for row in rows):
-        raise DeliveryError("empty or invalid process list")
-    return not any(row[0].strip().lower() in GAME_NAMES or
-                   "warcraft" in row[0].strip().lower() or
-                   "wow" in row[0].strip().lower()
-                   for row in rows)
+        entry = _PROCESSENTRY32W()
+        entry.dwSize = ctypes.sizeof(entry)
+        if not first(handle, ctypes.byref(entry)):
+            raise DeliveryError("process enumeration failed")
+        while True:
+            name = entry.szExeFile.strip().lower()
+            if name in GAME_NAMES or "warcraft" in name or "wow" in name:
+                return False
+            if not advance(handle, ctypes.byref(entry)):
+                # Error 18 is normal end of enumeration; others are unsafe.
+                if kernel.GetLastError() != 18:
+                    raise DeliveryError("process enumeration ended abnormally")
+                break
+        return True
+    finally:
+        close(handle)
 
 
 def create_plan(read_result, character, *, now=None):
