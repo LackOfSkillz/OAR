@@ -550,7 +550,10 @@ local function moneyRows()
         local zone = e.zones[z]
         actions[#actions + 1] = { "Find " .. zone, function() ns.Hub:Search(zone) end, "Finds " .. zone .. " on the Journey page." }
       end
-      out[#out + 1] = { art = "kind_gold", pic = "Interface\\Icons\\INV_Misc_Coin_02", title = e.title,
+      -- a picture per way of earning when installed (money_mob, money_skin...), else the gold one
+      local cat = type(e.category) == "table" and e.category[1] or e.category
+      local own = cat and ns.Art and ns.Art:Has("money_" .. tostring(cat)) and ("money_" .. tostring(cat)) or "kind_gold"
+      out[#out + 1] = { art = own, pic = "Interface\\Icons\\INV_Misc_Coin_02", title = e.title,
         tags = { { G.RateText(x), "gold" } }, line = (e.how or "") .. "  |cff888888(" .. tostring(e.source) .. ")|r",
         actions = actions, highlight = i == 1 }
     end

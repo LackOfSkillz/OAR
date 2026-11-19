@@ -96,9 +96,14 @@ ns.Hub:AddTab("feed", "Feed", function(p)
         if (e.count or 1) > 1 then tags[#tags + 1] = { "x" .. e.count, "gold" } end
         if e.who and e.who ~= ns.db.key then tags[#tags + 1] = { e.who:match("^[^-]+") or e.who, "gold" } end
         local t = tostring(e.title or ""):lower()
-        local icon = t:find("rare") and "Ability_Hunter_SniperShot" or t:find("upgrade") and "Spell_ChargePositive"
-          or t:find("ammo") and "INV_Ammo_Arrow_02" or t:find("errand") and "INV_Misc_Bag_08" or "INV_Letter_15"
-        out[#out + 1] = { pic = "Interface\\Icons\\" .. icon, title = e.title, tags = tags,
+        -- Outrider's own feed pictures when installed (feed_rare, feed_upgrade, ...), else game icons;
+        -- an upgrade shows armour, a reward a chest, a tip a note (tour 2026-11-19: a blue cross and envelopes)
+        local kind = t:find("rare") and "rare" or t:find("upgrade") and "upgrade" or t:find("reward") and "reward"
+          or t:find("ammo") and "ammo" or t:find("errand") and "errand" or "tip"
+        local icon = ({ rare = "Ability_Hunter_SniperShot", upgrade = "INV_Chest_Chain_05", reward = "INV_Box_01",
+          ammo = "INV_Ammo_Arrow_02", errand = "INV_Misc_Bag_08", tip = "INV_Misc_Note_01" })[kind]
+        local art = ns.Art and ns.Art:Has("feed_" .. kind) and ("feed_" .. kind) or nil
+        out[#out + 1] = { art = art, pic = "Interface\\Icons\\" .. icon, title = e.title, tags = tags,
           line = e.text and e.text:gsub("\n", " ") or "" }
       end
       return out

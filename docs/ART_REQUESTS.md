@@ -262,3 +262,36 @@ Shown at 52x52 beside the page title.
 | `empty_nodata.png` | 1536x1024 | opaque | An open, mostly blank journal with a quill waiting in an inkpot, by candlelight. Used when Outrider hasn't collected data yet. Plus the shared style line. |
 
 **Order if GPT can't do all at once:** 4c (map pins; the map is the most cluttered screen), then 4b (banners), then 4a, then 4d.
+
+## Batch 5 (Feed and Money cards, 2026-11-19 tour)
+
+The page tour showed the Feed using a blue cross and plain envelopes, and both
+Money cards using the same loot bag. These replace them. Same as the step
+pictures: one object centered, three-quarter view, on a dark vignette background
+(deep blue-black, lighter in the middle), filling about 75% of the canvas, no
+frame. Ask GPT for 1024x1024; final size 128x128, opaque. Add the shared style
+line at the end of each. Outrider picks them up automatically after
+`python tools/art.py` and a full game restart; until then it keeps the game icons.
+
+### 5a. Feed (one per kind of pop-up)
+
+| File | Object |
+|---|---|
+| `feed_rare.png` | a hunter's spyglass lying on a map, a faint silver star glinting in its lens |
+| `feed_upgrade.png` | a steel chest piece on a stand with a glowing green upward arrow beside it, brighter and newer-looking than `kind_gear` |
+| `feed_reward.png` | a small wooden quest-reward chest, lid open, soft gold light spilling out |
+| `feed_ammo.png` | a leather quiver of arrows with one arrow half drawn, a few loose arrows in front |
+| `feed_errand.png` | a merchant's scale with a coin on one pan and a worn boot on the other |
+| `feed_tip.png` | a folded parchment note with a small brass compass resting on it |
+
+### 5b. Money (one per way of earning)
+
+| File | Object |
+|---|---|
+| `money_mob.png` | grey vendor junk (a cracked fang, a torn pelt scrap, a dull ring) spilling from a cloth sack, a few coins among it |
+| `money_skin.png` | a skinning knife lying on a stack of tanned leather hides |
+| `money_herb.png` | a bundle of fresh herbs tied with twine, one glowing flower on top |
+| `money_ore.png` | chunks of copper and silver ore beside a miner's pick |
+| `money_cloth.png` | folded bolts of linen and wool cloth, a needle and thread on top |
+| `money_craft.png` | a leatherworker's bench: a half-stitched leather piece, an awl and thread |
+| `money_fish.png` | two fresh fish on a wooden plank beside a coiled fishing line and a red-and-white bobber |
