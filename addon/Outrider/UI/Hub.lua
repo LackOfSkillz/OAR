@@ -17,8 +17,10 @@ ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 44 -- module rows built; as many show as the page has room for (tour 2026-11-19: 19 left half the page empty), the rest scroll with the mouse wheel
-local W, H = 1080, 720        -- starting size; the window is resizable (Gary, 2026-11-13)
-local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1400, 1000
+-- starting size; the window is resizable (Gary, 2026-11-13). Larger since
+-- 2026-11-19 (Gary: "open a little larger"), never more than 90% of the screen.
+local W, H = 1280, 860
+local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1800, 1200
 local SIDE = 160             -- grouped sidebar on the left; pages to its right
 
 local L = {
@@ -284,9 +286,19 @@ function Hub:Resizer(f)
   if f.SetResizable then f:SetResizable(true) end
   if f.SetResizeBounds then f:SetResizeBounds(MIN_W, MIN_H, MAX_W, MAX_H)
   elseif f.SetMinResize then f:SetMinResize(MIN_W, MIN_H) f:SetMaxResize(MAX_W, MAX_H) end
-  if saved.w and saved.h then
-    f:SetSize(math.max(MIN_W, math.min(MAX_W, saved.w)), math.max(MIN_H, math.min(MAX_H, saved.h)))
+  -- fit the screen: the starting size is at most 90% of it
+  local sw = UIParent and UIParent.GetWidth and UIParent:GetWidth() or 0
+  local sh = UIParent and UIParent.GetHeight and UIParent:GetHeight() or 0
+  local fitW = sw > 300 and math.floor(math.min(W, sw * 0.9)) or W
+  local fitH = sh > 300 and math.floor(math.min(H, sh * 0.9)) or H
+  -- once: a size saved from the old smaller start grows to the new one (a size you dragged bigger stays)
+  if not saved.grew1119 then
+    saved.grew1119 = true
+    if saved.w and saved.w < fitW then saved.w = fitW end
+    if saved.h and saved.h < fitH then saved.h = fitH end
   end
+  local w, h = saved.w or fitW, saved.h or fitH
+  f:SetSize(math.max(MIN_W, math.min(MAX_W, w)), math.max(MIN_H, math.min(MAX_H, h)))
   local grip = CreateFrame("Button", nil, f)
   grip:SetSize(16, 16)
   grip:SetPoint("BOTTOMRIGHT", -2, 2)

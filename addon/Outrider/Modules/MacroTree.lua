@@ -599,7 +599,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
 
   -- the detail panel on the right
   local d = UI:Card(p)
-  d:SetWidth(270)
+  d:SetWidth(300)
   d:SetPoint("TOPRIGHT", -4, -26)
   d:SetPoint("BOTTOMRIGHT", -4, 0)
   p.detail = d
@@ -624,11 +624,12 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   d.text = UI.Text(d, "small", "text") d.text:SetPoint("TOPLEFT", d.sub, "BOTTOMLEFT", 0, -10) d.text:SetPoint("RIGHT", d, "RIGHT", -12, 0)
   d.text:SetJustifyH("LEFT") if d.text.SetJustifyV then d.text:SetJustifyV("TOP") end
   d.msg = UI.Text(d, "small", "warn") d.msg:SetPoint("BOTTOMLEFT", 14, 44) d.msg:SetPoint("RIGHT", d, "RIGHT", -12, 0) d.msg:SetJustifyH("LEFT")
-  d.pick = UI:Button(d, "Pick up", 110, function() p:PickCurrent() end)
+  -- three buttons inside the card (tidy-up 2026-11-19: Copy text stuck out past its edge)
+  d.pick = UI:Button(d, "Pick up", 96, function() p:PickCurrent() end)
   d.pick:SetPoint("BOTTOMLEFT", 14, 12)
   UI.SetPrimary(d.pick, true)
   UI.Tip(d.pick, "Pick up", "Writes the macro if it isn't in your macros yet, then puts it on your cursor: click an action bar slot to drop it.")
-  d.remove = UI:Button(d, "Remove", 90, function()
+  d.remove = UI:Button(d, "Remove", 80, function()
     local it = p.current
     if not (it and ns.MacroLibrary) then return end
     local ok, why = ns.MacroLibrary:Remove(it.key and it.key.entry or it.entry)
@@ -636,7 +637,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     p:Refresh()
   end)
   d.remove:SetPoint("LEFT", d.pick, "RIGHT", 6, 0)
-  d.copy = UI:Button(d, "Copy text", 90, function()
+  d.copy = UI:Button(d, "Copy text", 86, function()
     local it = p.current
     if not it then return end
     local x = T:Explain(it, it.key)
