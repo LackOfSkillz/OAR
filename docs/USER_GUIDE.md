@@ -156,7 +156,8 @@ With the auction house open, Outrider's shopping panel sits beside it. Buying is
 - **Chat.** Your name and watched words highlighted, repeated spam hidden, LFG lines in their own tab, timestamps. /ride chat; /ride copychat copies the last 100 lines.
 - **Spell check.** Misspelled words underlined while you type in chat, with suggestions. /ride spell add <word>.
 - **Accessibility.** Bigger fonts, UI scale, colour-blind colours, high contrast, less motion. /ride access.
-- **Macro tree.** Macros page, laid out like the talent window. On top, your keys (Fight, Pull, Strike...): put them on your bar once and Outrider rewrites them as you learn spells; the line under them says what Fight does press by press. Below, a tree: rows are level bands (1-10 up to 51-60), columns are every build of your class and one per talent tree. Grey icons with a number unlock at that level; gold ones are on your bar. Click an icon to read when to press it and every line in plain words; drag it (or Pick up) onto your action bar. PvE / PvP switches the tree to the PvP versions.
+- **Macro tree.** Macros page, laid out like the talent window. On top, your keys (Fight, Pull, Strike...): put them on your bar once and Outrider rewrites them as you learn spells; the line under them says what Fight does press by press. Below, a tree: rows are level bands (1-10 up to 51-60), columns are every build of your class and one per talent tree. Grey icons with a number unlock at that level; gold ones are on your bar. Click an icon to read when to press it and every line in plain words; drag it (or Pick up) onto your action bar. PvE / PvP switches the tree to the PvP versions. Before 10 talent points, the build menu at the top picks the build you're heading for. The page also counts your 18 character macro slots, marks newly unlocked macros as new, offers to clear the macros of your old build after a respec, and checks your own macros for spells Forever renamed and for copies (/ride macrocheck).
+- **Macro tooltips and missing buffs.** Hover one of Outrider's macros on your action bar: under the spell's tooltip it says when to press it and what it does. A small row of icons above your bars shows your own buffs that are missing or about to run out; click one to put it on you (out of combat it updates; /ride buffs on|off). Both switch off on the Settings page.
 
 ## Sharing (all off by default)
 
@@ -196,6 +197,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride bar` | the info bar: /ride bar on\|off\|reset (Shift-drag it to move) |
 | `/ride bossloot` | bossloot <boss name>  known boss drops, with wishlist markers |
 | `/ride bossnotes` | bossnotes list\|show <name>\|set <name> :: <notes>\|clear <name>\|timeline |
+| `/ride buffs` | on\|off  the missing-buffs row above your action bars |
 | `/ride census` | who's playing: most common level, class, race, profession (/ride census who searches the next group, reset clears) |
 | `/ride chars` | list characters Outrider knows on this account |
 | `/ride chat` | word add\|remove <text> \| spam on\|off \| lfgtab on\|off \| time on\|off  chat options |
@@ -231,6 +233,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride layout` | [<situation> <layout name>\|off]  Edit Mode layout per situation |
 | `/ride levelroute` | levelroute seed [level]\|list\|start <name>\|next\|skip\|undo\|guide\|stop |
 | `/ride log` | [n]  show the last n log lines (default 10) |
+| `/ride macrocheck` | your own macros: old spell names and exact copies |
 | `/ride mail` | mail all\|sold\|won\|expired \| free <slots> |
 | `/ride make` | [Profession]  make what you have ingredients for (no name: create the Cook / Brew / Herb macros) |
 | `/ride mapextras` | mapextras missing\|fishing\|faire |

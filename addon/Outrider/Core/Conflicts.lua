@@ -25,6 +25,10 @@ Conflicts.KNOWN = {
   { addon = "Bartender4",    relation = "yield", area = "action bars" },
   { addon = "Baganator",     relation = "yield", area = "bags" },
   { addon = "Bagnon",        relation = "yield", area = "bags" },
+  -- macro addons (2026-11-19): Outrider never overwrites their macros (it only edits its own), and
+  -- the missing-buffs row and bar tooltips step aside so you don't get two of each
+  { addon = "MacroKit",      relation = "yield", area = "macro buff row and bar tooltips" },
+  { addon = "ArcaneShortcuts", relation = "info", area = "macros (Outrider never overwrites them)" },
   { addon = "!BugGrabber",   relation = "info",  area = "error capture (recommended)" },
   { addon = "BugSack",       relation = "info",  area = "error viewer (recommended)" },
   { addon = "Forever Data Protect", relation = "info", area = "SavedVariables workaround" },

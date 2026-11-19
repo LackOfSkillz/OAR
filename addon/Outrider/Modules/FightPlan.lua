@@ -53,11 +53,20 @@ end
 -- ------------------------------------------------------------ who you are
 function M.Plan() return ns.FightPlans and ns.FightPlans:Class(ns.PlayerClass()) end
 
+-- The build chosen on the Macros page before 10 talent points (Gary,
+-- 2026-11-19: pick your build from level 1, so the keys and the tree aim at it).
+function M.Planned(plan)
+  local MT = ns.MacroTree
+  local want = MT and MT.enabled and MT:Settings().planned
+  if want and plan and plan.specs and plan.specs[want] then return want end
+  return "levelling"
+end
+
 function M:Spec()
   local plan = M.Plan()
   if not plan then return "levelling" end
   local T = ns.Talents and ns.Talents.Read and ns.Talents:Read()
-  if not (T and T.tabs) then return "levelling" end
+  if not (T and T.tabs) then return M.Planned(plan) end
   local best, bestN, total = nil, -1, 0
   for i, tab in ipairs(T.tabs) do
     -- Secret/unreadable talent points cannot establish a specialization.
@@ -67,7 +76,7 @@ function M:Spec()
     total = total + n
     if n > bestN then best, bestN = i, n end
   end
-  if total < 10 or not best then return "levelling" end
+  if total < 10 or not best then return M.Planned(plan) end
   return plan.trees[best] or "levelling"
 end
 

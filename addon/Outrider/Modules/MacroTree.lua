@@ -22,8 +22,108 @@ local _, ns = ...
 local C = ns.Compat
 local UI = ns.UI
 local E = ns.MacroEngine
-local T = {}
+local T = ns:NewModule("MacroTree", {
+  title = "Macros page: skill tree, tooltips, missing buffs",
+  phase = "P4",
+  order = 62,
+  -- seen: macros you've looked at (no "new" badge); planned: the build you
+  -- chose before 10 talent points; tooltips: Outrider's words under a macro
+  -- on your action bar; buffs: the missing-buffs row
+  defaults = { seen = {}, planned = nil, tooltips = true, buffs = true },
+})
 ns.MacroTree = T
+
+-- ------------------------------------------------------------------ module
+-- One chat line per session when macros unlock (rule 6); the page shows a
+-- "new" badge on each until you open it.
+function T:OnEnable()
+  self:On("PLAYER_ENTERING_WORLD", function(mod, _, isLogin, isReload)
+    if isLogin or isReload or not mod.baseline then mod.baseline = mod:UnlockedIds() end
+  end)
+  local function check(mod) ns.Throttle("macrotree:new", 3, function() mod:CheckNew() end) end
+  self:On("PLAYER_LEVEL_UP", check)
+  self:On("SPELLS_CHANGED", function(mod) mod.tipCache = nil check(mod) end)
+  self:On("LEARNED_SPELL_IN_TAB", check)
+  -- Outrider's words under one of its macros on your action bar (a hook: the
+  -- game's tooltip stays as it is, two lines are added under it)
+  if not self.tipHooked and GameTooltip and type(rawget(_G, "hooksecurefunc")) == "function" then
+    self.tipHooked = true
+    hooksecurefunc(GameTooltip, "SetAction", function(tt, slot)
+      if T.enabled and T:Settings().tooltips and not C.IsAddOnLoaded("MacroKit") then ns.Safe("macrotree:tooltip", T.AddTooltip, T, tt, slot) end
+    end)
+  end
+end
+
+-- name -> { when, what } for every macro Outrider can write for you
+function T:TipFor(name)
+  if not self.tipCache then
+    local c = {}
+    for _, k in ipairs(self:Keys()) do
+      c[k.name] = { when = T.KEY_WHEN[k.name] or "Press it in every fight.", what = k.entry.explain }
+    end
+    for _, it in ipairs(self:Items("pve")) do
+      if not c[it.name] then
+        local tag = it.tags and it.tags[1]
+        c[it.name] = { when = T.WHEN[tag or ""], what = it.why }
+      end
+    end
+    self.tipCache = c
+  end
+  return self.tipCache[name]
+end
+
+function T:AddTooltip(tt, slot)
+  local kind, id = C.Call("GetActionInfo", slot)
+  if kind ~= "macro" or not id then return end
+  local name = C.Call("GetMacroInfo", id)
+  local lib = ns.MacroLibrary
+  if type(name) ~= "string" or not (lib and lib:Settings().installed[name]) then return end
+  local t = self:TipFor(name)
+  if not t then return end
+  tt:AddLine(" ")
+  if t.when then tt:AddLine("Outrider: " .. t.when, 0.95, 0.82, 0.45, true) end
+  if t.what and t.what ~= "" then tt:AddLine(t.what, 0.8, 0.8, 0.8, true) end
+  tt:Show()
+end
+
+function T:OnDisable() ns.ThrottleCancel("macrotree:new") end
+
+-- ids of the tree's macros you can use now
+function T:UnlockedIds()
+  local out = {}
+  for _, it in ipairs(self:Items("pve")) do
+    local st = self:State(it)
+    if st ~= "locked" and not (type(st) == "string" and st:find("^needs")) then out[it.id] = it.name end
+  end
+  return out
+end
+
+-- newly usable and not yet looked at: { names }
+function T:CheckNew()
+  if not self.baseline then self.baseline = self:UnlockedIds() return {} end
+  local now, fresh = self:UnlockedIds(), {}
+  local seen = self:Settings().seen
+  for id, name in pairs(now) do
+    if not self.baseline[id] and not seen[id] then fresh[#fresh + 1] = name end
+  end
+  self.baseline = now
+  table.sort(fresh)
+  if #fresh > 0 then
+    if not self.toldNew then
+      self.toldNew = true
+      ns.Print("new macros on your Macros page: %s (drag them to your bar)", table.concat(fresh, ", "))
+    end
+    self:Info("macros unlocked: %s", table.concat(fresh, ", "))
+  end
+  return fresh
+end
+
+function T:Activity()
+  local n, new = 0, 0
+  local seen = self:Settings().seen
+  for id in pairs(self:UnlockedIds()) do n = n + 1 if not seen[id] then new = new + 1 end end
+  return string.format("%d macros ready for you on the Macros page, %d not looked at yet", n, new)
+end
 
 T.BANDS = { { 1, 10 }, { 11, 20 }, { 21, 30 }, { 31, 40 }, { 41, 50 }, { 51, 60 } }
 -- words that are tags, not talent trees (the rogue tree "combat" is also the "in a fight" tag)
@@ -60,6 +160,8 @@ T.KEY_WHEN = {
 -- ------------------------------------------------------------------ model
 function T.Plan() return ns.FightPlans and ns.FightPlans:Class(ns.PlayerClass()) or nil end
 function T.Learn() local p = T.Plan() return p and p.learn or {} end
+-- the class spellbook from the live client (Data/SpellInfo.lua): level, tree, icon
+function T.Info(sp) local s = ns.SpellInfo and ns.SpellInfo[ns.PlayerClass() or ""] return s and s[sp] end
 function T.Level() return tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1 end
 
 function T.Band(level)
@@ -94,8 +196,10 @@ function T.LevelOf(spells, own)
   if tonumber(own) then return tonumber(own) end
   local learn, best = T.Learn(), 1
   for _, sp in ipairs(spells) do
-    local e = learn[sp]
-    if e and e[1] and e[1] > best then best = e[1] end
+    local e, info = learn[sp], T.Info(sp)
+    -- the plan's level, else the trainer's, else 10 for a talent (points start at 10)
+    local lv = e and e[1] or info and (info.level or (info.tree and 10)) or nil
+    if lv and lv > best then best = lv end
   end
   return best
 end
@@ -109,8 +213,9 @@ function T.TreeOf(spells, tags, own)
   if own and isTree[own] then return own end
   local learn = T.Learn()
   for _, sp in ipairs(spells) do
-    local e = learn[sp]
+    local e, info = learn[sp], T.Info(sp)
     if e and e[2] and isTree[e[2]] then return e[2] end
+    if info and info.tree and isTree[info.tree] then return info.tree end
   end
   local map = ns.MacroLibrary and ns.MacroLibrary.SPEC_TAG or {}
   for _, tag in ipairs(tags or {}) do
@@ -210,11 +315,20 @@ function T:TalentItems(mode)
   local plan = T.Plan()
   if not plan then return {} end
   local cls, out = ns.PlayerClass(), {}
-  local names = {}
-  for sp, e in pairs(plan.learn or {}) do if e[2] then names[#names + 1] = sp end end
+  -- talents from the plan's learn table, then the client spellbook's (Data/SpellInfo.lua)
+  local names, meta = {}, {}
+  for sp, e in pairs(plan.learn or {}) do if e[2] then names[#names + 1] = sp meta[sp] = { e[2], e[1] } end end
+  local isTree = {}
+  for _, t in ipairs(plan.trees or {}) do isTree[t] = true end
+  for sp, info in pairs(ns.SpellInfo and ns.SpellInfo[cls] or {}) do
+    if type(info) == "table" and info.tree and isTree[info.tree] and not meta[sp] then
+      names[#names + 1] = sp
+      meta[sp] = { info.tree, info.level or 10 }
+    end
+  end
   table.sort(names)
   for _, sp in ipairs(names) do
-    local tree, lvl = plan.learn[sp][2], plan.learn[sp][1]
+    local tree, lvl = meta[sp][1], meta[sp][2]
     local s = plan.specs and plan.specs[tree]
     local m = s and (s[mode] or s.pve)
     local line, why
@@ -321,11 +435,87 @@ function T:PickUp(it)
     local ok, why = lib:Install(entry)
     if not ok then return false, why end
   end
+  -- remember which build it belongs to, for "macros from your old build" after a respec
+  local rec = lib:Settings().installed[entry.name]
+  if rec then rec.tree = it.tree end
+  self:Settings().seen[it.id] = true
   local index = C.Call("GetMacroIndexByName", entry.name) or 0
   if index == 0 then return false, "the macro wasn't found after writing it" end
   C.Call("PickupMacro", index)
   ns.Log:Info("macrotree", "picked up %s (%s)", tostring(entry.name), tostring(it.id))
   return true
+end
+
+-- Outrider macros written for another build than yours (after a respec):
+-- { {name, tree} }. Kept until you clear them (MacroKit's idea, our code).
+function T:OldBuild()
+  local FP = ns.FightPlan
+  local spec = FP and FP.enabled and FP:Spec() or "levelling"
+  if spec == "levelling" or not ns.MacroLibrary then return {} end
+  local out = {}
+  for name, rec in pairs(ns.MacroLibrary:Settings().installed) do
+    if rec.tree and rec.tree ~= spec then out[#out + 1] = { name = name, tree = rec.tree } end
+  end
+  table.sort(out, function(a, b) return a.name < b.name end)
+  return out
+end
+
+-- Removes them (only the ones Outrider wrote and you didn't change). Returns removed, kept.
+function T:ClearOldBuild()
+  if C.InCombat() then return 0, { "not in combat" } end
+  local lib, removed, kept = ns.MacroLibrary, 0, {}
+  for _, o in ipairs(self:OldBuild()) do
+    local ok, why = lib:Remove({ name = o.name })
+    if ok then removed = removed + 1 else kept[#kept + 1] = o.name .. ": " .. tostring(why) end
+  end
+  self:Info("old build macros cleared: %d removed, %d kept", removed, #kept)
+  return removed, kept
+end
+
+-- ------------------------------------------------------------------ macro check
+-- Spells Forever renamed or changed, from the Forever patch notes as community
+-- macro guides report them (MacroKit's notes, foreverwow.com, 2026-11): a macro
+-- still using the old name does nothing. verified = false.
+T.RENAMED = {
+  ["Curse of Agony"] = { to = "Bane of Agony", note = "Forever renamed it" },
+  ["Elemental Mastery"] = { to = "Lightning Mastery", note = "Forever renamed it" },
+  ["Faerie Fire (Feral)"] = { to = "Faerie Fire", note = "in Forever Faerie Fire works in Cat and Bear form" },
+}
+
+-- Your own macros (not Outrider's): old spell names and exact copies.
+-- { {name, problem, fix} }
+function T:Audit()
+  local acct, char = C.Call("GetNumMacros")
+  acct, char = tonumber(C.Readable(acct)) or 0, tonumber(C.Readable(char)) or 0
+  local base = rawget(_G, "MAX_ACCOUNT_MACROS") or 120
+  local ours = ns.MacroLibrary and ns.MacroLibrary:Settings().installed or {}
+  local out, bodies = {}, {}
+  local idx = {}
+  for i = 1, acct do idx[#idx + 1] = i end
+  for i = base + 1, base + char do idx[#idx + 1] = i end
+  for _, i in ipairs(idx) do
+    local name, _, body = C.Call("GetMacroInfo", i)
+    name, body = C.Readable(name), C.Readable(body)
+    if type(name) == "string" and type(body) == "string" and not ours[name] then
+      for _, sp in ipairs(T.SpellsIn(body)) do
+        local r = T.RENAMED[sp]
+        if r and not (ns.Spellbook and ns.Spellbook:Known(sp)) then
+          out[#out + 1] = { name = name, problem = sp .. " (" .. r.note .. ")", fix = "use " .. r.to }
+        end
+      end
+      local key = body:gsub("%s+", " ")
+      if bodies[key] and key ~= "" then
+        out[#out + 1] = { name = name, problem = "the same text as " .. bodies[key], fix = "keep one, free a macro slot" }
+      else bodies[key] = name end
+    end
+  end
+  return out
+end
+
+-- Character macro slots: used, max (a character holds 18).
+function T.Slots()
+  local _, char = C.Call("GetNumMacros")
+  return tonumber(C.Readable(char)) or 0, rawget(_G, "MAX_CHARACTER_MACROS") or 18
 end
 
 -- The icon for an item: its first known spell's icon, else Outrider's art or a game icon by kind.
@@ -334,6 +524,11 @@ function T.Icon(it)
     local rec = ns.Spellbook and ns.Spellbook:Known(sp)
     local tex = rec and C.SpellIcon(rec.id or sp)
     if tex then return tex, true end
+  end
+  -- the spell's own game icon, from the client's spellbook data, before you know it
+  for _, sp in ipairs(it.spells or {}) do
+    local info = T.Info(sp)
+    if info and info.icon then return "Interface\\Icons\\" .. info.icon, true end
   end
   local tag = it.tags and it.tags[1]
   local art = tag and ns.Art and ns.Art:Path("macro_" .. tag)
@@ -407,6 +602,18 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   p.detail = d
   p.pvp:SetPoint("TOPRIGHT", d, "TOPRIGHT", 0, 26)
   p.pve:SetPoint("RIGHT", p.pvp, "LEFT", -6, 0)
+  -- character macro slots: a character holds 18
+  p.slots = UI.Text(p, "small", "muted")
+  p.slots:SetPoint("RIGHT", p.pve, "LEFT", -12, 0)
+  -- before 10 talent points: pick the build you're heading for
+  p.plan = UI:Dropdown(p, 170, {}, function() return T:Settings().planned or "levelling" end, function(v)
+    T:Settings().planned = v ~= "levelling" and v or nil
+    if ns.HunterFight and ns.HunterFight.enabled then ns.HunterFight:Update("planned build") end
+    T:Info("planned build: %s", tostring(v))
+    p:Refresh()
+  end)
+  p.plan:SetPoint("RIGHT", p.slots, "LEFT", -12, 0)
+  UI.Tip(p.plan, "Planned build", "Before 10 talent points, pick the build you're heading for: your keys and the tree follow it. Your talents take over from 10 points.")
   d.title = UI.Display(d, "side", "goldText") d.title:SetPoint("TOPLEFT", 14, -10) d.title:SetPoint("RIGHT", d, "RIGHT", -12, 0)
   d.title:SetJustifyH("LEFT")
   d.sub = UI.Text(d, "small", "muted") d.sub:SetPoint("TOPLEFT", d.title, "BOTTOMLEFT", 0, -4) d.sub:SetPoint("RIGHT", d, "RIGHT", -12, 0)
@@ -426,6 +633,14 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     p:Refresh()
   end)
   d.remove:SetPoint("LEFT", d.pick, "RIGHT", 6, 0)
+  d.copy = UI:Button(d, "Copy text", 90, function()
+    local it = p.current
+    if not it then return end
+    local x = T:Explain(it, it.key)
+    UI:TextDialog(it.name, x.body, "copy")
+  end)
+  d.copy:SetPoint("LEFT", d.remove, "RIGHT", 6, 0)
+  UI.Tip(d.copy, "Copy text", "Shows the macro's text to copy, so you can change it and make your own.")
   -- your own macro next to Outrider's (FightPlan's check): Use Outrider's / Keep mine
   d.useOurs = UI:Button(d, "Use Outrider's", 120, function()
     local f = p.own
@@ -479,6 +694,22 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   -- banner: one of your own macros misses parts of your build
   p.ownLine = UI.Text(p, "small", "warn")
   p.ownLine:SetPoint("BOTTOMLEFT", p.legend, "TOPLEFT", 0, 6)
+  -- banner: your own macros with an old spell name or an exact copy
+  p.auditLine = UI.Text(p, "small", "warn")
+  -- banner: Outrider macros from the build you had before a respec
+  p.oldLine = UI.Text(p, "small", "warn")
+  p.oldLine:SetPoint("BOTTOMLEFT", p.ownLine, "TOPLEFT", 0, 8)
+  p.auditLine:SetPoint("BOTTOMLEFT", p.oldLine, "TOPLEFT", 0, 8)
+  p.auditLine:SetPoint("RIGHT", d, "LEFT", -12, 0)
+  p.auditLine:SetJustifyH("LEFT")
+  p.oldBtn = UI:Button(p, "Clear them", 90, function()
+    local n, kept = T:ClearOldBuild()
+    d.msg:SetText(string.format("Removed %d.%s", n, #kept > 0 and (" Kept: " .. table.concat(kept, "; ")) or ""))
+    p:Refresh(true)
+  end)
+  p.oldBtn:SetHeight(20)
+  p.oldBtn:SetPoint("LEFT", p.oldLine, "RIGHT", 8, 0)
+  UI.Tip(p.oldBtn, "Clear them", "Removes the macros Outrider wrote for your old build. A macro you changed stays.")
   p.ownBtn = UI:Button(p, "Compare", 80, function() if p.findings and p.findings[1] then p:ShowOwn(p.findings[1]) end end)
   p.ownBtn:SetHeight(20)
   p.ownBtn:SetPoint("LEFT", p.ownLine, "RIGHT", 8, 0)
@@ -524,7 +755,9 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     local locked = st == "locked" or (type(st) == "string" and st:find("^needs"))
     if b.icon.SetDesaturated then b.icon:SetDesaturated(locked and true or false) end
     b.icon:SetAlpha(locked and 0.55 or 1)
-    b.badge:SetText(st == "locked" and tostring(it.level) or "")
+    local usable = not locked
+    local new = usable and not it.key and not T:Settings().seen[it.id]
+    b.badge:SetText(st == "locked" and tostring(it.level) or new and "|cfff1d58enew|r" or "")
     local on = onBars[it.name] and true or false
     b.ring:SetShown(on)
     Theme:ApplyPanel(b, "bg", on and "gold" or "strong")
@@ -580,11 +813,13 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     if not it then return end
     self.current, self.own = it, nil
     d.useOurs:Hide() d.keep:Hide()
+    if it.id and it.state ~= "locked" then T:Settings().seen[it.id] = true end
     local x = T:Explain(it, it.key)
     d.title:SetText(x.title)
     local names = ns.FightPlan and ns.FightPlan.SPEC_NAMES or {}
     local sub = it.key and "One of your keys" or (it.tree and ((names[it.tree] or it.tree) .. " build") or "Every build")
     sub = sub .. "  ·  " .. (it.stateText or "")
+    sub = sub .. string.format("  ·  %d / 255 characters", #(x.body or ""))
     d.sub:SetText(sub)
     local parts = { "|cfff1d58eWhen to press|r", x.when }
     if x.what and x.what ~= "" then parts[#parts + 1] = "\n|cfff1d58eWhat it does|r" parts[#parts + 1] = x.what end
@@ -594,6 +829,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     d.text:SetText(table.concat(parts, "\n"))
     local st = it.state
     d.pick:SetShown(st ~= "locked")
+    d.copy:Show()
     d.remove:SetShown(st == "installed" or st == "changed")
     d.msg:SetText(st == "locked" and string.format("Unlocks at level %d. It appears here so you can plan ahead.", it.level) or "")
   end
@@ -605,6 +841,16 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     local specName = FP and FP.SPEC_NAMES and FP.SPEC_NAMES[spec] or spec
     self.who:SetText(string.format("%s%s  ·  %s  ·  level %d", cls:sub(1, 1), cls:sub(2):lower(),
       spec == "levelling" and "levelling build (talents from level 10)" or (ns.TitleCase(specName or "") .. " build"), T.Level()))
+    local used, max = T.Slots()
+    self.slots:SetText(string.format("%s%d / %d character macros|r", used >= max and "|cffff6060" or "|cff8f96a6", used, max))
+    -- the build menu, while talents don't decide yet
+    local plan = T.Plan()
+    local opts = { { "levelling", "Levelling (no build yet)" } }
+    for _, t in ipairs(plan and plan.trees or {}) do opts[#opts + 1] = { t, "Plan: " .. ((FP and FP.SPEC_NAMES[t]) or t) } end
+    if self.plan.SetOptions then self.plan:SetOptions(opts) else self.plan.options = opts end
+    local fromTalents = FP and FP.enabled and spec ~= "levelling" and spec ~= (T:Settings().planned or "")
+    self.plan:SetShown(not fromTalents and #opts > 1)
+    if self.plan.Refresh then self.plan:Refresh() end
     UI.SetPrimary(self.pve, self.mode == "pve")
     UI.SetPrimary(self.pvp, self.mode == "pvp")
     local onBars = T.OnBars()
@@ -718,6 +964,16 @@ ns.Hub:AddTab("macros", "Macros", function(p)
       if not (FP.dismissed and FP.dismissed[f.name]) then own[#own + 1] = f end
     end
     self.findings = own
+    local audit = T:Audit()
+    self.audit = audit
+    self.auditLine:SetText(#audit > 0 and string.format("Macro check: %s: %s, %s.%s", audit[1].name, audit[1].problem, audit[1].fix,
+      #audit > 1 and string.format(" (%d more in /ride macrocheck)", #audit - 1) or "") or "")
+    local old = T:OldBuild()
+    local oldNames = {}
+    for i, o in ipairs(old) do if i <= 4 then oldNames[#oldNames + 1] = o.name end end
+    self.oldLine:SetText(#old > 0 and string.format("%d macro%s from your old build: %s%s.", #old, #old == 1 and "" or "s",
+      table.concat(oldNames, ", "), #old > 4 and "..." or "") or "")
+    self.oldBtn:SetShown(#old > 0)
     self.ownLine:SetText(#own > 0 and string.format("Your macro %s misses parts of your build's rotation.", own[1].name) or "")
     self.ownBtn:SetShown(#own > 0)
     if not keepMsg then d.msg:SetText("") end
@@ -727,3 +983,9 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     elseif tree.pool[1] and tree.pool[1]:IsShown() then self:Show(tree.pool[1].item) end
   end
 end, 42)
+
+ns.AddCommand("macrocheck", "your own macros: old spell names and exact copies", function()
+  local list = T:Audit()
+  if #list == 0 then ns.Print("macro check: nothing to fix") return end
+  for i, f in ipairs(list) do if i <= 8 then ns.Print("%s: %s, %s", f.name, f.problem, f.fix) end end
+end)

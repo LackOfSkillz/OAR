@@ -59,6 +59,22 @@ function M:Values()
     v.FOOD, v.DRINK = ns.BagFood.food, ns.BagFood.drink
   end
   if ns.RareMacros and ns.RareMacros.enabled then ns.RareMacros:Values(v) end
+  -- {HEALTHSTONE} and {POTION}: the best of each in your bags (the one that sells for most)
+  local best = {}
+  for bag = 0, 4 do
+    for slot = 1, (C.Call("C_Container.GetContainerNumSlots", bag) or 0) do
+      local info = C.Call("C_Container.GetContainerItemInfo", bag, slot)
+      local id = type(info) == "table" and C.Readable(info.itemID)
+      local item = id and C.ItemInfo(id)
+      local name = item and item.name
+      if type(name) == "string" then
+        local key = name:find("Healthstone", 1, true) and "HEALTHSTONE" or name:find("Healing Potion", 1, true) and "POTION"
+        local worth = item.sellPrice or 0
+        if key and (not best[key] or worth > best[key].worth) then best[key] = { name = name, worth = worth } end
+      end
+    end
+  end
+  for k, b in pairs(best) do v[k] = b.name end
   return v
 end
 
@@ -71,7 +87,7 @@ function M:Missing(entry)
   local _, missing = E.Fill(entry.body, self:Values())
   -- words, not the macro's placeholder names (tour 2026-11-19: "needs DRINK")
   local words = { FOOD = "food in your bags", DRINK = "a drink in your bags", MOUNT = "a mount", TARGET = "a watched rare",
-    PET = "a pet", AMMO = "ammo" }
+    PET = "a pet", AMMO = "ammo", HEALTHSTONE = "a healthstone in your bags", POTION = "a healing potion in your bags" }
   for i, k in ipairs(missing) do missing[i] = words[k] or tostring(k):lower() end
   if #missing > 0 then return "needs " .. table.concat(missing, ", ") end
   return nil

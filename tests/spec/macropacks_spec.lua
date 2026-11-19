@@ -44,7 +44,9 @@ T.describe("macro packs", function()
     end
   end)
 
-  T.it("each class pack has 8 to 12 macros for that class only", function()
+  -- 2026-11-19: the Macros page is a tree you pick from (a macro is only written
+  -- when you pick it up), so a class has more than its 18 slots; 40 at most
+  T.it("each class pack has 8 to 40 macros for that class only", function()
     local ns = load()
     local count = {}
     for _, m in ipairs(ns.Data:All("macro")) do count[m.class] = (count[m.class] or 0) + 1 end
@@ -52,7 +54,7 @@ T.describe("macro packs", function()
       T.ok((count[c] or 0) >= 8, c .. " has " .. tostring(count[c]))
     end
     for _, c in ipairs({ "WARRIOR", "ROGUE", "WARLOCK", "DRUID", "SHAMAN", "PALADIN" }) do
-      T.ok(count[c] <= 12, c .. " has " .. count[c])
+      T.ok(count[c] <= 40, c .. " has " .. count[c])
       for _, m in ipairs(ns.Data:All("macro")) do
         if m.class == c then T.eq(m.id:match("^(%a+)%-"), c:lower(), m.id) end
       end
