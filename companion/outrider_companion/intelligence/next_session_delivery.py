@@ -12,7 +12,8 @@ from pathlib import Path
 from .. import advice
 from . import session_reader, xp_baseline, xp60_planner
 
-GAME_NAMES = {"wow.exe", "wow-64.exe", "wowclassic.exe", "wowclassicera.exe", "wowforever.exe"}
+GAME_NAMES = {"wow.exe", "wow-64.exe", "wowclassic.exe", "wowclassicera.exe",
+              "wowforever.exe", "warcraft forever.exe", "forever.exe"}
 
 
 class DeliveryError(ValueError):
@@ -40,7 +41,10 @@ def game_closed():
         raise DeliveryError("unparseable Windows process list") from exc
     if not rows or any(not row for row in rows):
         raise DeliveryError("empty or invalid process list")
-    return not any(row[0].strip().lower() in GAME_NAMES for row in rows)
+    return not any(row[0].strip().lower() in GAME_NAMES or
+                   "warcraft" in row[0].strip().lower() or
+                   "wow" in row[0].strip().lower()
+                   for row in rows)
 
 
 def create_plan(read_result, character, *, now=None):
