@@ -467,3 +467,11 @@ The fix: every rogue Fight bracket, all builds, PvE and PvP, levels 1 to 60, now
 The warrior version has no `[nostealth]`.
 - **Rogues can use bows:** Jekar's spellbook on Forever has both Shoot Bow (2480) and Throw (2764). Classic rogues use bows, crossbows, guns and thrown weapons.
 - **Not seen on Forever yet:** the Shoot Crossbow and Shoot Gun spell names. They're harmless, because a clause for a shot you haven't learned drops out.
+
+**Rogue Fight key over 255 (same day, found in game):** at level 4 the Backstab opener line pushed the Fight macro to about 280 characters, and the builder dropped the Sinister Strike/Eviscerate line. Jekar's real macro was left with only target, Stealth/opener and `/startattack`. The 255 test missed it because it only checked the length, not what got dropped.
+
+Fixes:
+- **The builder line has no `[nostealth]`.** It now also opens from Stealth with Sinister Strike, so the `;[stealth] Sinister Strike` clause is gone, and a Backstab or Garrote that fails from the front no longer leaves you stuck in Stealth.
+- **Shorter lines:** `reset=target` instead of `reset=combat/target`, since you change targets after every kill, and `/cast Shank` without `[nostealth]`.
+- **Subtlety at 25 and 30** drops its own `/startattack`, because a Sinister Strike or Hemorrhage hit starts auto-attack.
+- **The test now checks every level from 1 to 60, every build, PvE and PvP:** the `/castsequence` must be present and nothing may be dropped.

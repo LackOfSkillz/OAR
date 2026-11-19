@@ -183,14 +183,20 @@ T.describe("fight plans: rogue Stealth on the Fight key", function()
   T.it("level 2: the first press Stealths, the next opens with Sinister Strike (nothing else works while sneaking)", function()
     local ns = rogue(2, { "Sinister Strike", "Eviscerate", "Stealth" }, {})
     local fight = ns.HunterFight:Body("ranged")
-    T.contains(fight, "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike")
+    T.contains(fight, "/cast [nocombat,nostealth] Stealth")
+    -- the builder line has no [nostealth]: it opens from Stealth too
+    T.contains(fight, "/castsequence reset=target Sinister Strike")
     T.eq(#ns.Errors.list, 0)
   end)
   T.it("level 4: Backstab opens from Stealth with a dagger; the Strike key Pick Pockets while sneaking, not before you learn it", function()
     local ns = rogue(2, { "Sinister Strike", "Eviscerate", "Stealth" }, {})
     T.no(ns.HunterFight:Body("melee"):find("Pick Pocket", 1, true), "level 2: no Pick Pocket yet")
     ns = rogue(4, { "Sinister Strike", "Eviscerate", "Stealth", "Backstab", "Pick Pocket" }, {})
-    T.contains(ns.HunterFight:Body("ranged"), "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab;[stealth] Sinister Strike")
+    local fight, dropped = ns.HunterFight:Body("ranged")
+    T.contains(fight, "/cast [nocombat,nostealth] Stealth;[stealth,equipped:Daggers] Backstab")
+    -- 2026-11-19 in game: the Backstab line pushed it over 255 and the builder line was dropped
+    T.contains(fight, "/castsequence reset=target Sinister Strike")
+    T.eq(#dropped, 0, "nothing left out")
     T.contains(ns.HunterFight:Body("melee"), "/cast [nocombat,nostealth] Stealth;[stealth] Pick Pocket")
     T.eq(#ns.Errors.list, 0)
   end)
@@ -210,16 +216,20 @@ T.describe("fight plans: rogue Stealth on the Fight key", function()
       "Garrote", "Ambush", "Riposte", "Rupture", "Vanish", "Shank", "Cold Blood", "Ghostly Strike", "Cheap Shot", "Blade Flurry",
       "Hemorrhage", "Kidney Shot", "Blind", "Adrenaline Rush", "Mutilate" }
     for _, tree in ipairs({ 0, 1, 2, 3 }) do
-      for _, level in ipairs({ 1, 10, 14, 18, 26, 30, 40, 60 }) do
+      for level = 1, 60 do
         local talents = {}
         for t = 1, 3 do talents[t] = { name = "t" .. t, talents = points(t == tree and math.max(0, level - 9) or 0) } end
         local ns = rogue(level, all, talents)
         for _, mode in ipairs({ "pve", "pvp" }) do
           ns.FightPlan:Settings().mode = mode
-          local fight = ns.HunterFight:Body("ranged")
+          local fight, dropped = ns.HunterFight:Body("ranged")
           local where = ("tree %d level %d %s"):format(tree, level, mode)
+          T.contains(fight, "/castsequence", where .. ": the builders and finisher are there")
+          T.eq(#dropped, 0, where .. ": nothing dropped to fit (" .. table.concat(dropped, "; ") .. ")")
           T.contains(fight, "Stealth", where)
-          T.ok(fight:find("[stealth]", 1, true), where .. ": a Stealth opener")
+          -- from 4 a Stealth opener clause (Backstab, Garrote, Ambush, Cheap Shot); below
+          -- that the builder line opens with Sinister Strike
+          if level >= 4 then T.ok(fight:find("[stealth", 1, true), where .. ": a Stealth opener") end
           T.ok(#fight <= 255, where .. " is " .. #fight)
         end
         T.eq(#ns.Errors.list, 0)
