@@ -176,7 +176,7 @@ ns.Hub:AddTab("home", "Home", function(p)
     lines = {}
     for i, c in ipairs(ns.Nearby and ns.Nearby:Candidates() or {}) do
       if i > 4 then break end
-      lines[#lines + 1] = (ns.Nearby.Describe(c):gsub("|c%x+", ""):gsub("|r", ""))
+      lines[#lines + 1] = (ns.Nearby.Describe(c):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
     end
     self.gear.body:SetText(#lines > 0 and table.concat(lines, "\n") or "Nothing better here right now.")
     lines = {}
@@ -226,10 +226,11 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
     { "buttons", { { "Clear arrow", Run("way clear") }, { "Say my coordinates", Run("coords") } } },
     { "header", "Nearest place" },
     { "buttons", { { "Inn", Run("near inn") }, { "Vendor", Run("near vendor") }, { "Repair", Run("near repair") },
-      { "Flight", Run("near flight") }, { "Trainer", Run("near trainer") } } },
+      { "Flight", Run("near flight") }, { "Trainer", Run("near trainer") } }, plain = true },
+    -- plain rows (tour 2026-11-19): equal choices, so no button looks picked
     { "buttons", { { "Mail", Run("near mail") }, { "Bank", Run("near bank") }, { "Auction", Run("near ah") },
-      { "Stable", Run("near stable") }, { "Spirit healer", Run("near spirit") } } },
-    { "buttons", { { "Ammo vendor", Run("near ammo") } } },
+      { "Stable", Run("near stable") }, { "Spirit healer", Run("near spirit") } }, plain = true },
+    { "buttons", { { "Ammo vendor", Run("near ammo") } }, plain = true },
     { "check", "Arrow to the spirit healer when you die", function() return set("Nearest").spiritOnDeath end,
       function(on) set("Nearest").spiritOnDeath = on end },
     { "header", "Map and minimap pins" },
@@ -257,7 +258,8 @@ ns.Hub:AddTab("rarealerts", "Rare alerts", function(p)
     { "input", "Watch a rare", "Mystmane, or an NPC id", "Watch", function(t) ns.Slash:Run("watch " .. t) end },
     { "note", "Click a name to stop watching it." },
     { "list", 5, function(row, k) row.text:SetText(ns.TitleCase(tostring(k))) end,
-      function(k) ns.Slash:Run("unwatch " .. tostring(k)) p:Refresh() end, watched },
+      function(k) ns.Slash:Run("unwatch " .. tostring(k)) p:Refresh() end, watched,
+      empty = "No rare on your watch list. Type a name above and press Watch." },
     { "header", "Timers" },
     { "note", function() return ns.RareTimer and ns.RareTimer:Activity() or "" end, 36 },
     { "header", "How you're told" },
@@ -282,7 +284,7 @@ local KEY_NOTE = {
   MAGE = "Fight (Frostbolt) and Strike (close: Frost Nova, Fire Blast, Arcane Explosion) follow your spellbook.",
   PRIEST = "Fight (Shadow Word: Pain once, Mind Blast, Smite) and Heal follow your spellbook.",
   WARRIOR = "Fight on key 1 (Charge, Shout, Rend, big strike, Heroic Strike); Strike on key 2 (Overpower, Execute, Thunder Clap).",
-  ROGUE = "Fight on key 1 (Cheap Shot, builders, Slice and Dice, Eviscerate); Strike on key 2 (Stealth, Kick, cooldowns).",
+  ROGUE = "Fight (Stealth, an opener from Stealth, Sinister Strike, Slice and Dice, Eviscerate), Pull (Throw or your bow) and Strike (Stealth, then Pick Pocket; Evasion and Kick in a fight).",
   WARLOCK = "Fight on key 1 (demon, curse, dots once, Drain Life or wand); Strike on key 2 (Life Tap, Shift: Fear).",
   DRUID = "Fight on key 1 follows your form (caster, Bear, Cat); Heal on key 2 (Swipe, Tiger's Fury or a heal).",
   PALADIN = "Fight on key 1 (Blessing, Aura, Seal and Judgement, Holy Strike); Heal on key 2 (Holy Light).",
@@ -340,7 +342,12 @@ local function classRows(cls, page)
   end
   -- talent advisor (Modules/Talents.lua)
   local Tal = ns.Talents
-  if Tal then
+  if Tal and #Tal.Builds(cls) == 0 then
+    -- no sourced build for this class yet: one honest line, no empty plan box
+    -- and no switches for rings that never show (tour 2026-11-19, Rogue page)
+    r({ "header", "Talents" })
+    r({ "note", "No levelling talent build for your class in Outrider yet (builds come from a cited guide, never made up). Talent points start at level 10." })
+  elseif Tal then
     r({ "header", "Talents" })
     r({ "note", function()
       local b = Tal:Build()
@@ -395,7 +402,8 @@ ns.Hub:AddTab("gearsets", "Gear sets", function(p)
     { "header", "Gear sets" },
     { "input", "Save what you wear as", "Questing", "Save", function(t) ns.Slash:Run("gear save " .. t) end },
     { "note", "Click a set to put it on (out of combat). Delete removes it." },
-    { "list", 6, function(row, name) row.text:SetText(name) end, function(name) ns.Slash:Run("gear " .. name) end, sets },
+    { "list", 6, function(row, name) row.text:SetText(name) end, function(name) ns.Slash:Run("gear " .. name) end, sets,
+      empty = "No gear sets saved yet. Type a name above and press Save." },
     { "input", "Delete set", "Questing", "Delete", function(t) ns.Slash:Run("gear delete " .. t) end },
     { "header", "How gear is scored" },
     { "buttons", { { "Show my stat weights", Run("weights") }, { "Upgrades in this zone", Run("nearby") } } },
@@ -454,8 +462,15 @@ local function profRows()
     r({ "note", function() local m = mod("ProfTrainer") return m and m.enabled and m:Activity() or "" end, 36 })
   end
   if next(owned) then
-    r({ "header", "Skill-up planner" })
-    r({ "input", "Profession and target", "Alchemy 75", "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
+    -- the example is one of your own crafts (tour 2026-11-19: it said Alchemy to a leatherworker)
+    local example
+    for _, prof in ipairs({ "Leatherworking", "Tailoring", "Blacksmithing", "Engineering", "Alchemy", "Enchanting", "Cooking", "First Aid" }) do
+      if owned[prof] then example = prof .. " 75" break end
+    end
+    if example then
+      r({ "header", "Skill-up planner" })
+      r({ "input", "Profession and target", example, "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
+    end
   end
   if owned.Herbalism or owned.Mining then
     r({ "header", "Herb and ore map" })
@@ -656,8 +671,11 @@ local function dungeonRows()
   end })
   r({ "header", "Coming up", icon = "INV_Misc_PocketWatch_01" })
   r({ "cards", function()
-    local out = {}
-    for _, x in ipairs(D:Rank()) do if x.status == "soon" then out[#out + 1] = cardFor(x) end end
+    -- the next tier is already its own card above: not twice (tour 2026-11-19)
+    local out, nxt = {}, D:NextTier()
+    for _, x in ipairs(D:Rank()) do
+      if x.status == "soon" and not (nxt and nxt.name == x.name) then out[#out + 1] = cardFor(x) end
+    end
     return out
   end })
   r({ "note", "Upgrades are scored for your class against what you wear. Hover an item for its tooltip. Level ranges from foreverdb.net, loot from QuestieDB (both unverified)." })
@@ -1009,7 +1027,8 @@ ns.Hub:AddTab("chat", "Chat", function(p)
     { "header", "Highlighted words" },
     { "input", "Highlight a word", "Mystmane", "Add", function(t) ns.Slash:Run("chat word add " .. t) end },
     { "note", "Click a word to stop highlighting it." },
-    { "list", 4, function(row, w) row.text:SetText(w) end, function(w) ns.Slash:Run("chat word remove " .. w) p:Refresh() end, words },
+    { "list", 4, function(row, w) row.text:SetText(w) end, function(w) ns.Slash:Run("chat word remove " .. w) p:Refresh() end, words,
+      empty = "No highlighted words yet. Your name always stands out." },
     { "header", "Spell check" },
     { "input", "Add a word", "Skyborne", "Add", function(t) ns.Slash:Run("spell add " .. t) end },
     { "input", "Remove a word", "Skyborne", "Remove", function(t) ns.Slash:Run("spell remove " .. t) end },

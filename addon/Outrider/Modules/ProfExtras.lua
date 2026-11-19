@@ -142,6 +142,12 @@ ns.AddCommand("recipesources", "recipesources list | add <recipeID> <kind> <sour
 end)
 
 -- ------------------------------------------------------------------ chance
+-- the game's icon for each profession (tour 2026-11-19: every trainer card had the Alchemy potion)
+M.PROF_ICON = { Alchemy = "Trade_Alchemy", Blacksmithing = "Trade_BlackSmithing", Leatherworking = "INV_Misc_ArmorKit_17",
+  Tailoring = "Trade_Tailoring", Engineering = "Trade_Engineering", Enchanting = "Trade_Engraving",
+  Herbalism = "Trade_Herbalism", Mining = "Trade_Mining", Skinning = "INV_Misc_Pelt_Wolf_01",
+  Cooking = "INV_Misc_Food_15", ["First Aid"] = "Spell_Holy_SealOfSacrifice", Fishing = "Trade_Fishing" }
+
 M.CHANCE = { [0] = "always", [1] = "likely", [2] = "sometimes", [3] = "never" }
 function M.Chance(diff)
   local exp = ns.SkillUp and ns.SkillUp.EXPECTED and ns.SkillUp.EXPECTED[diff]
@@ -268,7 +274,7 @@ function M:PageRows()
       end
       local line = #u.ready > 0 and ("Learn now: " .. table.concat(names, ", ") .. (#u.ready > 4 and "..." or "")) or "Nothing new to learn right now."
       if #nxt > 0 then line = line .. "  |cff888888Next: " .. table.concat(nxt, "; ") .. "|r" end
-      out[#out + 1] = { pic = "Interface\\Icons\\" .. (kind == "class" and "INV_Misc_Book_09" or "Trade_Alchemy"),
+      out[#out + 1] = { pic = "Interface\\Icons\\" .. (kind == "class" and "INV_Misc_Book_09" or M.PROF_ICON[kind] or "INV_Misc_Book_09"),
         title = kind == "class" and "Class trainer" or kind,
         tags = { { #u.ready .. " to learn", #u.ready > 0 and "gold" or "plain" }, { money(cost), "plain" }, { ago(u.at), "plain" } },
         line = line, highlight = #u.ready > 0 }

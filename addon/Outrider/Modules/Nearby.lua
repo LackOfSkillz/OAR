@@ -193,7 +193,8 @@ function M.SlotWord(id)
   return info and SLOT_WORDS[info.equipLoc or ""] or ""
 end
 
-function M.Describe(c)
+-- where the item comes from, without the item: "dropped by Slydris"
+function M.Source(c)
   local w = c.where or {}
   -- no "?" when the source has no named NPC ("profession ?" in the tour)
   local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or nil
@@ -203,7 +204,11 @@ function M.Describe(c)
   end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end
   if w.note then src = src .. ", " .. w.note end
-  return string.format("%s  %s  |cffbbbbbb%s|r", ns.GearScore.UpText(c.pct), tostring(c.name), src)
+  return src
+end
+
+function M.Describe(c)
+  return string.format("%s  %s  |cffbbbbbb%s|r", ns.GearScore.UpText(c.pct), tostring(c.name), M.Source(c))
 end
 
 function M:Scan(why)
@@ -215,7 +220,7 @@ function M:Scan(why)
   for _, c in ipairs(quiet and {} or list) do
     if c.pct >= s.threshold and not s.told[c.itemID] and c.kind ~= "alt" then
       s.told[c.itemID] = time()
-      ns.Toast:Show({ title = "Upgrade nearby: " .. tostring(c.name), text = M.Describe(c):gsub("|c%x+", ""):gsub("|r", ""),
+      ns.Toast:Show({ title = "Upgrade nearby: " .. tostring(c.name), text = M.Describe(c):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""),
         color = "good", duration = 12 })
       self:Info("nearby upgrade %s (%s)", tostring(c.name), M.Describe(c))
       break -- one toast per scan
@@ -349,7 +354,9 @@ function M:CardItems()
   for i, c in ipairs(list) do
     if i > 15 then break end
     local w = c.where or {}
-    local src = M.Describe(c):gsub("^%+%d+%%%s+", ""):gsub("^" .. tostring(c.name):gsub("%p", "%%%0") .. "%s*", "")
+    -- the source only: the card's title and tag already say the item and how big
+    -- an upgrade it is (the tour showed "big upgrade Rusty Cutlass" repeated under the title)
+    local src = M.Source(c)
     local tags = { { ns.GearScore.UpText(c.pct), "gold" } }
     local slot = M.SlotWord(c.itemID)
     if slot and slot ~= "" then tags[#tags + 1] = { slot:gsub("^%l", string.upper), "plain" } end

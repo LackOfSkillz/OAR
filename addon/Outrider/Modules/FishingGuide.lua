@@ -298,6 +298,41 @@ function M:Activity()
   return string.format("%d casts, %d fish caught (lifetime)", st.casts, st.catches)
 end
 
+-- ------------------------------------------------------------------ where to fish
+-- A zone's faction, from the guide's own trainers and vendors there: "Horde",
+-- "Alliance", or nil when both (or nobody listed) can fish it.
+function M.ZoneFaction(zone)
+  local d = M.Data() or {}
+  local seen
+  for _, kind in ipairs({ "trainers", "vendors" }) do
+    for _, x in ipairs(d[kind] or {}) do
+      if x[2] == zone then
+        if not x[4] then return nil end
+        if seen and seen ~= x[4] then return nil end
+        seen = x[4]
+      end
+    end
+  end
+  return seen
+end
+
+-- The tier's zones for this character (tour 2026-11-19: the page listed Dun
+-- Morogh, Elwynn and Teldrassil first to a character on Zephras Isle): the
+-- zone you're in first, then the rest your faction can reach; the other
+-- faction's home zones are left out.
+function M.ZonesFor(t, here, faction)
+  here = here or readable(C.Call("GetZoneText"))
+  faction = faction or readable(C.Call("UnitFactionGroup", "player"))
+  local first, rest = {}, {}
+  for _, zone in ipairs(t.zones or {}) do
+    local zf = M.ZoneFaction(zone)
+    if zone == here then first[#first + 1] = zone
+    elseif not (zf and faction and zf ~= faction) then rest[#rest + 1] = zone end
+  end
+  for _, z in ipairs(rest) do first[#first + 1] = z end
+  return first
+end
+
 -- ------------------------------------------------------------------ page
 local function clock(secs)
   if secs >= 86400 then return string.format("%dd %dh", math.floor(secs / 86400), math.floor(secs % 86400 / 3600)) end
@@ -316,8 +351,9 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       return {
         { cap = "Fishing skill", value = skill and (skill .. " / " .. (max or "?")) or "—", color = "gold",
           fill = skill and max and max > 0 and skill / max or nil },
-        { cap = "Next step", value = nxt and nxt.title or (skill and max and skill >= max and "Train the next rank" or "Keep fishing"),
-          note = nxt and nxt.how or nil },
+        { cap = "Next step", value = not skill and "Learn Fishing" or nxt and nxt.title
+            or (max and skill >= max and "Train the next rank" or "Keep fishing"),
+          note = not skill and "any fishing trainer, free" or nxt and nxt.how or nil },
       }
     end },
     { "header", "Your fishing", icon = "Trade_Fishing" },
@@ -328,13 +364,16 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       local level = tonumber(C.Call("UnitLevel", "player")) or 1
       local m = M:Milestone(skill, max, level)
       local out = {
-        { ok = true, icon = "Interface\\Icons\\Trade_Fishing", text = skill and string.format("Fishing %d / %d", skill, max or 0) or "Fishing not learned yet" },
-        { ok = true, icon = "Interface\\Icons\\INV_Misc_Fish_02", text = string.format("%d fish in %d casts (%s caught)", st.catches, st.casts, M:Rate() and (M:Rate() .. "%") or "?") },
+        -- not learned is a to-do, not an OK; the catch count is every character's (tour 2026-11-19)
+        { ok = skill ~= nil, warn = not skill, icon = "Interface\\Icons\\Trade_Fishing",
+          text = skill and string.format("Fishing %d / %d", skill, max or 0) or "Fishing not learned: any fishing trainer teaches it" },
+        { ok = true, icon = "Interface\\Icons\\INV_Misc_Fish_02", text = string.format("%d fish in %d casts on all your characters (%s caught)", st.catches, st.casts, M:Rate() and (M:Rate() .. "%") or "?") },
         { ok = nxt ~= nil or (skill and max and skill >= max) or false, warn = true, icon = "Interface\\Icons\\Spell_Holy_SurgeOfLight",
           -- at the cap there is no next point to measure: say what unlocks more
           text = (skill and max and skill >= max) and string.format("Capped at %d: train the next rank to keep going", max)
             or nxt and string.format("About %d more catches to the next point", nxt) or "Next point: measured after two skill-ups" },
       }
+      if not skill then table.remove(out, 3) end -- no skill-ups to measure yet
       if m then out[#out + 1] = { ok = m.ready, icon = "Interface\\Icons\\INV_Misc_Book_09", text = m.title .. (m.ready and ": ready" or ": not yet") } end
       return out
     end },
@@ -351,7 +390,7 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       local t = M:Tier(skill)
       local out = {}
       if not t then return out end
-      for _, zone in ipairs(t.zones) do
+      for _, zone in ipairs(M.ZonesFor(t)) do
         local fish, total = M:CaughtIn(zone)
         local parts = {}
         for i, f in ipairs(fish) do

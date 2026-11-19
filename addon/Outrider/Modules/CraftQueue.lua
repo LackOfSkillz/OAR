@@ -163,9 +163,12 @@ ns.Hub:AddTab("crafting", "Crafting", function(p)
       or "|cff8f96a6Empty. Click a recipe on the left to add one (Shift adds 5).|r")
     local text = M:ShoppingText()
     if ns.SkillUp and ns.SkillUp.enabled then
+      -- crafts only: a gathering skill has no recipes, so no shopping route
+      -- (tour 2026-11-19: "Skinning 76/150 ... Route to 86")
+      local gather = { Skinning = true, Herbalism = true, Mining = true, Fishing = true }
       for prof in pairs(ns.db.char.professions or {}) do
-        local l = ns.SkillUp:Lines(prof)
-        text = text .. "\n\n" .. table.concat(l, "\n", 1, math.min(#l, 4))
+        local l = not gather[prof] and ns.SkillUp:Lines(prof) or {}
+        if #l > 0 then text = text .. "\n\n" .. table.concat(l, "\n", 1, math.min(#l, 4)) end
       end
     end
     self.shop:SetText(text)

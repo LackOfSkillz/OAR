@@ -236,7 +236,7 @@ function H.Landing(p)
   local cols = 3
   local gap = 12
   local cw = math.floor((w - gap * (cols - 1)) / cols)
-  local ch = 74
+  local ch = 92 -- room for a two-line name and three lines of topics (tour 2026-11-19: text ran past the card)
   for i, sec in ipairs(ns.HelpData or {}) do
     local c = v.cards[i]
     if not c then
@@ -255,6 +255,9 @@ function H.Landing(p)
       c.blurb:SetPoint("RIGHT", c, "RIGHT", -8, 0)
       c.blurb:SetJustifyH("LEFT")
       if c.blurb.SetWordWrap then c.blurb:SetWordWrap(true) end
+      if c.blurb.SetMaxLines then c.blurb:SetMaxLines(3) end
+      c.blurb:SetPoint("BOTTOM", c, "BOTTOM", 0, 6)
+      if c.blurb.SetJustifyV then c.blurb:SetJustifyV("TOP") end
       c:SetScript("OnEnter", function(self) if self.SetBackdropBorderColor then self:SetBackdropBorderColor(Theme:Color("gold")) end end)
       c:SetScript("OnLeave", function(self) if self.SetBackdropBorderColor then self:SetBackdropBorderColor(Theme:Color("border")) end end)
       c:SetScript("OnClick", function(self)
@@ -270,8 +273,8 @@ function H.Landing(p)
     c.icon:SetTexture(sec.icon and (ICON .. sec.icon) or nil)
     c.name:SetText(sec[1])
     local names = {}
-    for k, t in ipairs(sec[3]) do if k <= 4 then names[#names + 1] = t[1] end end
-    c.blurb:SetText(string.format("%d topics: %s%s", #sec[3], table.concat(names, ", "), #sec[3] > 4 and "..." or ""))
+    for k, t in ipairs(sec[3]) do if k <= 3 then names[#names + 1] = t[1] end end
+    c.blurb:SetText(string.format("%d topics: %s%s", #sec[3], table.concat(names, ", "), #sec[3] > 3 and "..." or ""))
     c:Show()
   end
   p.list:Refresh()

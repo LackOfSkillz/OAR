@@ -110,8 +110,9 @@ ns.Hub:AddTab("errands", "Errands", function(p)
       local free = ns.InfoBar and ns.InfoBar.Bags and ns.InfoBar.Bags()
       return {
         { cap = "Errands", value = tostring(n), color = n > 0 and "gold" or "good", note = n == 0 and "nothing to do in town" or "below" },
-        { cap = "Gear condition", value = dura and (math.floor(dura * 100) .. "%") or "—", fill = dura,
-          color = dura and dura < 0.3 and "bad" or nil },
+        -- the most worn piece, not the average the info bar shows (tour 2026-11-19: 80% here, 94% there)
+        { cap = "Most worn piece", value = dura and (math.floor(dura * 100) .. "%") or "—", fill = dura,
+          color = dura and dura < 0.3 and "bad" or nil, note = "the info bar shows the average" },
         { cap = "Free bag slots", value = free and tostring(free) or "—", color = free and free <= 4 and "warn" or nil },
       }
     end },

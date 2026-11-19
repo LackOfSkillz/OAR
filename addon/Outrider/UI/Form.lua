@@ -188,12 +188,24 @@ function UI:Form(parent, rows)
       local row = CreateFrame("Frame", nil, host)
       row:SetSize(W, 26)
       local prev
+      local btns = {}
       for _, b in ipairs(r[2]) do
         local btn = UI:Button(row, b[1], b[3] or math.max(110, #b[1] * 7 + 28), b[2])
         btn:SetHeight(26)
-        if not prev and not r.plain then UI.SetPrimary(btn, true) end
+        if not prev and not r.plain and not r.active then UI.SetPrimary(btn, true) end
         if prev then btn:SetPoint("LEFT", prev, "RIGHT", 8, 0) else btn:SetPoint("LEFT", 0, 0) end
         prev = btn
+        btns[#btns + 1] = btn
+      end
+      -- a filter row (tour 2026-11-19): r.active(i) says which button is the
+      -- current choice, and only that one is gold, so gold never looks chosen
+      -- when it isn't ("In my zone" was gold while everyone was listed)
+      if type(r.active) == "function" then
+        row.Refresh = function()
+          for i, btn in ipairs(btns) do UI.SetPrimary(btn, r.active(i) and true or false) end
+        end
+        row.Refresh()
+        scroll.items[#scroll.items + 1] = row
       end
       place(row, ROW.buttons)
     elseif kind == "input" then
@@ -285,6 +297,25 @@ function UI:Form(parent, rows)
       list:SetWidth(W)
       place(list, r[2] * 22 + 10)
       entries[#entries].stretch = true
+      -- an empty list shows a picture and a line instead of a blank box
+      -- (tour 2026-11-19): { "list", ..., empty = "text", emptyArt = "empty_quiet" }
+      if r.empty then
+        local e = CreateFrame("Frame", nil, list)
+        e:SetAllPoints()
+        e.pic = e:CreateTexture(nil, "ARTWORK")
+        e.pic:SetSize(128, 64)
+        e.pic:SetPoint("CENTER", 0, 12)
+        e.text = UI.Text(e, "normal", "muted")
+        e.text:SetPoint("TOP", e.pic, "BOTTOM", 0, -6)
+        e.text:SetText(r.empty)
+        if not (ns.Art and ns.Art:Set(e.pic, r.emptyArt or "empty_quiet")) then
+          e.pic:Hide()
+          e.text:ClearAllPoints()
+          e.text:SetPoint("CENTER")
+        end
+        e:Hide()
+        list.emptyView = e
+      end
       scroll.items[#scroll.items + 1] = { list = list, getItems = r[5] }
     elseif kind == "cards" or kind == "tiles" or kind == "bars" or kind == "stats" then
       -- { "cards", getItems } / { "tiles", getItems } / { "bars", getItems } /
@@ -418,7 +449,9 @@ function UI:Form(parent, rows)
         if ok and v then it.slider.slider:SetValue(v) end
       elseif it.list and it.getItems then
         local ok, items = pcall(it.getItems)
-        it.list:SetItems(ok and items or {})
+        items = ok and items or {}
+        it.list:SetItems(items)
+        if it.list.emptyView then it.list.emptyView:SetShown(#items == 0) end
       end
     end
     self:Layout()

@@ -19,7 +19,7 @@ local M = ns:NewModule("MapReveal", {
   title = "Reveal unexplored map",
   phase = "P3",
   order = 34,
-  defaults = { on = true, tint = 0.55 },
+  defaults = { on = true },
   yieldsTo = { "Leatrix_Maps", "Mapster", "MapsterEnhanced" },
 })
 ns.MapReveal = M
@@ -236,7 +236,9 @@ end
 
 function M:Refresh()
   self:Release()
-  if not (self.map and self:Settings().on) then return end
+  local s = self:Settings()
+  if s.tint == 0.55 then s.tint = nil end -- the old default darkened the map (see below)
+  if not (self.map and s.on) then return end
   local mapID = self.map.GetMapID and self.map:GetMapID()
   if not mapID then return end
   self:Record(mapID)
@@ -252,7 +254,11 @@ function M:Refresh()
   local f = self:Layer()
   f:SetSize(layerW, layerH)
   f:SetScale(math.max(0.01, (canvas:GetWidth() or layerW) / layerW))
-  local tint = self:Settings().tint or 0.55
+  -- Untinted (tour, 2026-11-19): Forever's redrawn maps (Zephras Isle) bake the
+  -- coast and parchment into the overlay tiles, so the old 0.55 darkening drew
+  -- a big shadow over the map and the sea. Drawn as Blizzard draws explored
+  -- areas, revealed land looks like the rest of the map. Old saved 0.55 is dropped.
+  local tint = s.tint or 1
   for _, e in ipairs(missing) do
     for _, t in ipairs(M.Tiles(e, tileW, tileH)) do
       local tex = table.remove(self.pool) or f:CreateTexture(nil, "ARTWORK")
@@ -261,7 +267,7 @@ function M:Refresh()
       tex:SetTexCoord(0, t.u, 0, t.v)
       tex:SetPoint("TOPLEFT", f, "TOPLEFT", t.x, -t.y)
       tex:SetTexture(t.id)
-      tex:SetVertexColor(tint, tint, tint + 0.1, 1)
+      tex:SetVertexColor(tint, tint, math.min(1, tint + 0.1), 1)
       tex:Show()
       self.used[#self.used + 1] = tex
     end

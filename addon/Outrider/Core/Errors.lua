@@ -23,9 +23,10 @@ function Errors:Record(where, err, trace)
   if entry then
     entry.count = entry.count + 1
     entry.last = now
+    entry.build = ns.build
   else
     entry = { where = where or "?", msg = msg, trace = trace, count = 1, first = now, last = now,
-              session = ns.session }
+              session = ns.session, build = ns.build }
     self.byKey[key] = entry
     table.insert(self.list, entry)
     if #self.list > self.MAX then
@@ -63,6 +64,14 @@ function Errors:Attach()
     end
   end
   self:Save()
+end
+
+-- Errors seen on the running build (tour 2026-11-19: Status said "7 errors
+-- need a look" for errors fixed two builds ago). Older ones stay in the list.
+function Errors:Fresh()
+  local n = 0
+  for _, e in ipairs(self.list) do if e.build and e.build == ns.build then n = n + 1 end end
+  return n
 end
 
 function Errors:Clear()

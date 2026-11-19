@@ -300,8 +300,10 @@ end
 local E = F.EXPLAIN
 E.WARRIOR = { ranged = "Key 1, spam it: Charge, Battle Shout, Rend once, your big strike on cooldown, Heroic Strike.",
   melee = "Key 2: press when Overpower, Revenge or Execute lights up; Thunder Clap on a pack." }
-E.ROGUE = { ranged = "Key 1, spam it: Cheap Shot from Stealth, then builders, Slice and Dice, builders, Eviscerate.",
-  melee = "Key 2: Stealth out of combat; in a fight Kick, then your cooldowns." }
+-- Rogue: no key numbers (tour 2026-11-19: Gary's bar is Fight 1, Pull 2,
+-- Strike 3, so "key 2" was wrong); the text names the macro instead.
+E.ROGUE = { ranged = "Fight, spam it: Stealth out of combat, open from it (Backstab with a dagger; Garrote, Ambush or Cheap Shot later), then Sinister Strike, Slice and Dice, Eviscerate.",
+  melee = "Strike: Stealth out of combat; pressed again while sneaking, Pick Pocket. In a fight: Evasion (8), Kick (12). Pull (Throw or your bow) is its own macro." }
 E.WARLOCK = { ranged = "Key 1, spam it: demon in, curse, Corruption, Immolate once each, then Drain Life or the wand.",
   melee = "Key 2: Life Tap; Shift fears the target." }
 E.DRUID = { ranged = "Key 1, spam it: follows your form (caster, Bear or Cat).",

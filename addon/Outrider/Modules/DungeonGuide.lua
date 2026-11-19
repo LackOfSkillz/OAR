@@ -253,8 +253,8 @@ function M:ReadyCheck()
   local function add(ok, text, soft) out[#out + 1] = { ok = ok and true or false, text = text, warn = (not ok) and soft or nil } end
   local d = ns.Errands and ns.Errands.Durability and ns.Errands.Durability()
   if d then
-    add(d >= M.READY.durability, d >= M.READY.durability and string.format("Gear in good repair (%d%%)", math.floor(d * 100))
-      or string.format("Repair first: gear at %d%%", math.floor(d * 100)))
+    add(d >= M.READY.durability, d >= M.READY.durability and string.format("Gear in good repair (most worn piece %d%%)", math.floor(d * 100))
+      or string.format("Repair first: most worn piece at %d%%", math.floor(d * 100)))
   end
   if ns.BagFood then
     local ok, food, drink = pcall(ns.BagFood.Scan, ns.BagFood)

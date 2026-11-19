@@ -228,6 +228,9 @@ function M:Usable(link, info)
   if info and info.reqLevel and info.reqLevel > level then return "level " .. info.reqLevel, info.reqLevel end
   local equipLoc, class, subclass = itemClass(link)
   if class == 4 and subclass == 6 and not SHIELD_CLASSES[ns.PlayerClass()] then return "can't wear" end
+  -- a fishing pole is never a fighting upgrade (tour 2026-11-19: What now
+  -- offered a rogue a Strong Fishing Pole as "183% better"); Fishing has its own page
+  if class == 2 and subclass == 20 then return "fishing pole" end
   if class == 2 and subclass then
     local ok = M.WEAPON_TYPES[ns.PlayerClass()]
     if subclass ~= 20 and ok and not ok[subclass] then return "can't wear" end

@@ -151,10 +151,14 @@ function M:Rank(level, owned, faction)
   return out
 end
 
--- "about 2g 0s an hour (your own loot)" / "(guide, unverified)" / "no figure yet"
+-- "about 2g 0s an hour of loot per hour of farming (all your characters)" / "(guide, unverified)" / "no figure yet"
 function M.RateText(r)
   if not r.rate then return "no gold-per-hour figure yet" end
-  return string.format("about %s an hour (%s)", ns.Prices.Money(r.rate), r.measured and "your own loot" or "guide, unverified")
+  -- measured = what loot from every character on the account was worth per
+  -- hour spent looting it, not this character's gold per hour (tour 2026-11-19:
+  -- "44s an hour (your own loot)" next to a real 7c an hour read as a promise)
+  if r.measured then return string.format("loot worth about %s per hour of farming (all your characters)", ns.Prices.Money(r.rate)) end
+  return string.format("about %s an hour (guide, unverified)", ns.Prices.Money(r.rate))
 end
 
 -- One line per kind of earning Gary has done: "Herbs: 1g 20s an hour over 34 min; best: Silverleaf 3s"

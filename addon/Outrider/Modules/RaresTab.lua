@@ -109,6 +109,9 @@ ns.Hub:AddTab("rares", "Rares", function(p)
       local last = ns.Sightings:Last(r.npcID)
       local where = last and last.layer and ("  ·  last on " .. ns.Layers.Label(last.layer)) or ""
       local desc = ns.Sightings:Describe(r.npcID, layer)
+      -- an old "alive" sighting is shown as UNKNOWN: say it was alive then, not
+      -- now (tour 2026-11-19: "UNKNOWN" next to "Alive, seen 1 day 18 h ago")
+      if st == "unknown" then desc = desc:gsub("^[Aa]live, seen ", "last seen alive ") end
       row.sub:SetText(ns.TitleCase(desc:sub(1, 1)) .. desc:sub(2) .. where)
       local watched = scan():IsWatched(r.npcID, r.name)
       row.star.watched = watched

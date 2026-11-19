@@ -47,7 +47,7 @@ T.describe("money guide", function()
       if x.entry.id == "skin-route" then top = x end
     end
     T.ok(top and top.measured, "the skinning tip now shows your own number")
-    T.contains(G.RateText(top), "your own loot")
+    T.contains(G.RateText(top), "all your characters")
     T.contains(table.concat(G:YourLines(), "\n"), "Light Leather")
     T.eq(#ns.Errors.list, 0)
   end)

@@ -58,9 +58,11 @@ function M:RespawnLines()
     if r.lo then
       text = string.format("respawns in %d to %d min, usually %d (%d observations)", mins(r.lo), mins(r.hi), mins(r.median), r.n)
     else
-      text = string.format("%d of %d observations needed", r.n, M.MIN_OBS)
+      -- in words (tour 2026-11-19: "2 of 3 observations needed" read like a fault)
+      local more = M.MIN_OBS - r.n
+      text = string.format("%d respawn%s timed so far; %d more and Outrider can forecast it", r.n, r.n == 1 and "" or "s", more)
     end
-    out[#out + 1] = { npcID = id, name = rareName(id), text = text, n = r.n }
+    out[#out + 1] = { npcID = id, name = rareName(id), text = text, n = r.n, ready = r.lo ~= nil }
   end
   table.sort(out, function(a, b) if a.n ~= b.n then return a.n > b.n end return a.name < b.name end)
   return out
@@ -121,11 +123,13 @@ ns.Hub:AddTab("forecasts", "Forecasts", function(p)
   function p:Refresh()
     local g = M.Gold(ns.db.char.ledger)
     local lines = M:RespawnLines()
+    local ready = 0
+    for _, l in ipairs(lines) do if l.ready then ready = ready + 1 end end
     self.stats:SetItems({
       { cap = "Gold per hour", value = g and ns.Prices.Coins(math.floor(math.abs(g.perHour))) or "—", color = g and "gold" or nil,
         note = g and ("over " .. g.sessions .. " sessions") or "log out once to save a session" },
       { cap = "Trend", value = g and g.trend and ns.TitleCase(g.trend) or "—", color = g and g.trend == "up" and "good" or g and g.trend == "down" and "bad" or nil },
-      { cap = "Rares with a forecast", value = tostring(#lines), note = #lines == 0 and "needs sightings" or "respawn times below" },
+      { cap = "Rares with a forecast", value = tostring(ready), note = ready == 0 and (#lines > 0 and (#lines .. " still learning") or "needs sightings") or "respawn times below" },
     })
     self.gold:SetText(M:GoldLine())
     self.list:SetItems(lines)

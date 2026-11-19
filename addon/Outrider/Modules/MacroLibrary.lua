@@ -69,6 +69,10 @@ function M:Missing(entry)
   local lvl = C.Call("UnitLevel", "player") or 0
   if entry.level and entry.level > lvl then return "level " .. entry.level end
   local _, missing = E.Fill(entry.body, self:Values())
+  -- words, not the macro's placeholder names (tour 2026-11-19: "needs DRINK")
+  local words = { FOOD = "food in your bags", DRINK = "a drink in your bags", MOUNT = "a mount", TARGET = "a watched rare",
+    PET = "a pet", AMMO = "ammo" }
+  for i, k in ipairs(missing) do missing[i] = words[k] or tostring(k):lower() end
   if #missing > 0 then return "needs " .. table.concat(missing, ", ") end
   return nil
 end

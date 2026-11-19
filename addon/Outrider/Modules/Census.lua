@@ -689,7 +689,13 @@ ns.Hub:AddTab("people", "Players & guilds", function(p)
       return head
     end },
     { "buttons", { { "In my zone", function() M.filter = readable(C.Call("GetZoneText")) or "" M.selected = nil end, 120 },
-      { "Show everyone", function() M.filter = nil M.selected = nil end, 130 } } },
+      { "Show everyone", function() M.filter = nil M.selected = nil end, 130 } },
+      active = function(i)
+        local zone = readable(C.Call("GetZoneText")) or ""
+        local f = M.filter or ""
+        if i == 1 then return f ~= "" and f == zone end
+        return f == ""
+      end },
     -- a sortable table (2026-11-18 premium rebuild): click a column to sort
     { "table", 10, {
       { key = "name", label = "Name", width = 0, sort = function(x) return x.name end,

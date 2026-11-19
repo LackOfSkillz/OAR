@@ -233,7 +233,7 @@ function M:PinLines()
   local goal = self.goal
   if goal then
     out[#out + 1] = { "Outrider: " .. tostring(goal.name), "accent" }
-    if goal.sub and goal.sub ~= "" then out[#out + 1] = { tostring(goal.sub):gsub("|c%x+", ""):gsub("|r", ""), "muted" } end
+    if goal.sub and goal.sub ~= "" then out[#out + 1] = { tostring(goal.sub):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""), "muted" } end
   else
     out[#out + 1] = { "Outrider: " .. tostring(w.title), "accent" }
   end
@@ -352,12 +352,14 @@ ns.Hub:AddTab("journey", "Journey", function(p)
   p.kindBtns = {}
   local prev
   for _, k in ipairs(F.KINDS) do
-    local b = UI:Button(p, F.KIND_LABEL[k], 62, function() p.kind, p.sort = k, nil p:Refresh() end)
+    -- as wide as its word (tour 2026-11-19: "Creatures" and "Herbs, ore" ran into each other)
+    local label = F.KIND_LABEL[k]
+    local b = UI:Button(p, label, math.max(62, #label * 7 + 20), function() p.kind, p.sort = k, nil p:Refresh() end)
     if prev then b:SetPoint("LEFT", prev, "RIGHT", 4, 0) else b:SetPoint("TOPLEFT", p.search, "BOTTOMLEFT", 0, -6) end
     p.kindBtns[k], prev = b, b
   end
   p.list = UI:ScrollList(p, {
-    rows = 16, rowHeight = 22,
+    rows = 20, rowHeight = 22, -- 16 left the bottom third of the page empty
     render = function(row, e) row.text:SetText(F.Line(e)) end,
     onClick = function(e) p:ShowRoute(e) if e.target then M:Go(e) end end, -- one click: route, marker and arrow
   })

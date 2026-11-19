@@ -99,7 +99,7 @@ function M:FactionName(id)
     local data = readable(C.Call("C_Reputation.GetFactionDataByID", id))
     name = type(data) == "table" and readable(data.name) or nil
   end
-  return name or ("faction " .. id)
+  return name
 end
 
 function M:Category(questID)
@@ -119,8 +119,13 @@ function M:Lines(questID)
   if e.bf then out[#out + 1] = "Leads to: " .. self:Name(e.bf) end
   if e.rep then
     local r = {}
-    for i = 1, #e.rep - 1, 2 do r[#r + 1] = string.format("%+d %s", e.rep[i + 1], self:FactionName(e.rep[i])) end
-    out[#out + 1] = "Reputation: " .. table.concat(r, ", ")
+    -- a faction the game has no name for (a hidden one, e.g. 2779 on Zephras
+    -- Isle) is left out: "+50 faction 2779" meant nothing (tour 2026-11-19)
+    for i = 1, #e.rep - 1, 2 do
+      local name = self:FactionName(e.rep[i])
+      if name then r[#r + 1] = string.format("%+d %s", e.rep[i + 1], name) end
+    end
+    if #r > 0 then out[#out + 1] = "Reputation: " .. table.concat(r, ", ") end
   end
   local tags = {}
   local cat = self:Category(questID)

@@ -16,7 +16,7 @@ local Hub = { name = "hub", tabs = {}, byId = {} }
 ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
-local MAX_ROWS = 19 -- visible module rows; the list scrolls with the mouse wheel
+local MAX_ROWS = 44 -- module rows built; as many show as the page has room for (tour 2026-11-19: 19 left half the page empty), the rest scroll with the mouse wheel
 local W, H = 1080, 720        -- starting size; the window is resizable (Gary, 2026-11-13)
 local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1400, 1000
 local SIDE = 160             -- grouped sidebar on the left; pages to its right
@@ -465,13 +465,15 @@ Hub:AddTab("overview", L.overview, function(p)
   p.toTools:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, 0)
   function p:Refresh()
     local meta = ns.db.char.meta
-    local nerr = #ns.Errors.list
+    local all = #ns.Errors.list
+    local nerr = ns.Errors:Fresh() -- only this build's errors need a look
+    local older = all - nerr
     local sv, loads = ns.DB:SavedVariablesStatus()
     local svOK = tostring(sv):lower():find("ok") or tostring(sv):lower():find("yes")
     self.health:SetTextColor(Theme:Color(nerr == 0 and svOK and "good" or "warn"))
     self.health:SetText(nerr == 0 and (svOK and "All systems OK" or "Settings not confirmed saved yet")
       or (nerr == 1 and "1 error needs a look" or (nerr .. " errors need a look")))
-    self.toTools:SetShown(nerr > 0)
+    self.toTools:SetShown(all > 0)
     self.who:SetText(string.format("%s  ·  %s %s, level %s  ·  v%s", ns.db.key, tostring(meta.race or ""), tostring(meta.class or ""),
       tostring(meta.level or "?"), tostring(ns.version)))
     local on, total = 0, 0
@@ -480,7 +482,8 @@ Hub:AddTab("overview", L.overview, function(p)
     local present, missing = pr and pr.summary and pr.summary.present or 0, pr and pr.summary and pr.summary.missing or 0
     local id, conf, label = ns.Layers:Current()
     self.row1:SetItems({
-      { cap = "Errors", value = tostring(nerr), color = nerr > 0 and "bad" or "good", note = nerr > 0 and "see Tools" or "none" },
+      { cap = "Errors on this build", value = tostring(nerr), color = nerr > 0 and "bad" or "good",
+        note = nerr > 0 and "see Tools" or older > 0 and (older .. " older, fixed or gone: see Tools") or "none" },
       { cap = "Settings saved", value = svOK and "Yes" or tostring(sv), color = svOK and "good" or "warn", note = loads .. " loads" },
       { cap = "Features on", value = on .. " / " .. total, fill = total > 0 and on / total or nil },
     })
@@ -562,9 +565,17 @@ Hub:AddTab("modules", L.modules, function(p)
       for _, s in ipairs(byGroup[g]) do lines[#lines + 1] = s end
     end
     local status = lines
-    self.offset = math.max(0, math.min(self.offset or 0, #status - #self.rows))
+    local h = self.GetHeight and self:GetHeight() or 0
+    local fit = h >= 300 and math.min(#self.rows, math.floor((h - 70) / 21)) or 19 -- 19 until the page has a real size
+    self.offset = math.max(0, math.min(self.offset or 0, #status - fit))
+    if not self.more then
+      self.more = UI.Text(self, "small", "muted")
+      self.more:SetPoint("BOTTOMLEFT", 14, 8)
+    end
+    local last = math.min(#status, fit + self.offset)
+    self.more:SetText(#status > fit and string.format("Lines %d-%d of %d: scroll with the mouse wheel for the rest", self.offset + 1, last, #status) or "")
     for i, row in ipairs(self.rows) do
-      local s = status[i + (self.offset or 0)]
+      local s = i <= fit and status[i + (self.offset or 0)]
       if s and s.header then
         row.mod, row.full = nil, nil
         row.head:SetText(s.header) row.head:Show()
@@ -686,7 +697,9 @@ Hub:AddTab("tools", L.tools, function(p)
       local where = tostring(e.where or "?"):gsub("^module:", "")
       local msg = tostring(e.msg or ""):gsub("^[^:]*%.lua:%d+: ", "")
       local taint = tostring(e.msg or ""):find("BLOCKED", 1, true) or tostring(e.kind or "") == "taint"
-      row.text:SetText(string.format("%sx%d|r  |cfff1d58e%s|r  %s", Theme:Hex(taint and "warn" or "bad"), e.count or 1, where, msg))
+      local old = not (e.build and e.build == ns.build) -- from an earlier build: greyed, with a tag
+      row.text:SetText(string.format("%sx%d|r  |cfff1d58e%s|r  %s%s", Theme:Hex(old and "muted" or taint and "warn" or "bad"), e.count or 1, where,
+        old and "|cff8f96a6" or "", msg .. (old and "  (earlier build)|r" or "")))
       row.full = tostring(e.msg or "")
     end,
   })
@@ -699,7 +712,8 @@ Hub:AddTab("tools", L.tools, function(p)
   p.probe:SetPoint("LEFT", p.debug, "RIGHT", 210, 0)
   function p:Refresh()
     local n = #ns.Errors.list
-    self.errHead:SetText(n > 0 and ("Errors (" .. n .. ")") or "Errors")
+    local fresh = ns.Errors:Fresh()
+    self.errHead:SetText(n > 0 and string.format("Errors (%d on this build, %d earlier)", fresh, n - fresh) or "Errors")
     self.debug:Refresh()
     self.accent:Refresh()
     self.probe:SetText(ns.Probe:Summary())
