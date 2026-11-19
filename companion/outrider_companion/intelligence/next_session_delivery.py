@@ -74,7 +74,33 @@ def create_plan(read_result, character, *, now=None):
 
     opportunities = []
     for c in raw if isinstance(raw, list) else []:
-        if isinstance(c, dict) and isinstance(c.get("candidateId"), str):
+        if not isinstance(c, dict) or not isinstance(c.get("candidateId"), str):
+            continue
+        community = (
+            c.get("kind") == "quest" and c.get("label") == "community"
+            and c.get("estimateBasis") == "journey_community"
+            and isinstance(c.get("estimatedQuestXP"), (int, float))
+            and isinstance(c.get("estimatedTripSeconds"), (int, float))
+            and isinstance(c.get("estimatedActivitySeconds"), (int, float))
+            and isinstance(c.get("target"), dict)
+        )
+        if community:
+            # Costs are source-provided heuristics, with a conservative
+            # estimated turn-in allowance and uncertainty reserve. They are
+            # never reported as verified XP or a proven better route.
+            opportunities.append({
+                "candidateId": c["candidateId"], "title": c.get("title"),
+                "kind": "quest", "eligible": True, "completed": False,
+                "origin": "community", "estimateBasis": "journey_community",
+                "travelKnown": True, "mapID": c["target"].get("mapID"),
+                "evidenceIds": ["whatnow:" + c["candidateId"]],
+                "timeSeconds": {"travel": c["estimatedTripSeconds"],
+                                "activity": c["estimatedActivitySeconds"],
+                                "turnIn": 180, "wait": 0},
+                "riskSeconds": 360,
+                "xpReward": {"value": c["estimatedQuestXP"], "origin": "community"},
+            })
+        else:
             opportunities.append({"candidateId": c["candidateId"],
                                   "eligible": False, "origin": c.get("label") or "unknown"})
     computed = xp60_planner.optimize(opportunities, baseline=b)
@@ -86,6 +112,7 @@ def create_plan(read_result, character, *, now=None):
             continue
         cid = c.get("candidateId")
         if (isinstance(cid, str) and 1 <= len(cid) <= 100
+                and cid not in {step["candidateId"] for step in computed["steps"]}
                 and cid not in qualitative and c.get("label") in
                 ("observed", "verified", "community")):
             qualitative.append(cid)

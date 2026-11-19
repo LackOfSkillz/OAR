@@ -42,7 +42,9 @@ def normalize(source):
     for k in ("travel", "activity", "turnIn", "wait"):
         if not _bounded(timecost.get(k), SECONDS):
             return None
-    if xp.get("origin") not in ("observed", "verified"):
+    if xp.get("origin") not in ("observed", "verified", "community"):
+        return None
+    if xp.get("origin") == "community" and source.get("estimateBasis") != "journey_community":
         return None
     if not _bounded(xp.get("value"), 1e7):
         return None
@@ -66,7 +68,7 @@ def normalize(source):
         return None
     return {"candidateId": cid, "rewardKey": reward_key,
             "title": str(source.get("title") or cid)[:120],
-            "seconds": int(math.ceil(total)), "xp": int(xp["value"]),
+            "seconds": int(math.ceil(total)), "xp": int(xp["value"]), "xpOrigin": xp["origin"],
             "evidenceIds": evidence, "requires": requires, "kind": source.get("kind", "quest"),
             "mapID": source.get("mapID"), "source": source.get("origin"),
             "riskSeconds": int(min(600, source.get("riskSeconds", 0)))
@@ -126,6 +128,9 @@ def optimize(candidates, *, baseline=None, budget=SECONDS):
         if _score(beam[0]) > _score(best):
             best = beam[0]
     measured = baseline if isinstance(baseline, dict) else {}
+    all_verified = all(next((c["xpOrigin"] for c in eligible
+                             if c["candidateId"] == step["candidateId"]), None)
+                       in ("observed", "verified") for step in best["steps"])
     previous = measured.get("xpPerHour") if measured.get("observed") else None
     # A finite historical XP/hour isn't a controlled experiment. An uplift
     # requires a comparable route and sufficiently narrow uncertainty.
@@ -134,13 +139,15 @@ def optimize(candidates, *, baseline=None, budget=SECONDS):
         improvement = None  # explicitly withheld until ranges/comparability exist
     return {
         "schema": 1, "goal": "xp", "budgetSeconds": SECONDS,
-        "estimatedEarnedXP": best["xp"] if best["steps"] else None,
-        "xpRange": {"low": None, "typical": best["xp"] if best["steps"] else None,
+        "estimatedEarnedXP": best["xp"] if best["steps"] and all_verified else None,
+        "xpRange": {"low": None, "typical": best["xp"] if best["steps"] and all_verified else None,
                     "high": None},
         "estimatedImprovementPercent": improvement,
         "steps": best["steps"], "baseline": measured,
-        "status": "evidence_backed" if best["steps"] else "insufficient_evidence",
-        "message": ("Proposed XP route from verified rewards and time evidence."
+        "status": ("evidence_backed" if all_verified else "tentative") if best["steps"] else "insufficient_evidence",
+        "message": ("Proposed XP route from source-backed estimates; actual quest XP and completion times are unverified."
+                    if best["steps"] and not all_verified else
+                    "Proposed XP route from verified rewards and time evidence."
                     if best["steps"] else
                     "No defensible XP/hour improvement established; continue your current route."),
         "unknownCandidateIds": unknown[:20],

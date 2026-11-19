@@ -80,6 +80,17 @@ class Planner(unittest.TestCase):
         self.assertLessEqual(plan["steps"][-1]["endsAt"] + 240, 3600)
         self.assertIsNone(plan["estimatedImprovementPercent"])
 
+    def test_community_quest_proposals_are_tentative_without_numeric_uplift(self):
+        c = option("community:one", seconds=1200, xp=1200,
+                   origin="community", estimateBasis="journey_community",
+                   xpReward={"value": 1200, "origin": "community"})
+        plan = xp60_planner.optimize([c])
+        self.assertEqual(plan["status"], "tentative")
+        self.assertEqual(len(plan["steps"]), 1)
+        self.assertIsNone(plan["estimatedEarnedXP"])
+        self.assertIsNone(plan["estimatedImprovementPercent"])
+        self.assertIn("unverified", plan["message"])
+
     def test_turnin_at_minute_61_is_not_counted(self):
         p = xp60_planner.optimize([option("late", seconds=3660, xp=100000)])
         self.assertIsNone(p["estimatedEarnedXP"])
