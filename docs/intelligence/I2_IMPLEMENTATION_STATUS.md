@@ -30,3 +30,16 @@ See the [77-task backlog](OUTRIDER_INTELLIGENCE_2_0_IMPLEMENTATION_BACKLOG.md) f
 - User-approved nine-class beta, release packaging and signoff. I2-09 remains blocked by D18.
 
 `main` remains untouched. Do not mark tasks or release gates complete without their distinct source, CI and live evidence.
+
+
+## XP60 AfterAction integration — unverified developer beta
+
+- **XP60-00**: Opt-in Lua `SessionXP.lua`, XP/level/zone/turn-in observations, persisted bounded per-character history and native periodic quest snapshot. Login/off, logout/reload, and interruption tests exist. Real Forever XP/level-up event semantics remain unverified.
+- **XP60-01**: Read-only `session_reader.py` parses `WTF/.../SavedVariables/Outrider.lua`, caps input, checks file stability and deduplicates sessions; `xp_baseline.py` computes a wall-clock rate only from valid completed sessions.
+- **XP60-02**: `xp60_planner.py` has a bounded 3600-second search, prerequisites, buffer, quest-reward dedup and safe no-data fallback. Journey provides a separately labeled tentative estimate tier. Quantified improvement claims are withheld without comparable observations. Real travel/quest predictions and useful alternative routes need hands-on validation and calibration.
+- **XP60-03**: `next_session_delivery.py` validates data and requires Windows process-exit checks before writing existing `Advisor/Advice.lua`. `xp60_cli.py` supports one-shot preview and opt-in watch/install. Lua schema 4 is bound to a finalized character session and `NextSession.lua` displays it without auto-actions.
+- **XP60-04**: Feedback and tests added. **Incomplete:** complete live-client verification, performance/cap/taint benchmarks, actual Windows watcher trial, nine classes and owner UX signoff.
+
+[AfterAction design](AFTERACTION_XP60_ENGINEERING_DESIGN.md) | [Windows beta guide](XP60_USER_GUIDE.md)
+
+No automatic background worker has been started in a user's environment. The feature has not been merged into `main`.

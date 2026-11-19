@@ -307,12 +307,12 @@ See **[AfterAction XP60 Engineering Design](AFTERACTION_XP60_ENGINEERING_DESIGN.
 
 The product requirement is **maximize supported expected XP gained inside the next 3,600 real-world seconds**, including travel, quest hand-ins and downtime; avoid generic coaching and fabricated percentage improvements. Recommendations must be backed by persisted observed XP/quest/time evidence and safe, versioned, source-validated route candidates.
 
-**Implementation subtasks (all unstarted until separate code and tests exist):**
+**Implementation subtasks:** `[~]` means code exists but its acceptance evidence is incomplete; `[ ]` means not accepted.
 
-- [ ] XP60-00 — Instrument opt-in bounded, secret-safe in-game XP/session/quest telemetry; reliable level-up and reload handling.
-- [ ] XP60-01 — Desktop read-only stable SavedVariables watcher, post-logout baseline builder, dedup and privacy controls.
-- [ ] XP60-02 — Deterministic 60-minute quest-cluster/route optimizer with uncertainty bands, eligibility and current-route comparison.
-- [ ] XP60-03 — Separate session-bound next-login data-only plan contract, safe closed-game delivery, quiet UI and stale-plan invalidation.
+- [~] XP60-00 — Instrument opt-in bounded, secret-safe in-game XP/session/quest telemetry; reliable level-up and reload handling.
+- [~] XP60-01 — Desktop read-only stable SavedVariables watcher, post-logout baseline builder, dedup and privacy controls.
+- [~] XP60-02 — Deterministic 60-minute quest-cluster/route optimizer with uncertainty bands, eligibility and current-route comparison.
+- [~] XP60-03 — Separate session-bound next-login data-only plan contract, safe closed-game delivery, quiet UI and stale-plan invalidation.
 - [ ] XP60-04 — Expert-respectful relevance/suppression feedback, negative and performance tests, real-game acceptance.
 
-**New release gates:** no beginner-style filler; no misleading XP/hour; no plan beyond 60 minutes; don't count quest XP until it can be turned in by minute 60; preserve existing Ask/Advice contracts; no live bridge or game automation (D18); all generated player actions remain player-controlled. The latest design document is a spec, **not completed code**.
+**New release gates:** no beginner-style filler; no misleading XP/hour; no plan beyond 60 minutes; don't count quest XP until it can be turned in by minute 60; preserve existing Ask/Advice contracts; no live bridge or game automation (D18); all generated player actions remain player-controlled. XP60-00 through XP60-03 now have development code and automated fixtures, but the integrated CI and real-game acceptance remain gates. See [XP60 Windows beta setup](XP60_USER_GUIDE.md). **Do not mark this feature complete solely because source files exist.**
