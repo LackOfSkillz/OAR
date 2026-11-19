@@ -437,3 +437,19 @@ Gary pasted three pages. Still `verified = false` until seen in game.
 - High Order (Alliance) Skyborne: Walk on Air and Read Ley Line.
 - The priest racials match the draft.
 - The page gives **no cooldowns or levels**, so those stay open, along with the PvP rotations for the other classes.
+
+## Update 2026-11-19: rogue Stealth on the Fight key
+
+Gary, on his level 2 rogue: Stealth was never used. It sat only on the separate Strike key. Below level 14, the Fight key also had no opener, and every line in it had `[nostealth]`, so pressing Fight while sneaking did nothing.
+
+The fix: every rogue Fight bracket, all builds, PvE and PvP, levels 1 to 60, now starts with:
+
+    /cast [nocombat,nostealth] Stealth;[stealth] <opener>
+
+- **The opener by level:**
+  - Sinister Strike up to 13.
+  - Then the plan's own openers: Garrote at 14, Ambush at 18 for Assassination and Subtlety, Cheap Shot at 26.
+- **How it plays:** the first press out of combat puts you in Stealth; the next press opens.
+- **Why one line:** a separate Stealth line pushed the level 10 key past 255 characters.
+- **Positional openers are not verified on Forever.** In Classic, Garrote and Ambush need you behind the target. If you're in front, the opener fails and you stay in Stealth until you move behind.
+- **Test:** `tests/spec/fightplan_spec.lua`, "rogue Stealth on the Fight key". It checks every build at levels 1, 10, 14, 18, 26, 30, 40 and 60, in PvE and PvP.

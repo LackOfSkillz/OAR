@@ -169,3 +169,42 @@ T.describe("fight plans: hunter PvP from the Forever guides", function()
     T.ok(#fight <= 255, #fight .. " characters")
   end)
 end)
+
+T.describe("fight plans: rogue Stealth on the Fight key", function()
+  -- the rogue Fight key is HunterFight kind "ranged" (FightPlan.KIND_MAP)
+  local function rogue(level, spells, talents)
+    local game = mock.new({ class = "ROGUE", level = level, race = "Orc" })
+    game.spells = sp(spells)
+    game.talents = talents
+    local ns = game:loadAddon()
+    game:login()
+    return ns
+  end
+  T.it("level 2: the first press Stealths, the next opens with Sinister Strike (nothing else works while sneaking)", function()
+    local ns = rogue(2, { "Sinister Strike", "Eviscerate", "Stealth" }, {})
+    local fight = ns.HunterFight:Body("ranged")
+    T.contains(fight, "/cast [nocombat,nostealth] Stealth;[stealth] Sinister Strike")
+    T.eq(#ns.Errors.list, 0)
+  end)
+  T.it("every level from 1 to 60 and every build keeps Stealth and a Stealth opener within 255 characters", function()
+    local all = { "Sinister Strike", "Eviscerate", "Stealth", "Backstab", "Gouge", "Evasion", "Slice and Dice", "Sprint", "Kick",
+      "Garrote", "Ambush", "Riposte", "Rupture", "Vanish", "Shank", "Cold Blood", "Ghostly Strike", "Cheap Shot", "Blade Flurry",
+      "Hemorrhage", "Kidney Shot", "Blind", "Adrenaline Rush", "Mutilate" }
+    for _, tree in ipairs({ 0, 1, 2, 3 }) do
+      for _, level in ipairs({ 1, 10, 14, 18, 26, 30, 40, 60 }) do
+        local talents = {}
+        for t = 1, 3 do talents[t] = { name = "t" .. t, talents = points(t == tree and math.max(0, level - 9) or 0) } end
+        local ns = rogue(level, all, talents)
+        for _, mode in ipairs({ "pve", "pvp" }) do
+          ns.FightPlan:Settings().mode = mode
+          local fight = ns.HunterFight:Body("ranged")
+          local where = ("tree %d level %d %s"):format(tree, level, mode)
+          T.contains(fight, "Stealth", where)
+          T.ok(fight:find("[stealth]", 1, true), where .. ": a Stealth opener")
+          T.ok(#fight <= 255, where .. " is " .. #fight)
+        end
+        T.eq(#ns.Errors.list, 0)
+      end
+    end
+  end)
+end)
