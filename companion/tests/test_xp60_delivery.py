@@ -38,6 +38,7 @@ class Delivery(unittest.TestCase):
             self.assertEqual(plan["baselineXPPerHour"], 10000)
             self.assertIsNone(plan["estimatedEarnedXP"])
             self.assertEqual(plan["steps"], [])
+            self.assertEqual(plan["qualitativeCandidateIds"], ["quest:possible"])
             self.assertEqual(D.validate_payload(plan), plan)
 
     def test_never_writes_without_confirmed_game_exit(self):

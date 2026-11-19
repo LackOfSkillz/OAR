@@ -64,5 +64,9 @@ T.describe("XP60 next-login session-bound plans", function()
     for k,v in pairs(original) do bad[k]=v end
     bad.steps={{candidateId="quest:invented",startsAt=0,endsAt=300,xp=100}}
     check(bad,"untrusted")
+    bad={}
+    for k,v in pairs(original) do bad[k]=v end
+    bad.qualitativeCandidateIds={"quest:invented"}
+    check(bad,"untrusted suggestion")
   end)
 end)

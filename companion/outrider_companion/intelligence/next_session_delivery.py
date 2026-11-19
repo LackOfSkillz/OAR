@@ -65,6 +65,19 @@ def create_plan(read_result, character, *, now=None):
             opportunities.append({"candidateId": c["candidateId"],
                                   "eligible": False, "origin": c.get("label") or "unknown"})
     computed = xp60_planner.optimize(opportunities, baseline=b)
+    # Unknown XP/time is not a reason to hide valid, player-eligible next
+    # steps. Show source-bound candidate IDs qualitatively, with no fake rate.
+    qualitative = []
+    for c in raw if isinstance(raw, list) else []:
+        if not isinstance(c, dict) or c.get("kind") != "quest":
+            continue
+        cid = c.get("candidateId")
+        if (isinstance(cid, str) and 1 <= len(cid) <= 100
+                and cid not in qualitative and c.get("label") in
+                ("observed", "verified", "community")):
+            qualitative.append(cid)
+        if len(qualitative) >= 3:
+            break
     if len(str(last.get("sessionId", ""))) > 80:
         raise DeliveryError("invalid session identifier")
     payload = {
@@ -77,11 +90,12 @@ def create_plan(read_result, character, *, now=None):
         "goal": "xp", "budgetSeconds": xp60_planner.SECONDS,
         "status": computed["status"],
         "headline": "Your next 60 minutes" if computed["steps"]
+                    else "Three nearby opportunities to review" if qualitative
                     else "Your current route remains the best supported choice",
         "summary": computed["message"],
         "baselineXPPerHour": b["xpPerHour"],
         "estimatedEarnedXP": computed["estimatedEarnedXP"],
-        "steps": computed["steps"],
+        "steps": computed["steps"], "qualitativeCandidateIds": qualitative,
         "limitations": [
             "XP/hour is measured from wall-clock time, not active time.",
             "No quantified improvement without verified reward, timing and comparable baseline.",
@@ -96,7 +110,7 @@ def validate_payload(plan):
         "schema", "kind", "forCharacter", "basedOnSessionId", "sourceDigest",
         "createdAt", "expiresAt", "gameBuild", "levelAtPlan", "goal",
         "budgetSeconds", "status", "headline", "summary", "baselineXPPerHour",
-        "estimatedEarnedXP", "steps", "limitations", "actions"
+        "estimatedEarnedXP", "steps", "qualitativeCandidateIds", "limitations", "actions"
     }:
         raise DeliveryError("unexpected plan fields")
     if plan.get("schema") != 4 or plan.get("kind") != "nextSessionPlan" or plan.get("goal") != "xp":
@@ -114,6 +128,11 @@ def validate_payload(plan):
         raise DeliveryError("invalid plan expiry")
     if plan.get("actions") != []:
         raise DeliveryError("model or planner actions are not permitted")
+    suggestions = plan.get("qualitativeCandidateIds", [])
+    if not isinstance(suggestions, list) or len(suggestions) > 3 or any(
+            not isinstance(x, str) or not 1 <= len(x) <= 100 for x in suggestions
+    ) or len(set(suggestions)) != len(suggestions):
+        raise DeliveryError("invalid source suggestion IDs")
     rows = plan.get("steps")
     if not isinstance(rows, list) or len(rows) > 12:
         raise DeliveryError("too many steps")

@@ -90,6 +90,9 @@ function M:Render(answer, reason)
     end
   else
     rows[#rows + 1] = "No defensible numerical improvement from the available evidence."
+    for i, suggestion in ipairs(answer.suggestions or {}) do
+      rows[#rows + 1] = string.format("Review %d: %s", i, suggestion.title)
+    end
   end
   for _, l in ipairs(answer.limits or {}) do rows[#rows + 1] = "Note: " .. l end
   self.window.head:SetText(answer.headline or "Your next 60 minutes")

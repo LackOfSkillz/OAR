@@ -149,7 +149,8 @@ function Advice:CheckNextSession(a)
     sourceDigest=true, createdAt=true, expiresAt=true, gameBuild=true,
     levelAtPlan=true, goal=true, budgetSeconds=true, status=true,
     headline=true, summary=true, baselineXPPerHour=true,
-    estimatedEarnedXP=true, steps=true, limitations=true, actions=true,
+    estimatedEarnedXP=true, steps=true, qualitativeCandidateIds=true,
+    limitations=true, actions=true,
   }
   for k in pairs(a) do if not allowed[k] then return {}, "unknown plan field" end end
   if type(a.sourceDigest) ~= "string" or #a.sourceDigest ~= 64 or
@@ -180,6 +181,22 @@ function Advice:CheckNextSession(a)
   local snapshot = rawget(_G, "Outrider_Snapshots")
   snapshot = type(snapshot) == "table" and snapshot[ns.db.key]
   local candidates = snapshot and Advice.Candidates(snapshot) or nil
+  local suggestions = {}
+  local ids = a.qualitativeCandidateIds
+  if ids ~= nil then
+    if type(ids) ~= "table" or #ids > 3 then return {}, "invalid suggestions" end
+    local unique = {}
+    for _, id in ipairs(ids) do
+      if type(id) ~= "string" or unique[id] or not (candidates and candidates[id]) then
+        return {}, "untrusted suggestion"
+      end
+      unique[id] = true
+      suggestions[#suggestions + 1] = {
+        candidateId = id,
+        title = plain(candidates[id].title, 120) or "Quest opportunity",
+      }
+    end
+  end
   local seen, steps, last = {}, {}, 0
   for _, raw in ipairs(a.steps) do
     if type(raw) ~= "table" or type(raw.candidateId) ~= "string" or
@@ -211,7 +228,8 @@ function Advice:CheckNextSession(a)
     summary = plain(a.summary, 600) or "Continue your current route.",
     plan = steps, budget = 60, planMinutes = math.ceil(last/60),
     limits = limits, sources = { "Saved gameplay session" },
-    nextSession = true, basedOnSessionId = a.basedOnSessionId,
+    nextSession = true, suggestions = suggestions,
+    basedOnSessionId = a.basedOnSessionId,
     baselineXPPerHour = type(a.baselineXPPerHour) == "number" and
       math.floor(math.max(0, a.baselineXPPerHour)) or nil,
   }
