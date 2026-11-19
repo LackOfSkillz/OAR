@@ -62,7 +62,16 @@ def create_plan(read_result, character, *, now=None):
     # and Journey's community XP estimates are not verified player earnings.
     # A source can become quantitative only after we have real, separately
     # provenance-checked reward + duration inputs.
-    raw = ((snapshot.get("modules") or {}).get("WhatNow") or {}).get("candidates") if isinstance(snapshot, dict) else None
+    whatnow = ((snapshot.get("modules") or {}).get("WhatNow") or {}) if isinstance(snapshot, dict) else {}
+    raw = whatnow.get("candidates")
+    # An old Ask snapshot may survive multiple logouts. It cannot establish
+    # a fresh next-session quest opportunity without its observation time.
+    seen_at = whatnow.get("seenAt")
+    latest_end = last.get("endedAt")
+    if (not isinstance(seen_at, int) or not isinstance(latest_end, int)
+            or seen_at > latest_end + 300 or latest_end - seen_at > 900):
+        raw = []
+
     opportunities = []
     for c in raw if isinstance(raw, list) else []:
         if isinstance(c, dict) and isinstance(c.get("candidateId"), str):

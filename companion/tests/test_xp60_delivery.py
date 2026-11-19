@@ -28,7 +28,7 @@ class Delivery(unittest.TestCase):
                 "chars": {"Test-Realm": {"xp60": {
                     "schema": 1, "history": [recording()]}}}}) +
                 luadata.dumps("Outrider_Snapshots", {
-                    "Test-Realm": {"modules": {"WhatNow": {"candidates": [
+                    "Test-Realm": {"modules": {"WhatNow": {"seenAt": 13580, "candidates": [
                         {"candidateId": "quest:possible", "label": "community"}]}}}}),
                 encoding="utf-8")
             result = session_reader.read_sessions(p)
@@ -40,6 +40,19 @@ class Delivery(unittest.TestCase):
             self.assertEqual(plan["steps"], [])
             self.assertEqual(plan["qualitativeCandidateIds"], ["quest:possible"])
             self.assertEqual(D.validate_payload(plan), plan)
+
+    def test_stale_whatnow_candidates_are_not_suggested(self):
+        result = {
+            "sessions": [("Test-Realm", recording())],
+            "sourceDigest": "a" * 64,
+            "snapshots": {"Test-Realm": {
+                "modules": {"WhatNow": {
+                    "seenAt": 1000,
+                    "candidates": [{"candidateId": "quest:old", "kind": "quest",
+                                    "label": "observed"}]}}}},
+        }
+        p = D.create_plan(result, "Test-Realm", now=1795000000)
+        self.assertEqual(p["qualitativeCandidateIds"], [])
 
     def test_never_writes_without_confirmed_game_exit(self):
         with tempfile.TemporaryDirectory() as d:
