@@ -90,6 +90,8 @@ function T:OnDisable() ns.ThrottleCancel("macrotree:new") end
 
 -- ids of the tree's macros you can use now
 function T:UnlockedIds()
+  local lib = ns.MacroLibrary
+  if lib and not lib.held then return lib:Hold(self.UnlockedIds, self) end
   local out = {}
   for _, it in ipairs(self:Items("pve")) do
     local st = self:State(it)
@@ -585,6 +587,7 @@ local function slotButton(parent, size)
 end
 
 ns.Hub:AddTab("macros", "Macros", function(p)
+  T:Info("macros page: building")
   local Theme = ns.Theme
   p.mode = "pve"
   p.who = UI.Text(p, "normal", "goldText")
@@ -834,7 +837,16 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     d.msg:SetText(st == "locked" and string.format("Unlocks at level %d. It appears here so you can plan ahead.", it.level) or "")
   end
 
+  T:Info("macros page: built")
   function p:Refresh(keepMsg)
+    -- one set of macro values for the whole page (see MacroLibrary:Hold)
+    if ns.MacroLibrary and not ns.MacroLibrary.held then
+      local t0 = C.Call("debugprofilestop")
+      local r = ns.MacroLibrary:Hold(self.Refresh, self, keepMsg)
+      local t1 = C.Call("debugprofilestop")
+      if t0 and t1 then T:Info("macros page drawn: %d icons in %.0f ms", self.count or 0, t1 - t0) end
+      return r
+    end
     local cls = ns.PlayerClass() or ""
     local FP = ns.FightPlan
     local spec = FP and FP.enabled and FP:Spec() or "levelling"

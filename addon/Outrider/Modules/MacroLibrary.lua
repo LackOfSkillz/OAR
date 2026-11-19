@@ -45,7 +45,24 @@ function M:Entries()
 end
 
 -- Placeholder values available now (P4-05 adds food, drink and mount).
+-- Placeholder values. Building them scans the bags and the rare list, so a
+-- caller that checks many macros at once holds one copy (M:Hold): the Macros
+-- page drew nothing in game (2026-11-19) because each of its ~60 icons rebuilt
+-- them and the game stopped the script as too slow.
+function M:Hold(fn, ...)
+  local outer = self.held
+  if not outer then self.held = self:Build() end
+  local ok, a, b = pcall(fn, ...)
+  if not outer then self.held = nil end
+  if not ok then error(a, 0) end
+  return a, b
+end
+
 function M:Values()
+  return self.held or self:Build()
+end
+
+function M:Build()
   local v = {}
   local scan = ns.Modules:Get("RareScan")
   if scan then
