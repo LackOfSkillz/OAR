@@ -359,3 +359,51 @@ class. Simple bold silhouette in gold on a transparent background, readable at
 | Warrior | `spec_warrior_arms` greatsword · `spec_warrior_fury` two axes crossed · `spec_warrior_prot` tower shield |
 
 Batch 6 is 45 pictures in all; the keys (6a) matter most, then the build emblems.
+
+## Batch 6 redo (2026-11-19 review of the 69-picture delivery)
+
+Installed from that delivery: all page pictures, step pictures, emblem, header,
+the six key pictures, the tree background and the build emblems (the nine below
+stay in until their replacements come). Please redo these 20.
+
+### 6b again: the 11 macro-kind icons (wrong style)
+The delivered ones are flat clip-art (smooth gold vector shapes). They must be
+**painted, exactly like the six `macro_key_*.png` pictures from the same
+delivery**: a real, textured, lit object with depth, a dark blue-teal vignette
+behind it, warm gold rim light, three-quarter view. Give GPT one of the key
+pictures as the style reference ("in the same painted style as this image").
+Not flat, not a vector icon, no outline shapes. 1024x1024, final 128x128, opaque.
+Same objects as before:
+
+| File | Object |
+|---|---|
+| `macro_combat.png` | a sword point-down with a small gold flame running along the blade |
+| `macro_control.png` | a heavy iron chain wrapped around a raised gauntleted fist |
+| `macro_defensive.png` | a round battered shield with a gold rim and a crack across it |
+| `macro_utility.png` | a leather pouch with a small brass compass resting beside it (not a padlock) |
+| `macro_heal.png` | a green-gold leaf cradling a glowing drop of light |
+| `macro_pet.png` | a glowing gold paw print pressed into dark earth |
+| `macro_rare.png` | a silver star shining above a hunter's narrowed eye |
+| `macro_burst.png` | an hourglass cracking open with gold light pouring out |
+| `macro_break.png` | a broken iron shackle, the two halves flying apart |
+| `macro_recover.png` | a small campfire with a dented kettle steaming beside it |
+| `macro_trap.png` | an open iron bear trap half hidden in grass |
+
+### 6d again: 9 build emblems
+The rest are right. Rules again: **one bold gold silhouette only** (the same
+gold as the others), transparent background, no second colour, readable at 16
+pixels, and each one different from every other emblem.
+
+| File | Problem | Emblem wanted |
+|---|---|---|
+| `spec_warrior_arms.png` | the same dagger as Rogue Assassination | a two-handed greatsword, broad blade, long grip, point down |
+| `spec_warrior_prot.png` | same plain shield as Priest Discipline | a tall rectangular tower shield with rivets |
+| `spec_priest_disc.png` | same plain shield as Warrior Protection | a glowing sphere (bubble of light) with rays |
+| `spec_priest_shadow.png` | purple, not gold | an eye with shadow tendrils, all gold |
+| `spec_shaman_resto.png` | blue, not gold | a water droplet, all gold |
+| `spec_shaman_enhancement.png` | teal arcs | a fist wreathed in wind lines, all gold |
+| `spec_warlock_affliction.png` | grey and green | a skull with smoke curling up, all gold |
+| `spec_warlock_demonology.png` | grey | a horned demon head, all gold |
+| `spec_warlock_destruction.png` | grey and orange | a falling burning meteor, all gold |
+
+Batch 5 (6 Feed and 7 Money pictures) is still to come as well.
