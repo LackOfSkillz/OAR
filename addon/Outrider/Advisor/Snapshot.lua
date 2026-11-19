@@ -201,3 +201,7 @@ if ns.Events then
     ns.Events:On(e, Snap, function() Snap:Remember() end)
   end
 end
+
+-- Capture the final read-only snapshot when WoW saves the character file.
+-- Without this hook, automatic next-session advice had no fresh quest state.
+ns.Events:On("PLAYER_LOGOUT", Snap, function() Snap:OnLogout() end)

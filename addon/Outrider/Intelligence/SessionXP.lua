@@ -136,14 +136,30 @@ function M:Checkpoint(final)
   self.current, self.lastXP, self.zoneById, self.zoneId = nil, nil, nil, nil
   return true
 end
+function M:RefreshCandidateSnapshot()
+  if not self.enabled or C.InCombat() or
+      not (ns.WhatNow and ns.WhatNow.BuildSnapshot) then return false end
+  local t = wall()
+  if self.lastCandidateRefresh and t - self.lastCandidateRefresh < 180 then return false end
+  -- The existing WhatNow source owns quest eligibility/route facts.
+  -- Only an infrequent opt-in snapshot is retained, never a model call.
+  local ok, data = pcall(ns.WhatNow.BuildSnapshot, ns.WhatNow)
+  if not ok or type(data) ~= "table" then return false end
+  data.seenAt = t
+  ns.WhatNow.lastSnap = data
+  self.lastCandidateRefresh = t
+  return true
+end
 function M:OnEnable()
   self:Start()
+  self:RefreshCandidateSnapshot()
   self:On("PLAYER_XP_UPDATE", function(mod) mod:Sample() end)
   self:On("PLAYER_LEVEL_UP", function(mod) mod:Sample() end)
   self:On("QUEST_TURNED_IN", self.OnQuest)
   self:On("ZONE_CHANGED_NEW_AREA", function(mod)
     mod:Sample()
     mod:SetZone(zone())
+    mod:RefreshCandidateSnapshot()
   end)
   self:On("PLAYER_LOGOUT", function(mod) mod:Checkpoint(true) end)
 end
