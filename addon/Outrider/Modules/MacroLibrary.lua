@@ -18,12 +18,20 @@ local M = ns:NewModule("MacroLibrary", {
 })
 ns.MacroLibrary = M
 
+-- A profession macro (Disenchant, Find) is for a character with that profession.
+function M.HasProfession(e)
+  if not e.profession then return true end
+  local owned = ns.Crafter and ns.Crafter.Owned and ns.Crafter:Owned() or {}
+  for _, prof in ipairs(e.profession) do if not owned[prof] then return false end end
+  return true
+end
+
 -- Entries for this character: its class plus "ALL", sorted by name.
 function M:Entries()
   local class = ns.PlayerClass()
   local out = {}
   for _, e in ipairs(ns.Data:All("macro")) do
-    if e.class == class or e.class == "ALL" then out[#out + 1] = e end
+    if (e.class == class or e.class == "ALL") and M.HasProfession(e) then out[#out + 1] = e end
   end
   -- the hunter Fight macro is written from the spellbook, not a pack
   if ns.HunterFight and ns.HunterFight.enabled then
@@ -76,8 +84,24 @@ function M:Build()
     v.FOOD, v.DRINK = ns.BagFood.food, ns.BagFood.drink
   end
   if ns.RareMacros and ns.RareMacros.enabled then ns.RareMacros:Values(v) end
-  -- {HEALTHSTONE} and {POTION}: the best of each in your bags (the one that sells for most)
+  -- From your bags: {HEALTHSTONE}, {POTION}, {BANDAGE} (the best of each: the
+  -- one that sells for most), {QUESTITEM} (a usable quest item, the one picked
+  -- up last), {TWOHAND} {ONEHAND} {SHIELD} (weapon swap: what you wear first)
   local best = {}
+  local function offer(key, name, worth)
+    if key and (not best[key] or worth > best[key].worth) then best[key] = { name = name, worth = worth } end
+  end
+  local WEAPON = { INVTYPE_2HWEAPON = "TWOHAND", INVTYPE_WEAPON = "ONEHAND", INVTYPE_WEAPONMAINHAND = "ONEHAND", INVTYPE_SHIELD = "SHIELD" }
+  for slot = 16, 17 do
+    local id = C.Readable(C.Call("GetInventoryItemID", "player", slot))
+    if not id then
+      local link = C.Readable(C.Call("GetInventoryItemLink", "player", slot))
+      id = type(link) == "string" and tonumber(link:match("item:(%d+)")) or nil
+    end
+    local item = id and C.ItemInfo(id)
+    if item and item.name and WEAPON[item.equipLoc or ""] then offer(WEAPON[item.equipLoc], item.name, 1e9) end
+  end
+  local questN = 0
   for bag = 0, 4 do
     for slot = 1, (C.Call("C_Container.GetContainerNumSlots", bag) or 0) do
       local info = C.Call("C_Container.GetContainerItemInfo", bag, slot)
@@ -85,9 +109,14 @@ function M:Build()
       local item = id and C.ItemInfo(id)
       local name = item and item.name
       if type(name) == "string" then
-        local key = name:find("Healthstone", 1, true) and "HEALTHSTONE" or name:find("Healing Potion", 1, true) and "POTION"
         local worth = item.sellPrice or 0
-        if key and (not best[key] or worth > best[key].worth) then best[key] = { name = name, worth = worth } end
+        offer(name:find("Healthstone", 1, true) and "HEALTHSTONE" or name:find("Healing Potion", 1, true) and "POTION"
+          or name:find("Bandage", 1, true) and "BANDAGE" or nil, name, worth)
+        offer(WEAPON[item.equipLoc or ""], name, worth)
+        if item.class == "Quest" and (C.Call("C_Item.GetItemSpell", id) or C.Call("GetItemSpell", id)) then
+          questN = questN + 1
+          offer("QUESTITEM", name, questN) -- later in the bags = picked up later
+        end
       end
     end
   end
@@ -104,7 +133,9 @@ function M:Missing(entry)
   local _, missing = E.Fill(entry.body, self:Values())
   -- words, not the macro's placeholder names (tour 2026-11-19: "needs DRINK")
   local words = { FOOD = "food in your bags", DRINK = "a drink in your bags", MOUNT = "a mount", TARGET = "a watched rare",
-    PET = "a pet", AMMO = "ammo", HEALTHSTONE = "a healthstone in your bags", POTION = "a healing potion in your bags" }
+    PET = "a pet", AMMO = "ammo", HEALTHSTONE = "a healthstone in your bags", POTION = "a healing potion in your bags",
+    BANDAGE = "a bandage in your bags", QUESTITEM = "a quest item to use", TWOHAND = "a two-handed weapon",
+    ONEHAND = "a one-handed weapon", SHIELD = "a shield" }
   for i, k in ipairs(missing) do missing[i] = words[k] or tostring(k):lower() end
   if #missing > 0 then return "needs " .. table.concat(missing, ", ") end
   return nil

@@ -263,7 +263,8 @@ function T:Items(mode)
   local cls = ns.PlayerClass()
   local out = {}
   for _, e in ipairs(ns.Data and ns.Data:All("macro") or {}) do
-    if e.class == cls then
+    -- your class's macros and the every-class ones (bandage, quest item...); profession ones only if you have it
+    if (e.class == cls or e.class == "ALL") and (not ns.MacroLibrary or ns.MacroLibrary.HasProfession(e)) then
       local spells = T.SpellsIn(e.body)
       for _, sp in ipairs(e.needsSpells or {}) do spells[#spells + 1] = sp end
       out[#out + 1] = { id = e.id, name = e.name, body = e.body, level = T.LevelOf(spells, e.level),

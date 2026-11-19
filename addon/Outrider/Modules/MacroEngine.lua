@@ -47,7 +47,8 @@ for cmd in ([[cast use castsequence castrandom userandom target targetexact targ
   petdefensive petaggressive petstay petmoveto petautocaston petautocastoff petautocasttoggle startattack
   stopattack stopcasting stopspelltarget stopmacro dismount cancelaura cancelform equip equipslot equipset
   click run script say yell emote e s y p g w whisper raid ra rw i instance reload console tm targetmarker
-  wm worldmarker cwm clearworldmarker follow f stopwatch petdismiss dismisspet ride outrider]]):gmatch("%S+") do
+  wm worldmarker cwm clearworldmarker follow f stopwatch petdismiss dismisspet ride outrider
+  thank wave cheer bow hello bye salute dance]]):gmatch("%S+") do
   KNOWN[cmd] = true
 end
 E.KNOWN = KNOWN

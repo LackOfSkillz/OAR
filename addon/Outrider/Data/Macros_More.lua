@@ -323,6 +323,22 @@ ns.Data:Register("macro", "more-hunter", {
     "#showtooltip Eagle Eye\n/cast Eagle Eye", "Looks far ahead to scout a camp or a rare's spot."),
 })
 
+-- Weapon swap for the classes that use a shield (names from your bags and gear)
+local SWAP_WHY = "Swaps between your two-hander and your one-hander with a shield: the shield for tanking or a hard fight, the two-hander for damage. Outrider fills in the weapons from what you wear and carry. Out of combat only."
+for _, cls in ipairs({ "WARRIOR", "PALADIN", "SHAMAN" }) do
+  ns.Data:Register("macro", "more-swap-" .. cls:lower(), {
+    M(cls, cls:lower() .. "-swap", "Weapon Swap", { "utility" }, nil,
+      "#showtooltip\n/equip [equipped:Shields] {TWOHAND}\n/equipslot [noequipped:Shields] 16 {ONEHAND}\n/equipslot [noequipped:Shields] 17 {SHIELD}",
+      SWAP_WHY),
+  })
+end
+
+ns.Data:Register("macro", "more-rogue-lock", {
+  M("ROGUE", "rogue-picklock", "Pick Lock", { "utility" }, { "Pick Lock" },
+    "#showtooltip Pick Lock\n/cast Pick Lock",
+    "Press it, then click a lockbox in your bags (or a locked chest or door) to open it. Lockboxes sell well, and other players pay rogues to open theirs."),
+})
+
 -- Every class: items rather than spells.
 ns.Data:Register("macro", "more-all", {
   { id = "all-trinkets", name = "Trinkets", class = "ALL", verified = false, tags = { "combat" },
@@ -331,4 +347,35 @@ ns.Data:Register("macro", "more-all", {
   { id = "all-healpot", name = "Heal Potion", class = "ALL", verified = false, tags = { "defensive" },
     body = "#showtooltip\n/castsequence reset=combat {HEALTHSTONE}, {POTION}",
     explain = "First press uses your healthstone, the next your best healing potion. Starts over when the fight ends.", source = SRC },
+  { id = "all-bandage", name = "Bandage", class = "ALL", verified = false, tags = { "defensive" },
+    body = "#showtooltip\n/use [@player] {BANDAGE}",
+    explain = "Bandages you without changing your target. Outrider fills in your best bandage. Stand still: moving or a hit stops it.", source = SRC },
+  { id = "all-questitem", name = "Quest Item", class = "ALL", verified = false, tags = { "utility" },
+    body = "#showtooltip\n/use {QUESTITEM}",
+    explain = "Uses the quest item in your bags (the one you have to use on something or someone). Outrider puts in the one you got most recently; it changes when your quests do.", source = SRC },
+  { id = "all-attack", name = "Attack", class = "ALL", verified = false, tags = { "combat" },
+    body = "#showtooltip\n/targetenemy [noharm][dead]\n/startattack",
+    explain = "Picks the nearest enemy if you have none, then starts attacking. A first fight key before your class key has much in it.", source = SRC },
+  { id = "all-shoot", name = "Shoot", class = "ALL", verified = false, tags = { "combat" },
+    body = "#showtooltip\n/cast [equipped:Thrown] Throw; [equipped:Bows] Shoot Bow; [equipped:Crossbows] Shoot Crossbow; [equipped:Guns] Shoot Gun",
+    explain = "Fires whatever ranged weapon you have on: thrown, bow, crossbow or gun. Good for pulling one enemy away from a group. (Not wands, and not a hunter's Auto Shot.)", source = SRC },
+  { id = "all-assist", name = "Assist", class = "ALL", verified = false, tags = { "control" },
+    body = "#showtooltip\n/assist [@mouseover,exists,nodead][]",
+    explain = "Targets whatever the player under your mouse (or your target) is attacking, so the group hits the same enemy.", source = SRC },
+  { id = "all-focus", name = "Focus", class = "ALL", verified = false, tags = { "control" },
+    body = "/clearfocus [mod:shift]\n/stopmacro [mod:shift]\n/focus [@mouseover,exists,nodead][]",
+    explain = "Makes the enemy under your mouse (or your target) your focus; Shift clears it. Your Kick, Sap, Polymorph and similar macros use the focus first.", source = SRC },
+  { id = "all-skull", name = "Skull", class = "ALL", verified = false, tags = { "control" },
+    body = "/tm [@mouseover,exists][] 8",
+    explain = "Puts a skull on the enemy under your mouse (or your target): in a group, everyone kills the skull first.", source = SRC },
+  { id = "all-thanks", name = "Thanks", class = "ALL", verified = false, tags = { "utility" },
+    body = "/thank\n/wave",
+    explain = "Thanks and waves at your target: for a buff, a heal or a rez from a stranger.", source = SRC },
+  -- professions: shown only to a character with the profession
+  { id = "all-disenchant", name = "Disenchant", class = "ALL", verified = false, tags = { "utility" }, profession = { "Enchanting" },
+    needsSpells = { "Disenchant" }, body = "#showtooltip Disenchant\n/cast Disenchant",
+    explain = "Press it, then click a green or better item in your bags: it turns into enchanting materials. Check the auction price first; some items sell for more whole.", source = SRC },
+  { id = "all-tracking", name = "Find", class = "ALL", verified = false, tags = { "utility" }, profession = { "Herbalism", "Mining" },
+    needsSpells = { "Find Herbs", "Find Minerals" }, body = "#showtooltip\n/cast [mod:shift] Find Minerals; Find Herbs",
+    explain = "Shows herbs on your minimap; Shift switches to ore. One key for both gathering skills.", source = SRC },
 })
