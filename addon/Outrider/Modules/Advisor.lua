@@ -167,6 +167,39 @@ function M:Step()
   return 1, 0
 end
 
+-- The AI Advisor switch drives the XP session recorder (SessionXP) and the
+-- next-hour briefing (NextSession) together. Both are optional modules: when
+-- they aren't installed the switch is hidden.
+function M:HasCoach() return ns.SessionXP ~= nil end
+function M:CoachOn()
+  local s = ns.SessionXP
+  return s ~= nil and s.enabled and true or false
+end
+function M:SetCoach(on)
+  on = on and true or false
+  if not ns.SessionXP then return false end
+  ns.Modules:SetEnabled("SessionXP", on)
+  if ns.NextSession then ns.Modules:SetEnabled("NextSession", on) end
+  self:Info("AI Advisor %s", on and "on" or "off")
+  return true
+end
+function M:CoachNote()
+  if not self:CoachOn() then
+    return "Off. Turn it on and Outrider keeps a private log of your XP, quests and zones, then plans your next hour after you log out."
+  end
+  local parts = {}
+  local ok, rec = pcall(function() return ns.SessionXP:Activity() end)
+  if ok and rec then parts[#parts + 1] = "Recording: " .. tostring(rec) end
+  if ns.NextSession then
+    local ok2, plan = pcall(function() return ns.NextSession:Activity() end)
+    if ok2 and plan then parts[#parts + 1] = tostring(plan) end
+  end
+  return table.concat(parts, "  ||  ")
+end
+function M:OpenPlan()
+  if ns.NextSession and ns.NextSession.Open then ns.Safe("advisor:nextsession", ns.NextSession.Open, ns.NextSession) end
+end
+
 ns.Hub:AddTab("advisor", "Advisor", function(p)
   -- the three steps as a strip of numbered tiles
   p.steps = {}
@@ -196,10 +229,27 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   end
   placeSteps()
   if p.HookScript then p:HookScript("OnSizeChanged", placeSteps) end
+  -- AI Advisor switch (Gary, 2026-11-19): turns the private session recorder
+  -- and next-hour plan on or off here instead of /ride xp60 and
+  -- /ride nextsession. Only shown when those modules are installed.
+  p.coach = CreateFrame("Frame", nil, p)
+  p.coach:SetHeight(28)
+  p.coach:SetPoint("TOPLEFT", 0, -54)
+  p.coach:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  p.coach.switch = UI:Check(p.coach, "AI Advisor", function() return M:CoachOn() end,
+    function(on) M:SetCoach(on) if p.Refresh then p:Refresh() end end)
+  p.coach.switch:SetPoint("LEFT", 0, 0)
+  p.coach.switch:SetWidth(150)
+  p.coach.plan = UI:PrimaryButton(p.coach, "Next hour plan", 130, function() M:OpenPlan() end)
+  p.coach.plan:SetPoint("LEFT", p.coach.switch, "RIGHT", 8, 0)
+  p.coach.note = UI.Text(p.coach, "small", "muted")
+  p.coach.note:SetPoint("LEFT", p.coach.plan, "RIGHT", 10, 0)
+  p.coach.note:SetPoint("RIGHT", p.coach, "RIGHT", 0, 0)
+  p.coach.note:SetJustifyH("LEFT")
   -- your question and time (AI03): they go into the snapshot, so the
   -- companion answers what you asked in game
   p.q = UI:SearchBox(p, 360, "Your question, e.g. what should I do next?")
-  p.q:SetPoint("TOPLEFT", 0, -56)
+  p.q:SetPoint("TOPLEFT", 0, M:HasCoach() and -90 or -56)
   p.q:SetText(ns.db.char.askQuestion or "")
   p.q:HookScript("OnTextChanged", function(box) ns.db.char.askQuestion = (box:GetText() or ""):sub(1, 200) end)
   p.mins = UI:SearchBox(p, 70, "minutes")
@@ -284,6 +334,13 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   end
   function p:Refresh()
     local items, why, answer = M:Items()
+    self.coach:SetShown(M:HasCoach())
+    if M:HasCoach() then
+      self.coach.switch:Refresh()
+      local on = M:CoachOn()
+      self.coach.plan:SetShown(on and ns.NextSession ~= nil)
+      self.coach.note:SetText(M:CoachNote())
+    end
     -- steps: done ones green, the current one gold, the rest quiet
     local cur, done = M:Step()
     for i, t in ipairs(self.steps) do
