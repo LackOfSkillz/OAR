@@ -407,3 +407,26 @@ pixels, and each one different from every other emblem.
 | `spec_warlock_destruction.png` | grey and orange | a falling burning meteor, all gold |
 
 Batch 5 (6 Feed and 7 Money pictures) is still to come as well.
+
+## Batch 6 redo 2: match the gold (2026-11-19)
+
+The 9 redone build emblems have the right shapes, but they are a flat mustard
+gold, while the other 18 have a shaded gold: lighter on top, darker below, a
+thin darker outline and a soft highlight. Please redo these 9 with **the same
+shapes as the redo**, in **that shaded gold**. Give GPT one of the first-round
+emblems (for example `spec_druid_balance.png`, `spec_rogue_combat.png` or
+`spec_paladin_holy.png`) as the style reference: "the same shaded gold, outline
+and highlight as this image". One colour only (gold), transparent background,
+1024x1024, final 64x64.
+
+| File | Shape (keep the redo's) |
+|---|---|
+| `spec_priest_disc.png` | a glowing sphere with rays; make it a round bubble with a bright rim, not a sun, so it differs from Paladin Holy |
+| `spec_priest_shadow.png` | an eye with shadow tendrils below |
+| `spec_shaman_enhancement.png` | a raised fist with wind lines on both sides |
+| `spec_shaman_resto.png` | a water droplet |
+| `spec_warlock_affliction.png` | a skull with smoke curling up |
+| `spec_warlock_demonology.png` | a horned demon head |
+| `spec_warlock_destruction.png` | a falling burning meteor |
+| `spec_warrior_arms.png` | a two-handed greatsword: make the blade broad and the grip long, so it can't be read as a dagger |
+| `spec_warrior_prot.png` | a tall tower shield with rivets |
