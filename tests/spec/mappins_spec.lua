@@ -69,12 +69,19 @@ T.describe("marker symbols and colours", function()
     local ns = game:loadAddon()
     local MP = ns.MapPins
     local function icon(kind, title, goods) return MP.IconFor({ kind = kind, poi = { title = title, goods = goods } }) end
+    -- art batch 4 (2026-11-19): Outrider's own pin pictures win when installed
+    T.contains(icon("trainer", "Hunter Trainer"), "pin_trainer")
+    T.contains(icon("vendor", "Bowyer"), "pin_ammo")
+    -- without them, the game's icons by role, as before
+    local path = ns.Art.Path
+    ns.Art.Path = function() return nil end
     T.contains(icon("trainer", "Hunter Trainer"), "Class")
     T.contains(icon("trainer", "Leatherworking Trainer"), "Profession")
     T.contains(icon("vendor", "Bowyer"), "Ammunition")
     T.contains(icon("vendor", "Trade Supplies", { "food & potions" }), "Food")
     T.contains(icon("innkeeper"), "Innkeeper")
     T.contains(icon("rare"), "Skull")
+    ns.Art.Path = path
     T.eq(MP.Group("vendor"), "merchant")
     T.eq(MP.Group("trainer"), "trainer")
     T.eq(MP.Group("bank"), "service")
