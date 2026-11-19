@@ -97,6 +97,14 @@ class Planner(unittest.TestCase):
         self.assertIsNone(p["estimatedImprovementPercent"])
         self.assertEqual(len(p["unknownCandidateIds"]), 2)
 
+    def test_shared_reward_id_not_counted_across_different_candidates(self):
+        p = xp60_planner.optimize([
+            option("one", xp=12000, questID=140),
+            option("two", xp=12000, questID=140),
+        ])
+        self.assertEqual(len(p["steps"]), 1)
+        self.assertEqual(p["estimatedEarnedXP"], 12000)
+
     def test_duplicate_candidate_cannot_gain_xp_twice(self):
         p = xp60_planner.optimize([option("one"), option("one")])
         self.assertEqual(p["estimatedEarnedXP"], 6000)

@@ -58,7 +58,14 @@ def normalize(source):
     if not isinstance(requires, list) or len(requires) > 8 or any(
             not isinstance(q, str) for q in requires):
         return None
-    return {"candidateId": cid, "title": str(source.get("title") or cid)[:120],
+    reward_key = source.get("rewardKey")
+    if reward_key is None and isinstance(source.get("questID"), int):
+        reward_key = "quest:" + str(source["questID"])
+    reward_key = reward_key or cid
+    if not isinstance(reward_key, str) or not 1 <= len(reward_key) <= 100:
+        return None
+    return {"candidateId": cid, "rewardKey": reward_key,
+            "title": str(source.get("title") or cid)[:120],
             "seconds": int(math.ceil(total)), "xp": int(xp["value"]),
             "evidenceIds": evidence, "requires": requires, "kind": source.get("kind", "quest"),
             "mapID": source.get("mapID"), "source": source.get("origin"),
@@ -82,14 +89,16 @@ def optimize(candidates, *, baseline=None, budget=SECONDS):
         else:
             eligible.append(normalized)
     eligible.sort(key=lambda x: x["candidateId"])
-    beam = [{"ids": [], "seconds": 0, "xp": 0, "steps": [], "done": set()}]
+    beam = [{"ids": [], "seconds": 0, "xp": 0, "steps": [], "done": set(), "rewards": set()}]
     best = beam[0]
     for _ in range(min(MAX_STEPS, len(eligible))):
         expanded = []
         for state in beam:
             expanded.append(state)
             for c in eligible:
-                if c["candidateId"] in state["done"] or any(dep not in state["done"] for dep in c["requires"]):
+                if (c["candidateId"] in state["done"] or
+                    c["rewardKey"] in state["rewards"] or
+                    any(dep not in state["done"] for dep in c["requires"])):
                     continue
                 # This assumes each candidate's travel cost is independently
                 # grounded in the stated itinerary. Do not combine duplicate
@@ -104,7 +113,8 @@ def optimize(candidates, *, baseline=None, budget=SECONDS):
                 expanded.append({"ids": ids, "seconds": end,
                                  "xp": state["xp"] + c["xp"],
                                  "steps": state["steps"] + [step],
-                                 "done": state["done"] | {c["candidateId"]}})
+                                 "done": state["done"] | {c["candidateId"]},
+                                 "rewards": state["rewards"] | {c["rewardKey"]}})
         if not expanded:
             break
         unique = {}

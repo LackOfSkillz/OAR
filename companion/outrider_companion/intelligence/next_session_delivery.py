@@ -90,7 +90,7 @@ def create_plan(read_result, character, *, now=None):
         "goal": "xp", "budgetSeconds": xp60_planner.SECONDS,
         "status": computed["status"],
         "headline": "Your next 60 minutes" if computed["steps"]
-                    else "Three nearby opportunities to review" if qualitative
+                    else "Quest opportunities to review" if qualitative
                     else "Your current route remains the best supported choice",
         "summary": computed["message"],
         "baselineXPPerHour": b["xpPerHour"],
