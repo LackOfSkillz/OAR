@@ -94,6 +94,23 @@ function M:OnCommodityPrice(_, unitPrice, totalPrice)
   self:Refresh()
 end
 
+-- A purchase's key, the same for the card that asked for it and the cart.
+function M.KeyOf(e)
+  local id = e and (e.itemID or (e.itemKey and e.itemKey.itemID))
+  return id and (tostring(id) .. ":" .. tostring(e.qty or 1)) or nil
+end
+
+-- Where a purchase stands: nil, "queued", "finding", "quote", "buying" or "bought".
+function M:StateOf(e)
+  local k = M.KeyOf(e)
+  if not k then return nil end
+  if self.pending and M.KeyOf(self.pending.e) == k then return "buying" end
+  if self.current and M.KeyOf(self.current) == k then return self.quote and "quote" or "finding" end
+  for _, q in ipairs(self.queue or {}) do if M.KeyOf(q) == k then return "queued" end end
+  if self.bought and self.bought[k] then return "bought" end
+  return nil
+end
+
 -- The confirm click. The purchase goes out, then Outrider waits for the
 -- game's answer (bought, or why not) before it looks up the next item:
 -- sending the next search while a purchase was still in flight could make
@@ -151,6 +168,8 @@ function M:Finish(ok, why)
   self.results = self.results or { bought = 0, failed = 0 }
   if ok then
     self.results.bought = self.results.bought + 1
+    self.bought = self.bought or {}
+    if e then self.bought[M.KeyOf(e) or "?"] = true end
     self:Info("bought %s%s", what, p and p.error and (" (the game also showed " .. p.error .. "; the gold was taken, so it went through)") or "")
   else
     self.results.failed = self.results.failed + 1
@@ -233,6 +252,9 @@ end
 
 function M:Refresh()
   if not self.open then return end
+  -- the shopping window's buttons and cart bar follow the cart
+  local G = ns.GearShop
+  if G and G.frame and G.UpdateButtons then G:UpdateButtons() end
   local f = self:Build()
   local e, q, p = self.current, self.quote, self.pending
   if not e and not p then f:Hide() return end
@@ -264,7 +286,7 @@ function M:OnEnable()
   self:On("AUCTION_HOUSE_CLOSED", function(mod)
     mod.open = false
     if mod.pending then mod:Info("auction house closed while buying %s", tostring(mod.pending.e.name)) end
-    mod.queue, mod.current, mod.quote, mod.pending = {}, nil, nil, nil
+    mod.queue, mod.current, mod.quote, mod.pending, mod.bought = {}, nil, nil, nil, nil
     if mod.frame then mod.frame:Hide() end
   end)
   self:On("ITEM_SEARCH_RESULTS_UPDATED", self.OnItemResults)

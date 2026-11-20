@@ -252,3 +252,33 @@ T.describe("recipe items that load late (2026-11-20: 57 of 58 without skill)", f
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("add then buy on the same button (2026-11-20)", function()
+  T.it("first click adds to the cart, the same button then says Buy and buys; the cart bar does the same", function()
+    local game, ns = session()
+    run(game, ns)
+    local G = ns.GearShop
+    G.open = true
+    G:Pick("list")
+    local f = G.frame
+    local card = f.rows[1]
+    T.eq(card.buy.label:GetText(), "Add")
+    T.contains(f.cart.text:GetText(), "Cart empty")
+    card.buy.__scripts.OnClick(card.buy)
+    T.eq(card.buy.label:GetText(), "...", "finding the price")
+    game:fire("COMMODITY_PRICE_UPDATED", 10, 200)
+    T.eq(card.buy.label:GetText(), "Buy", "same spot, now Buy")
+    T.contains(f.cart.text:GetText(), "Cart 1")
+    card.buy.__scripts.OnClick(card.buy)
+    T.eq(#game.bought, 1, "bought with the second click on the same button")
+    T.eq(card.buy.label:GetText(), "Buying")
+    game:fire("COMMODITY_PURCHASE_SUCCEEDED")
+    T.eq(card.buy.label:GetText(), "Bought")
+    -- Add all, then Buy in the cart bar without moving
+    f.buyAll.__scripts.OnClick(f.buyAll)
+    game:fire("COMMODITY_PRICE_UPDATED", 10, 200)
+    f.cart.buy.__scripts.OnClick(f.cart.buy)
+    T.eq(#game.bought, 2)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

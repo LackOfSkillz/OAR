@@ -127,7 +127,7 @@ With the auction house open, Outrider's shopping window sits beside it: a menu o
 - **Training.** Three views from one search. Skill-ups: the cheapest way to your next points, each recipe with its ingredients as icons (amber: not on the auction house) and its cost a point. Recipes: recipes for sale you don't know, usable now or soon; ones this character already knows are left out (the line under the heading says how many); another character knowing it doesn't count. Shopping list: every ingredient added up, with Buy all. Pick a profession with its chip, or All.
 - **Weapons, Armor and Bags.** Upgrades your gold covers: only armor your class wears, bigger bags than your smallest, quivers or ammo pouches for hunters, profession bags for your professions.
 - **Profit: vendor flips and resale.** After Scan all prices (top right, once every 15 minutes): Vendor flips lists auctions priced under what a vendor pays, so you buy them and sell them at any vendor for a sure profit; Resale lists auctions well under their usual price (two weeks of history), with the profit after the 5% cut and deposit once it sells again. Each Buy has a price cap: if the cheap listing is gone, it's skipped.
-- **Buy.** A Buy click queues the item; the bar above the auction window shows the cheapest listing and you confirm each purchase.
+- **Add, then Buy.** A card's Add puts it in the cart; when its price is in, the same button says Buy: click again to buy. The cart bar at the bottom of the window buys the next item each press (Add all fills it). Every purchase is your click.
 - **Prices and selling.** Prices from Auctionator or TSM when installed, else what Outrider has seen. The auction helper suggests a price; /ride undercut sets how far under the market.
 
 ## Interface and chat
@@ -207,6 +207,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride coords` | print map id and your coordinates |
 | `/ride copy` | <Name-Realm>  copy settings from another of your characters |
 | `/ride copychat` | copy the last 100 lines of the main chat window |
+| `/ride deals` | show \| reserve <wholeGold>  review, never auto-purchase |
 | `/ride debug` | on\|off  verbose logging to the saved log |
 | `/ride discovered` | [n]  last n NPCs Outrider recorded (default 10) |
 | `/ride dungeonquests` | dungeonquests <dungeon name> \| link <questID> <dungeon name> |
@@ -250,6 +251,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride near` | <spirit\|flight\|vendor\|repair\|trainer\|mail\|bank\|ah\|stable\|inn\|guild\|ammo>  waypoint to the nearest one |
 | `/ride nearby` | upgrades you can get in this zone |
 | `/ride next` | What now?'s top step, with the arrow set |
+| `/ride nextsession` | open the offline 60-minute XP briefing |
 | `/ride note` | note add <map> <x> <y> <text> \| edit <id> <text> \| remove <id> \| list |
 | `/ride now` | level\|gold\|gear\|professions\|explore\|mix  What now? next steps (optional goal) |
 | `/ride paste` | open the Paste advice box (Ctrl+V applies it) |
@@ -258,11 +260,13 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride probe` | record which game APIs exist (then /reload) |
 | `/ride questpins` | grey on\|off  show quests too low to give XP |
 | `/ride quiet` | on\|off  quiet presses: no 'not ready yet' text or voice |
+| `/ride radar` | show \| time 30\|45\|60 \| feedback \| reset \| unmute <kind>  offline coach |
 | `/ride rareloot` | rareloot <npcID>  sourced known drops, never invented |
 | `/ride rareroute` | rareroute all\|watched  queue nearest known rare spawns on this map |
 | `/ride recipesources` | recipesources list \| add <recipeID> <kind> <source> |
 | `/ride reset` | char\|all confirm  wipe settings (needs the word confirm) |
 | `/ride restock` | restock add <itemID> <count> \| remove <itemID> \| reserve <gold> \| list |
+| `/ride role` | list\|auto\|tank\|melee\|ranged\|caster\|healer\|pet  coaching role |
 | `/ride runs` | dungeon lockouts; /ride runs list\|delete <index> |
 | `/ride scale` | scale list\|use <name>\|set <stat> <weight>\|import <Pawn text> |
 | `/ride score` | <item link>  compare an item with what you wear |
@@ -292,5 +296,6 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride where` | where your characters keep an item: /ride where <item name> |
 | `/ride wish` | wish add\|remove <itemID> \| list |
 | `/ride wowhead` | the Wowhead address of what you're hovering (item, NPC, spell), to copy |
+| `/ride xp60` | on\|off\|status\|clear (private session XP recorder) |
 | `/ride zonelevels` | [on\|off]  level ranges over zones on the world map |
 | `/ride zones` | zones  known available quest XP by zone (estimates) |
