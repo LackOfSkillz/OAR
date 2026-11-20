@@ -105,12 +105,29 @@ function M:Confirm()
     self:Finish(false, tostring(err))
     return
   end
-  local p = { e = e, q = q }
+  local p = { e = e, q = q, money = M.Money() }
   self.pending = p
   ns.Timer.After(M.DONE_WAIT, function()
-    if M.pending == p then M:Finish(nil, "no answer from the auction house") end
+    if M.pending ~= p then return end
+    -- no "completed" event: the gold decides (2026-11-20: the game showed
+    -- "Internal auction error" for a Heavy Shortbow that was bought all the same)
+    if M.Paid(p) then M:Finish(true) else M:Finish(false, p.error or "no answer from the auction house") end
   end, "ahbuy:done")
   self:Refresh()
+end
+
+-- Was the price taken from your gold since the click?
+function M.Paid(p)
+  return p and p.money and (p.money - M.Money()) >= (p.q.price or 0) * 0.99 and true or false
+end
+
+-- The game's name for an auction house error code ("DatabaseError"), when it has one.
+function M.ErrorName(code)
+  local enum = C.Resolve("Enum.AuctionHouseError")
+  if type(enum) == "table" then
+    for k, v in pairs(enum) do if v == code then return k end end
+  end
+  return "error " .. tostring(code)
 end
 
 -- The game's answer to a purchase: ok true (bought), false (refused, with why) or nil (no answer).
@@ -122,7 +139,7 @@ function M:Finish(ok, why)
   self.results = self.results or { bought = 0, failed = 0 }
   if ok then
     self.results.bought = self.results.bought + 1
-    self:Info("bought %s", what)
+    self:Info("bought %s%s", what, p and p.error and (" (the game also showed " .. p.error .. "; the gold was taken, so it went through)") or "")
   else
     self.results.failed = self.results.failed + 1
     self:Warn("purchase %s: %s", what, tostring(why or "refused"))
@@ -137,9 +154,16 @@ end
 
 function M:OnPurchaseDone() if self.pending then self:Finish(true) end end
 function M:OnCommodityFailed() if self.pending then self:Finish(false, "the price changed or the goods sold out") end end
+-- An error while our purchase is out doesn't settle it: the purchase can go
+-- through all the same, so the gold (or a completed event) decides.
 function M:OnShowError(_, code)
-  local msg = "auction house error " .. tostring(C.Readable(code))
-  if self.pending then self:Finish(false, msg) else self:Info("%s (nothing of ours was buying)", msg) end
+  local msg = "auction house " .. M.ErrorName(C.Readable(code))
+  if self.pending then
+    self.pending.error = msg
+    self:Info("%s while buying %s; waiting to see whether the gold is taken", msg, tostring(self.pending.e.name))
+  else
+    self:Info("%s (nothing of ours was buying)", msg)
+  end
 end
 -- The red text in the middle of the screen while a purchase or lookup is ours.
 function M:OnUIError(_, _, text)
@@ -238,7 +262,10 @@ function M:OnEnable()
   self:On("COMMODITY_PURCHASE_FAILED", self.OnCommodityFailed)
   self:On("AUCTION_HOUSE_SHOW_ERROR", self.OnShowError)
   self:On("UI_ERROR_MESSAGE", self.OnUIError)
-  self:On("PLAYER_MONEY", function(mod) if mod.current or mod.pending then mod:Refresh() end end)
+  self:On("PLAYER_MONEY", function(mod)
+    if mod.pending and M.Paid(mod.pending) then mod:Finish(true) return end
+    if mod.current or mod.pending then mod:Refresh() end
+  end)
 end
 
 function M:Activity()

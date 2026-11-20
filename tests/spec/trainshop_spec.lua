@@ -226,3 +226,29 @@ T.describe("recipes you already know, every profession", function()
     end)
   end
 end)
+
+T.describe("recipe items that load late (2026-11-20: 57 of 58 without skill)", function()
+  T.it("a recipe whose tooltip isn't loaded yet is read again later, and dropped if you know it", function()
+    local game, ns = session()
+    game.items[2996] = { name = "Recipe: Elixir of Minor Defense" }
+    game.items[2997] = { name = "Recipe: Late Brew" }
+    game.ahListings[2996] = { name = "Recipe: Elixir of Minor Defense", minPrice = 100, recipe = 6 }
+    game.ahListings[2997] = { name = "Recipe: Late Brew", minPrice = 200, recipe = 6 }
+    game.itemTips[2995] = { "Recipe: Swiftness Potion" } -- not loaded: only the title
+    game.itemTips[2996] = { "Recipe: Elixir of Minor Defense" }
+    game.itemTips[2997] = { "Recipe: Late Brew" }
+    run(game, ns)
+    local T2 = ns.TrainShop
+    T.eq(#T2:UsefulRecipes(), 0, "nothing readable yet")
+    -- the item data arrives
+    game.itemTips[2995] = { "Recipe: Swiftness Potion", "Requires Alchemy (60)" }
+    game.itemTips[2996] = { "Recipe: Elixir of Minor Defense", "Requires Alchemy (1)" }
+    game.itemTips[2997] = { "Recipe: Late Brew", "Requires Alchemy (35)" }
+    local list = T2:UsefulRecipes()
+    T.eq(#list, 1)
+    T.eq(list[1].name, "Recipe: Late Brew")
+    T.eq(list[1].need, 35)
+    T.ok(T2.knownHidden >= 1, "Minor Defense is known: dropped once readable")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

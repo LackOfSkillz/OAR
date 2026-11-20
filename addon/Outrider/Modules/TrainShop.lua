@@ -180,13 +180,15 @@ function M:OnResults()
   if self.manual then self:Refresh() else self:Next() end
 end
 
--- A recipe for sale: keep it when the tooltip says it's not known yet, with the skill it needs.
-function M:NoteRecipe(prof, itemID, price, itemKey)
+-- What a recipe item's tooltip says: the skill it needs and whether this
+-- character already knows it. Empty until the game has the item's data.
+function M.ReadTip(prof, itemID)
   local tip = C.Call("C_TooltipInfo.GetItemByID", itemID)
-  local need, known
+  local need, known, lines = nil, false, 0
   for _, line in ipairs(type(tip) == "table" and tip.lines or {}) do
     local t = C.Readable(line.leftText)
     if type(t) == "string" then
+      lines = lines + 1
       local n = t:match("Requires " .. prof .. " %((%d+)%)")
       if n then need = tonumber(n) end
       if t:find("Already known", 1, true) then known = true end
@@ -196,12 +198,50 @@ function M:NoteRecipe(prof, itemID, price, itemKey)
   local name = itemName(itemID)
   local taught = name and name:match("^[%a ]+: (.+)$")
   if M.Knows(ns.db.char, prof, taught) then known = true end
+  return need, known, name, lines > 1 and name ~= nil
+end
+
+-- A recipe for sale: kept unless this character knows it, with the skill it
+-- needs. Most recipe items aren't loaded yet when the search answers (2026-11-20:
+-- 57 of 58 Cooking recipes came back without skill), so an unread one is kept
+-- and read again once its data arrives (M:Recheck).
+function M:NoteRecipe(prof, itemID, price, itemKey)
   self.seenRecipes = (self.seenRecipes or 0) + 1
+  local need, known, name, read = M.ReadTip(prof, itemID)
   if known then self.knownHidden = (self.knownHidden or 0) + 1 return end
+  if not read and C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, itemID) end
   -- only this character counts: a recipe another character knows is still
   -- one this character may want (Gary, 2026-11-20)
   self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = name or ("item " .. itemID),
-    price = price, need = need, itemKey = itemKey or { itemID = itemID } }
+    price = price, need = need, read = read, itemKey = itemKey or { itemID = itemID } }
+end
+
+-- Read again the recipes whose tooltip wasn't there yet; drop the ones this
+-- character turns out to know. Returns how many are still unread.
+function M:Recheck()
+  local keep, unread = {}, 0
+  for _, r in ipairs(self.recipesForSale or {}) do
+    local drop = false
+    if not r.read then
+      local need, known, name, read = M.ReadTip(r.prof, r.itemID)
+      if known then drop = true self.knownHidden = (self.knownHidden or 0) + 1
+      else
+        r.need, r.read = need or r.need, read
+        if name then r.name = name end
+        if not read then unread = unread + 1 end
+      end
+    end
+    if not drop then keep[#keep + 1] = r end
+  end
+  self.recipesForSale = keep
+  return unread
+end
+
+-- "  12 still loading." while recipe items wait for their data
+function M:LoadingText()
+  local n = 0
+  for _, r in ipairs(self.recipesForSale or {}) do if not r.read then n = n + 1 end end
+  return n > 0 and string.format("  |cff8f96a6%d still loading from the game.|r", n) or ""
 end
 
 -- "Hidden: 3 you already know."
@@ -229,6 +269,7 @@ end
 -- now first, then cheapest (Gary's first search found 119, 2026-11-14).
 M.SOON = 25
 function M:UsefulRecipes()
+  self:Recheck()
   local out, unknown = {}, 0
   for _, r in ipairs(self.recipesForSale or {}) do
     local rec = ns.db.char.professions[r.prof]
@@ -380,7 +421,7 @@ function M:View(view)
         action = { { name = r.name, itemKey = r.itemKey } } }
     end
     return cards, (#cards > 0 and "Recipes for sale that you don't know yet: usable now first, then cheapest. Buy queues it; the bar above the auction window confirms."
-      or "No recipe for sale that you don't know and could use soon.") .. self:HiddenText(), false, 0, 0
+      or "No recipe for sale that you don't know and could use soon.") .. self:HiddenText() .. self:LoadingText(), false, 0, 0
   end
   local picked = self:Picked()
   if view == "list" then
@@ -491,6 +532,12 @@ function M:OnEnable()
     if mod.frame then mod.frame:Hide() end
   end)
   self:On("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED", self.OnResults)
+  -- recipe items load after the search: read their tooltips again then
+  self:On("GET_ITEM_INFO_RECEIVED", function(mod)
+    if mod.open and mod.recipesForSale and not mod.queue then
+      ns.Throttle("trainshop:items", 1, function() M:Refresh() end)
+    end
+  end)
   self:On("AUCTION_HOUSE_THROTTLED_SYSTEM_READY", function(mod)
     if mod.pendingNext then mod.pendingNext = false mod.pos = mod.pos - 1 mod:Next() end
   end)
