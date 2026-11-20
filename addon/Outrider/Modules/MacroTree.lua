@@ -29,7 +29,7 @@ local T = ns:NewModule("MacroTree", {
   -- seen: macros you've looked at (no "new" badge); planned: the build you
   -- chose before 10 talent points; tooltips: Outrider's words under a macro
   -- on your action bar; buffs: the missing-buffs row
-  defaults = { seen = {}, planned = nil, tooltips = true, buffs = true },
+  defaults = { seen = {}, planned = nil, tooltips = true, buffs = true, singles = false },
 })
 ns.MacroTree = T
 
@@ -157,6 +157,11 @@ T.KEY_WHEN = {
   Heal = "When you or a friend needs health; point the mouse at a friend to heal them.",
   Pet = "Between fights or when your pet is hurt: it revives, calls or heals your pet.",
   Reach = "When the enemy is out of melee range.",
+  Stop = "When an enemy starts casting (plain press), or you need it stunned or out of the fight (hold Shift, Ctrl or Alt).",
+  Save = "When the fight goes wrong: plain press first, the modifiers when that isn't enough.",
+  Burst = "At the start of a hard fight or a boss, once your cooldowns are ready.",
+  Recover = "Between fights to eat and drink; in a fight when your health is low.",
+  Team = "In a group: plain press to hit what the tank or leader hits; Shift to mark a focus to interrupt or watch.",
 }
 
 -- ------------------------------------------------------------------ model
@@ -368,9 +373,20 @@ function T:Grid(mode)
   for i, c in ipairs(cols) do index[c] = i end
   local grid = {}
   for b = 1, #T.BANDS do grid[b] = {} for c = 1, #cols do grid[b][c] = {} end end
+  -- singles a combined key already covers stay out of the tree unless asked for
+  local spells, ids = {}, {}
+  if ns.ComboKeys and ns.ComboKeys.enabled and not self:Settings().singles then spells, ids = ns.ComboKeys:Covered() end
+  grid.hidden = 0
   for _, it in ipairs(self:Items(mode)) do
+    local covered = ids[it.id] or false
+    if not covered and #(it.spells or {}) > 0 then
+      covered = true
+      for _, sp in ipairs(it.spells) do if not spells[sp] then covered = false end end
+    end
+    if covered and it.tags[1] ~= "handy" then
+      grid.hidden = grid.hidden + 1
     -- handy keys sit with your keys, not in the tree
-    if it.tags[1] == "handy" then
+    elseif it.tags[1] == "handy" then
       grid.handy = grid.handy or {}
       grid.handy[#grid.handy + 1] = it
     else
@@ -643,6 +659,11 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   p.pvp = UI:Button(p, "PvP", 56, function() p.mode = "pvp" p:Refresh() end)
   UI.Tip(p.pve, "PvE", "Macros for questing and dungeons.")
   UI.Tip(p.pvp, "PvP", "The PvP versions, for battlegrounds, duels and world PvP. Only changes this view.")
+  p.singles = UI:Button(p, "Show singles", 104, function()
+    T:Settings().singles = not T:Settings().singles
+    p:Refresh()
+  end)
+  UI.Tip(p.singles, "Singles", "The one-spell macros a combined key already covers (Kick, Evasion, Bandage...). Hidden by default; show them if you'd rather have separate buttons.")
 
   -- the detail panel on the right
   local d = UI:Card(p)
@@ -719,9 +740,14 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   keys:SetPoint("RIGHT", d, "LEFT", -12, 0)
   keys:SetHeight(128)
   p.keys = keys
+  -- combined keys row (Gary, 2026-11-20: fewer macros, each with Shift / Ctrl / Alt layers)
+  keys.comboHead = UI.Text(keys, "normal", "goldText")
+  keys.comboHead:SetPoint("TOPLEFT", 12, -124)
+  keys.comboHead:SetText("Combined keys  |cff8f96a6one button each, hold Shift, Ctrl or Alt for the other layers|r")
+  keys.combo = {}
   keys.head = UI.Text(keys, "normal", "goldText") keys.head:SetPoint("TOPLEFT", 12, -8)
   keys.head:SetText("Your keys  |cff8f96a6set up once; Outrider rewrites them as you learn spells|r")
-  keys.flow = UI.Text(keys, "small", "muted") keys.flow:SetPoint("BOTTOMLEFT", 12, 8) keys.flow:SetPoint("RIGHT", keys, "RIGHT", -12, 0)
+  keys.flow = UI.Text(keys, "small", "muted") keys.flow:SetPoint("TOPLEFT", 12, -104) keys.flow:SetPoint("RIGHT", keys, "RIGHT", -12, 0)
   keys.flow:SetJustifyH("LEFT")
   keys.btns = {}
 
@@ -779,6 +805,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     end)
   end)
   p.import:SetPoint("RIGHT", p.export, "LEFT", -6, 0)
+  p.singles:SetPoint("RIGHT", p.import, "LEFT", -6, 0)
 
   local function hookButton(b)
     b:SetScript("OnClick", function(self) p:ShowItem(self.item) end)
@@ -871,10 +898,15 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     local x = T:Explain(it, it.key)
     d.title:SetText(x.title)
     local names = ns.FightPlan and ns.FightPlan.SPEC_NAMES or {}
-    local sub = it.key and "One of your keys" or (it.tree and ((names[it.tree] or it.tree) .. " build") or "Every build")
+    local sub = it.key and (it.key.kind == "combo" and "Combined key" or "One of your keys") or (it.tree and ((names[it.tree] or it.tree) .. " build") or "Every build")
     d.sub:SetText(sub .. "\n" .. (it.stateText or ""))
     local parts = { "|cfff1d58eWhen to press|r", x.when }
     if x.what and x.what ~= "" then parts[#parts + 1] = "\n|cfff1d58eWhat it does|r" parts[#parts + 1] = x.what end
+    local layers = it.key and it.key.entry and it.key.entry.layers
+    if layers and layers ~= "" then
+      parts[#parts + 1] = "\n|cfff1d58eHold to change it|r"
+      for l in (layers .. "  ·  "):gmatch("(.-)  ·  ") do parts[#parts + 1] = l end
+    end
     parts[#parts + 1] = "\n|cfff1d58eLine by line|r"
     for i, l in ipairs(x.lines) do parts[#parts + 1] = i .. ". " .. l end
     -- the macro itself, one line per line (tidy-up 2026-11-20: was run together with bars)
@@ -981,6 +1013,34 @@ ns.Hub:AddTab("macros", "Macros", function(p)
       b.cap:SetText(it.name)
       b.cap:Show()
     end
+
+    -- combined keys, a row of their own under your keys
+    local combos = ns.ComboKeys and ns.ComboKeys.enabled and ns.ComboKeys:Entries() or {}
+    local CP, CS = 84, 44
+    for i, e in ipairs(combos) do
+      local b = keys.combo[i]
+      if not b then
+        b = slotButton(keys, CS)
+        b.cap = UI.Text(keys, "small", "text")
+        b.cap:SetPoint("TOP", b, "BOTTOM", 0, -4)
+        b.cap:SetWidth(CP - 4)
+        b.cap:SetJustifyH("CENTER")
+        hookButton(b)
+        keys.combo[i] = b
+      end
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", keys, "TOPLEFT", 16 + (i - 1) * CP + (CP - CS) / 2, -146)
+      local it = { name = e.name, key = { entry = e, name = e.name, kind = "combo" }, spells = T.SpellsIn(e.body), tags = { "combo" }, level = 1 }
+      paint(b, it, onBars, CS)
+      b.cap:SetText(e.name)
+      b.cap:Show()
+    end
+    for i = #combos + 1, #keys.combo do keys.combo[i]:Hide() keys.combo[i].cap:Hide() end
+    keys.comboHead:SetShown(#combos > 0)
+    keys:SetHeight(#combos > 0 and 232 or 128)
+    -- the singles a combined key covers: hidden, with a switch to show them
+    self.singles:SetText(T:Settings().singles and "Hide singles" or "Show singles")
+    self.singles:SetShown(#combos > 0)
 
     -- tree
     for _, b in ipairs(tree.pool) do b:Hide() end

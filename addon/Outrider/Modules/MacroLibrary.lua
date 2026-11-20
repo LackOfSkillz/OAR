@@ -54,6 +54,10 @@ function M:Entries()
   if ns.Crafter and ns.Crafter.enabled then
     for _, e in ipairs(ns.Crafter:Entries()) do out[#out + 1] = e end
   end
+  -- the combined keys (Stop, Save, Burst, Recover, Team), written from the spellbook
+  if ns.ComboKeys and ns.ComboKeys.enabled then
+    for _, e in ipairs(ns.ComboKeys:Entries()) do out[#out + 1] = e end
+  end
   table.sort(out, function(a, b) return a.name < b.name end)
   return out
 end

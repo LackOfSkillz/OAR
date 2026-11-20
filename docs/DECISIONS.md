@@ -172,3 +172,7 @@ QuestObjectives pins the unfinished objectives of quests in the log on the
 world map and minimap, and alerts when the mouse passes over a quest object
 (saving that spot as seen on Forever). Installed on Gary's PC with his OK
 (`--deploy`, 2026-11-17).
+
+## D-combo: combined keys and the modifier convention (2026-11-20, Claude, from Gary's ask)
+
+Gary asked for fewer macros that combine the best sequences, with scripts if they help. Scripts in a macro can read state but cannot cast or choose a spell (protected; rule 1), and Python can only run outside the game, so the combining is done with standard macro conditions the player holds: plain press = the most used layer, Shift = the second, Ctrl = the third, Alt = the fourth (Recover: Shift bandages yourself; Team: Shift sets focus, Ctrl clears). Five keys per class (Stop, Save, Burst, Recover, Team) from Data/ComboKeys.lua, spell names checked against Data/SpellInfo.lua; Wyvern Sting and Elemental Mastery left out (not in our cited data). Singles a key covers are hidden in the tree by default (Show singles). The fight rotation stays in Fight (castsequence built offline by tools/build_fight_plans.lua).

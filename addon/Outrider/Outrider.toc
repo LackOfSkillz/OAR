@@ -59,6 +59,7 @@ Data\Macros_Druid.lua
 Data\Macros_Shaman.lua
 Data\Macros_Paladin.lua
 Data\Macros_More.lua
+Data\ComboKeys.lua
 Data\FightPlans.lua
 Data\SpellInfo.lua
 Data\StatWeights.lua
@@ -83,6 +84,7 @@ Modules\FightPlan.lua
 Modules\MacroTree.lua
 Modules\BuffRow.lua
 Modules\HandyKeys.lua
+Modules\ComboKeys.lua
 Modules\HealPanel.lua
 Modules\Census.lua
 Modules\InfoBar.lua
