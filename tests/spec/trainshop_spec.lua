@@ -150,7 +150,7 @@ T.describe("shopping window (2026-11-20 redesign)", function()
 end)
 
 T.describe("recipes you already know", function()
-  T.it("leaves out recipes this character or one of your other characters knows, and says who", function()
+  T.it("leaves out only recipes this character knows; another character knowing one doesn't hide it", function()
     local game, ns = session()
     game.items[2996] = { name = "Recipe: Elixir of Minor Defense" }
     game.items[2997] = { name = "Recipe: Holy Brew" }
@@ -165,9 +165,9 @@ T.describe("recipes you already know", function()
     run(game, ns)
     local names = {}
     for _, r in ipairs(ns.TrainShop:UsefulRecipes()) do names[#names + 1] = r.name end
-    T.eq(table.concat(names, ","), "Recipe: Fresh Brew", "Defense: you know it; Holy Brew: Khreos knows it")
+    T.eq(table.concat(names, ","), "Recipe: Holy Brew,Recipe: Fresh Brew", "Defense: you know it; Holy Brew stays though Khreos knows it")
     local _, status = ns.TrainShop:View("recipes")
-    T.contains(status, "Hidden: 1 you know, 1 Khreos knows")
+    T.contains(status, "Hidden: 1 you already know")
     T.eq(#ns.Errors.list, 0)
   end)
 end)

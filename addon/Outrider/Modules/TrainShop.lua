@@ -131,7 +131,7 @@ end
 function M:Start()
   if not self.open then ns.Print("open the auction house first") return end
   self.queue, self.pos, self.prices, self.recipesForSale, self.seenRecipes = self:Queue(), 0, {}, {}, 0
-  self.knownHidden, self.altHidden = 0, {}
+  self.knownHidden = 0
   self.manual = false
   self:Info("training shopping: %d searches", #self.queue)
   self:Next()
@@ -198,26 +198,16 @@ function M:NoteRecipe(prof, itemID, price, itemKey)
   if M.Knows(ns.db.char, prof, taught) then known = true end
   self.seenRecipes = (self.seenRecipes or 0) + 1
   if known then self.knownHidden = (self.knownHidden or 0) + 1 return end
-  -- one of your other characters knows it (Gary, 2026-11-20: "filter out
-  -- recipes that I already know"): left out, and the status line says who
-  local alts = M.AltsKnowing(prof, taught)
-  if #alts > 0 then
-    self.altHidden = self.altHidden or {}
-    for _, who in ipairs(alts) do self.altHidden[who] = (self.altHidden[who] or 0) + 1 end
-    return
-  end
+  -- only this character counts: a recipe another character knows is still
+  -- one this character may want (Gary, 2026-11-20)
   self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = name or ("item " .. itemID),
     price = price, need = need, itemKey = itemKey or { itemID = itemID } }
 end
 
--- "Hidden: 3 you know, 2 Khreos knows."
+-- "Hidden: 3 you already know."
 function M:HiddenText()
   local parts = {}
-  if (self.knownHidden or 0) > 0 then parts[1] = string.format("%d you know", self.knownHidden) end
-  local names = {}
-  for who in pairs(self.altHidden or {}) do names[#names + 1] = who end
-  table.sort(names)
-  for _, who in ipairs(names) do parts[#parts + 1] = string.format("%d %s knows", self.altHidden[who], who) end
+  if (self.knownHidden or 0) > 0 then parts[1] = string.format("%d you already know", self.knownHidden) end
   if #parts == 0 then return "" end
   return "  |cff8f96a6Hidden: " .. table.concat(parts, ", ") .. ".|r"
 end
@@ -234,16 +224,6 @@ function M.Knows(char, prof, taught)
   return false
 end
 
--- Short names of your other characters who know it (from their profession windows).
-function M.AltsKnowing(prof, taught)
-  local out = {}
-  local chars = ns.db and ns.db.raw and ns.db.raw.chars or {}
-  for key, c in pairs(chars) do
-    if key ~= ns.db.key and M.Knows(c, prof, taught) then out[#out + 1] = (tostring(key):match("^([^%-]+)")) end
-  end
-  table.sort(out)
-  return out
-end
 
 -- Recipes worth showing: skill known, usable now or within 25 points; usable
 -- now first, then cheapest (Gary's first search found 119, 2026-11-14).
