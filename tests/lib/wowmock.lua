@@ -624,6 +624,11 @@ function M.new(opts)
   end
   base.UnitInRange = function(unit) local d = game.units and game.units[unit] if d then return d.inRange ~= false, true end end
   base.UnitIsDeadOrGhost = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
+  -- index 3 is about 10 yards; game.units[unit].near = true when the player stands next to it
+  base.CheckInteractDistance = function(unit, index)
+    local d = game.units and game.units[unit]
+    return d and d.near and (index == 3 or index == 2) or false
+  end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]

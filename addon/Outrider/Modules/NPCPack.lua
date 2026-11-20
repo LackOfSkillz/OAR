@@ -54,6 +54,8 @@ function M:OnEnable()
     mod:LogZoneReport("login")
   end)
   self:On("QUEST_TURNED_IN", function(mod) ns.Throttle("npcpack:zone", 3, function() mod:LogZoneReport("turned in") end) end)
+  -- an NPC seen up close: rebuild the places with its real spot
+  self:On("OTR_NPC_PLACED", function(mod) for mapID in pairs(mod.maps or {}) do mod.maps[mapID] = nil end end)
   if not rawget(_G, "Outrider_DataNPC") then C.LoadAddOn(self.ADDON) end
   local data = rawget(_G, "Outrider_DataNPC")
   if type(data) ~= "table" or type(data.maps) ~= "table" then
@@ -64,6 +66,14 @@ function M:OnEnable()
   self:Build(data.maps)
   self:Info("loaded %d places on %d maps from %s", self.count, self.mapCount, tostring(data.source))
   ns.Events:Fire("OTR_DATA_CHANGED", "npcpack")
+end
+
+-- Where you saw the NPC yourself, up close (Discovery, interact or near):
+-- that beats the pack's spot (Gary, 2026-11-20). mapID, x, y or nil.
+function M.Seen(npcID)
+  local d = ns.db.global.discovered
+  local e = type(d) == "table" and type(d.npcs) == "table" and d.npcs[npcID]
+  if type(e) == "table" and (e.qualityRank or 0) >= 3 and e.mapID and e.x and e.y then return e.mapID, e.x, e.y end
 end
 
 -- Places are built per map the first time that map is needed (building all
@@ -96,6 +106,8 @@ function M:BuildMap(mapID)
     if not cur then
       cur = { id = "q-" .. npcID, npcID = npcID, mapID = mapID, x = r[3], y = r[4], name = r[5], title = r[6],
         faction = r[7], kinds = {}, verified = false, source = "questie" }
+      local sm, sx, sy = M.Seen(npcID)
+      if sm == mapID then cur.x, cur.y, cur.source, cur.seen = sx, sy, "discovery", true end
       byNpc[npcID] = cur
     end
     cur.kinds[#cur.kinds + 1] = kind
@@ -218,7 +230,9 @@ function M:OfKind(kind)
   for mapID, rows in pairs(self.raw or {}) do
     for _, r in ipairs(rows) do
       if r[2] == kind then
-        out[#out + 1] = { npcID = r[1], kind = kind, mapID = mapID, x = r[3], y = r[4], name = r[5], title = r[6], faction = r[7] }
+        local sm, sx, sy = M.Seen(r[1])
+        out[#out + 1] = { npcID = r[1], kind = kind, mapID = sm or mapID, x = sm and sx or r[3], y = sm and sy or r[4],
+          name = r[5], title = r[6], faction = r[7] }
       end
     end
   end

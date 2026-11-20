@@ -162,8 +162,16 @@ function M:People(kind)
   return out
 end
 
--- where an NPC stands, from the NPC pack or what Outrider discovered
+-- where an NPC stands: where you saw it yourself first (Gary, 2026-11-20),
+-- then places Outrider recorded, then the NPC pack
 function M.Place(name)
+  local d = ns.db.global.discovered
+  for _, e in pairs(type(d) == "table" and d.npcs or {}) do
+    if type(e) == "table" and e.name == name and (e.qualityRank or 0) >= 3 and e.mapID and e.x then return e.mapID, e.x, e.y end
+  end
+  for _, p in pairs(ns.db.global.pois or {}) do
+    if type(p) == "table" and p.name == name and p.mapID and p.source ~= "questie" then return p.mapID, p.x, p.y end
+  end
   local pack = rawget(_G, "Outrider_DataNPC")
   if not pack and ns.NPCPack and ns.NPCPack.Load then pcall(ns.NPCPack.Load, ns.NPCPack) pack = rawget(_G, "Outrider_DataNPC") end
   for mapID, list in pairs(pack and pack.maps or {}) do

@@ -140,6 +140,35 @@ function M:OnEnable()
     self:On(event, function(mod) mod:CaptureWindow(kind) end)
   end
   self:On("GOSSIP_SHOW", self.OnGossip)
+  self:On("OTR_NPC_PLACED", self.OnNpcPlaced)
+end
+
+-- An NPC seen up close (Discovery): its places move to where it stands, and
+-- a service NPC whose title says what it does (Fishing Trainer, Innkeeper)
+-- becomes a place, so your sighting beats the data pack on the map and in
+-- "nearest" (Gary, 2026-11-20: "outrider should adjust the poi").
+function M:OnNpcPlaced(_, npcID, e)
+  if type(npcID) ~= "number" or type(e) ~= "table" or not (e.mapID and e.x and e.y) then return end
+  local prefix, found = "npc-" .. npcID .. "-", false
+  for id, p in pairs(self.db) do
+    if id:sub(1, #prefix) == prefix then
+      found = true
+      if p.mapID ~= e.mapID or p.x ~= e.x or p.y ~= e.y then
+        p.mapID, p.x, p.y, p.n, p.lastSeen = e.mapID, e.x, e.y, 1, time()
+        self:Info("poi moved %s %s to map=%d %.1f,%.1f", p.kind, tostring(p.name), e.mapID, e.x * 100, e.y * 100)
+        ns.Events:Fire("OTR_POI_ADDED", p)
+      end
+    end
+  end
+  if found then return end
+  local kind = M.KindFromTitle(e.title)
+  if not kind then return end
+  local id = prefix .. kind
+  local p = { id = id, kind = kind, mapID = e.mapID, x = e.x, y = e.y, n = 1, npcID = npcID, name = e.name, title = e.title,
+    verified = false, source = "discovery", faction = e.faction ~= "Neutral" and e.faction or nil, firstSeen = time(), lastSeen = time() }
+  self.db[id] = p
+  self:Info("poi seen %s %s map=%d %.1f,%.1f", kind, tostring(e.name), e.mapID, e.x * 100, e.y * 100)
+  ns.Events:Fire("OTR_POI_ADDED", p)
 end
 
 function M:CaptureWindow(kind)
@@ -214,7 +243,11 @@ function M:Add(id, kind, extra)
           faction = C.Call("UnitFactionGroup", "player"), firstSeen = time() }
     self.db[id] = p
     self:Info("poi new %s %s map=%d %.1f,%.1f", kind, tostring(extra.name), mapID, x * 100, y * 100)
-  elseif p.mapID == mapID then
+  elseif p.mapID ~= mapID or math.abs(p.x - x) > 0.03 or math.abs(p.y - y) > 0.03 then
+    -- talking to it far from the stored spot: it moved, or the spot was wrong
+    p.mapID, p.x, p.y, p.n = mapID, x, y, 1
+    self:Info("poi moved %s %s to map=%d %.1f,%.1f", kind, tostring(extra.name), mapID, x * 100, y * 100)
+  else
     p.x = (p.x * p.n + x) / (p.n + 1)
     p.y = (p.y * p.n + y) / (p.n + 1)
     p.n = p.n + 1

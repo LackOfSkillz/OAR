@@ -16,7 +16,13 @@ local M = ns:NewModule("Discovery", {
   defaults = { skipCritters = true },
 })
 
-local QUALITY = { nameplate = 1, mouseover = 2, target = 2, interact = 3 }
+-- "near": seen within ~10 yards (CheckInteractDistance), as good as talking
+-- to it (Gary, 2026-11-20: "standing right next to him").
+local QUALITY = { nameplate = 1, mouseover = 2, target = 2, near = 3, interact = 3 }
+M.QUALITY = QUALITY
+-- A sure sighting this far (map share) from the stored spot means the NPC
+-- moved or the old spot was wrong: start over instead of averaging.
+M.MOVED = 0.03
 local RECENT_MAX = 300 -- enough history to read respawn timings back (50 lasted 40 minutes, 2026-11-13)
 
 -- NPC windows: event -> role tag. The unit is "npc" while the window is open.
@@ -102,7 +108,11 @@ function M:Capture(unit, how, role)
   if fac == "Alliance" or fac == "Horde" then e.faction = fac elseif fac then e.faction = "Neutral" end
   if g.zoneUID and not inInstance() then e.layer = g.zoneUID end
 
-  local upgraded = self:UpdatePosition(e, how)
+  -- close enough to touch: a sure position, out of combat only (the range
+  -- check is restricted in combat on the modern client)
+  if how ~= "interact" and not C.InCombat() and C.Call("CheckInteractDistance", unit, 3) then how = "near" end
+  local before = e.qualityRank == 3 and e.mapID and { e.mapID, e.x, e.y } or nil
+  local upgraded, moved = self:UpdatePosition(e, how)
   local newRole = false
   if role then
     e.roles = type(e.roles) == "table" and e.roles or {}
@@ -121,6 +131,10 @@ function M:Capture(unit, how, role)
   else
     self:Debug("seen npcID=%d %s how=%s", npcID, name, how)
   end
+  -- a sure spot that is new or moved: places and the NPC pack follow it
+  if e.qualityRank == 3 and (not before or moved or before[1] ~= e.mapID) then
+    ns.Events:Fire("OTR_NPC_PLACED", npcID, e)
+  end
   return e
 end
 
@@ -131,11 +145,19 @@ function M:UpdatePosition(e, how)
   if not mapID or not x or not y then return false end
   local q = QUALITY[how] or 1
   local old = e.qualityRank or 0
-  if q > old or (q == old and e.mapID ~= mapID and how ~= "interact") then
+  if q > old or (q == old and e.mapID ~= mapID and q < 3) then
     e.mapID, e.x, e.y, e.quality, e.qualityRank, e.posN = mapID, x, y, how, q, 1
     return q > old
   end
-  if q == old and how == "interact" and e.mapID == mapID then
+  -- a sure sighting on another map, or far from the stored spot: it moved
+  -- (or the old spot was wrong), so the new spot replaces it
+  if q == 3 and old == 3 and (e.mapID ~= mapID or math.abs(e.x - x) > M.MOVED or math.abs(e.y - y) > M.MOVED) then
+    self:Info("npc %s moved: map %s %.1f,%.1f -> map %s %.1f,%.1f", tostring(e.name), tostring(e.mapID), e.x * 100, e.y * 100,
+      tostring(mapID), x * 100, y * 100)
+    e.mapID, e.x, e.y, e.quality, e.posN = mapID, x, y, how, 1
+    return false, true
+  end
+  if q == old and q == 3 and e.mapID == mapID then
     local n = (e.posN or 1)
     e.x = (e.x * n + x) / (n + 1)
     e.y = (e.y * n + y) / (n + 1)
