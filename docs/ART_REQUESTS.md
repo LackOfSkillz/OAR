@@ -459,7 +459,7 @@ soft rim light, no text, no logos).
 | `kind_zone.png` | 1024x1024, opaque, like the other `kind_*` pictures | A wide landscape seen from a hilltop: rolling green hills, a winding road, a small village with smoke from chimneys, mountains in the distance at dusk. The "Best zone for your level" card. |
 | `journey_empty.png` | 2048x1024 (2:1), transparent or dark vignette background | An open traveller's map on a wooden table, a brass compass on it, and a glowing gold arrow drawn across the map toward a small marked spot. Shown in "Your trip" before anything is picked. |
 
-## Batch 9: profession pictures (2026-11-20)
+## Batch 9: profession pictures (2026-11-20) — DELIVERED and installed 2026-11-20
 
 The Professions page now has a card per profession saying what to do next.
 One picture per profession, like the `kind_*` pictures: 1024x1024, opaque, one
