@@ -410,6 +410,8 @@ Batch 5 (6 Feed and 7 Money pictures) is still to come as well.
 
 ## Batch 6 redo 2: match the gold (2026-11-19)
 
+**Delivered and installed 2026-11-19.** All 9 match the shaded gold of the other 18.
+
 The 9 redone build emblems have the right shapes, but they are a flat mustard
 gold, while the other 18 have a shaded gold: lighter on top, darker below, a
 thin darker outline and a soft highlight. Please redo these 9 with **the same
