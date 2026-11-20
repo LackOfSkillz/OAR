@@ -90,6 +90,7 @@ Modules\FightPlan.lua
 Modules\MacroTree.lua
 Modules\BuffRow.lua
 Modules\HandyKeys.lua
+Modules\BagSwap.lua
 Modules\ComboKeys.lua
 Modules\HealPanel.lua
 Modules\Census.lua

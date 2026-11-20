@@ -384,6 +384,9 @@ ns.Data:Register("macro", "more-all", {
   { id = "all-next", name = "Next Step", class = "ALL", verified = false, tags = { "handy" }, icon = "INV_Misc_Map_01",
     body = "/ride next",
     explain = "Says the best thing to do next (from What now?) and points the arrow at it.", source = SRC },
+  { id = "all-bagswap", name = "Bag Swap", class = "ALL", verified = false, tags = { "handy" }, icon = "INV_Misc_Bag_08",
+    body = "/ride bagswap",
+    explain = "Got a bigger bag? Press it out of combat: Outrider empties your smallest bag into your other bags and puts the new one in its place.", source = SRC },
   -- professions: shown only to a character with the profession
   { id = "all-disenchant", name = "Disenchant", class = "ALL", verified = false, tags = { "utility" }, profession = { "Enchanting" },
     needsSpells = { "Disenchant" }, body = "#showtooltip Disenchant\n/cast Disenchant",

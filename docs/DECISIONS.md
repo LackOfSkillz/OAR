@@ -176,3 +176,7 @@ world map and minimap, and alerts when the mouse passes over a quest object
 ## D-combo: combined keys and the modifier convention (2026-11-20, Claude, from Gary's ask)
 
 Gary asked for fewer macros that combine the best sequences, with scripts if they help. Scripts in a macro can read state but cannot cast or choose a spell (protected; rule 1), and Python can only run outside the game, so the combining is done with standard macro conditions the player holds: plain press = the most used layer, Shift = the second, Ctrl = the third, Alt = the fourth (Recover: Shift bandages yourself; Team: Shift sets focus, Ctrl clears). Five keys per class (Stop, Save, Burst, Recover, Team) from Data/ComboKeys.lua, spell names checked against Data/SpellInfo.lua; Wyvern Sting and Elemental Mastery left out (not in our cited data). Singles a key covers are hidden in the tree by default (Show singles). The fight rotation stays in Fight (castsequence built offline by tools/build_fight_plans.lua).
+
+## D-bagswap: moving items for a bag swap (2026-11-20, Claude, Gary asked)
+
+One press of Bag Swap moves the items of the smallest bag into free slots elsewhere, one move every 0.2 s, then puts the new bag in. Moving items and placing a bag are not protected actions (bag-sort addons and Blizzard's Clean Up do the same); the whole run starts only from Gary's press, runs only out of combat, stops when a fight starts, and never sells, deletes or drops anything. Rule 1 (no automation of protected actions) is unchanged.

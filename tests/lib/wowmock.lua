@@ -716,6 +716,43 @@ function M.new(opts)
         questID = game.questStartItems and game.questStartItems[id] or nil } end
     end,
   }
+  -- cursor and bag slots (BagSwap): game.cursorItem = { id, bag, slot }; the bag in slot n is
+  -- game.bagItem[n] (its size game.bagSize[n]); a bag item's size is game.items[id].slots
+  base.C_Container.ContainerIDToInventoryID = function(bag) return 30 + bag end
+  base.C_Container.PickupContainerItem = function(bag, slot)
+    if game.combat then error("item moved in combat") end
+    game.bags = game.bags or {}
+    game.bags[bag] = game.bags[bag] or {}
+    local here = game.bags[bag][slot]
+    local cur = game.cursorItem
+    if not cur then
+      if here then game.cursorItem = { id = here, bag = bag, slot = slot } game.bags[bag][slot] = nil end
+      return
+    end
+    if slot > base.C_Container.GetContainerNumSlots(bag) then error("no such slot") end
+    game.bags[bag][slot] = cur.id
+    game.cursorItem = nil
+    if here then game.bags[cur.bag][cur.slot] = here end -- swap
+    game.moves = (game.moves or 0) + 1
+  end
+  base.CursorHasItem = function() return game.cursorItem ~= nil end
+  base.PutItemInBag = function(inv)
+    local bag = inv - 30
+    local cur = game.cursorItem
+    if not cur then return end
+    for _ in pairs(game.bags[bag] or {}) do
+      game.bags[cur.bag][cur.slot] = cur.id game.cursorItem = nil
+      game.uiError = "That bag must be empty" return
+    end
+    local it = game.items[cur.id]
+    local old = game.bagItem and game.bagItem[bag]
+    game.cursorItem = nil
+    game.bagItem = game.bagItem or {}
+    game.bagSize = game.bagSize or {}
+    game.bagItem[bag], game.bagSize[bag] = cur.id, it.slots
+    game.bags[bag] = {}
+    if old then game.bags[cur.bag][cur.slot] = old end -- the old bag lands where the new one was
+  end
   -- gear: game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 5, ... }; items[id].equipLoc / class / subclass
   base.C_Item.EquipItemByName = function(link, slot)
     if game.combat then error("EquipItemByName in combat") end
@@ -921,7 +958,11 @@ function M.new(opts)
     game.actions = game.actions or {}
     game.actions[slot] = game.cursorSpell
   end
-  base.ClearCursor = function() game.cursorSpell = nil end
+  base.ClearCursor = function()
+    game.cursorSpell = nil
+    local cur = game.cursorItem
+    if cur then game.bags[cur.bag][cur.slot] = cur.id game.cursorItem = nil end
+  end
   base.C_TaxiMap = { GetTaxiNodesForMap = function(mapID)
     return game.taxi and game.taxi[mapID] or {}
   end }
