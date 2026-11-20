@@ -24,6 +24,10 @@ ns.Data:Register("rare", "seed", {
     level = { 12, 12 }, beast = {},
     spawns = { { x = 0.599, y = 0.344 } }, shares = { 259388 },
     notes = "Seen at Mystmane's spot", source = DISC },
+  -- captured 2026-11-20 from Jekar's save (targeted alive, later seen dead, both at 63.3, 62.3)
+  { npcID = 259398, name = "Galemender Delanea", mapID = 2521, verified = false,
+    level = { 11, 11 }, spawns = { { x = 0.633, y = 0.623 } },
+    notes = "By the lake east of Shrine of Akir", source = "discovery on Gary's client 2026-11-20" },
   { npcID = 259394, name = "Snapbeak the Quick", mapID = 2521, verified = false,
     level = { 9, 9 }, elite = true,
     spawns = { { x = 0.351, y = 0.582 } }, source = DISC },
@@ -62,4 +66,14 @@ ns.Data:Register("rare", "seed", {
     source = "conquestcapped.com Forever guide, read 2026-11-15" },
   { npcID = 3056, name = "Ghost Howl", mapID = 1412, verified = false, confidence = "community",
     spawns = {}, notes = "Mulgore was redrawn: no spawn points until Outrider captures it", source = WDB },
+})
+
+-- Spots Gary reported a rare at before Outrider saw it (2026-11-20: he circled
+-- them on a map screenshot). Read from the screenshot: about 1-2% off. Shown
+-- as a rare pin until a known rare is seen within ~4% of the spot.
+ns.Data:Register("poi", "reported rares", {
+  { id = "2521-akir-camp", kind = "rare_spot", mapID = 2521, x = 0.604, y = 0.519, verified = false, confidence = "unknown",
+    name = "A rare spawns near here (not seen by Outrider yet)",
+    note = "Gary's report: by the camp west of Shrine of Akir. Mouse over it when it's up and Outrider records it.",
+    source = "Gary 2026-11-20, circled on a map screenshot" },
 })

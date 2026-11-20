@@ -166,7 +166,9 @@ function M.Paint(frame, pin)
   if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
   local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
   frame.ring:SetColorTexture(c[1], c[2], c[3], (pin.questColor or pin.ringColor) and 0.95 or 0.55)
-  if pin.faded then frame:SetAlpha(0.55) end -- a dead rare fades; focus dimming above stays
+  -- a dead rare dims a little, never out of sight: it still marks where it
+  -- spawns (Gary, 2026-11-20: a dead rare's pin was too faint to find)
+  if pin.faded then frame:SetAlpha(0.85) end
   local ok = frame.icon:SetTexture(M.IconFor(pin))
   if ok == false then
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1) -- missing file: plain round dot
@@ -363,6 +365,20 @@ function M:BuildPins(mapID)
     for _, e in ipairs(ns.Data:All("rare")) do
       if e.mapID == mapID and e.spawns and e.spawns[1] then addRare(e.npcID, e.name, e.spawns[1].x, e.spawns[1].y) end
     end
+    -- Spots Gary reported a rare at before Outrider saw it (Data poi kind
+    -- "rare_spot", Gary 2026-11-20). Gone once a known rare pin is within ~4%.
+    for _, e in ipairs(ns.Data:All("poi")) do
+      if e.kind == "rare_spot" and e.mapID == mapID then
+        local near = false
+        for _, pin in ipairs(out) do
+          if pin.kind == "rare" and math.abs(pin.x - e.x) < 0.04 and math.abs(pin.y - e.y) < 0.04 then near = true break end
+        end
+        if not near then
+          out[#out + 1] = { id = "rarespot-" .. e.id, kind = "rare", mapID = mapID, x = e.x, y = e.y, rare = true,
+            name = e.name or "A rare spawns near here", stateLine = e.note }
+        end
+      end
+    end
     -- Every rare and rare elite in the creature pack (Gary, 2026-11-13: "how
     -- was I supposed to find that rare elite?"), at every spawn spot it has
     -- (Gary, 2026-11-14: Slydris has 4).
@@ -528,6 +544,7 @@ end
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
+M.RARE_SCALE = 2 -- rares on the zone map: twice the size of other pins
 local NO_MERGE = { rare = true, note = true, guild = true, trail = true, ride = true, transport = true }
 
 function M.Declutter(pins, px, py)
@@ -577,6 +594,21 @@ function M:AcquirePin(canvas)
   if not pin then
     pin = CreateFrame("Button", nil, canvas)
     M.Decorate(pin, M.PIN_SIZE)
+    -- rares stand out on the zone map: a red halo and the name under the pin
+    pin.halo = pin:CreateTexture(nil, "BACKGROUND", nil, -1)
+    pin.halo:SetPoint("CENTER")
+    pin.halo:SetSize(M.PIN_SIZE + 8, M.PIN_SIZE + 8)
+    pin.halo:SetColorTexture(1, 0.2, 0.2, 0.45)
+    if pin.CreateMaskTexture and pin.halo.AddMaskTexture then
+      local m = pin:CreateMaskTexture()
+      if m then m:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+      m:SetAllPoints(pin.halo)
+      pin.halo:AddMaskTexture(m) end
+    end
+    pin.halo:Hide()
+    pin.label = pin:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    pin.label:SetPoint("TOP", pin, "BOTTOM", 0, -1)
+    pin.label:Hide()
     pin:SetScript("OnClick", function(self) M:ShowCard(self.data) end)
     pin:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -624,8 +656,19 @@ function M:Refresh()
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
-    pin:SetScale((data.small and 0.55 or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
+    -- rares are twice the size, with a red halo and their name (Gary, 2026-11-20:
+    -- "make it really noticeable")
+    local big = data.kind == "rare" and not data.small
+    pin:SetScale((data.small and 0.55 or big and M.RARE_SCALE or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
     M.Paint(pin, data)
+    if pin.halo then
+      pin.halo:SetShown(big)
+      -- the name once per rare (not on every extra spawn spot)
+      local first = big and not tostring(data.id or ""):match("^rare%-%d+%-%d+$")
+      pin.label:SetText(first and (tostring(data.name or ""):match("^([^%(,]+)") or "") or "")
+      pin.label:SetShown(first and true or false)
+      if first then pin:SetFrameLevel(pin:GetFrameLevel() + 2) end
+    end
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", canvas, "TOPLEFT", data.x * w * scale, -data.y * h * scale)
     pin:Show()

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Rares stand out on the zone map (Gary, 2026-11-20):** rare pins are twice the size with a red halo and the rare's name under them; a dead rare dims only slightly instead of fading out. Galemender Delanea (Zephras Isle 63.3, 62.3) is in the rare pack from Jekar's capture, and a spot Gary reported west of Shrine of Akir (about 60.4, 51.9) shows as a rare pin until Outrider sees the rare itself.
 - **Places fix themselves (Gary, 2026-11-20: the fishing trainer was in the wrong spot):** an NPC you stand next to (mouse over, target or its nameplate, within about 10 yards, out of combat) now counts as a sure spot, like talking to it. A sure spot far from the stored one replaces it instead of being averaged in. Your own sighting beats the data pack on the map, in the nearest-place arrows and on the Fishing page, and a service NPC whose title says what it does (Fishing Trainer, Innkeeper...) becomes a place as soon as you see it up close.
 - **Fishing page:** Fishing gear on / Usual gear back moved to the top.
 - **Outrider stands alone (Gary, 2026-11-20):** it needs no other addon (the TOC has no required dependencies; the optional list only sets load order). No other addon is named on screen any more: the Gear page says "Quest The Horn of Xelthos" or "Crafted" instead of "GearQuest: ...", the Modules and Status pages say "another addon you run does this" instead of naming it, and Help, the map reveal note, quest data notes and the dungeon guide use plain words. Outrider still shares with or steps aside for those addons when you run them.
