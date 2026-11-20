@@ -572,6 +572,37 @@ function T:Explain(it, key)
   return out
 end
 
+-- Column widths for the tree (tidy-up 2026-11-20): each column as wide as its
+-- fullest band needs, at least wide enough for its name; spare room shared out
+-- evenly. When it doesn't all fit, the build columns keep their room and
+-- "Every <class>" (column 1) wraps its icons onto more lines.
+T.MIN_COL = 120
+function T.ColumnWidths(grid, ncols, avail, step)
+  local need, total = {}, 0
+  for c = 1, ncols do
+    local most = 0
+    for b = 1, #(grid or {}) do most = math.max(most, #((grid[b] or {})[c] or {})) end
+    need[c] = math.max(T.MIN_COL, most * step + 12)
+    total = total + need[c]
+  end
+  local w = {}
+  if total <= avail then
+    local extra = math.floor((avail - total) / math.max(1, ncols))
+    for c = 1, ncols do w[c] = need[c] + extra end
+  else
+    local others = total - need[1]
+    if ncols > 1 and avail - others >= step * 4 + 12 then
+      for c = 2, ncols do w[c] = need[c] end
+      w[1] = avail - others
+    else
+      for c = 1, ncols do w[c] = math.max(step + 4, math.floor(avail * need[c] / total)) end
+    end
+  end
+  local x, xs = 0, {}
+  for c = 1, ncols do xs[c] = x x = x + w[c] end
+  return xs, w
+end
+
 -- ------------------------------------------------------------------ page
 local ICON, BIG = 36, 54
 local COLOR = { gold = { 0.95, 0.78, 0.30 } }
@@ -584,8 +615,15 @@ local function slotButton(parent, size)
   b.icon:SetPoint("TOPLEFT", 2, -2)
   b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
   b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  -- tidy-up 2026-11-20: the level number sits inside the icon, and "new" is a
+  -- small gold dot in the corner (the word ran into the next icon and the caption)
   b.badge = UI.Text(b, "small", "text")
-  b.badge:SetPoint("BOTTOMRIGHT", 2, -2)
+  b.badge:SetPoint("BOTTOMRIGHT", -2, 2)
+  b.dot = b:CreateTexture(nil, "OVERLAY")
+  b.dot:SetSize(7, 7)
+  b.dot:SetPoint("TOPRIGHT", -3, -3)
+  b.dot:SetColorTexture(1, 0.84, 0.35, 1)
+  b.dot:Hide()
   b.ring = b:CreateTexture(nil, "OVERLAY")
   b.ring:SetPoint("TOPLEFT", -3, 3)
   b.ring:SetPoint("BOTTOMRIGHT", 3, -3)
@@ -703,7 +741,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   p.legend:SetPoint("BOTTOMLEFT", 2, 14)
   p.legend:SetPoint("RIGHT", d, "LEFT", -12, 0)
   p.legend:SetJustifyH("LEFT")
-  p.legend:SetText("Click an icon to read it; drag it (or Pick up) onto your action bar.  Gold: on your bar.  Grey with a number: unlocks at that level.")
+  p.legend:SetText("Click an icon to read it; drag it (or Pick up) onto your action bar.  Gold frame: on your bar.  Gold dot: new.  Grey with a number: unlocks at that level.")
   -- banner: one of your own macros misses parts of your build
   p.ownLine = UI.Text(p, "small", "warn")
   p.ownLine:SetPoint("BOTTOMLEFT", p.legend, "TOPLEFT", 0, 6)
@@ -751,6 +789,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
       GameTooltip:AddLine(it.name)
       GameTooltip:AddLine(it.stateText or "", 0.75, 0.75, 0.75, true)
+      if it.isNew then GameTooltip:AddLine("New: you haven't opened this one yet", 0.95, 0.78, 0.3, true) end
       GameTooltip:Show()
     end)
     b:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -770,7 +809,9 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     b.icon:SetAlpha(locked and 0.55 or 1)
     local usable = not locked
     local new = usable and not it.key and not T:Settings().seen[it.id]
-    b.badge:SetText(st == "locked" and tostring(it.level) or new and "|cfff1d58enew|r" or "")
+    b.badge:SetText(st == "locked" and tostring(it.level) or "")
+    b.dot:SetShown(new and true or false)
+    it.isNew = new and true or nil
     local on = onBars[it.name] and true or false
     b.ring:SetShown(on)
     Theme:ApplyPanel(b, "bg", on and "gold" or "strong")
@@ -831,14 +872,16 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     d.title:SetText(x.title)
     local names = ns.FightPlan and ns.FightPlan.SPEC_NAMES or {}
     local sub = it.key and "One of your keys" or (it.tree and ((names[it.tree] or it.tree) .. " build") or "Every build")
-    sub = sub .. "  ·  " .. (it.stateText or "")
-    sub = sub .. string.format("  ·  %d / 255 characters", #(x.body or ""))
-    d.sub:SetText(sub)
+    d.sub:SetText(sub .. "\n" .. (it.stateText or ""))
     local parts = { "|cfff1d58eWhen to press|r", x.when }
     if x.what and x.what ~= "" then parts[#parts + 1] = "\n|cfff1d58eWhat it does|r" parts[#parts + 1] = x.what end
     parts[#parts + 1] = "\n|cfff1d58eLine by line|r"
     for i, l in ipairs(x.lines) do parts[#parts + 1] = i .. ". " .. l end
-    parts[#parts + 1] = "\n|cff8f96a6" .. x.body:gsub("\n", "  |  ") .. "|r"
+    -- the macro itself, one line per line (tidy-up 2026-11-20: was run together with bars)
+    parts[#parts + 1] = string.format("\n|cfff1d58eThe macro|r  |cff8f96a6%d / 255 characters|r", #(x.body or ""))
+    for line in (x.body .. "\n"):gmatch("(.-)\n") do
+      if line ~= "" then parts[#parts + 1] = "|cffb8c0d0" .. line .. "|r" end
+    end
     d.text:SetText(table.concat(parts, "\n"))
     local st = it.state
     d.pick:SetShown(st ~= "locked")
@@ -861,8 +904,6 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     local FP = ns.FightPlan
     local spec = FP and FP.enabled and FP:Spec() or "levelling"
     local specName = FP and FP.SPEC_NAMES and FP.SPEC_NAMES[spec] or spec
-    self.who:SetText(string.format("%s%s  ·  %s  ·  level %d", cls:sub(1, 1), cls:sub(2):lower(),
-      spec == "levelling" and "levelling build (talents from level 10)" or (ns.TitleCase(specName or "") .. " build"), T.Level()))
     local used, max = T.Slots()
     self.slots:SetText(string.format("%s%d / %d character macros|r", used >= max and "|cffff6060" or "|cff8f96a6", used, max))
     -- the build menu, while talents don't decide yet
@@ -871,7 +912,12 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     for _, t in ipairs(plan and plan.trees or {}) do opts[#opts + 1] = { t, "Plan: " .. ((FP and FP.SPEC_NAMES[t]) or t) } end
     if self.plan.SetOptions then self.plan:SetOptions(opts) else self.plan.options = opts end
     local fromTalents = FP and FP.enabled and spec ~= "levelling" and spec ~= (T:Settings().planned or "")
-    self.plan:SetShown(not fromTalents and #opts > 1)
+    local menu = not fromTalents and #opts > 1
+    self.plan:SetShown(menu)
+    -- tidy-up 2026-11-20: the build menu already names the build; the line only says when talents decide
+    local buildText = spec == "levelling" and "levelling build" or (ns.TitleCase(specName or "") .. " build")
+    if menu then buildText = buildText .. "  |cff8f96a6(talents decide from 10 points; until then pick one on the right)|r" end
+    self.who:SetText(string.format("%s%s  ·  level %d  ·  %s", cls:sub(1, 1), cls:sub(2):lower(), T.Level(), buildText))
     if self.plan.Refresh then self.plan:Refresh() end
     UI.SetPrimary(self.pve, self.mode == "pve")
     UI.SetPrimary(self.pvp, self.mode == "pvp")
@@ -912,20 +958,26 @@ ns.Hub:AddTab("macros", "Macros", function(p)
       keys.handyHead = UI.Text(keys, "small", "goldText")
       keys.handyHead:SetText("Handy keys")
     end
+    -- tidy-up 2026-11-20: wider pitch and fixed-width captions so names don't run together
+    local HP, HS = 72, 40
     keys.handyHead:ClearAllPoints()
-    keys.handyHead:SetPoint("TOPRIGHT", keys, "TOPRIGHT", -16 - math.max(0, #handy * 48 - 70), -10)
+    keys.handyHead:SetPoint("TOP", keys, "TOPRIGHT", -16 - (#handy * HP) / 2, -10)
+    keys.handyHead:SetShown(#handy > 0)
     for i, it in ipairs(handy) do
       local b = keys.handy[i]
       if not b then
-        b = slotButton(keys, 40)
+        b = slotButton(keys, HS)
         b.cap = UI.Text(keys, "small", "text")
-        b.cap:SetPoint("TOP", b, "BOTTOM", 0, -3)
+        b.cap:SetPoint("TOP", b, "BOTTOM", 0, -4)
+        b.cap:SetWidth(HP - 4)
+        b.cap:SetJustifyH("CENTER")
+        if b.cap.SetWordWrap then b.cap:SetWordWrap(false) end
         hookButton(b)
         keys.handy[i] = b
       end
       b:ClearAllPoints()
-      b:SetPoint("TOPRIGHT", keys, "TOPRIGHT", -16 - (#handy - i) * 56, -32)
-      paint(b, it, onBars, 40)
+      b:SetPoint("TOP", keys, "TOPRIGHT", -16 - (#handy - i) * HP - HP / 2, -30)
+      paint(b, it, onBars, HS)
       b.cap:SetText(it.name)
       b.cap:Show()
     end
@@ -936,16 +988,8 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     local W = math.max(400, tree:GetWidth() or 0)
     if W < 300 then W = 520 end
     local labelW = 46
-    -- "Every <class>" holds most macros: it gets two shares of the width, each build one
-    local shares = #cols + 1
-    local unit = math.floor((W - labelW) / shares)
-    local colX, colWs = {}, {}
-    local x = labelW
-    for c = 1, #cols do
-      colWs[c] = c == 1 and unit * 2 or unit
-      colX[c] = x
-      x = x + colWs[c]
-    end
+    local colX, colWs = T.ColumnWidths(grid, #cols, W - labelW, ICON + 4)
+    for c = 1, #cols do colX[c] = colX[c] + labelW end
     for c, id in ipairs(cols) do
       local h = tree.colHeads[c]
       if not h then h = UI.Text(tree, "small", "text") tree.colHeads[c] = h end
@@ -972,6 +1016,19 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     local bgArt = ns.Art and (ns.Art:Path("macro_tree_" .. cls:lower()) or ns.Art:Path("macro_tree"))
     if bgArt then tree.bg:SetTexture(bgArt) tree.bg:Show() else tree.bg:Hide() end
     for c = #cols + 1, #tree.colHeads do tree.colHeads[c]:Hide() end
+    -- faint dividers between the columns
+    tree.vlines = tree.vlines or {}
+    for c = 2, #cols do
+      local v = tree.vlines[c]
+      if not v then v = tree:CreateTexture(nil, "BORDER") v:SetWidth(1) tree.vlines[c] = v end
+      v:ClearAllPoints()
+      v:SetPoint("TOPLEFT", tree, "TOPLEFT", colX[c], -16)
+      v:SetPoint("BOTTOM", tree, "BOTTOM", 0, 0)
+      v:SetColorTexture(1, 1, 1, 0.05)
+      v:Show()
+    end
+    for c = #cols + 1, #tree.vlines do if tree.vlines[c] then tree.vlines[c]:Hide() end end
+    if tree.here then tree.here:Hide() end
     -- each band as tall as its fullest cell (icons wrap inside a cell)
     local step = ICON + 4
     local n, y = 0, -20
@@ -987,6 +1044,25 @@ ns.Hub:AddTab("macros", "Macros", function(p)
       rh:SetPoint("TOPLEFT", tree, "TOPLEFT", 0, y - 12)
       local here = T.Band(T.Level()) == bIdx
       rh:SetText((here and "|cfff1d58e" or "") .. band[1] .. "-" .. band[2] .. (here and "|r" or ""))
+      -- a faint line above each band, and a soft gold wash behind your own band (tidy-up 2026-11-20)
+      tree.sep = tree.sep or {}
+      local sep = tree.sep[bIdx]
+      if not sep then sep = tree:CreateTexture(nil, "BORDER") sep:SetHeight(1) tree.sep[bIdx] = sep end
+      sep:ClearAllPoints()
+      sep:SetPoint("TOPLEFT", tree, "TOPLEFT", 0, y)
+      sep:SetPoint("RIGHT", tree, "RIGHT", 0, 0)
+      sep:SetColorTexture(1, 1, 1, 0.07)
+      sep:Show()
+      local bandH = lines * step + 10
+      if here then
+        if not tree.here then tree.here = tree:CreateTexture(nil, "BACKGROUND", nil, 1) end
+        tree.here:ClearAllPoints()
+        tree.here:SetPoint("TOPLEFT", tree, "TOPLEFT", 0, y)
+        tree.here:SetPoint("RIGHT", tree, "RIGHT", 0, 0)
+        tree.here:SetHeight(bandH)
+        tree.here:SetColorTexture(0.95, 0.78, 0.30, 0.06)
+        tree.here:Show()
+      end
       for c = 1, #cols do
         local items = grid[bIdx][c]
         local per = math.max(1, math.floor((colWs[c] - 4) / step))

@@ -91,4 +91,36 @@ T.describe("macro tree", function()
     T.contains(s, "you are not stealthed")
     T.contains(s, "you have a dagger equipped")
   end)
+  T.it("tidy-up: columns fit their icons, new is a dot, the macro shows line by line, no dev notes", function()
+    local game, ns = rogue()
+    local MT = ns.MacroTree
+    -- one band: every has 20 icons, three builds have 1, 0 and 2
+    local grid = { { {}, {}, {}, {} } }
+    for i = 1, 20 do grid[1][1][i] = i end
+    grid[1][2][1] = 1 grid[1][4] = { 1, 2 }
+    local xs, w = MT.ColumnWidths(grid, 4, 1000, 40)
+    T.eq(w[2], MT.MIN_COL, "a near-empty build column keeps just its name's room")
+    T.eq(w[1] + w[2] + w[3] + w[4], 1000, "fills the width")
+    T.ok(w[1] >= 400, "every column gets the rest")
+    T.eq(xs[2], w[1])
+    local _, roomy = MT.ColumnWidths(grid, 4, 2000, 40)
+    T.ok(roomy[1] >= 812, "every column fits all 20 in one line when there's room")
+    game:slash("")
+    ns.Hub.frame.tabBar:Select("macros")
+    local p = ns.Hub.byId.macros.panel
+    local dots = 0
+    for _, b in ipairs(p.tree.pool) do
+      if b:IsShown() then
+        T.ok(b.badge:GetText() == "" or tonumber(b.badge:GetText()), "badge is a level number or empty")
+        if b.dot:IsShown() then dots = dots + 1 end
+      end
+    end
+    T.ok(dots > 0, "new macros carry the gold dot")
+    p:ShowItem(p.keys.btns[1].item)
+    local text = p.detail.text:GetText()
+    T.contains(text, "The macro")
+    T.ok(not text:find("  |  ", 1, true), "macro lines are not run together")
+    T.ok(not text:find("2026%-"), "no dated developer notes")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
