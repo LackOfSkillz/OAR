@@ -171,3 +171,58 @@ T.describe("recipes you already know", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("recipes you already know, every profession", function()
+  -- the prefix each profession's recipe items carry, and its auction subclass
+  local PROFS = {
+    { "Alchemy", "Recipe", 6 }, { "Blacksmithing", "Plans", 4 }, { "Cooking", "Recipe", 5 },
+    { "Enchanting", "Formula", 8 }, { "Engineering", "Schematic", 3 }, { "First Aid", "Manual", 7 },
+    { "Leatherworking", "Pattern", 1 }, { "Tailoring", "Pattern", 2 },
+  }
+  for _, p in ipairs(PROFS) do
+    local prof, prefix, sub = p[1], p[2], p[3]
+    T.it(prof .. ": hides what this character knows (by name or 'Already known'), keeps what only another character knows", function()
+      local game = mock.new({ now = 1794700000 })
+      game.items = {
+        [1] = { name = "Linen Cloth" },
+        [11] = { name = prefix .. ": Known Thing" }, [12] = { name = prefix .. ": Alt Thing" },
+        [13] = { name = prefix .. ": New Thing" }, [14] = { name = prefix .. ": Tooltip Thing" },
+      }
+      local ns = game:loadAddon()
+      game:login()
+      ns.db.char.professions = { [prof] = { skill = 50, max = 75, recipes = {
+        [1] = { name = "Known Thing", diff = 3, reagents = { [1] = 1 } } } } }
+      ns.db.raw.chars["Alty-Realm"] = { professions = { [prof] = { skill = 300, recipes = { [9] = { name = "Alt Thing" } } } } }
+      game.ahListings = {
+        [11] = { name = prefix .. ": Known Thing", minPrice = 100, recipe = sub },
+        [12] = { name = prefix .. ": Alt Thing", minPrice = 200, recipe = sub },
+        [13] = { name = prefix .. ": New Thing", minPrice = 300, recipe = sub },
+        [14] = { name = prefix .. ": Tooltip Thing", minPrice = 400, recipe = sub },
+      }
+      game.itemTips = {
+        [11] = { prefix .. ": Known Thing", "Requires " .. prof .. " (40)" },
+        [12] = { prefix .. ": Alt Thing", "Requires " .. prof .. " (45)" },
+        [13] = { prefix .. ": New Thing", "Requires " .. prof .. " (50)" },
+        [14] = { prefix .. ": Tooltip Thing", "Requires " .. prof .. " (30)", "Already known" },
+      }
+      ns.Crafter.Have = function() return 99 end
+      game:fire("AUCTION_HOUSE_SHOW")
+      ns.TrainShop:Start()
+      local guard = 0
+      while ns.TrainShop.queue and guard < 20 do guard = guard + 1 game:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED") end
+      local searched
+      for _, q in ipairs(game.queries or {}) do
+        local f = q.itemClassFilters and q.itemClassFilters[1]
+        if f and f.classID == 9 and f.subClassID == sub then searched = true end
+      end
+      T.ok(searched, prof .. " recipes searched in subclass " .. sub)
+      local names = {}
+      for _, r in ipairs(ns.TrainShop:UsefulRecipes()) do names[#names + 1] = r.name end
+      table.sort(names)
+      T.eq(table.concat(names, ","), prefix .. ": Alt Thing," .. prefix .. ": New Thing")
+      local _, status = ns.TrainShop:View("recipes")
+      T.contains(status, "Hidden: 2 you already know")
+      T.eq(#ns.Errors.list, 0)
+    end)
+  end
+end)
