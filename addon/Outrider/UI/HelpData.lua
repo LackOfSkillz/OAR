@@ -102,9 +102,9 @@ ns.HelpData = {
     { "Vendor and mailbox", "Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click) that says what's waiting in total. Send to: your characters on this realm and the last people you mailed, one click fills the To: box. At login, one line warns about mail with gold or items expiring within 3 days on any of your characters." },
   } },
 
-  { icon = "INV_Misc_Coin_02", "Auction house", "With the auction house open, Outrider's shopping panel sits beside it. Buying is always your click.", {
-    { "Training tab", "Pick a profession (only the ones this character has, or All). Outrider searches the ingredients your skill-up recipes need and ranks them by cost per skill point, plus recipes for sale you can use now or soon." },
-    { "Weapons, Armor and Bags tabs", "Upgrades your gold covers: only armor your class wears, bigger bags than your smallest, quivers or ammo pouches for hunters, profession bags for your professions." },
+  { icon = "INV_Misc_Coin_02", "Auction house", "With the auction house open, Outrider's shopping window sits beside it: a menu on the left, item cards with icons and prices in coins. Buying is always your click.", {
+    { "Training", "Three views from one search. Skill-ups: the cheapest way to your next points, each recipe with its ingredients as icons (amber: not on the auction house) and its cost a point. Recipes: recipes for sale you don't know, usable now or soon. Shopping list: every ingredient added up, with Buy all. Pick a profession with its chip, or All." },
+    { "Weapons, Armor and Bags", "Upgrades your gold covers: only armor your class wears, bigger bags than your smallest, quivers or ammo pouches for hunters, profession bags for your professions." },
     { "Buy", "A Buy click queues the item; the bar above the auction window shows the cheapest listing and you confirm each purchase." },
     { "Prices and selling", "Prices from Auctionator or TSM when installed, else what Outrider has seen. The auction helper suggests a price; /ride undercut sets how far under the market." },
   } },

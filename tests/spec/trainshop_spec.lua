@@ -106,3 +106,45 @@ T.describe("training shopping by profession", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("shopping window (2026-11-20 redesign)", function()
+  T.it("Training has three sub-items: skill-up cards, recipes and a shopping list with Buy all", function()
+    local game, ns = session()
+    run(game, ns)
+    local G = ns.GearShop
+    G.open = true
+    G:Pick("training")
+    local f = G.frame
+    T.ok(f:IsShown(), "window shown")
+    T.ok(f.rows[1]:IsShown(), "a skill-up card")
+    T.contains(f.rows[1].text:GetText(), "Elixir of Minor Defense")
+    T.contains(f.rows[1].pill:GetText(), "+10 skill")
+    T.ok(f.rows[1].reagents[1]:IsShown(), "reagent icons")
+    G:Pick("recipes")
+    T.eq(G.mode, "recipes")
+    T.ok(not f.rows[1]:IsShown(), "Swiftness needs 60: nothing usable soon")
+    G:Pick("list")
+    local names = {}
+    for _, r in ipairs(f.rows) do if r:IsShown() then names[#names + 1] = r.text:GetText() end end
+    T.contains(table.concat(names, ","), "Silverleaf")
+    T.contains(table.concat(names, ","), "Peacebloom")
+    T.ok(f.buyAll:IsShown(), "Buy all")
+    T.eq(#game.queries, 3, "one search serves all three views")
+    G:BuyAll()
+    T.ok((ns.AHBuy.current and 1 or 0) + #ns.AHBuy.queue >= 2, "every line queued, each still confirmed by a click")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("gear views search from the menu and page through results", function()
+    local game, ns = session()
+    game:fire("AUCTION_HOUSE_SHOW")
+    local G = ns.GearShop
+    G:Pick("bags")
+    T.eq(G.mode, "bags")
+    T.ok(G.queue ~= nil or G.found ~= nil, "a bag search started")
+    G.found, G.queue = {}, nil
+    G:Refresh()
+    T.ok(G.frame.empty ~= nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

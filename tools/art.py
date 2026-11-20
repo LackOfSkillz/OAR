@@ -23,7 +23,7 @@ OUT = os.path.join(ROOT, "addon", "Outrider", "Art")
 # name: (width, height). Square art is centre-cropped to a square; the header
 # is cropped to a 4:1 strip a little above the middle (VY) to keep the castle.
 # Batch 4 headers (2026-11-19) come with the artwork centred in a 4:1 strip, so they crop at the middle.
-VY = {"header": 0.35, "header_explore": 0.5, "header_character": 0.5, "header_town": 0.5, "header_social": 0.5, "header_outrider": 0.5}
+VY = {"header": 0.35, "header_explore": 0.5, "header_character": 0.5, "header_town": 0.5, "header_social": 0.5, "header_outrider": 0.5, "header_auction": 0.5}
 SPECS = {
     "emblem": (128, 128),
     "header": (1024, 256),
@@ -131,6 +131,7 @@ SPECS = {
     "header_town": (1024, 256),
     "header_social": (1024, 256),
     "header_outrider": (1024, 256),
+    "header_auction": (1024, 256),
     # world map and minimap pin glyphs (transparent)
     "pin_vendor": (64, 64),
     "pin_repair": (64, 64),

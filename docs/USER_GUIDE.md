@@ -122,10 +122,10 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 
 ## Auction house
 
-With the auction house open, Outrider's shopping panel sits beside it. Buying is always your click.
+With the auction house open, Outrider's shopping window sits beside it: a menu on the left, item cards with icons and prices in coins. Buying is always your click.
 
-- **Training tab.** Pick a profession (only the ones this character has, or All). Outrider searches the ingredients your skill-up recipes need and ranks them by cost per skill point, plus recipes for sale you can use now or soon.
-- **Weapons, Armor and Bags tabs.** Upgrades your gold covers: only armor your class wears, bigger bags than your smallest, quivers or ammo pouches for hunters, profession bags for your professions.
+- **Training.** Three views from one search. Skill-ups: the cheapest way to your next points, each recipe with its ingredients as icons (amber: not on the auction house) and its cost a point. Recipes: recipes for sale you don't know, usable now or soon. Shopping list: every ingredient added up, with Buy all. Pick a profession with its chip, or All.
+- **Weapons, Armor and Bags.** Upgrades your gold covers: only armor your class wears, bigger bags than your smallest, quivers or ammo pouches for hunters, profession bags for your professions.
 - **Buy.** A Buy click queues the item; the bar above the auction window shows the cheapest listing and you confirm each purchase.
 - **Prices and selling.** Prices from Auctionator or TSM when installed, else what Outrider has seen. The auction helper suggests a price; /ride undercut sets how far under the market.
 

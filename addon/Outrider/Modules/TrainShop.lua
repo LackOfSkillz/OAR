@@ -73,7 +73,7 @@ function M:Recipes()
     for id, r in pairs(p and p.recipes or {}) do
       local diff = type(r) == "table" and tonumber(r.diff)
       if diff and M.CHANCE[diff] and r.name ~= "Basic Campfire" and type(r.reagents) == "table" and next(r.reagents) then
-        out[#out + 1] = { prof = prof, id = id, name = r.name, diff = diff, reagents = r.reagents }
+        out[#out + 1] = { prof = prof, id = id, name = r.name, diff = diff, reagents = r.reagents, product = r.product }
       end
     end
   end
@@ -266,17 +266,7 @@ end
 function M:Lines()
   local lines, actions = {}, {}
   local money = ns.Prices.Money
-  -- All: a fair share of the 8 lines per profession (best of each first).
-  local ranked, picked = self:Rank(), {}
-  local profs = {}
-  for _, x in ipairs(ranked) do profs[x.recipe.prof] = true end
-  local n = 0
-  for _ in pairs(profs) do n = n + 1 end
-  local share, used = math.max(1, math.ceil(M.SHOW / math.max(1, n))), {}
-  for _, x in ipairs(ranked) do
-    local p = x.recipe.prof
-    if #picked < M.SHOW and (used[p] or 0) < share then picked[#picked + 1] = x used[p] = (used[p] or 0) + 1 end
-  end
+  local picked = self:Picked()
   for _, x in ipairs(picked) do
     local parts = {}
     for _, b in ipairs(x.buy) do
@@ -321,68 +311,135 @@ function M:Done()
 end
 
 -- ------------------------------------------------------------ panel
+-- Drawn inside the shopping window (GearShop): the profession chips, and the
+-- cards for its three Training views (Gary, 2026-11-20: sub-items for training).
+
+-- The skill-up lines on show: All gives each profession a fair share.
+function M:Picked()
+  local ranked, picked = self:Rank(), {}
+  local profs = {}
+  for _, x in ipairs(ranked) do profs[x.recipe.prof] = true end
+  local n = 0
+  for _ in pairs(profs) do n = n + 1 end
+  local share, used = math.max(1, math.ceil(M.SHOW / math.max(1, n))), {}
+  for _, x in ipairs(ranked) do
+    local p = x.recipe.prof
+    if #picked < M.SHOW and (used[p] or 0) < share then picked[#picked + 1] = x used[p] = (used[p] or 0) + 1 end
+  end
+  return picked
+end
+
+local function profIcon(prof)
+  local P = ns.ProfExtras and ns.ProfExtras.PROF_ICON
+  return "Interface\\Icons\\" .. ((P and P[prof]) or "INV_Misc_Book_09")
+end
+
+-- cards, status, searching, pos, total for "training" | "recipes" | "list"
+function M:View(view)
+  local money = ns.Prices.Money
+  if self.queue then
+    local e = self.queue[self.pos]
+    local s = self.manual and string.format("The server wants a click per search: press %s again (%d of %d).", view == "recipes" and "Recipes" or "Skill-ups", self.pos, #self.queue)
+      or string.format("Searching the auction house: %s (%d of %d)...", e and e.text or "...", self.pos, #self.queue)
+    return {}, s, true, self.pos, #self.queue
+  end
+  if not self.prices then
+    local n = 0
+    for _ in pairs(self:Needs()) do n = n + 1 end
+    return {}, n > 0 and string.format("Looks up the %d ingredients your skill-up recipes need, and recipes you don't know yet.", n)
+      or "Open each profession window once so Outrider knows which recipes still give skill.", false, 0, 0
+  end
+  local cards = {}
+  if view == "recipes" then
+    for _, r in ipairs(self:UsefulRecipes()) do
+      local skill = tonumber(ns.db.char.professions[r.prof].skill) or 0
+      cards[#cards + 1] = { itemID = r.itemID, item = { itemID = r.itemID }, title = r.name,
+        sub = string.format("Needs %s %d, you have %d%s", r.prof, r.need, skill, r.now and "" or string.format("  |cffffc84d(%d more points)|r", r.need - skill)),
+        pill = r.now and "|cff7fff7fusable now|r" or "|cff8f96a6later|r", price = r.price, dim = not r.now,
+        action = { { name = r.name, itemKey = r.itemKey } } }
+    end
+    return cards, #cards > 0 and "Recipes for sale that you don't know yet: usable now first, then cheapest. Buy queues it; the bar above the auction window confirms."
+      or "No recipe for sale that you don't know and could use soon.", false, 0, 0
+  end
+  local picked = self:Picked()
+  if view == "list" then
+    local sum, order = {}, {}
+    for _, x in ipairs(picked) do
+      for _, b in ipairs(x.buy) do
+        local s = sum[b.itemID]
+        if not s then s = { itemID = b.itemID, n = 0, cost = b.cost and 0 or nil, for_ = {} } sum[b.itemID] = s order[#order + 1] = s end
+        s.n = s.n + b.n
+        if s.cost and b.cost then s.cost = s.cost + b.cost else s.cost = nil end
+        s.for_[#s.for_ + 1] = tostring(x.recipe.name)
+      end
+    end
+    table.sort(order, function(a, b) if (a.cost == nil) ~= (b.cost == nil) then return a.cost ~= nil end return (a.cost or 0) > (b.cost or 0) end)
+    for _, s in ipairs(order) do
+      local name = itemName(s.itemID) or ("item " .. s.itemID)
+      cards[#cards + 1] = { itemID = s.itemID, item = { itemID = s.itemID }, title = name,
+        sub = s.cost and ("For " .. table.concat(s.for_, ", ")) or "Not on the auction house: a vendor may sell it",
+        pill = "x" .. s.n, price = s.cost, priceText = s.cost and nil or "|cff8f96a6vendor|r", dim = s.cost == nil,
+        action = s.cost and { { name = name, itemID = s.itemID, qty = s.n, commodity = true } } or nil }
+    end
+    return cards, #cards > 0 and "Everything the skill-ups need that your bags don't hold, added up. Buy all queues it; each purchase still waits for your click."
+      or "Your bags already hold what the skill-ups need.", false, 0, 0
+  end
+  for _, x in ipairs(picked) do
+    local buys, reagents = {}, {}
+    for _, b in ipairs(x.buy) do
+      reagents[#reagents + 1] = { itemID = b.itemID, n = b.n, short = b.cost == nil }
+      if b.cost then buys[#buys + 1] = { name = itemName(b.itemID) or ("item " .. b.itemID), itemID = b.itemID, qty = b.n, commodity = true } end
+    end
+    local r = x.recipe
+    local pill = string.format("+%d skill", math.floor(x.points))
+    if #x.buy > 0 and not x.missing then pill = pill .. "  ·  " .. money(x.perPoint) .. " a point" end
+    cards[#cards + 1] = { itemID = r.product, icon = not r.product and profIcon(r.prof) or nil, item = r.product and { itemID = r.product } or nil,
+      title = string.format("%s  |cff8f96a6%s|r", tostring(r.name), r.prof),
+      sub = #x.buy == 0 and "|cff7fff7fYou have everything: craft it|r" or nil,
+      reagents = reagents, pill = pill, price = (#x.buy > 0 and not x.missing) and x.cost or nil,
+      priceText = #x.buy == 0 and "|cff7fff7ffree|r" or (x.missing and "|cffffc84dpart from a vendor|r" or nil),
+      action = #buys > 0 and buys or nil }
+  end
+  return cards, #cards > 0 and "Cheapest skill first. Amber counts: not on the auction house (a vendor may sell them)."
+    or "Nothing found that trains your professions.", false, 0, 0
+end
+
 function M:Build()
   if self.frame then return self.frame end
-  -- drawn inside the shopping panel (GearShop) under its Training button
   local host = ns.GearShop and ns.GearShop:Build()
   local f = CreateFrame("Frame", "Outrider_TrainShop", host or UIParent)
-  f:SetSize(480, 100)
-  if host then
-    f:SetPoint("TOPLEFT", host, "TOPLEFT", 6, -88)
-  else
-    f:SetPoint("CENTER")
-  end
-  -- the search starts from the panel's Training button; this one stays as a fallback
+  f:SetSize(540, 30)
+  if host then f:SetPoint("TOPLEFT", host, "TOPLEFT", 184, -140) else f:SetPoint("CENTER") end
+  -- the search starts from the menu; this one stays as a fallback without the window
   f.button = UI:Button(f, "Find training materials", 190, function()
     if M.queue and M.manual then M:Next() else M:Start() end
   end)
   f.button:SetPoint("TOPRIGHT", -8, -2)
   if host then f.button:Hide() end
-  -- profession chips: All + this character's crafting professions
   f.chips = {}
-  f.text = UI.Text(f, "small", "text")
-  f.text:SetPoint("TOPLEFT", 8, -32)
-  f.text:SetWidth(452)
-  f.text:SetJustifyH("LEFT")
-  f.text:SetJustifyV("TOP")
-  -- result lines, each with a Buy button when there is something to buy
-  f.rows = {}
-  for i = 1, 16 do
-    local row = CreateFrame("Frame", nil, f)
-    row:SetSize(452, 30)
-    row.text = UI.Text(row, "small", "text")
-    row.text:SetPoint("LEFT", 0, 0)
-    row.text:SetWidth(390)
-    row.text:SetJustifyH("LEFT")
-    row.buy = UI:Button(row, "Buy", 52, function()
-      for _, e in ipairs(row.action or {}) do if ns.AHBuy then ns.AHBuy:Add(e) end end
-    end)
-    row.buy:SetPoint("RIGHT", 0, 0)
-    row:Hide()
-    f.rows[i] = row
-  end
   f:Hide()
   self.frame = f
   return f
 end
 
--- Chips for All and each crafting profession, the chosen one lit.
+-- Chips for All and each crafting profession (with its icon), the chosen one lit.
 function M:Chips(f)
   local list = { false }
   for _, p in ipairs(self:Professions()) do list[#list + 1] = p end
   local chosen = self:Chosen()
-  local x = 8
+  local x = 0
   for i, p in ipairs(list) do
     local c = f.chips[i]
     if not c then
-      c = UI:Chip(f, p or "All", function(btn) M:Choose(btn.prof or nil) end)
+      c = UI:Chip(f, p or "All", function(btn) M:Choose(btn.prof or nil) end, p and profIcon(p) or "Interface\\Icons\\INV_Misc_Book_09")
       f.chips[i] = c
     end
     c.prof = p or nil
     c.label:SetText(p or "All")
+    if c.icon then c.icon:SetTexture(p and profIcon(p) or "Interface\\Icons\\INV_Misc_Book_09") end
     c:ClearAllPoints()
-    c:SetPoint("TOPLEFT", x, -4)
-    x = x + (c:GetWidth() or 60) + 4
+    c:SetPoint("TOPLEFT", x, 0)
+    x = x + (c:GetWidth() or 60) + 6
     c:SetOn((p or nil) == chosen)
     c:Show()
   end
@@ -394,53 +451,13 @@ function M:Refresh()
   local f = self:Build()
   self:Chips(f)
   if self.queue then
-    for _, row in ipairs(f.rows) do row:Hide() end
-    f:SetHeight(66)
-    local e = self.queue[self.pos]
-    local label = self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching..."
-    f.button.label:SetText(label)
-    local host = ns.GearShop and ns.GearShop.frame
-    if host and host.training then host.training.label:SetText(self.manual and "Search next" or "Searching...") end
-    f.text:SetText(string.format("Searching the auction house: %s (%d of %d)", e and e.text or "...", self.pos, #self.queue))
+    f.button.label:SetText(self.manual and string.format("Search next (%d/%d)", self.pos, #self.queue) or "Searching...")
   else
-    for _, row in ipairs(f.rows) do row:Hide() end
-    f:SetHeight(76)
     f.button.label:SetText(self.prices and "Search again" or "Find training materials")
-    local host = ns.GearShop and ns.GearShop.frame
-    if host and host.training then host.training.label:SetText("Training") end
-    if self.prices then
-      local lines, actions = self:Lines()
-      f.text:SetText(#lines > 0 and "Cheapest skill first. Buy queues it; the bar above the auction window confirms each purchase."
-        or "Nothing found that trains your professions.")
-      local y = -52
-      for i, row in ipairs(f.rows) do
-        local line = lines[i]
-        if line then
-          row.text:SetText(line)
-          row.action = actions[i]
-          row.buy:SetShown(actions[i] ~= nil)
-          local sh = row.text.GetStringHeight and row.text:GetStringHeight()
-          local h = math.max(18, (type(sh) == "number" and sh or 14) + 6)
-          row:SetHeight(h)
-          row:ClearAllPoints()
-          row:SetPoint("TOPLEFT", 8, y)
-          y = y - h - 2
-          row:Show()
-        end
-      end
-      f:SetHeight(-y + 10)
-    else
-      local n = 0
-      for _ in pairs(self:Needs()) do n = n + 1 end
-      f.text:SetText(n > 0 and string.format("Training: looks up %d ingredients your skill-up recipes need, and recipes you don't know yet. Weapons and Armor find gear upgrades your gold covers.", n)
-        or "Open each profession window once so Outrider knows which recipes still give skill.")
-    end
   end
-  -- shown only on the shopping panel's Training view
   local G = ns.GearShop
   if G and G.frame then
-    f:SetShown(G.mode == "training" or not G.mode)
-    G:Resize()
+    if G.open then G:Refresh() end
   else
     f:Show()
   end

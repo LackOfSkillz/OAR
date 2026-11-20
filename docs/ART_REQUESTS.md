@@ -434,3 +434,15 @@ and highlight as this image". One colour only (gold), transparent background,
 | `spec_warlock_destruction.png` | a falling burning meteor |
 | `spec_warrior_arms.png` | a two-handed greatsword: make the blade broad and the grip long, so it can't be read as a dagger |
 | `spec_warrior_prot.png` | a tall tower shield with rivets |
+
+## Batch 7: auction house header (2026-11-20)
+
+The redesigned shopping window beside the auction house opens with a painted
+header strip, like the hub's page headers. One picture, same style line as the
+rest (painted dark fantasy, deep blue-teal shadows, warm gold highlights, soft
+rim light, no text, no logos). 4:1 wide strip, artwork centred: deliver
+2048x512 (or 1024x256), opaque.
+
+| File | Picture |
+|---|---|
+| `header_auction.png` | A grand auction hall at dusk: a long auctioneer's counter of dark wood with brass scales, stacked crates, bolts of cloth, potions on a shelf and a hanging lantern; gold coins on the counter catching the light; an arched window with a blue evening sky behind. Keep the left third darker and calmer (the emblem and title sit there) and the right edge quiet (the gold amount sits there). |
