@@ -262,7 +262,7 @@ T.describe("add then buy on the same button (2026-11-20)", function()
     G:Pick("list")
     local f = G.frame
     local card = f.rows[1]
-    T.eq(card.buy.label:GetText(), "Add")
+    T.eq(card.buy.label:GetText(), "Buy", "one thing to buy: the button says Buy")
     T.contains(f.cart.text:GetText(), "Cart empty")
     card.buy.__scripts.OnClick(card.buy)
     T.eq(card.buy.label:GetText(), "...", "finding the price")

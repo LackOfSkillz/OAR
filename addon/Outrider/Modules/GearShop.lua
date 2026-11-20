@@ -376,7 +376,12 @@ function M.NewCard(parent, width)
   -- one button, two clicks on the same spot (Gary, 2026-11-20: "I don't like
   -- how I have to chase the buy button"): Add puts it in the cart; once its
   -- price is in, the same button says Buy and that click buys it.
-  card.buy = UI:Button(card, "Add", 64, function() M.CardClick(card) end)
+  card.buy = UI:Button(card, "Buy", 64, function() M.CardClick(card) end)
+  -- stackable goods: the price quote comes while the mouse rests here, so the click buys
+  card.buy:HookScript("OnEnter", function()
+    local a = card.action
+    if a and #a == 1 and a[1].commodity and ns.AHBuy then ns.AHBuy:Prequote(a[1]) end
+  end)
   card.buy:SetHeight(26)
   card.buy:SetPoint("RIGHT", -10, 0)
   UI.SetPrimary(card.buy, true)
@@ -404,11 +409,15 @@ function M.CartState(action)
   return A:StateOf(e)
 end
 
+-- One click buys when the listing or quote is already in (AHBuy:BuyNow);
+-- a card with several things to buy (a skill-up's ingredients) goes to the cart.
 function M.CardClick(card)
   local A = ns.AHBuy
   if not (A and card.action) then return end
   local st = M.CartState(card.action)
-  if st == "quote" then A:Confirm()
+  if #card.action == 1 and (st == nil or st == "bought" or (st == "quote")) then
+    if st == "quote" and not (A.current and A.current.hover) then A:Confirm() else A:BuyNow(card.action[1]) end
+  elseif st == "quote" then A:Confirm()
   elseif st == nil or st == "bought" then
     for _, e in ipairs(card.action) do A:Add(e) end
   end
@@ -423,9 +432,16 @@ function M:UpdateButtons()
   for _, card in ipairs(f.rows or {}) do
     if card:IsShown() and card.action then
       local st = M.CartState(card.action)
-      card.buy.label:SetText(M.BUTTON[st or ""] or "Add")
+      local single = #card.action == 1
+      card.buy.label:SetText(M.BUTTON[st or ""] or (single and "Buy" or "Add"))
       UI.SetPrimary(card.buy, st == nil or st == "quote")
-      if st == "quote" and ns.AHBuy.quote then card.price:SetText(ns.Prices.Coins(ns.AHBuy.quote.price)) end
+      -- the price the click will pay: the quote or the listing looked up ahead
+      local A = ns.AHBuy
+      if st == "quote" and A.quote then card.price:SetText(ns.Prices.Coins(A.quote.price))
+      elseif single and A.Known then
+        local kn = A:Known(card.action[1])
+        if kn then card.price:SetText(ns.Prices.Coins(kn.price)) end
+      end
     end
   end
   self:CartBar()
@@ -436,6 +452,7 @@ function M:CartBar()
   local f, A = self.frame, ns.AHBuy
   if not (f and f.cart and A) then return end
   local e, q, p = A.current, A.quote, A.pending
+  if e and e.hover then e, q = nil, nil end -- a hover quote isn't in the cart
   local n = #(A.queue or {}) + (e and 1 or 0) + (p and 1 or 0)
   if n == 0 then
     f.cart.text:SetText("|cff8f96a6Cart empty: Add puts an item here; Buy here or on its card.|r")
@@ -846,6 +863,13 @@ function M:Refresh()
     f.nav.resale.count:SetText(tostring(#D:Resale()))
   end
   f:SetHeight(math.max(560, -y + 14 + 50))
+  -- look up the single items on screen now, so one click buys them
+  local ahead = {}
+  for _, card in ipairs(f.rows) do
+    local a = card:IsShown() and card.action
+    if a and #a == 1 and not a[1].commodity then ahead[#ahead + 1] = a[1] end
+  end
+  if ns.AHBuy and ns.AHBuy.Prefetch then ns.AHBuy:Prefetch(ahead) end
   self:UpdateButtons()
   f:Show()
 end

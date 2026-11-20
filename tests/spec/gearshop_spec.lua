@@ -298,3 +298,44 @@ T.describe("an auction error but the gold was taken (2026-11-20, Heavy Shortbow)
     T.ok(not game:chatText():find("wasn't bought", 1, true), "no wrong chat line")
   end)
 end)
+
+T.describe("one click buys (2026-11-20)", function()
+  T.it("single items: looked up ahead for the cards on screen, then one click buys at the card's price", function()
+    local game, ns = session()
+    search(game, ns, "armor")
+    local f = ns.GearShop.frame
+    -- the lookups ahead answer one at a time
+    local guard = 0
+    while ns.AHBuy.fetching and guard < 10 do guard = guard + 1 game:fire("ITEM_SEARCH_RESULTS_UPDATED") game:advance(1) end
+    local vest
+    for _, r in ipairs(f.rows) do if r:IsShown() and r.item and r.item.itemID == 401 then vest = r end end
+    T.ok(vest, "Fine Vest card")
+    T.eq(vest.buy.label:GetText(), "Buy")
+    T.contains(vest.price:GetText(), "50")
+    vest.buy.__scripts.OnClick(vest.buy)
+    T.eq(#game.bought, 1, "one click")
+    T.eq(game.bought[1].id, 9002, "the cheapest listing")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("stackable goods: quoted while the mouse rests on Buy, then one click buys; too fast falls back to the cart", function()
+    local game, ns = session()
+    local A = ns.AHBuy
+    local e = { name = "Silverleaf", itemID = 765, qty = 20, commodity = true }
+    A:Prequote(e)
+    T.eq(game.commodityStart.qty, 20, "quote asked on hover")
+    T.ok(not A.frame or not A.frame:IsShown(), "no confirm bar for a hover quote")
+    game:fire("COMMODITY_PRICE_UPDATED", 10, 200)
+    T.eq(A:BuyNow(e), "bought")
+    T.eq(game.bought[1].commodity, 765)
+    game:fire("COMMODITY_PURCHASE_SUCCEEDED")
+    -- clicked before the quote came back: into the cart, the second click buys
+    local p = { name = "Peacebloom", itemID = 2447, qty = 5, commodity = true }
+    A:Prequote(p)
+    T.eq(A:BuyNow(p), "queued")
+    game:fire("COMMODITY_PRICE_UPDATED", 20, 100)
+    A:Confirm()
+    T.eq(#game.bought, 2)
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
