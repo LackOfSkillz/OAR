@@ -265,7 +265,8 @@ function M:OnReplicate()
   local info = C.Resolve("C_AuctionHouse.GetReplicateItemInfo")
   if type(info) ~= "function" then self.scanning = nil return end
   self.reading = true
-  local mins, i, listings = {}, 0, 0
+  -- also the few cheapest listings of each item (Deals: vendor flips, resale)
+  local mins, cheap, i, listings = {}, {}, 0, 0
   local function step()
     local last = math.min(n - 1, i + M.SCAN_CHUNK - 1)
     for k = i, last do
@@ -275,6 +276,7 @@ function M:OnReplicate()
       if type(itemID) == "number" and type(buyout) == "number" and buyout > 0 and type(count) == "number" and count > 0 then
         local per = math.floor(buyout / count)
         if not mins[itemID] or per < mins[itemID] then mins[itemID] = per end
+        M.KeepCheap(cheap, itemID, per, count)
         listings = listings + 1
       end
     end
@@ -282,12 +284,25 @@ function M:OnReplicate()
     if i < n then ns.Timer.After(0, step, "prices:scanstep") return end
     local items = 0
     for id, p in pairs(mins) do M:Record(id, p) items = items + 1 end
+    M.lastScan = { at = time(), items = cheap }
     M.scanning, M.reading = nil, nil
     M:Info("full price scan: %d listings, %d items priced", listings, items)
     ns.Print("price scan done: %d items priced", items)
     ns.Events:Fire("OTR_PRICES_SCAN", "done", items)
   end
   step()
+end
+
+-- The cheapest few listings of an item, cheapest first: { {per, count}, ... }.
+M.KEEP = 6
+function M.KeepCheap(cheap, itemID, per, count)
+  local list = cheap[itemID]
+  if not list then list = {} cheap[itemID] = list end
+  if #list >= M.KEEP and per >= list[#list][1] then return end
+  local at = #list + 1
+  for k = 1, #list do if per < list[k][1] then at = k break end end
+  table.insert(list, at, { per, count })
+  if #list > M.KEEP then table.remove(list) end
 end
 
 function M:OnEnable()

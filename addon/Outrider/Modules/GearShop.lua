@@ -322,7 +322,11 @@ M.NAV_ITEMS = {
   { id = "weapons", label = "Weapons", icon = "INV_Sword_04", tip = "Weapons your class can use, in your level range, that your gold covers: the top upgrades." },
   { id = "armor", label = "Armor", icon = "INV_Chest_Chain_05", tip = "The best upgrade per slot in your armor type that your gold covers." },
   { id = "bags", label = "Bags", icon = "INV_Misc_Bag_08", tip = "Bags bigger than your smallest one; hunters also get a quiver or ammo pouch." },
+  { head = "Profit" },
+  { id = "flips", label = "Vendor flips", icon = "INV_Misc_Coin_01", tip = "Listings under what a vendor pays: buy them, sell them at any vendor. From Scan all prices." },
+  { id = "resale", label = "Resale", icon = "INV_Misc_Coin_17", tip = "Listings well under their usual auction price, after the 5% cut and deposit. Not sure: it has to sell again." },
 }
+M.PROFIT_VIEWS = { flips = true, resale = true }
 M.TRAINING_VIEWS = { training = true, recipes = true, list = true }
 
 M.QUALITY = { [0] = { 0.62, 0.62, 0.62 }, [1] = { 1, 1, 1 }, [2] = { 0.12, 1, 0 }, [3] = { 0, 0.44, 0.87 },
@@ -576,7 +580,9 @@ end
 -- A menu click: training views share one search; gear views each search.
 function M:Pick(id)
   self.page = 1
-  if M.TRAINING_VIEWS[id] then
+  if M.PROFIT_VIEWS[id] then
+    self.mode = id
+  elseif M.TRAINING_VIEWS[id] then
     self.mode = id
     local T = ns.TrainShop
     if T and not T.prices and not T.queue then T:Start()
@@ -635,7 +641,7 @@ function M:GearCards()
   return out
 end
 
-M.HEADINGS = { training = "Skill-ups", recipes = "Recipes for sale", list = "Shopping list", weapons = "Weapons", armor = "Armor", bags = "Bags" }
+M.HEADINGS = { flips = "Vendor flips", resale = "Resale", training = "Skill-ups", recipes = "Recipes for sale", list = "Shopping list", weapons = "Weapons", armor = "Armor", bags = "Bags" }
 
 function M:Refresh()
   if not self.open then return end
@@ -650,7 +656,10 @@ function M:Refresh()
   local gold = ns.Prices.Money(ns.AHBuy and ns.AHBuy.Money() or 0)
   local cards, searching, pos, total, statusText = {}, false, 0, 0, ""
   local _, skipped = 0, 0
-  if training then
+  if M.PROFIT_VIEWS[self.mode] then
+    if ns.Deals and ns.Deals.enabled then cards, statusText = ns.Deals:View(self.mode) end
+    statusText = statusText or "Deals are switched off (Modules page)."
+  elseif training then
     if T then cards, statusText, searching, pos, total = T:View(self.mode) end
     statusText = statusText or ""
   else
@@ -711,7 +720,7 @@ function M:Refresh()
   end
   -- empty state
   if #cards == 0 and not searching then
-    local pic = ns.Art and ns.Art:Path(statusText:find("^Finds") and "empty_search" or "empty_nodata")
+    local pic = ns.Art and ns.Art:Path((statusText:find("^Finds") or statusText:find("^Press Scan")) and "empty_search" or "empty_nodata")
     if pic then
       f.empty:SetTexture(pic)
       f.empty:ClearAllPoints()
@@ -723,7 +732,7 @@ function M:Refresh()
     f.empty:Hide()
   end
   -- footer: total and Buy all on training lists, pager when needed
-  local footer = (#actions > 1 and M.TRAINING_VIEWS[self.mode] and self.mode ~= "recipes")
+  local footer = (#actions > 1 and ((M.TRAINING_VIEWS[self.mode] and self.mode ~= "recipes") or self.mode == "flips"))
   y = y - 6
   f.total:ClearAllPoints()
   f.total:SetPoint("TOPLEFT", f, "TOPLEFT", M.NAV + 16, y - 6)
@@ -747,7 +756,12 @@ function M:Refresh()
     f.nav.training.count:SetText(T.prices and tostring(math.min(n, T.SHOW)) or "")
     f.nav.recipes.count:SetText(T.prices and tostring(#(T:UsefulRecipes())) or "")
   end
-  f:SetHeight(math.max(470, -y + 14))
+  local D = ns.Deals
+  if D and D.enabled and D:Scan() then
+    f.nav.flips.count:SetText(tostring(#(D:VendorFlips())))
+    f.nav.resale.count:SetText(tostring(#D:Resale()))
+  end
+  f:SetHeight(math.max(540, -y + 14))
   f:Show()
 end
 

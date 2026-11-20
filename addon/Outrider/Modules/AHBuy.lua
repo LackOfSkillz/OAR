@@ -65,10 +65,16 @@ function M:OnItemResults()
     local r = C.Call("C_AuctionHouse.GetItemSearchResultInfo", e.itemKey, i)
     local price = type(r) == "table" and C.Readable(r.buyoutAmount)
     if type(price) == "number" and not r.containsOwnerItem and (not best or price < best.price) then
-      best = { auctionID = r.auctionID, price = price }
+      best = { auctionID = r.auctionID, price = price, n = tonumber(C.Readable(r.quantity)) or 1 }
     end
   end
   if not best then ns.Print("%s: no buyout left, skipped", tostring(e.name)) return self:Next() end
+  -- a deal's price cap (Deals): the cheap listing may be gone
+  if e.maxUnit and best.price / math.max(1, best.n) > e.maxUnit then
+    self:Info("buy %s: cheapest now %s, over the deal's %s: skipped", tostring(e.name), ns.Prices.Money(best.price), ns.Prices.Money(e.maxUnit))
+    ns.Print("%s: the cheap listing is gone, skipped", tostring(e.name))
+    return self:Next()
+  end
   self.quote = best
   self:Refresh()
 end
@@ -78,6 +84,12 @@ function M:OnCommodityPrice(_, unitPrice, totalPrice)
   if not e or not e.commodity or self.quote then return end
   local total = C.Readable(totalPrice)
   if type(total) ~= "number" then return end
+  if e.maxUnit and total > e.maxUnit * (e.qty or 1) then
+    pcall(C_AuctionHouse.CancelCommoditiesPurchase)
+    self:Info("buy %s: %s now, over the deal's %s: skipped", tostring(e.name), ns.Prices.Money(total), ns.Prices.Money(e.maxUnit * (e.qty or 1)))
+    ns.Print("%s: the cheap listings are gone, skipped", tostring(e.name))
+    return self:Next()
+  end
   self.quote = { price = total, unit = C.Readable(unitPrice) }
   self:Refresh()
 end

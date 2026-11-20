@@ -106,6 +106,7 @@ Modules\AuctionHelper.lua
 Modules\AHBuy.lua
 Modules\TrainShop.lua
 Modules\GearShop.lua
+Modules\Deals.lua
 Modules\Talents.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
