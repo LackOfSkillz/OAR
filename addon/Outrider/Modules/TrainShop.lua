@@ -131,6 +131,7 @@ end
 function M:Start()
   if not self.open then ns.Print("open the auction house first") return end
   self.queue, self.pos, self.prices, self.recipesForSale, self.seenRecipes = self:Queue(), 0, {}, {}, 0
+  self.knownHidden, self.altHidden = 0, {}
   self.manual = false
   self:Info("training shopping: %d searches", #self.queue)
   self:Next()
@@ -193,15 +194,55 @@ function M:NoteRecipe(prof, itemID, price, itemKey)
   end
   -- known by name too: "Recipe: Elixir of Minor Defense" vs the recipes we stored
   local name = itemName(itemID)
-  local taught = name and name:match("^%a+: (.+)$")
-  local rec = ns.db.char.professions[prof]
-  if taught and rec and type(rec.recipes) == "table" then
-    for _, r in pairs(rec.recipes) do if type(r) == "table" and r.name == taught then known = true end end
-  end
+  local taught = name and name:match("^[%a ]+: (.+)$")
+  if M.Knows(ns.db.char, prof, taught) then known = true end
   self.seenRecipes = (self.seenRecipes or 0) + 1
-  if known then return end
+  if known then self.knownHidden = (self.knownHidden or 0) + 1 return end
+  -- one of your other characters knows it (Gary, 2026-11-20: "filter out
+  -- recipes that I already know"): left out, and the status line says who
+  local alts = M.AltsKnowing(prof, taught)
+  if #alts > 0 then
+    self.altHidden = self.altHidden or {}
+    for _, who in ipairs(alts) do self.altHidden[who] = (self.altHidden[who] or 0) + 1 end
+    return
+  end
   self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = name or ("item " .. itemID),
     price = price, need = need, itemKey = itemKey or { itemID = itemID } }
+end
+
+-- "Hidden: 3 you know, 2 Khreos knows."
+function M:HiddenText()
+  local parts = {}
+  if (self.knownHidden or 0) > 0 then parts[1] = string.format("%d you know", self.knownHidden) end
+  local names = {}
+  for who in pairs(self.altHidden or {}) do names[#names + 1] = who end
+  table.sort(names)
+  for _, who in ipairs(names) do parts[#parts + 1] = string.format("%d %s knows", self.altHidden[who], who) end
+  if #parts == 0 then return "" end
+  return "  |cff8f96a6Hidden: " .. table.concat(parts, ", ") .. ".|r"
+end
+
+-- Does this character record (ns.db.chars[key]) know the recipe called `taught`?
+function M.Knows(char, prof, taught)
+  if type(taught) ~= "string" or type(char) ~= "table" then return false end
+  local rec = type(char.professions) == "table" and char.professions[prof]
+  if not (rec and type(rec.recipes) == "table") then return false end
+  local want = taught:lower()
+  for _, r in pairs(rec.recipes) do
+    if type(r) == "table" and type(r.name) == "string" and r.name:lower() == want then return true end
+  end
+  return false
+end
+
+-- Short names of your other characters who know it (from their profession windows).
+function M.AltsKnowing(prof, taught)
+  local out = {}
+  local chars = ns.db and ns.db.raw and ns.db.raw.chars or {}
+  for key, c in pairs(chars) do
+    if key ~= ns.db.key and M.Knows(c, prof, taught) then out[#out + 1] = (tostring(key):match("^([^%-]+)")) end
+  end
+  table.sort(out)
+  return out
 end
 
 -- Recipes worth showing: skill known, usable now or within 25 points; usable
@@ -358,8 +399,8 @@ function M:View(view)
         pill = r.now and "|cff7fff7fusable now|r" or "|cff8f96a6later|r", price = r.price, dim = not r.now,
         action = { { name = r.name, itemKey = r.itemKey } } }
     end
-    return cards, #cards > 0 and "Recipes for sale that you don't know yet: usable now first, then cheapest. Buy queues it; the bar above the auction window confirms."
-      or "No recipe for sale that you don't know and could use soon.", false, 0, 0
+    return cards, (#cards > 0 and "Recipes for sale that you don't know yet: usable now first, then cheapest. Buy queues it; the bar above the auction window confirms."
+      or "No recipe for sale that you don't know and could use soon.") .. self:HiddenText(), false, 0, 0
   end
   local picked = self:Picked()
   if view == "list" then

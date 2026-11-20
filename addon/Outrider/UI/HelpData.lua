@@ -103,7 +103,7 @@ ns.HelpData = {
   } },
 
   { icon = "INV_Misc_Coin_02", "Auction house", "With the auction house open, Outrider's shopping window sits beside it: a menu on the left, item cards with icons and prices in coins. Buying is always your click.", {
-    { "Training", "Three views from one search. Skill-ups: the cheapest way to your next points, each recipe with its ingredients as icons (amber: not on the auction house) and its cost a point. Recipes: recipes for sale you don't know, usable now or soon. Shopping list: every ingredient added up, with Buy all. Pick a profession with its chip, or All." },
+    { "Training", "Three views from one search. Skill-ups: the cheapest way to your next points, each recipe with its ingredients as icons (amber: not on the auction house) and its cost a point. Recipes: recipes for sale you don't know, usable now or soon; ones this character or another of your characters already knows are left out (the line under the heading says how many and who). Shopping list: every ingredient added up, with Buy all. Pick a profession with its chip, or All." },
     { "Weapons, Armor and Bags", "Upgrades your gold covers: only armor your class wears, bigger bags than your smallest, quivers or ammo pouches for hunters, profession bags for your professions." },
     { "Buy", "A Buy click queues the item; the bar above the auction window shows the cheapest listing and you confirm each purchase." },
     { "Prices and selling", "Prices from Auctionator or TSM when installed, else what Outrider has seen. The auction helper suggests a price; /ride undercut sets how far under the market." },

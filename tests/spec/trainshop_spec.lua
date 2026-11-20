@@ -148,3 +148,26 @@ T.describe("shopping window (2026-11-20 redesign)", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("recipes you already know", function()
+  T.it("leaves out recipes this character or one of your other characters knows, and says who", function()
+    local game, ns = session()
+    game.items[2996] = { name = "Recipe: Elixir of Minor Defense" }
+    game.items[2997] = { name = "Recipe: Holy Brew" }
+    game.items[2998] = { name = "Recipe: Fresh Brew" }
+    game.ahListings[2996] = { name = "Recipe: Elixir of Minor Defense", minPrice = 100, recipe = 6 }
+    game.ahListings[2997] = { name = "Recipe: Holy Brew", minPrice = 200, recipe = 6 }
+    game.ahListings[2998] = { name = "Recipe: Fresh Brew", minPrice = 300, recipe = 6 }
+    game.itemTips[2996] = { "Recipe: Elixir of Minor Defense", "Requires Alchemy (1)" }
+    game.itemTips[2997] = { "Recipe: Holy Brew", "Requires Alchemy (10)" }
+    game.itemTips[2998] = { "Recipe: Fresh Brew", "Requires Alchemy (20)" }
+    ns.db.raw.chars["Khreos-Airwolf"] = { professions = { Alchemy = { skill = 200, recipes = { [9] = { name = "Holy Brew" } } } } }
+    run(game, ns)
+    local names = {}
+    for _, r in ipairs(ns.TrainShop:UsefulRecipes()) do names[#names + 1] = r.name end
+    T.eq(table.concat(names, ","), "Recipe: Fresh Brew", "Defense: you know it; Holy Brew: Khreos knows it")
+    local _, status = ns.TrainShop:View("recipes")
+    T.contains(status, "Hidden: 1 you know, 1 Khreos knows")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
