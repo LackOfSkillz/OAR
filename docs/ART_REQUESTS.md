@@ -446,3 +446,15 @@ rim light, no text, no logos). 4:1 wide strip, artwork centred: deliver
 | File | Picture |
 |---|---|
 | `header_auction.png` | A grand auction hall at dusk: a long auctioneer's counter of dark wood with brass scales, stacked crates, bolts of cloth, potions on a shelf and a hanging lantern; gold coins on the counter catching the light; an arched window with a blue evening sky behind. Keep the left third darker and calmer (the emblem and title sit there) and the right edge quiet (the gold amount sits there). |
+
+## Batch 8: Journey page (2026-11-20)
+
+The Journey page is rebuilt to read at a glance: steps 1-2-3, three "best
+picks" picture cards, and a "Your trip" card. Two pictures, same style line as
+the rest (painted dark fantasy, deep blue-teal shadows, warm gold highlights,
+soft rim light, no text, no logos).
+
+| File | Size | Picture |
+|---|---|---|
+| `kind_zone.png` | 1024x1024, opaque, like the other `kind_*` pictures | A wide landscape seen from a hilltop: rolling green hills, a winding road, a small village with smoke from chimneys, mountains in the distance at dusk. The "Best zone for your level" card. |
+| `journey_empty.png` | 2048x1024 (2:1), transparent or dark vignette background | An open traveller's map on a wooden table, a brass compass on it, and a glowing gold arrow drawn across the map toward a small marked spot. Shown in "Your trip" before anything is picked. |

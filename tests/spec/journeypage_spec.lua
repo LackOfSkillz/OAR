@@ -1,0 +1,30 @@
+-- Journey page, rebuilt to be clear at a glance (Gary, 2026-11-20).
+local T, mock = ...
+
+T.describe("journey page", function()
+  T.it("shows 1-2-3 steps, three best picks, plain kinds and a trip card; picking a line shows its trip", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Hub:Build()
+    ns.Hub.frame.tabBar:Select("journey")
+    local p = ns.Hub.byId.journey.panel
+    T.ok(p:IsShown())
+    T.eq(p.steps[2].text:GetText(), "Press Go")
+    T.eq(#p.pickCards, 3)
+    T.eq(p.pickCards[1].label:GetText(), "BEST QUEST FOR XP")
+    T.eq(p.kindBtns.place.label:GetText(), "Services")
+    T.eq(p.trip.title:GetText(), "Pick something", "says what to do before anything is picked")
+    p.kindBtns.item.__scripts.OnClick(p.kindBtns.item)
+    T.contains(p.count:GetText(), "3 letters")
+    -- a line with no known position
+    p:Select({ kind = "npc", name = "Somebody", mapID = 1 })
+    T.eq(p.trip.title:GetText(), "Somebody")
+    T.contains(p.trip.sub:GetText(), "doesn't know where")
+    local title, sub, far = ns.Journey.Plain({ kind = "gear", name = "Boots", gain = 22.4, sub = "dropped by X", mapID = 1, seconds = 60 })
+    T.eq(title, "Boots")
+    T.contains(sub, "22% better")
+    T.eq(far, "1 min away")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

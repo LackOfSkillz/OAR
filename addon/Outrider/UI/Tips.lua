@@ -211,6 +211,7 @@ local controls = {
   ["Quiet presses: no 'not ready yet' text or voice"] = "Outrider's casting macros clear the red 'not ready yet' text, and the game's error voice is off. Refusals are still logged.",
   ["Copy text"] = "Shows the macro's text to copy, so you can change it and make your own.",
   ["Clear them"] = "Removes the macros Outrider wrote for your old build. A macro you changed stays.",
+  ["Go"] = "Shows the trip and puts the gold arrow up. Then just follow it.",
   ["Show singles"] = "Shows the one-spell macros a combined key already covers (Kick, Evasion, Bandage...), for separate buttons.",
   ["Hide singles"] = "Hides the one-spell macros a combined key already covers, so the tree shows only what is left.",
   ["Missing-buffs row above your bars"] = "A row of icons for your own buffs that are missing or about to run out; click one to put it on you.",

@@ -66,7 +66,7 @@ ns.HelpData = {
     { "Zone levels", "Level ranges over each zone on the world map and over areas inside a zone map. /ride zonelevels on|off.", page = "map", cmd = "zonelevels" },
     { "Breadcrumbs", "Small gold dots where you walked, on the world map and minimap, so you can find your way back out. /ride trail clear.", page = "map", cmd = "trail" },
     { "Waypoints", "/ride way <x> <y> [title] sets one on this map; /ride near <spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|ammo> goes to the nearest. When you die, a waypoint to the nearest spirit healer appears by itself.", page = "waypoints" },
-    { "Travel planner and Journey", "Journey page: search for any place, rare, mob, NPC, quest or item, and the best gear and XP quests for your level; a number guides you there across zones (flights, boats, portals).", page = "journey" },
+    { "Travel planner and Journey", "Journey page: 1, pick a place, quest or item (the three best picks for you are on top, or choose what you're looking for on the left, or type a name); 2, press Go; 3, follow the gold arrow. Your trip on the right shows each step, across zones by flight, boat or portal.", page = "journey" },
     { "Coordinates", "Under the minimap while you move. /ride coords prints them.", cmd = "coords" },
     { "Herbs and ore", "Herb and ore spawn points for the world (with the optional node pack), a reminder when Find Herbs is off, and where each herb grows (/ride herbs).", cmd = "herbs" },
     { "Discovery", "Outrider records the NPCs you meet (account-wide) to build its own map of WoW Forever, since zones were redrawn. /ride discovered.", page = "map", cmd = "discovered" },

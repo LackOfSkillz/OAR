@@ -46,6 +46,8 @@ SPECS = {
     "money_mob": (128, 128), "money_skin": (128, 128), "money_herb": (128, 128), "money_ore": (128, 128),
     "money_cloth": (128, 128), "money_craft": (128, 128), "money_fish": (128, 128),
     "kind_quest": (128, 128),
+    "kind_zone": (128, 128),
+    "journey_empty": (256, 128),
     "kind_dungeon": (128, 128),
     "kind_gear": (128, 128),
     "kind_profession": (128, 128),
