@@ -356,6 +356,10 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
           note = not skill and "any fishing trainer, free" or nxt and nxt.how or nil },
       }
     end },
+    -- gear swap first: it's what you reach for every time (Gary, 2026-11-20)
+    { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
+    { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
+    { "note", "Puts on your best fishing pole and any gear with a Fishing bonus from your bags; Usual gear back puts back what you wore. Out of combat." },
     { "header", "Your fishing", icon = "Trade_Fishing" },
     { "tiles", function()
       local skill, max = M:Skill()
@@ -404,9 +408,6 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       return out
     end },
     { "note", function() local t = M:Tier(M:Skill() or 1) return t and (t.note .. " Zones from the WoW Forever fishing guide (unverified).") or "" end },
-    { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
-    { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
-    { "note", "Puts on your best fishing pole and any gear with a Fishing bonus from your bags; Usual gear back puts back what you wore. Out of combat." },
     { "header", "Trainers and supplies", icon = "INV_Misc_Book_09" },
     { "cards", function()
       local out = {}
