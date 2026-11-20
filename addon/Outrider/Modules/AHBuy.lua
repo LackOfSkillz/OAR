@@ -33,7 +33,7 @@ function M:Add(e)
   if not self.open then ns.Print("open the auction house first") return end
   self.queue[#self.queue + 1] = e
   self:Info("buy queued: %s%s", tostring(e.name), e.qty and (" x" .. e.qty) or "")
-  if not self.current then self:Next() else self:Refresh() end
+  if not self.current and not self.pending then self:Next() else self:Refresh() end
 end
 
 function M:Next()
@@ -82,10 +82,15 @@ function M:OnCommodityPrice(_, unitPrice, totalPrice)
   self:Refresh()
 end
 
--- The confirm click.
+-- The confirm click. The purchase goes out, then Outrider waits for the
+-- game's answer (bought, or why not) before it looks up the next item:
+-- sending the next search while a purchase was still in flight could make
+-- the auction house refuse one of them (Gary, 2026-11-20: "auction house
+-- errors after I purchased something"). Every answer goes to the log.
+M.DONE_WAIT = 5
 function M:Confirm()
   local e, q = self.current, self.quote
-  if not (e and q) then return end
+  if not (e and q) or self.pending then return end
   if q.price > M.Money() then
     ns.Print("%s costs %s, more than you carry", tostring(e.name), ns.Prices.Money(q.price))
     return self:Next()
@@ -93,8 +98,53 @@ function M:Confirm()
   local ok, err
   if e.commodity then ok, err = pcall(C_AuctionHouse.ConfirmCommoditiesPurchase, e.itemID, e.qty)
   else ok, err = pcall(C_AuctionHouse.PlaceBid, q.auctionID, q.price) end
-  self:Info("bought %s%s for %s: %s", tostring(e.name), e.qty and (" x" .. e.qty) or "", ns.Prices.Money(q.price), ok and "sent" or tostring(err))
+  self:Info("buying %s%s for %s: %s", tostring(e.name), e.qty and (" x" .. e.qty) or "", ns.Prices.Money(q.price), ok and "sent" or tostring(err))
+  self.current, self.quote = nil, nil
+  if not ok then
+    self.pending = { e = e, q = q }
+    self:Finish(false, tostring(err))
+    return
+  end
+  local p = { e = e, q = q }
+  self.pending = p
+  ns.Timer.After(M.DONE_WAIT, function()
+    if M.pending == p then M:Finish(nil, "no answer from the auction house") end
+  end, "ahbuy:done")
+  self:Refresh()
+end
+
+-- The game's answer to a purchase: ok true (bought), false (refused, with why) or nil (no answer).
+function M:Finish(ok, why)
+  local p = self.pending
+  self.pending = nil
+  local e = p and p.e
+  local what = e and (tostring(e.name) .. (e.qty and (" x" .. e.qty) or "")) or "?"
+  self.results = self.results or { bought = 0, failed = 0 }
+  if ok then
+    self.results.bought = self.results.bought + 1
+    self:Info("bought %s", what)
+  else
+    self.results.failed = self.results.failed + 1
+    self:Warn("purchase %s: %s", what, tostring(why or "refused"))
+    if ok == false and not self.toldFail then
+      self.toldFail = true
+      ns.Print("%s wasn't bought: %s", what, tostring(why or "the auction house refused it"))
+    end
+  end
+  self.lastResult = { ok = ok, why = why, what = what }
   self:Next()
+end
+
+function M:OnPurchaseDone() if self.pending then self:Finish(true) end end
+function M:OnCommodityFailed() if self.pending then self:Finish(false, "the price changed or the goods sold out") end end
+function M:OnShowError(_, code)
+  local msg = "auction house error " .. tostring(C.Readable(code))
+  if self.pending then self:Finish(false, msg) else self:Info("%s (nothing of ours was buying)", msg) end
+end
+-- The red text in the middle of the screen while a purchase or lookup is ours.
+function M:OnUIError(_, _, text)
+  if not (self.pending or self.current) then return end
+  self:Info("game said while buying: %s", tostring(C.Readable(text)))
 end
 
 function M:Cancel()
@@ -104,22 +154,42 @@ function M:Cancel()
 end
 
 -- ------------------------------------------------------------ the bar
+-- The confirm bar above the auction window, in the shopping window's look:
+-- the item's icon, its name, the price in coins, gold Buy and Cancel.
 function M:Build()
   if self.frame then return self.frame end
+  local Theme = ns.Theme
   local anchor = rawget(_G, "AuctionHouseFrame") or UIParent
-  local f = CreateFrame("Frame", "Outrider_AHBuy", anchor, ns.Theme:BackdropTemplate())
-  ns.Theme:ApplyPanel(f, "raised")
-  f:SetSize(460, 34)
+  local f = CreateFrame("Frame", "Outrider_AHBuy", anchor, Theme:BackdropTemplate())
+  Theme:ApplyPanel(f, "bg", "gold")
+  f:SetSize(520, 46)
   f:SetFrameStrata("DIALOG")
-  f:SetPoint("BOTTOM", anchor, "TOP", 0, 6)
+  f:SetPoint("BOTTOM", anchor, "TOP", 0, 8)
+  f.edge = f:CreateTexture(nil, "ARTWORK")
+  f.edge:SetPoint("TOPLEFT", 1, -1)
+  f.edge:SetPoint("BOTTOMLEFT", 1, 1)
+  f.edge:SetWidth(3)
+  f.edge:SetColorTexture(Theme:Color("gold"))
+  f.icon = f:CreateTexture(nil, "ARTWORK")
+  f.icon:SetSize(32, 32)
+  f.icon:SetPoint("LEFT", 12, 0)
+  f.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
   f.text = UI.Text(f, "normal", "text")
-  f.text:SetPoint("LEFT", 10, 0)
-  f.text:SetWidth(250)
+  f.text:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 10, -1)
+  f.text:SetWidth(270)
   f.text:SetJustifyH("LEFT")
-  f.buy = UI:Button(f, "Buy", 90, function() M:Confirm() end)
+  if f.text.SetWordWrap then f.text:SetWordWrap(false) end
+  f.sub = UI.Text(f, "small", "muted")
+  f.sub:SetPoint("BOTTOMLEFT", f.icon, "BOTTOMRIGHT", 10, 1)
+  f.sub:SetWidth(270)
+  f.sub:SetJustifyH("LEFT")
+  f.buy = UI:Button(f, "Buy", 96, function() M:Confirm() end)
+  f.buy:SetHeight(28)
   f.buy:SetPoint("RIGHT", -96, 0)
+  UI.SetPrimary(f.buy, true)
   f.cancel = UI:Button(f, "Cancel", 80, function() M:Cancel() end)
-  f.cancel:SetPoint("RIGHT", -8, 0)
+  f.cancel:SetHeight(28)
+  f.cancel:SetPoint("RIGHT", -10, 0)
   f:Hide()
   self.frame = f
   return f
@@ -128,16 +198,26 @@ end
 function M:Refresh()
   if not self.open then return end
   local f = self:Build()
-  local e, q = self.current, self.quote
-  if not e then f:Hide() return end
-  local more = #self.queue > 0 and string.format("  |cff888888(+%d more)|r", #self.queue) or ""
-  local what = tostring(e.name) .. (e.qty and (" x" .. e.qty) or "")
-  if q then
+  local e, q, p = self.current, self.quote, self.pending
+  if not e and not p then f:Hide() return end
+  local more = #self.queue > 0 and string.format("%d more after this", #self.queue) or ""
+  local shown = e or p.e
+  local id = shown.itemID or (shown.itemKey and shown.itemKey.itemID)
+  local G = ns.GearShop
+  f.icon:SetTexture((id and G and G.Icon and G.Icon(id)) or "Interface\\Icons\\INV_Misc_Coin_02")
+  local what = tostring(shown.name) .. (shown.qty and (" x" .. shown.qty) or "")
+  if p then
+    f.text:SetText(what .. ": " .. ns.Prices.Money(p.q.price))
+    f.sub:SetText("Buying... waiting for the auction house" .. (more ~= "" and ("  ·  " .. more) or ""))
+    f.buy.label:SetText("...")
+  elseif q then
     local short = q.price > M.Money()
-    f.text:SetText(string.format("%s: %s%s%s", what, ns.Prices.Money(q.price), short and " |cffff5050(not enough gold)|r" or "", more))
+    f.text:SetText(string.format("%s: %s%s", what, ns.Prices.Money(q.price), short and " |cffff5050(not enough gold)|r" or ""))
+    f.sub:SetText((short and "Skip moves on to the next" or "Cheapest listing: Buy to confirm") .. (more ~= "" and ("  ·  " .. more) or ""))
     f.buy.label:SetText(short and "Skip" or "Buy")
   else
-    f.text:SetText("Finding the cheapest " .. what .. "..." .. more)
+    f.text:SetText("Finding the cheapest " .. what .. "...")
+    f.sub:SetText(more)
     f.buy.label:SetText("...")
   end
   f:Show()
@@ -147,14 +227,22 @@ function M:OnEnable()
   self:On("AUCTION_HOUSE_SHOW", function(mod) mod.open = true end)
   self:On("AUCTION_HOUSE_CLOSED", function(mod)
     mod.open = false
-    mod.queue, mod.current, mod.quote = {}, nil, nil
+    if mod.pending then mod:Info("auction house closed while buying %s", tostring(mod.pending.e.name)) end
+    mod.queue, mod.current, mod.quote, mod.pending = {}, nil, nil, nil
     if mod.frame then mod.frame:Hide() end
   end)
   self:On("ITEM_SEARCH_RESULTS_UPDATED", self.OnItemResults)
   self:On("COMMODITY_PRICE_UPDATED", self.OnCommodityPrice)
-  self:On("PLAYER_MONEY", function(mod) if mod.current then mod:Refresh() end end)
+  self:On("AUCTION_HOUSE_PURCHASE_COMPLETED", self.OnPurchaseDone)
+  self:On("COMMODITY_PURCHASE_SUCCEEDED", self.OnPurchaseDone)
+  self:On("COMMODITY_PURCHASE_FAILED", self.OnCommodityFailed)
+  self:On("AUCTION_HOUSE_SHOW_ERROR", self.OnShowError)
+  self:On("UI_ERROR_MESSAGE", self.OnUIError)
+  self:On("PLAYER_MONEY", function(mod) if mod.current or mod.pending then mod:Refresh() end end)
 end
 
 function M:Activity()
-  return self.current and ("buying " .. tostring(self.current.name)) or "nothing queued"
+  local r = self.results or { bought = 0, failed = 0 }
+  local now = self.current and ("buying " .. tostring(self.current.name)) or "nothing queued"
+  return string.format("%s; this session %d bought, %d not bought", now, r.bought, r.failed)
 end
