@@ -10,19 +10,19 @@ local _, ns = ...
 local pages = {
   home = "Your character at a glance: the next step, errands, your pet or class keys, and the journey you're on.",
   whatnow = "What to do next with this character, ranked: errands, quests, gear, dungeons, training and gold. Pick a goal to narrow it.",
-  journal = "Your quest story: every quest you took, handed in or abandoned, by date, with your level and the zone. Pick one for details.",
+  journal = "Your quest diary: every quest you took, finished or gave up, with when and where. Handy to find a quest you lost or see how far you've come.",
   help = "What every part of Outrider does, one topic at a time, with buttons that take you there.",
   journey = "Find anything (places, rares, quests, items, NPCs) and the best gear and XP quests for you; a number guides you there.",
   map = "Which pins show on the world map and minimap, what Outrider records, and how much it has stored.",
-  waypoints = "Set or clear the arrow, and go to the nearest vendor, flight master, spirit healer and more.",
-  rares = "Every rare Outrider knows, for this zone or all: last seen, respawn window on your layer, and a waypoint.",
+  waypoints = "The gold arrow that points the way. Send it to the nearest inn, vendor, flight master and more, or to any map spot.",
+  rares = "Rare monsters: tougher than normal, with better loot. See which are near, when they were last seen, and get an arrow to them.",
   rarealerts = "How rare alerts reach you (sound, pop-up), which rares, your watch list and recent alerts.",
   dungeons = "Which dungeons and raids you're ready for and what each holds for this character.",
-  class = "Your class page: the Fight macros, heal bars, talent plan and class tools (pet, taming, ammo for hunters).",
+  class = "Everything about playing your class: the spells to learn next, your fight keys, and your talents.",
   gear = "Upgrades for this character: nearby, from quests, from dungeons and from your other characters' bags.",
   gearsets = "Save what you wear as a set and put a set back on with one command.",
-  professions = "Your professions and recipes, one-press crafting macros, training and the cheapest skill-ups.",
-  crafting = "A craft queue and the shopping list it needs.",
+  professions = "Your crafting and gathering skills: how high they are, how to raise them cheaply, and one-press crafting.",
+  crafting = "Plan what to make: pick recipes, and Outrider adds up the materials you still need to buy or gather.",
   macros = "Your keys and every macro for your class by level and build: click to read, drag to your action bar.",
   money = "The best ways to earn gold at your level and with your professions, and your own earnings.",
   errands = "What to do in town with this character: sell junk, repair, buy ammo, train, collect mail.",
@@ -211,6 +211,10 @@ local controls = {
   ["Quiet presses: no 'not ready yet' text or voice"] = "Outrider's casting macros clear the red 'not ready yet' text, and the game's error voice is off. Refusals are still logged.",
   ["Copy text"] = "Shows the macro's text to copy, so you can change it and make your own.",
   ["Clear them"] = "Removes the macros Outrider wrote for your old build. A macro you changed stays.",
+  ["Finished"] = "Only quests you handed in.",
+  ["Took"] = "Only quests you picked up.",
+  ["Gave up"] = "Only quests you abandoned; each shows where to take it again.",
+  ["Take it again"] = "Points the gold arrow at the quest giver, so you can pick it up again.",
   ["Go"] = "Shows the trip and puts the gold arrow up. Then just follow it.",
   ["Show singles"] = "Shows the one-spell macros a combined key already covers (Kick, Evasion, Bandage...), for separate buttons.",
   ["Hide singles"] = "Hides the one-spell macros a combined key already covers, so the tree shows only what is left.",
@@ -324,9 +328,20 @@ local sections = {
   ["Your own earnings"] = "INV_Misc_Coin_04", ["Your settings"] = "Trade_Engineering",
 }
 
+-- How to use a page in up to three short steps, shown under its title.
+local steps = {
+  class = { "See which new spells your trainer has for you", "Put your fight keys on your bar", "Pick your talents at level 10" },
+  waypoints = { "Press a place (Inn, Vendor...)", "Follow the gold arrow", "Clear arrow when you're there" },
+  rares = { "Click a rare to see it", "Press Waypoint for an arrow", "Press Watch to get an alert when it's up" },
+  journal = { "Click a quest", "See when, where and what it gave you" },
+  professions = { "Check your skill bars", "Press the craft button to make the best skill-up", "Plan to a target with the planner" },
+  crafting = { "Click recipes to add them to your queue", "Read what you still need", "Buy it at the auction house, then craft" },
+}
+
 ns.Tips = {
   sections = sections,
   pages = pages,
+  steps = steps,
   controls = controls,
   patterns = {
     { "^Open ", "Goes straight to that Outrider page." },

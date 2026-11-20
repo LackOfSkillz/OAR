@@ -19,7 +19,7 @@ T.describe("journal", function()
     local p = ns.Hub.byId.journal.panel
     T.eq(#p.list.items, 3)
     T.eq(p.list.items[1].what, "abandoned", "newest first")
-    T.contains(p.detail:GetText(), "Abandoned")
+    T.contains(p.what:GetText(), "Gave up", "the picked entry, in plain words")
     T.eq(p.stats.tiles[1].value:GetText(), "1")
     T.eq(#ns.Errors.list, 0)
   end)

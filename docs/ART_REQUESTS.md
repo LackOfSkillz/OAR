@@ -458,3 +458,27 @@ soft rim light, no text, no logos).
 |---|---|---|
 | `kind_zone.png` | 1024x1024, opaque, like the other `kind_*` pictures | A wide landscape seen from a hilltop: rolling green hills, a winding road, a small village with smoke from chimneys, mountains in the distance at dusk. The "Best zone for your level" card. |
 | `journey_empty.png` | 2048x1024 (2:1), transparent or dark vignette background | An open traveller's map on a wooden table, a brass compass on it, and a glowing gold arrow drawn across the map toward a small marked spot. Shown in "Your trip" before anything is picked. |
+
+## Batch 9: profession pictures (2026-11-20)
+
+The Professions page now has a card per profession saying what to do next.
+One picture per profession, like the `kind_*` pictures: 1024x1024, opaque, one
+object centred in three-quarter view on the dark vignette background (deep
+blue-black, lighter in the middle), filling about 75%, no frame. Same style
+line as the rest (painted dark fantasy, deep blue-teal shadows, warm gold
+highlights, soft rim light, no text, no logos).
+
+| File | Picture |
+|---|---|
+| `prof_cooking.png` | A cast-iron pan over a small campfire, a steak sizzling, a wooden spoon beside it |
+| `prof_firstaid.png` | A rolled linen bandage and a small corked red potion on a cloth |
+| `prof_fishing.png` | A wooden fishing pole with a red-and-white bobber and a fish on the line |
+| `prof_leatherworking.png` | A curved leather-cutting knife on a piece of tanned leather with stitching |
+| `prof_tailoring.png` | A spool of thread, a needle and a folded bolt of purple cloth |
+| `prof_blacksmithing.png` | A hammer resting on an anvil with a glowing orange ingot |
+| `prof_engineering.png` | A brass gear, a wrench and a small copper gadget with a spring |
+| `prof_alchemy.png` | Two glass flasks, one green and one blue, with a curl of vapour |
+| `prof_enchanting.png` | A glowing violet rod over a small pile of shimmering dust |
+| `prof_herbalism.png` | A hand trowel beside a freshly picked herb with its roots |
+| `prof_mining.png` | A miner's pick stuck in a rock with a vein of copper ore |
+| `prof_skinning.png` | A skinning knife on a folded wolf pelt |

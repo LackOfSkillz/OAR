@@ -203,9 +203,42 @@ ns.Hub:AddTab("home", "Home", function(p)
 end)
 
 -- ------------------------------------------------------------ Waypoints
+-- A grid of picture tiles (Gary, 2026-11-20: pages an 8th grader gets at a
+-- glance): { {label, art, fallbackIcon, fn, tip}, ... }, used as a "custom" form row.
+local function iconTiles(items, perRow)
+  perRow = perRow or 6
+  return function(host)
+    local f = CreateFrame("Frame", nil, host)
+    local TW, TH, GAP = 112, 76, 8
+    f:SetSize(perRow * (TW + GAP), math.ceil(#items / perRow) * (TH + GAP))
+    for i, it in ipairs(items) do
+      local b = CreateFrame("Button", nil, f, ns.Theme:BackdropTemplate())
+      b:SetSize(TW, TH)
+      b:SetPoint("TOPLEFT", ((i - 1) % perRow) * (TW + GAP), -math.floor((i - 1) / perRow) * (TH + GAP))
+      ns.Theme:ApplyPanel(b, "raised", "border")
+      b.icon = b:CreateTexture(nil, "ARTWORK")
+      b.icon:SetSize(36, 36)
+      b.icon:SetPoint("TOP", 0, -8)
+      if not (ns.Art and it[2] and ns.Art:Set(b.icon, it[2], "Interface\Icons\\" .. (it[3] or "INV_Misc_QuestionMark"))) then
+        b.icon:SetTexture("Interface\Icons\\" .. (it[3] or "INV_Misc_QuestionMark"))
+      end
+      b.label = UI.Text(b, "normal", "text")
+      b.label:SetPoint("BOTTOM", 0, 9)
+      b.label:SetText(it[1])
+      b:SetScript("OnClick", function() ns.Safe("tile:" .. it[1], it[4]) end)
+      b:SetScript("OnEnter", function(self) ns.Theme:ApplyPanel(self, "hover", "gold") end)
+      b:SetScript("OnLeave", function(self) ns.Theme:ApplyPanel(self, "raised", "border") end)
+      UI.Tip(b, it[1], it[5] or ("Points the gold arrow at the nearest " .. it[1]:lower() .. "."))
+    end
+    return f
+  end
+end
+ns.ClassPage = ns.ClassPage or {}
+ns.ClassPage.IconTiles = iconTiles
+
 ns.Hub:AddTab("waypoints", "Waypoints", function(p)
   UI:FormPage(p, {
-    { "header", "Waypoint" },
+    { "header", "Your arrow" },
     -- where the arrow points, at a glance (premium rebuild 2026-11-18)
     { "stats", function()
       local W = ns.Waypoints
@@ -222,15 +255,26 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
       local w = ns.Waypoints.current
       return w and ("Arrow to " .. tostring(w.title) .. ", " .. tostring(ns.Waypoints:Activity())) or "No waypoint set."
     end },
-    { "input", "Coordinates (x y)", "45.2 61.8", "Set arrow", function(t) ns.Slash:Run("way " .. t) end },
     { "buttons", { { "Clear arrow", Run("way clear") }, { "Say my coordinates", Run("coords") } } },
-    { "header", "Nearest place" },
-    { "buttons", { { "Inn", Run("near inn") }, { "Vendor", Run("near vendor") }, { "Repair", Run("near repair") },
-      { "Flight", Run("near flight") }, { "Trainer", Run("near trainer") } }, plain = true },
-    -- plain rows (tour 2026-11-19): equal choices, so no button looks picked
-    { "buttons", { { "Mail", Run("near mail") }, { "Bank", Run("near bank") }, { "Auction", Run("near ah") },
-      { "Stable", Run("near stable") }, { "Spirit healer", Run("near spirit") } }, plain = true },
-    { "buttons", { { "Ammo vendor", Run("near ammo") } }, plain = true },
+    { "header", "Take me to the nearest..." },
+    { "note", "Press a place: the gold arrow points to the closest one Outrider knows. Follow it; it clears when you arrive." },
+    -- picture tiles (Gary, 2026-11-20): the map-pin pictures, one press each
+    { "custom", iconTiles({
+      { "Inn", "pin_inn", "INV_Misc_Rune_01", Run("near inn"), "The nearest inn: rest for bonus XP and set your hearthstone." },
+      { "Vendor", "pin_vendor", "INV_Misc_Bag_10", Run("near vendor"), "The nearest vendor: sell junk, buy food and drink." },
+      { "Repair", "pin_repair", "Trade_BlackSmithing", Run("near repair"), "The nearest place to repair your gear." },
+      { "Flight", "pin_flight", "Ability_Mount_Gryphon_01", Run("near flight"), "The nearest flight master." },
+      { "Trainer", "pin_trainer", "INV_Misc_Book_09", Run("near trainer"), "The nearest trainer: new spells and skills." },
+      { "Mail", "pin_mail", "INV_Letter_15", Run("near mail"), "The nearest mailbox." },
+      { "Bank", "pin_bank", "INV_Misc_Coin_02", Run("near bank"), "The nearest bank." },
+      { "Auction", "pin_auction", "INV_Misc_Coin_01", Run("near ah"), "The nearest auction house." },
+      { "Stable", "pin_stable", "Ability_Hunter_BeastCall", Run("near stable"), "The nearest stable master." },
+      { "Spirit healer", "pin_spirit", "Spell_Holy_Resurrection", Run("near spirit"), "The nearest spirit healer." },
+      { "Ammo", "pin_ammo", "INV_Ammo_Arrow_02", Run("near ammo"), "The nearest arrow and bullet vendor." },
+    }, 6), 172 },
+    { "header", "Go to map coordinates" },
+    { "note", "Got coordinates from a quest or a friend, like 45.2 61.8? Type them here." },
+    { "input", "Coordinates (x y)", "45.2 61.8", "Set arrow", function(t) ns.Slash:Run("way " .. t) end },
     { "check", "Arrow to the spirit healer when you die", function() return set("Nearest").spiritOnDeath end,
       function(on) set("Nearest").spiritOnDeath = on end },
     { "header", "Map and minimap pins" },
@@ -291,15 +335,87 @@ local KEY_NOTE = {
   SHAMAN = "Fight on key 1 (imbue, Shield, bolt, totem, shocks, Stormstrike); Heal on key 2 (Healing Wave).",
 }
 
+-- Spells your class trainer teaches (Data/SpellInfo.lua, the client's
+-- spellbook pages; talents left out): ready now (your level, not known yet)
+-- and the next two levels that bring something new.
+local function trainerSpells(cls)
+  local info = ns.SpellInfo and ns.SpellInfo[cls or ""] or {}
+  local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  local now, later = {}, {}
+  for name, sp in pairs(info) do
+    if type(sp) == "table" and sp.level and not sp.tree then
+      local known = ns.Spellbook and ns.Spellbook:Known(name)
+      if sp.level <= level and not known then now[#now + 1] = { name = name, level = sp.level, icon = sp.icon }
+      elseif sp.level > level then later[#later + 1] = { name = name, level = sp.level, icon = sp.icon } end
+    end
+  end
+  local byName = function(a, b) if a.level ~= b.level then return a.level < b.level end return a.name < b.name end
+  table.sort(now, byName)
+  table.sort(later, byName)
+  local soon, levels = {}, {}
+  for _, sp in ipairs(later) do
+    if not levels[sp.level] then levels[sp.level] = true levels[#levels + 1] = sp.level end
+    if #levels <= 2 then soon[#soon + 1] = sp end
+  end
+  return now, soon, levels[1]
+end
+ns.ClassPage = ns.ClassPage or {}
+ns.ClassPage.TrainerSpells = trainerSpells
+
+local function spellChips(list, max)
+  local out = {}
+  for i, sp in ipairs(list) do
+    if i > (max or 6) then break end
+    out[#out + 1] = { icon = "Interface\Icons\\" .. tostring(sp.icon or "INV_Misc_QuestionMark"), text = sp.name .. "  |cff8f96a6" .. sp.level .. "|r",
+      tip = sp.name .. " (level " .. sp.level .. ")" }
+  end
+  return out
+end
+
 local function classRows(cls, page)
   local rows = {}
   local function r(t) rows[#rows + 1] = t end
   local F = function() return set("HunterFight") end
   local function opt(key) return function(on) ns.Slash:Run("fight " .. key .. " " .. onoff(on)) end end
   local fight = ns.HunterFight and ns.HunterFight:Supported()
+  -- at a glance: level, talent points, spells waiting at the trainer (Gary, 2026-11-20)
+  r({ "stats", function()
+    local now, _, nextLevel = trainerSpells(cls)
+    local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+    local pts = tonumber(C.Readable(C.Call("UnitCharacterPoints", "player"))) or 0
+    return {
+      { cap = "Level", value = tostring(level), color = "text" },
+      { cap = "Spells to learn now", value = tostring(#now), color = #now > 0 and "good" or "text",
+        note = #now > 0 and "visit your class trainer" or "you're up to date" },
+      { cap = "Next new spell", value = nextLevel and ("level " .. nextLevel) or "none", color = "gold" },
+      { cap = "Talent points", value = level < 10 and "at 10" or tostring(pts), color = pts > 0 and "good" or "text",
+        note = pts > 0 and "press N to spend them" or nil },
+    }
+  end })
+  r({ "header", "Spells from your trainer" })
+  r({ "cards", function()
+    local now, soon = trainerSpells(cls)
+    local out = {}
+    if #now > 0 then
+      out[#out + 1] = { title = string.format("%d new spell%s ready to learn", #now, #now == 1 and "" or "s"), highlight = true,
+        pic = "Interface\Icons\\" .. tostring(now[1].icon or "INV_Misc_Book_09"),
+        line = "Your class trainer teaches these now. New spells make fights faster and safer.",
+        chips = spellChips(now, 6), tags = { { "ready now", "gold" } },
+        actions = { { "Arrow to trainer", function() ns.Slash:Run("near trainer") end, "Points the gold arrow at the nearest trainer." } } }
+    else
+      out[#out + 1] = { title = "You know every spell for your level", pic = "Interface\Icons\INV_Misc_Book_09",
+        line = "Nothing to learn right now. Come back when you reach the level below." }
+    end
+    if #soon > 0 then
+      out[#out + 1] = { title = "Coming next", pic = "Interface\Icons\\" .. tostring(soon[1].icon or "INV_Misc_Book_09"),
+        line = string.format("At level %d%s.", soon[1].level, soon[#soon].level ~= soon[1].level and (" and " .. soon[#soon].level) or ""),
+        chips = spellChips(soon, 6) }
+    end
+    return out
+  end })
   if fight then
-    r({ "header", "Fight macros" })
-    r({ "note", KEY_NOTE[cls] or "" })
+    r({ "header", "Your fight keys" })
+    r({ "note", "Put these on your action bar and press them in every fight: Outrider keeps them up to date. " .. (KEY_NOTE[cls] or "") })
     r({ "buttons", { { "Make or show the macros", Run("fight") }, { "Open macro window", function()
       if C.Call("ShowMacroFrame") == nil then C.Call("MacroFrame_LoadUI") C.Call("ShowMacroFrame") end end } } })
     if cls == "HUNTER" then
@@ -346,7 +462,7 @@ local function classRows(cls, page)
     -- no sourced build for this class yet: one honest line, no empty plan box
     -- and no switches for rings that never show (tour 2026-11-19, Rogue page)
     r({ "header", "Talents" })
-    r({ "note", "No levelling talent build for your class in Outrider yet (builds come from a cited guide, never made up). Talent points start at level 10." })
+    r({ "note", "From level 10 you get a talent point each level: press N to open the talent window and spend it. Outrider has no tested levelling build for your class yet, so it doesn't suggest one (it never makes builds up)." })
   elseif Tal then
     r({ "header", "Talents" })
     r({ "note", function()
@@ -374,8 +490,8 @@ local function classRows(cls, page)
     r({ "check", "Tell me in chat when a point is ready", function() return set("Talents").notify end,
       function(on) set("Talents").notify = on end })
   end
-  r({ "header", "Your class macros" })
-  r({ "note", "Ready-made macros for your class only, in the Macros page: click one to see what it does, then Install." })
+  r({ "header", "More keys for your class" })
+  r({ "note", "The Macros page has every ready-made key for your class, by level: Stop, Save, Burst, Recover and Team, and one-spell keys. Drag them to your bar." })
   r({ "buttons", { { "Open Macros", function() ns.Hub.frame.tabBar:Select("macros") end } } })
   if not fight then
     r({ "note", "Fight macros that follow your spellbook exist for hunters, mages and priests so far." })
@@ -431,12 +547,45 @@ local function profRows()
     table.sort(out, function(x, y) return x.cap < y.cap end)
     return out
   end })
+  -- each profession in plain words: where it stands and what to do next (Gary, 2026-11-20)
+  r({ "header", "What to do next" })
+  r({ "cards", function()
+    local out = {}
+    local GATHER = { Herbalism = "pick herbs", Mining = "mine ore", Skinning = "skin beasts you kill", Fishing = "fish" }
+    local icons = ns.ProfExtras and ns.ProfExtras.PROF_ICON or {}
+    local names = {}
+    for name, d in pairs(ns.db.char.professions or {}) do if type(d) == "table" and d.skill then names[#names + 1] = name end end
+    table.sort(names)
+    for _, name in ipairs(names) do
+      local d = ns.db.char.professions[name]
+      local skill, max = tonumber(d.skill) or 0, tonumber(d.max) or 0
+      local line, tag, act
+      if max > 0 and skill >= max then
+        line = string.format("You've reached the most this rank allows (%d). Visit a %s trainer to learn the next rank and keep going.", max, name:lower())
+        tag = { "visit a trainer", "gold" }
+        act = { { "Arrow to trainer", function() ns.Slash:Run("near trainer") end, "Points the gold arrow at the nearest trainer." } }
+      elseif GATHER[name] then
+        line = string.format("Raise it by doing it: %s. Harder ones give more skill as you go.", GATHER[name])
+      else
+        line = "Raise it by making things: the craft button and the training button below pick the best recipe for you."
+      end
+      local artName = "prof_" .. name:lower():gsub(" ", "")
+      out[#out + 1] = { title = string.format("%s  %d / %d", name, skill, max), pic = "Interface\\Icons\\" .. (icons[name] or "INV_Misc_Book_09"),
+        art = (ns.Art and ns.Art:Has(artName)) and artName or nil,
+        line = line, tags = tag and { tag } or nil, actions = act, highlight = tag ~= nil }
+    end
+    if #out == 0 then
+      out[1] = { title = "No professions yet", pic = "Interface\\Icons\\INV_Misc_Book_09",
+        line = "Professions let you make or gather things to use and sell. Visit a profession trainer in a city to learn one." }
+    end
+    return out
+  end })
   local crafts = {}
   if owned.Cooking then crafts[#crafts + 1] = { "Cook", make("Cooking") } end
   if owned.Alchemy then crafts[#crafts + 1] = { "Brew", make("Alchemy") } end
   if #crafts > 0 then
-    r({ "header", "Make what you can" })
-    r({ "note", "Each click makes the best skill-up recipe you have every ingredient for (Create All). Stand by a fire to cook." })
+    r({ "header", "Craft in one click" })
+    r({ "note", "Press it: Outrider makes the recipe that raises your skill most with what's in your bags, as many as you can. For cooking, stand next to a fire." })
     crafts[#crafts + 1] = { "Make bar macros", Run("make") }
     r({ "buttons", crafts })
   end
@@ -444,8 +593,8 @@ local function profRows()
   local T = ns.ProfTrainer
   local crafting = T and T.Professions and T:Professions() or {}
   if #crafting > 0 then
-    r({ "header", "Training button" })
-    r({ "note", "When your bags hold enough to gain +10 in a profession, a button pops up: each press makes the next recipe that still gives skill (cooking builds a fire first)." })
+    r({ "header", "Skill-up button" })
+    r({ "note", "When your bags hold enough to gain about 10 skill, a button pops up on your screen. Press it again and again: each press makes the next recipe that still gives skill (for cooking it builds a fire first)." })
     r({ "check", "Show the training button", function() return set("ProfTrainer").show end,
       function(on) set("ProfTrainer").show = on if T then T:Evaluate() end end })
     r({ "key", "Training key", function() return set("ProfTrainer").key end,
@@ -468,7 +617,8 @@ local function profRows()
       if owned[prof] then example = prof .. " 75" break end
     end
     if example then
-      r({ "header", "Skill-up planner" })
+      r({ "header", "Plan to a goal" })
+      r({ "note", "Type a profession and the skill you want to reach, like the example. Outrider lists what to make and what to buy, cheapest first." })
       r({ "input", "Profession and target", example, "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
     end
   end

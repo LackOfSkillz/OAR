@@ -337,7 +337,7 @@ end
 
 -- Pages that draw their own heading (Expedition layouts) skip the title strip.
 Hub.OWN_HEADING = { home = true, whatnow = true }
-Hub.TITLE_H = 80
+Hub.TITLE_H = 100
 
 -- The page's picture: custom art page_<id> (or class_<CLASS> for the class
 -- page) when Gary's art is in, else the sidebar icon.
@@ -378,7 +378,8 @@ function Hub:Panel(t)
     -- for, and Help on the right.
     p.hubTile = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
     p.hubTile:SetSize(52, 52)
-    p.hubTile:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 12)
+    -- higher when the page has steps under its title (they sit above the rule)
+    p.hubTile:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, (ns.Tips and ns.Tips.steps and ns.Tips.steps[t.id]) and 34 or 22)
     Theme:ApplyPanel(p.hubTile, "bg", "gold")
     p.hubPic = p.hubTile:CreateTexture(nil, "ARTWORK")
     p.hubPic:SetPoint("TOPLEFT", 2, -2)
@@ -393,6 +394,26 @@ function Hub:Panel(t)
     p.hubSub:SetJustifyH("LEFT")
     if p.hubSub.SetWordWrap then p.hubSub:SetWordWrap(false) end
     p.hubSub:SetText(ns.Tips and ns.Tips.pages[t.id] or "")
+    -- how to use it, in numbered steps (Gary, 2026-11-20: an 8th grader gets the page at a glance)
+    local steps = ns.Tips and ns.Tips.steps and ns.Tips.steps[t.id]
+    if steps then
+      p.hubSteps = {}
+      local prev
+      for i, txt in ipairs(steps) do
+        local n = p:CreateTexture(nil, "ARTWORK")
+        n:SetSize(16, 16)
+        if prev then n:SetPoint("LEFT", prev, "RIGHT", 18, 0) else n:SetPoint("TOPLEFT", p.hubSub, "BOTTOMLEFT", 0, -8) end
+        n:SetColorTexture(Theme:Color("gold"))
+        local num = UI.Text(p, "small", "onGold")
+        num:SetPoint("CENTER", n, "CENTER", 0, 0)
+        num:SetText(tostring(i))
+        local tx = UI.Text(p, "normal", "text")
+        tx:SetPoint("LEFT", n, "RIGHT", 6, 0)
+        tx:SetText(txt)
+        p.hubSteps[i] = { box = n, num = num, text = tx }
+        prev = tx
+      end
+    end
     if t.id ~= "help" then
       p.helpBtn = UI:Button(p, "?", 30, function() if ns.HelpPage then ns.HelpPage.Open(t.id) end end)
       p.helpBtn:SetHeight(26)
