@@ -469,10 +469,18 @@ function M.new(opts)
     -- gear: a browse with itemClassFilters returns game.ahGear rows whose class (and inventoryType, if given) match
     -- item listings: game.ahAuctions[itemID] = { {auctionID, buyout}, ... }; PlaceBid records game.bought
     SendSearchQuery = function(key) game.itemSearch = key and key.itemID end,
-    GetNumItemSearchResults = function(key) return #((game.ahAuctions or {})[key.itemID] or {}) end,
+    -- {auctionID, buyout (whole listing), quantity (default 1), mine}; game.partial[itemID] = n shows only
+    -- the first n until RequestMoreItemSearchResults
+    GetNumItemSearchResults = function(key)
+      local all = #((game.ahAuctions or {})[key.itemID] or {})
+      local part = game.partial and game.partial[key.itemID]
+      return part and math.min(part, all) or all
+    end,
+    HasFullItemSearchResults = function(key) return not (game.partial and game.partial[key.itemID]) end,
+    RequestMoreItemSearchResults = function(key) if game.partial then game.partial[key.itemID] = nil end game.moreAsked = (game.moreAsked or 0) + 1 end,
     GetItemSearchResultInfo = function(key, i)
       local a = ((game.ahAuctions or {})[key.itemID] or {})[i]
-      return a and { auctionID = a[1], buyoutAmount = a[2], containsOwnerItem = false }
+      return a and { auctionID = a[1], buyoutAmount = a[2], quantity = a[3] or 1, containsOwnerItem = a[4] and true or false }
     end,
     StartCommoditiesPurchase = function(id, qty) game.commodityStart = { id = id, qty = qty } end,
     ConfirmCommoditiesPurchase = function(id, qty) game.bought = game.bought or {} game.bought[#game.bought + 1] = { commodity = id, qty = qty } end,

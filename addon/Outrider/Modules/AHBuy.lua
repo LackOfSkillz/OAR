@@ -43,6 +43,7 @@ function M:Next()
   if not e then self:Refresh() self:Pump() return end
   self.current = e
   self.fetching = nil -- a lookup ahead gives way: the next answer is this one
+  e.askedMore = nil
   if e.commodity then
     pcall(C_AuctionHouse.StartCommoditiesPurchase, e.itemID, e.qty)
   else
@@ -58,18 +59,38 @@ function M:Next()
   self:Refresh()
 end
 
--- The cheapest listing someone else posted for an item: { auctionID, price, n } or nil.
+-- The cheapest listing someone else posted for an item, by price per item
+-- (Gary, 2026-11-20: "make sure it buys the lowest price"; a listing of 2 at
+-- 3s is cheaper per item than 1 at 2s): { auctionID, price, n } or nil.
+-- Every result is compared, whatever order the game sends them in.
 function M.Cheapest(itemKey)
   local n = C.Call("C_AuctionHouse.GetNumItemSearchResults", itemKey) or 0
   local best
   for i = 1, n do
     local r = C.Call("C_AuctionHouse.GetItemSearchResultInfo", itemKey, i)
     local price = type(r) == "table" and C.Readable(r.buyoutAmount)
-    if type(price) == "number" and not r.containsOwnerItem and (not best or price < best.price) then
-      best = { auctionID = r.auctionID, price = price, n = tonumber(C.Readable(r.quantity)) or 1 }
+    local q = type(r) == "table" and tonumber(C.Readable(r.quantity)) or 1
+    if q < 1 then q = 1 end
+    if type(price) == "number" and price > 0 and not C.Readable(r.containsOwnerItem) then
+      local per = price / q
+      if not best or per < best.per or (per == best.per and price < best.price) then
+        best = { auctionID = C.Readable(r.auctionID), price = price, n = q, per = per }
+      end
     end
   end
   return best
+end
+
+-- The game can send a long result list in parts: ask for the rest once before
+-- deciding, so the cheapest can't be on a part not seen yet. true = wait.
+function M.NeedMore(e)
+  local full = C.Call("C_AuctionHouse.HasFullItemSearchResults", e.itemKey)
+  if full == false and not e.askedMore then
+    e.askedMore = true
+    pcall(C_AuctionHouse.RequestMoreItemSearchResults, e.itemKey)
+    return true
+  end
+  return false
 end
 
 -- ------------------------------------------------------------ one click
@@ -80,7 +101,7 @@ end
 -- stackable goods while the mouse rests on that card's Buy (the server keeps
 -- one price quote at a time). The click then buys at the price on the card.
 -- If the lookup isn't back yet, the click falls back to the cart (two clicks).
-M.FRESH, M.FETCH_WAIT = 90, 3
+M.FRESH, M.FETCH_WAIT = 60, 3
 
 function M:Prefetch(list)
   self.known = self.known or {}
@@ -99,6 +120,7 @@ function M:Pump()
   local e = table.remove(self.toFetch or {}, 1)
   if not e then return end
   self.fetching = e
+  e.askedMore = nil
   pcall(C_AuctionHouse.SendSearchQuery, e.itemKey, { { sortOrder = 0, reverseSort = false } }, false)
   ns.Timer.After(M.FETCH_WAIT, function()
     if M.fetching == e then M.fetching = nil M:Pump() end
@@ -107,6 +129,7 @@ end
 
 function M:OnFetched()
   local e = self.fetching
+  if M.NeedMore(e) then return end
   self.fetching = nil
   local best = M.Cheapest(e.itemKey)
   self.known = self.known or {}
@@ -181,6 +204,7 @@ function M:OnItemResults()
   if self.fetching then return self:OnFetched() end
   local e = self.current
   if not e or e.commodity or self.quote then return end
+  if M.NeedMore(e) then return end
   local best = M.Cheapest(e.itemKey)
   if not best then ns.Print("%s: no buyout left, skipped", tostring(e.name)) return self:Next() end
   -- a deal's price cap (Deals): the cheap listing may be gone
@@ -294,6 +318,10 @@ function M:Finish(ok, why)
     end
   end
   self.lastResult = { ok = ok, why = why, what = what }
+  if ok and e and not e.commodity and e.itemKey then
+    self.toFetch = self.toFetch or {}
+    table.insert(self.toFetch, 1, e)
+  end
   self:Next()
 end
 

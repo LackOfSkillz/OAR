@@ -339,3 +339,38 @@ T.describe("one click buys (2026-11-20)", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("always the lowest price (2026-11-20)", function()
+  T.it("compares price per item across every listing, skips your own, reads every part of a long list", function()
+    local game, ns = session()
+    local A = ns.AHBuy
+    game.ahAuctions[401] = {
+      { 1, 5000 },          -- 50s for one
+      { 2, 8000, 2 },       -- 40s each for two: cheaper per item
+      { 3, 3000, 1, true }, -- your own: never
+      { 4, 7600, 2 },       -- 38s each: the cheapest, but on the second part of the list
+    }
+    game.partial = { [401] = 3 }
+    local best
+    A:Add({ name = "Fine Vest", itemKey = { itemID = 401 } })
+    game:fire("ITEM_SEARCH_RESULTS_UPDATED") -- first part: asks for the rest
+    T.eq(game.moreAsked, 1)
+    T.eq(A.quote, nil, "doesn't decide on part of the list")
+    game:fire("ITEM_SEARCH_RESULTS_UPDATED")
+    T.eq(A.quote.auctionID, 4, "38s each beats 40s each, 50s and your own 30s")
+    A:Confirm()
+    T.eq(game.bought[1].id, 4)
+    T.eq(game.bought[1].price, 7600)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("stackable goods: the game's quote fills from the cheapest units up; Outrider confirms that quote", function()
+    local game, ns = session()
+    local A = ns.AHBuy
+    A:Add({ name = "Silverleaf", itemID = 765, qty = 20, commodity = true })
+    game:fire("COMMODITY_PRICE_UPDATED", 10, 200)
+    T.eq(A.quote.price, 200)
+    A:Confirm()
+    T.eq(game.bought[1].qty, 20)
+  end)
+end)
