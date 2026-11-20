@@ -265,6 +265,8 @@ Shown at 52x52 beside the page title.
 
 ## Batch 5 (Feed and Money cards, 2026-11-19 tour)
 
+**Delivered and installed 2026-11-20.** All 13 in style; every requested picture is now in (170 installed, 0 missing).
+
 The page tour showed the Feed using a blue cross and plain envelopes, and both
 Money cards using the same loot bag. These replace them. Same as the step
 pictures: one object centered, three-quarter view, on a dark vignette background
