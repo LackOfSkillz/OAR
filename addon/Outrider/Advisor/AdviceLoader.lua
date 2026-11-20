@@ -22,7 +22,7 @@ local Advice = { name = "advice", SCHEMA = 1, MAX_ITEMS = 12 }
 -- Schema 2 (Outrider Intelligence, AI02-05): adds answer = { headline,
 -- summary, limits = {..}, sources = {..} } and items may name the WhatNow
 -- candidate they act on (candidateId). Everything in schema 1 still works.
-Advice.SCHEMAS = { [1] = true, [2] = true }
+Advice.SCHEMAS = { [1] = true, [2] = true, [3] = true, [4] = true }
 ns.Advice = Advice
 
 -- Arg kinds: "id" = positive integer below 2^31, "frac" = finite 0..1,
@@ -75,11 +75,175 @@ local function clean(item)
   return { title = title, why = plain(item.why, 400) or "", action = item.action, args = args, confidence = confidence }
 end
 
+-- Schema 3: candidate selection only, NEVER model-authored actions.
+-- Rebuild all actions exclusively from a fresh Outrider snapshot.
+function Advice:CheckV3(a, snap)
+  if not snap.snapshotId or a.answersSnapshotId ~= snap.snapshotId then
+    return {}, "advice is stale"
+  end
+  if a.items ~= nil then return {}, "model-authored items forbidden" end
+  if a.actionRequests ~= nil and
+      (type(a.actionRequests) ~= "table" or next(a.actionRequests) ~= nil) then
+    return {}, "model actions forbidden"
+  end
+  local allowed = {
+    kind=true, schema=true, forCharacter=true, answersSnapshot=true,
+    answersSnapshotId=true, rankedCandidateIds=true, rationaleEvidenceIds=true,
+    headline=true, summary=true, assumptions=true, limitations=true, actionRequests=true,
+  }
+  for k in pairs(a) do if not allowed[k] then return {}, "unknown advice field" end end
+  local cands = Advice.Candidates(snap)
+  if not cands or type(a.rankedCandidateIds) ~= "table" or
+      #a.rankedCandidateIds < 1 or #a.rankedCandidateIds > 3 then
+    return {}, "invalid candidates"
+  end
+  local seen, out = {}, {}
+  for _, id in ipairs(a.rankedCandidateIds) do
+    if type(id) ~= "string" or seen[id] or not cands[id] then
+      return {}, "unknown or duplicate candidate"
+    end
+    seen[id] = true
+    local source = cands[id]
+    local action, args
+    if type(source.target) == "table" then
+      action = "waypoint"
+      args = { mapID = source.target.mapID, x = source.target.x, y = source.target.y }
+    elseif Advice.PANELS[source.panel] then
+      action, args = "open_panel", { panel = source.panel }
+    elseif source.itemID then
+      action, args = "show_item", { itemID = source.itemID }
+    end
+    if action then
+      local item = clean({ title = source.title, why = source.why, confidence = source.label,
+                           action = action, args = args })
+      if not item then return {}, "invalid source candidate" end
+      item.candidateId = id
+      out[#out + 1] = item
+    end
+  end
+  local sources = {}
+  for id in pairs(cands) do sources["local:" .. id] = true end
+  if a.rationaleEvidenceIds ~= nil and type(a.rationaleEvidenceIds) ~= "table" then
+    return {}, "invalid evidence"
+  end
+  local evidenceIds = a.rationaleEvidenceIds or {}
+  if #evidenceIds > 12 then return {}, "too many sources" end
+  for _, id in ipairs(evidenceIds) do
+    if type(id) ~= "string" or not sources[id] then return {}, "unknown evidence" end
+  end
+  local answer = Advice.CleanAnswer({
+    headline = a.headline, summary = a.summary, limits = a.limitations,
+    sources = evidenceIds,
+  }, cands)
+  return out, "ok", answer
+end
+
+-- XP60 schema 4: plans are DATA, not instructions. No model-defined actions.
+-- Session binding is independent of legacy askedAt, which can survive logout.
+function Advice:CheckNextSession(a)
+  if a.kind ~= "nextSessionPlan" or a.goal ~= "xp" or a.budgetSeconds ~= 3600 or
+      (a.status ~= "tentative" and a.status ~= "evidence_backed" and
+       a.status ~= "insufficient_evidence") then
+    return {}, "invalid XP60 contract"
+  end
+  local allowed = {
+    kind=true, schema=true, forCharacter=true, basedOnSessionId=true,
+    sourceDigest=true, createdAt=true, expiresAt=true, gameBuild=true,
+    levelAtPlan=true, goal=true, budgetSeconds=true, status=true,
+    headline=true, summary=true, baselineXPPerHour=true,
+    estimatedEarnedXP=true, steps=true, qualitativeCandidateIds=true,
+    limitations=true, actions=true,
+  }
+  for k in pairs(a) do if not allowed[k] then return {}, "unknown plan field" end end
+  if type(a.sourceDigest) ~= "string" or #a.sourceDigest ~= 64 or
+      not a.sourceDigest:match("^[a-f0-9]+$") then return {}, "bad source digest" end
+  if type(a.basedOnSessionId) ~= "string" or #a.basedOnSessionId > 80 then
+    return {}, "no source session" end
+  if type(a.createdAt) ~= "number" or type(a.expiresAt) ~= "number" or
+     a.createdAt > time() + 300 or a.expiresAt < time() or
+     a.expiresAt - a.createdAt > 86400 then return {}, "next-session plan expired" end
+  local state = ns.db.char.xp60
+  local history = type(state) == "table" and state.history
+  local source = type(history) == "table" and history[#history] or nil
+  if type(source) ~= "table" or source.sessionId ~= a.basedOnSessionId or
+     source.final ~= true or (source.flags and source.flags.incomplete) then
+    return {}, "source session has changed"
+  end
+  if tostring(a.gameBuild or "") ~= tostring(source.build or "") then
+    return {}, "game build differs from source" end
+  local currentLevel = ns.Compat.Readable(ns.Compat.Call("UnitLevel", "player"))
+  if type(currentLevel) == "number" and currentLevel ~= a.levelAtPlan then
+    return {}, "character level changed"
+  end
+  if a.actions ~= nil and
+      (type(a.actions) ~= "table" or next(a.actions) ~= nil) then
+    return {}, "model actions forbidden"
+  end
+  if type(a.steps) ~= "table" or #a.steps > 12 then return {}, "invalid plan steps" end
+  local snapshot = rawget(_G, "Outrider_Snapshots")
+  snapshot = type(snapshot) == "table" and snapshot[ns.db.key]
+  local candidates = snapshot and Advice.Candidates(snapshot) or nil
+  local suggestions = {}
+  local ids = a.qualitativeCandidateIds
+  if ids ~= nil then
+    if type(ids) ~= "table" or #ids > 3 then return {}, "invalid suggestions" end
+    local unique = {}
+    for _, id in ipairs(ids) do
+      if type(id) ~= "string" or unique[id] or not (candidates and candidates[id]) then
+        return {}, "untrusted suggestion"
+      end
+      unique[id] = true
+      suggestions[#suggestions + 1] = {
+        candidateId = id,
+        title = plain(candidates[id].title, 120) or "Quest opportunity",
+      }
+    end
+  end
+  local seen, steps, last = {}, {}, 0
+  for _, raw in ipairs(a.steps) do
+    if type(raw) ~= "table" or type(raw.candidateId) ~= "string" or
+       seen[raw.candidateId] or not (candidates and candidates[raw.candidateId]) or
+       type(raw.startsAt) ~= "number" or type(raw.endsAt) ~= "number" or
+       raw.startsAt < last or raw.endsAt <= raw.startsAt or
+       raw.endsAt > 3600 or type(raw.xp) ~= "number" or raw.xp < 0 or
+       raw.xp ~= math.floor(raw.xp) then
+       return {}, "untrusted or oversized plan step"
+    end
+    seen[raw.candidateId] = true
+    local orig = candidates[raw.candidateId]
+    steps[#steps + 1] = {
+      candidateId = raw.candidateId, title = plain(orig.title, 120) or "Quest objective",
+      minutes = math.ceil((raw.endsAt - raw.startsAt) / 60),
+      startsAt = raw.startsAt, endsAt = raw.endsAt,
+    }
+    last = raw.endsAt
+  end
+  local limits = {}
+  if type(a.limitations) == "table" then
+    for i, l in ipairs(a.limitations) do
+      if i > 4 then break end
+      local safe = plain(l, 160)
+      if safe then limits[#limits + 1] = safe end
+    end
+  end
+  local answer = { headline = plain(a.headline, 120) or "Your next 60 minutes",
+    summary = plain(a.summary, 600) or "Continue your current route.",
+    plan = steps, budget = 60, planMinutes = math.ceil(last/60),
+    limits = limits, sources = { "Saved gameplay session" },
+    nextSession = true, planStatus = a.status, suggestions = suggestions,
+    basedOnSessionId = a.basedOnSessionId,
+    baselineXPPerHour = type(a.baselineXPPerHour) == "number" and
+      math.floor(math.max(0, a.baselineXPPerHour)) or nil,
+  }
+  return {}, "ok", answer
+end
+
 -- Clean items and "ok", or {} and the reason, for one advice table.
 function Advice:Check(a)
   if type(a) ~= "table" then return {}, "no advice file" end
   if not self.SCHEMAS[a.schema] then return {}, "wrong schema" end
   if a.forCharacter ~= ns.db.key then return {}, "advice is for another character" end
+  if a.schema == 4 then return self:CheckNextSession(a) end
   local snaps = rawget(_G, "Outrider_Snapshots")
   local snap = type(snaps) == "table" and snaps[ns.db.key]
   if not snap then return {}, "advice is stale" end
@@ -92,9 +256,10 @@ function Advice:Check(a)
     if age < 0 or age > 6 * 3600 then return {}, "advice is stale" end
   end
   -- schema 2 answers name the snapshot they answer; a mismatch is stale
-  if a.schema == 2 and a.answersSnapshotId and snap.snapshotId and a.answersSnapshotId ~= snap.snapshotId then
+  if a.schema >= 2 and a.answersSnapshotId and snap.snapshotId and a.answersSnapshotId ~= snap.snapshotId then
     return {}, "advice is stale"
   end
+  if a.schema == 3 then return self:CheckV3(a, snap) end
   local cands = Advice.Candidates(snap)
   local out = {}
   if type(a.items) == "table" then

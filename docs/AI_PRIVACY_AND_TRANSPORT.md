@@ -17,15 +17,14 @@ or local until Gary changes it.
 - Nothing by default. The model provider is local: the default base URL is
   `http://127.0.0.1:<port>`. A LAN or internet URL has to be typed into
   `companion/config.json` by Gary, and a LAN machine is not private to this PC.
-- No automatic fallback to a paid or cloud provider.
+- No automatic fallback to a paid or cloud provider. Anthropic server-side model substitution is disabled.
+- Non-loopback local-model endpoints require explicit allowRemote plus HTTPS and authentication. For a development-only plaintext LAN connection, the user must additionally acknowledge the risk with allowInsecureLan; loopback stays HTTP-compatible.
 - Cloud providers (Anthropic, OpenAI, Gemini; AI-04) work only when Gary
   picks one, stores its key, looks at `ask --preview` and sets
   `"cloudConsent": true`. Keys live in Windows Credential Manager, never in
   SavedVariables, codes, logs or the repo. A daily token cap
   (`dailyTokenCap`, default 100,000) stops cloud calls past the limit.
-- Anthropic requests use server-side fallback on refusals (`fallbacks:
-  "default"`): a declined request is retried on another Claude model in the
-  same call. Remove it in cloud.py if that's unwanted.
+- Anthropic refusals do not trigger another model or provider. No automatic paid model substitution.
 
 ## What the model sees
 - A context built from the snapshot: class, level, faction, goal, zone name and

@@ -1,6 +1,6 @@
 # Outrider Intelligence 2.0 — Atomic Engineering Backlog
 
-**Owner:** Gary Mix · **Created:** 2026-11-18 · **Status:** DESIGN ONLY; no I2 tasks are implemented merely because this file exists.
+**Owner:** Gary Mix · **Created:** 2026-11-18 · **Status:** IMPLEMENTATION IN PROGRESS on `ai/intelligence-2.0`. This checklist tracks individual acceptance, not just whether source files exist. Live Forever tests and release approval remain pending.
 
 **Read first:** [Universal Engineering Blueprint](OUTRIDER_INTELLIGENCE_2_0_UNIVERSAL_ENGINEERING_BLUEPRINT.md). Compare the current code with previous AI v1 tasks in `docs/OUTRIDER_INTELLIGENCE_TASKS.md`. Do not mark any item done without source, automated tests and where applicable live Forever verification.
 
@@ -27,15 +27,15 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
 
 ## I2-00: Baseline and policy (P0)
 
-- [ ] **I2-00-01** Recheck branch HEAD, CI and compare with this blueprint; record changed modules.
+- [~] **I2-00-01** Recheck branch HEAD, CI and compare with this blueprint; record changed modules.
   - **Done when:** git state and exact CI logs.
-- [ ] **I2-00-02** Read controlling CLAUDE.md, D18, privacy, probe, threat model and create conflict register.
+- [~] **I2-00-02** Read controlling CLAUDE.md, D18, privacy, probe, threat model and create conflict register.
   - **Done when:** risk register; prior decisions preserved.
-- [ ] **I2-00-03** Inventory all producer candidates / snapshots / IDs and map reuse to old modules.
+- [~] **I2-00-03** Inventory all producer candidates / snapshots / IDs and map reuse to old modules.
   - **Done when:** source-to-contract map, no duplicate owner.
-- [ ] **I2-00-04** Freeze 9-class and role acceptance matrix including unknown Forever tokens.
+- [~] **I2-00-04** Freeze 9-class and role acceptance matrix including unknown Forever tokens.
   - **Done when:** 54 universal scenarios and hybrid roles declared.
-- [ ] **I2-00-05** Document policy posture and forbidden live bridge; feature flags default OFF.
+- [~] **I2-00-05** Document policy posture and forbidden live bridge; feature flags default OFF.
   - **Done when:** security suite rejects prohibited paths.
 - [ ] **I2-00-06** Record measured idle CPU/memory and snapshot size on client.
   - **Done when:** baseline trace and version stamped.
@@ -44,55 +44,55 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
 
 ## I2-01: Evidence registry and universal profiles (P0)
 
-- [ ] **I2-01-01** Add ClassProfiles registry keyed by readable class token with a separate UNKNOWN profile.
+- [~] **I2-01-01** Add ClassProfiles registry keyed by readable class token with a separate UNKNOWN profile.
   - **Done when:** 10 profiles (9+UNKNOWN) resolve without error.
-- [ ] **I2-01-02** Read talent/role evidence conservatively via Compat; support player override.
+- [~] **I2-01-02** Read talent/role evidence conservatively via Compat; support player override.
   - **Done when:** hybrids and unreadable talent values retain UNKNOWN.
-- [ ] **I2-01-03** Build additive normalized Observation v3 records and per-source provider registry.
+- [~] **I2-01-03** Build additive normalized Observation v3 records and per-source provider registry.
   - **Done when:** schema validation; bounded plain data, no secret branches.
-- [ ] **I2-01-04** Implement Evidence v3 with IDs, timestamp, client build, pack version and confidence.
+- [~] **I2-01-04** Implement Evidence v3 with IDs, timestamp, client build, pack version and confidence.
   - **Done when:** provenance and meaningful freshness demonstrated.
-- [ ] **I2-01-05** Create TTL/invalidation policies by source (AH, quest, bags, talent, location).
+- [~] **I2-01-05** Create TTL/invalidation policies by source (AH, quest, bags, talent, location).
   - **Done when:** event invalidates only correct facts, no stale actionable cards.
-- [ ] **I2-01-06** Implement character/account scoped preference and role state migrations.
+- [~] **I2-01-06** Implement character/account scoped preference and role state migrations.
   - **Done when:** v1/v2 fixture load, idempotent migration.
-- [ ] **I2-01-07** Add sanitization and separate local-only vs exportable evidence.
+- [~] **I2-01-07** Add sanitization and separate local-only vs exportable evidence.
   - **Done when:** privacy golden tests, zero unapproved fields.
-- [ ] **I2-01-08** Implement budgeted task-specific ContextEnvelope v3 on existing OTR1 copy flow.
+- [~] **I2-01-08** Implement budgeted task-specific ContextEnvelope v3 on existing OTR1 copy flow.
   - **Done when:** <= 50KiB, fails visibly instead of truncating essential evidence.
-- [ ] **I2-01-09** Compat adapter and provider tests against all nine class profiles.
+- [~] **I2-01-09** Compat adapter and provider tests against all nine class profiles.
   - **Done when:** 54 universal class×goal test cases pass.
 
 - [ ] **I2-01-GATE** Exit criteria demonstrated in automated and live-client evidence where relevant; no unsourced success claims.
 
 ## I2-02: Native Opportunity Radar (P0)
 
-- [ ] **I2-02-01** Wrap WhatNow as first producer preserving old score/actions.
+- [~] **I2-02-01** Wrap WhatNow as first producer preserving old score/actions.
   - **Done when:** old WhatNow regression green.
-- [ ] **I2-02-02** Build immutable Opportunity v3 validation and candidate ID registry.
+- [~] **I2-02-02** Build immutable Opportunity v3 validation and candidate ID registry.
   - **Done when:** malformed/unverified identifiers rejected.
-- [ ] **I2-02-03** Create normalized goal-fit, benefit, eligibility, role, freshness and distance scoring.
+- [~] **I2-02-03** Create normalized goal-fit, benefit, eligibility, role, freshness and distance scoring.
   - **Done when:** property tests and fixed fixtures.
-- [ ] **I2-02-04** Add event coalescer, bounded refresh rate, TTL and duplicate suppression.
+- [~] **I2-02-04** Add event coalescer, bounded refresh rate, TTL and duplicate suppression.
   - **Done when:** rapid BAG/QUEST bursts <= 1 recompute every 2s.
-- [ ] **I2-02-05** Implement 1 primary + at most 2 secondary Coach cards using existing UI kit.
+- [~] **I2-02-05** Implement 1 primary + at most 2 secondary Coach cards using existing UI kit.
   - **Done when:** 1+2 enforced, small-window rendering verified.
-- [ ] **I2-02-06** Add per-card Why?, dismiss, snooze, useful, wrong and completed.
+- [~] **I2-02-06** Add per-card Why?, dismiss, snooze, useful, wrong and completed.
   - **Done when:** persistent state, source inspectability.
-- [ ] **I2-02-07** Stop unsolicited combat notifications, queue safe post-combat reminder.
+- [~] **I2-02-07** Stop unsolicited combat notifications, queue safe post-combat reminder.
   - **Done when:** zero combat toasts, no protected actions.
-- [ ] **I2-02-08** Add per-category mute, quiet default, HUD enable/minimize/scale.
+- [~] **I2-02-08** Add per-category mute, quiet default, HUD enable/minimize/scale.
   - **Done when:** no modal onboarding or chat spam.
-- [ ] **I2-02-09** Make Coach open known in-addon panels or user-requested waypoint.
+- [~] **I2-02-09** Make Coach open known in-addon panels or user-requested waypoint.
   - **Done when:** only whitelisted nonprotected actions.
-- [ ] **I2-02-10** Native offline no-model experience for Warrior, Druid, Hunter at first vertical slice.
+- [~] **I2-02-10** Native offline no-model experience for Warrior, Druid, Hunter at first vertical slice.
   - **Done when:** three classes verified before adding specializations.
 
 - [ ] **I2-02-GATE** Exit criteria demonstrated in automated and live-client evidence where relevant; no unsourced success claims.
 
 ## I2-03: All-class and role coaching (P1)
 
-- [ ] **I2-03-01** Define class profile data reference schema/version and unknown ability behavior.
+- [~] **I2-03-01** Define class profile data reference schema/version and unknown ability behavior.
   - **Done when:** no invented talent/spell rank IDs.
 - [ ] **I2-03-02** Warrior & Paladin profiles and gear/readiness tests.
   - **Done when:** tank, melee damage, healing where documented.
@@ -104,7 +104,7 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
   - **Done when:** spell/consumable/demon preparation.
 - [ ] **I2-03-06** Druid profiles and role override tests.
   - **Done when:** four roles, hybrid/shape-shift unknown safe.
-- [ ] **I2-03-07** Unrecognized Forever class/race/talent probes and graceful fallback.
+- [~] **I2-03-07** Unrecognized Forever class/race/talent probes and graceful fallback.
   - **Done when:** universal quest/economy works, class advice quiet.
 - [ ] **I2-03-08** Unify class profile with GearScore/QuestRewards/TrainShop/LevelRoutes.
   - **Done when:** role-appropriate evidence and selected scale.
@@ -115,44 +115,44 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
 
 ## I2-04: Economy and Deal Desk (P1)
 
-- [ ] **I2-04-01** Define item listing, stack, vendor price and currency contracts.
+- [~] **I2-04-01** Define item listing, stack, vendor price and currency contracts.
   - **Done when:** copper int, quantity, binding and age validated.
-- [ ] **I2-04-02** Build AH→NPC unit/stack gross-margin calculator.
+- [~] **I2-04-02** Build AH→NPC unit/stack gross-margin calculator.
   - **Done when:** unit vs stack property tests, nonpositive margin rejected.
-- [ ] **I2-04-03** Require verified sellability, current listing, sufficient available gold after reserve.
+- [~] **I2-04-03** Require verified sellability, current listing, sufficient available gold after reserve.
   - **Done when:** unknown/secret/expired facts suppress active candidate.
-- [ ] **I2-04-04** Build Deal Desk nonprotected list with evidence, totals, age and visit navigation.
+- [~] **I2-04-04** Build Deal Desk nonprotected list with evidence, totals, age and visit navigation.
   - **Done when:** no auto-buy; player review always required.
-- [ ] **I2-04-05** Integrate existing player-requested AH scan and query throttle.
+- [~] **I2-04-05** Integrate existing player-requested AH scan and query throttle.
   - **Done when:** no background full scan or polling when AH closed.
-- [ ] **I2-04-06** Store player-approved outcomes separately from disappeared-auction observations.
+- [~] **I2-04-06** Store player-approved outcomes separately from disappeared-auction observations.
   - **Done when:** no false sale/profit claims.
-- [ ] **I2-04-07** Separate AH→AH and crafting opportunities as hypotheses with known fee/deposit status.
+- [~] **I2-04-07** Separate AH→AH and crafting opportunities as hypotheses with known fee/deposit status.
   - **Done when:** unknown liquidity cannot yield precise sale probability.
-- [ ] **I2-04-08** Implement option to compare gold/hour and goal fit from observed timing.
+- [~] **I2-04-08** Implement option to compare gold/hour and goal fit from observed timing.
   - **Done when:** time/price data provenance shown.
-- [ ] **I2-04-09** Test stale, unsellable, bound, 0-price, missing stack, changed lot and insufficient gold.
+- [~] **I2-04-09** Test stale, unsellable, bound, 0-price, missing stack, changed lot and insufficient gold.
   - **Done when:** 100% arithmetic + eligibility gates.
 
 - [ ] **I2-04-GATE** Exit criteria demonstrated in automated and live-client evidence where relevant; no unsourced success claims.
 
 ## I2-05: Companion and external models (P1)
 
-- [ ] **I2-05-01** Add Python v3 typed context schemas and v1/v2 migration wrappers.
+- [~] **I2-05-01** Add Python v3 typed context schemas and v1/v2 migration wrappers.
   - **Done when:** old golden codes still decode.
 - [ ] **I2-05-02** Create new deterministic evidence and candidate tools without duplicating MCP server.
   - **Done when:** tool scope read-only; source IDs trusted.
-- [ ] **I2-05-03** Build model tool selection and structured explanation flow.
+- [~] **I2-05-03** Build model tool selection and structured explanation flow.
   - **Done when:** provider may rank IDs, cannot author commands/data.
-- [ ] **I2-05-04** Add response v3 validator in Python; then additive Lua AdviceLoader v3.
+- [~] **I2-05-04** Add response v3 validator in Python; then additive Lua AdviceLoader v3.
   - **Done when:** malicious answer tests; all legacy formats unchanged.
-- [ ] **I2-05-05** Reuse existing OpenAI-compatible local adapter and vLLM/LAN config.
+- [~] **I2-05-05** Reuse existing OpenAI-compatible local adapter and vLLM/LAN config.
   - **Done when:** no hardcoded home IP; TLS/auth on LAN per policy.
-- [ ] **I2-05-06** Preserve cloud OpenAI/Anthropic/Gemini opt-in, preview, Credential Manager and token cap.
+- [~] **I2-05-06** Preserve cloud OpenAI/Anthropic/Gemini opt-in, preview, Credential Manager and token cap.
   - **Done when:** zero network calls before explicit consent.
-- [ ] **I2-05-07** Add provider health/timeouts/retry/circuit breaker and cancellation semantics.
+- [~] **I2-05-07** Add provider health/timeouts/retry/circuit breaker and cancellation semantics.
   - **Done when:** deterministic fallback, no automatic cloud escalation.
-- [ ] **I2-05-08** Add companion freshness status and selectable 'Explain' view.
+- [~] **I2-05-08** Add companion freshness status and selectable 'Explain' view.
   - **Done when:** no false live-awareness claim.
 - [ ] **I2-05-09** Benchmark 25 mixed questions on a local model and chosen cloud model (user-approved spend).
   - **Done when:** accuracy, latency and costs reported.
@@ -163,17 +163,17 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
 
 ## I2-06: Planning and feedback learning (P1)
 
-- [ ] **I2-06-01** Create per-character coaching preference profile.
+- [~] **I2-06-01** Create per-character coaching preference profile.
   - **Done when:** role override/goal/time persisted separately.
-- [ ] **I2-06-02** Record bounded usefulness/incorrectness feedback and reason.
+- [~] **I2-06-02** Record bounded usefulness/incorrectness feedback and reason.
   - **Done when:** explicitly entered or verified, no implied acceptance.
 - [ ] **I2-06-03** Track only observed quest times and known travel cost.
   - **Done when:** unknown travel stays unknown.
-- [ ] **I2-06-04** Re-rank candidates after measurable outcome/relevance evidence.
+- [~] **I2-06-04** Re-rank candidates after measurable outcome/relevance evidence.
   - **Done when:** replay tests detect quality change.
-- [ ] **I2-06-05** Implement 30/45/60 minute plan and alternative selection.
+- [~] **I2-06-05** Implement 30/45/60 minute plan and alternative selection.
   - **Done when:** feasible ordering with stated estimates.
-- [ ] **I2-06-06** Add delete/export/reset feedback history and preview.
+- [~] **I2-06-06** Add delete/export/reset feedback history and preview.
   - **Done when:** no secret/local identity leaks.
 - [ ] **I2-06-07** Add opt-in desktop push-to-talk with last-snapshot age label.
   - **Done when:** no game hooks, no persistent audio recording.
@@ -182,17 +182,17 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
 
 ## I2-07: Security/performance hardening (P0 release)
 
-- [ ] **I2-07-01** Audit secure actions, scripts, combat taint and unknown/secret API behavior.
+- [~] **I2-07-01** Audit secure actions, scripts, combat taint and unknown/secret API behavior.
   - **Done when:** 0 forbidden calls or taint in game.
-- [ ] **I2-07-02** Audit model input prompt injection, oversized fields and malicious tool outputs.
+- [~] **I2-07-02** Audit model input prompt injection, oversized fields and malicious tool outputs.
   - **Done when:** 0 trusted malicious commands.
-- [ ] **I2-07-03** Audit endpoint redirects/SSRF, TLS, credential storage and cloud spend caps.
+- [~] **I2-07-03** Audit endpoint redirects/SSRF, TLS, credential storage and cloud spend caps.
   - **Done when:** no remote leakage/redirect or unknown fallback.
-- [ ] **I2-07-04** Bound event registry/history/serialized snapshot, measure memory and CPU.
+- [~] **I2-07-04** Bound event registry/history/serialized snapshot, measure memory and CPU.
   - **Done when:** measured budgets or approved documented waiver.
-- [ ] **I2-07-05** Test competing addon yielding, source absence, intermittent provider failures.
+- [~] **I2-07-05** Test competing addon yielding, source absence, intermittent provider failures.
   - **Done when:** graceful degradation.
-- [ ] **I2-07-06** Validate /reload, logout, character changes, v1/v2 migration and offline restore.
+- [~] **I2-07-06** Validate /reload, logout, character changes, v1/v2 migration and offline restore.
   - **Done when:** saved data stable, no corrupted profiles.
 
 - [ ] **I2-07-GATE** Exit criteria demonstrated in automated and live-client evidence where relevant; no unsourced success claims.
@@ -218,16 +218,27 @@ All tasks begin `[ ]`. Mark `[~]` while coding, `[x]` only when committed with t
 
 ## I2-09: Potential seamless synchronization (not approved) (BLOCKED)
 
-- [ ] **I2-09-01** Explicit owner request revising existing D18 (not implied by this blueprint).
+- [!] **I2-09-01** Explicit owner request revising existing D18 (not implied by this blueprint).
   - **Done when:** specific signed decision prerequisite.
-- [ ] **I2-09-02** Written review/approval of proposed specific interface and privacy impact.
+- [!] **I2-09-02** Written review/approval of proposed specific interface and privacy impact.
   - **Done when:** no implementation without policy gate.
-- [ ] **I2-09-03** Separate isolated non-distributed experiment and adversarial review.
+- [!] **I2-09-03** Separate isolated non-distributed experiment and adversarial review.
   - **Done when:** never production if ambiguous.
-- [ ] **I2-09-04** New transport-specific user consent, rate limits, and verifiable evidence checks.
+- [!] **I2-09-04** New transport-specific user consent, rate limits, and verifiable evidence checks.
   - **Done when:** independent release decision.
 
 - [ ] **I2-09-GATE** Only with explicit policy/owner authorization.
+
+
+## November 18, 2026 implementation checkpoint
+
+**Development branch:** `ai/intelligence-2.0`. The original `/ride radar` smoke-test failure was fixed on `a4344a9`, [CI run 44404920384](https://github.com/LackOfSkillz/OAR/actions/runs/44404920384) PASS. Further work was merged with `p1-foundation` on `91387a2` and now requires fresh full CI evidence (do not count cancelled runs).
+
+The `[~]` tasks above have **partial code or supporting tests**, not complete acceptance. Examples: I2-01 has 10 profile tokens, bounded evidence and a Python v3 contract, but does not yet capture all live game talent and source-pack metadata or offer an addon-side task-scoped v3 context UI. I2-02 has native opt-in Radar, manual feedback, a max-three UI and event coalescing, but has no visual live-client approval or measured p95. I2-04 includes vendor-floor math and an opt-in read-only Deal Desk, not a certified end-to-end economy product. I2-05 adds additive v3 deterministic/model coach and strict action reconstruction but real providers/latency require tests. Other code remains experimental.
+
+**I2-00-06 and all I2-08 acceptance tasks remain unchecked** because they require actual in-game measurements, role/auction sessions, independent review and Gary's approval. **I2-09 is blocked under D18**; this does not authorize implementation. The branch must not merge to `main` before final review.
+
+Reference: [I2 implementation status](I2_IMPLEMENTATION_STATUS.md), [policy/ownership register](I2_BASELINE_POLICY_REGISTER.md) and [competitive audit](COMPETITIVE_SOURCE_AUDIT_2026-11-18.md).
 
 ## Suggested first Claude Code execution batch
 
@@ -289,3 +300,19 @@ Acceptance state: IMPLEMENTED | MOCK-GREEN | LIVE-WORKS | MATCHES | SURPASSES
 - [ ] Gary Mix reviews the final UX, setup, beta outcomes and production release notes.
 
 **Do not mark all gates complete simply because the task list is exhausted.**
+
+## Additional approved design scope — Next-session XP60 optimizer (2026-11-18)
+
+See **[AfterAction XP60 Engineering Design](AFTERACTION_XP60_ENGINEERING_DESIGN.md)**. This extends existing I2-01/I2-02/I2-03/I2-05/I2-06/I2-07/I2-08 acceptance obligations rather than silently declaring more of the original 77 items complete.
+
+The product requirement is **maximize supported expected XP gained inside the next 3,600 real-world seconds**, including travel, quest hand-ins and downtime; avoid generic coaching and fabricated percentage improvements. Recommendations must be backed by persisted observed XP/quest/time evidence and safe, versioned, source-validated route candidates.
+
+**Implementation subtasks:** `[~]` means code exists but its acceptance evidence is incomplete; `[ ]` means not accepted.
+
+- [~] XP60-00 — Instrument opt-in bounded, secret-safe in-game XP/session/quest telemetry; reliable level-up and reload handling.
+- [~] XP60-01 — Desktop read-only stable SavedVariables watcher, post-logout baseline builder, dedup and privacy controls.
+- [~] XP60-02 — Deterministic 60-minute quest-cluster/route optimizer with uncertainty bands, eligibility and current-route comparison.
+- [~] XP60-03 — Separate session-bound next-login data-only plan contract, safe closed-game delivery, quiet UI and stale-plan invalidation.
+- [ ] XP60-04 — Expert-respectful relevance/suppression feedback, negative and performance tests, real-game acceptance.
+
+**New release gates:** no beginner-style filler; no misleading XP/hour; no plan beyond 60 minutes; don't count quest XP until it can be turned in by minute 60; preserve existing Ask/Advice contracts; no live bridge or game automation (D18); all generated player actions remain player-controlled. XP60-00 through XP60-03 now have development code and automated fixtures, but the integrated CI and real-game acceptance remain gates. See [XP60 Windows beta setup](XP60_USER_GUIDE.md). **Do not mark this feature complete solely because source files exist.**

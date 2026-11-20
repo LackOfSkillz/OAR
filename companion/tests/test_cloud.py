@@ -65,11 +65,11 @@ class Anthropic(CloudBase):
         req = Stub.seen[0]
         self.assertEqual(req["headers"].get("x-api-key"), "sk-test-123456")
         self.assertEqual(req["headers"].get("anthropic-version"), cloud.ANTHROPIC_VERSION)
-        self.assertIn("server-side-fallback", req["headers"].get("anthropic-beta", ""))
+        self.assertNotIn("anthropic-beta", req["headers"])
         b = req["body"]
         self.assertEqual(b["system"], "rules")
         self.assertEqual([m["role"] for m in b["messages"]], ["user"])
-        self.assertEqual(b["fallbacks"], "default")
+        self.assertNotIn("fallbacks", b)
         for banned in ("temperature", "top_p", "top_k", "thinking"):
             self.assertNotIn(banned, b)
         self.assertEqual(p.last_usage, {"input": 120, "output": 40})

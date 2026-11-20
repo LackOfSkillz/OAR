@@ -223,9 +223,26 @@ class Provider(unittest.TestCase):
         for url in ("file:///c:/x", "ftp://127.0.0.1", "http://192.168.1.5:11434", "http://example.com"):
             with self.assertRaises(providers.ProviderError):
                 providers.OpenAICompatibleProvider(url, "m").validate_config()
-        self.assertTrue(providers.OpenAICompatibleProvider("http://192.168.1.5:1", "m", allow_remote=True).validate_config()["ok"])
+        with self.assertRaises(providers.ProviderError):
+            providers.OpenAICompatibleProvider("http://192.168.1.5:1", "m", allow_remote=True).validate_config()
+        self.assertTrue(providers.OpenAICompatibleProvider("https://192.168.1.5:1", "m", allow_remote=True,
+                                                          api_key="test-key").validate_config()["ok"])
+        self.assertTrue(providers.OpenAICompatibleProvider("http://192.168.1.5:1", "m", allow_remote=True,
+                                                          allow_insecure_lan=True).validate_config()["ok"])
         with self.assertRaises(providers.ProviderError):
             providers.OpenAICompatibleProvider("http://127.0.0.1:1", "").validate_config()
+
+    def test_breaker_opens_after_three_failed_manual_requests(self):
+        p = providers.OpenAICompatibleProvider("http://127.0.0.1:9", "m", retries=0)
+        def down(*args):
+            raise providers.ProviderError("connect", "offline")
+        p._post = down
+        for _ in range(3):
+            with self.assertRaises(providers.ProviderError):
+                p.generate([{"role": "user", "content": "x"}])
+        with self.assertRaises(providers.ProviderError) as e:
+            p.generate([{"role": "user", "content": "x"}])
+        self.assertEqual(e.exception.kind, "circuit_open")
 
     def test_config_off_by_default(self):
         self.assertIsNone(providers.from_config({}))

@@ -2,7 +2,7 @@ name: Outrider test gates
 
 on:
   push:
-    branches: [main, p1-foundation]
+    branches: [main, p1-foundation, 'ai/**']
   pull_request:
     branches: [main]
 

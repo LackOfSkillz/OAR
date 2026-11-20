@@ -124,10 +124,14 @@ def _is_loopback(host):
 class OpenAICompatibleProvider(ModelProvider):
     label = "local model"
 
-    def __init__(self, base_url, model, allow_remote=False, api_key=None, retries=1):
+    def __init__(self, base_url, model, allow_remote=False, api_key=None, retries=1,
+                 allow_insecure_lan=False):
         self.base_url = (base_url or "").rstrip("/")
         self.model = model
         self.allow_remote = allow_remote
+        self.allow_insecure_lan = allow_insecure_lan is True
+        self._failures = 0
+        self._breaker_until = 0
         self.api_key = api_key   # local servers usually need none; never logged
         self.retries = max(0, min(int(retries), 2))
         self._opener = urllib.request.build_opener(_NoRedirect)
@@ -138,9 +142,14 @@ class OpenAICompatibleProvider(ModelProvider):
             raise ProviderError("config", "the model URL must start with http:// or https:// (got %r)" % self.base_url)
         if not u.hostname:
             raise ProviderError("config", "the model URL has no host")
+        if u.username or u.password or u.query or u.fragment or u.path not in ("", "/"):
+            raise ProviderError("config", "base URL must contain only scheme, host and port")
         if not self.allow_remote and not _is_loopback(u.hostname):
             raise ProviderError("config", "only this PC (127.0.0.1) is allowed unless allowRemote is set in the config: "
                                           "a model on another machine sees your data")
+        if not _is_loopback(u.hostname) and not self.allow_insecure_lan:
+            if u.scheme != "https" or not self.api_key:
+                raise ProviderError("config", "non-loopback servers require HTTPS and auth; allowInsecureLan is an explicit development-only override")
         if not isinstance(self.model, str) or not self.model.strip():
             raise ProviderError("config", "no model name set")
         return {"ok": True, "host": u.hostname}
@@ -153,6 +162,8 @@ class OpenAICompatibleProvider(ModelProvider):
 
     def generate(self, messages, max_output_tokens=MAX_OUTPUT_TOKENS, timeout_seconds=TIMEOUT):
         self.validate_config()
+        if time.monotonic() < self._breaker_until:
+            raise ProviderError("circuit_open", "model temporarily unavailable after repeated failures")
         body = {"model": self.model, "messages": messages, "temperature": 0.2,
                 "max_tokens": int(min(max_output_tokens, MAX_OUTPUT_TOKENS)), "stream": False}
         last = None
@@ -163,10 +174,15 @@ class OpenAICompatibleProvider(ModelProvider):
             except ProviderError as e:
                 last = e
                 if e.kind != "connect" or attempt == self.retries:
+                    self._failures += 1
+                    if self._failures >= 3:
+                        self._breaker_until = time.monotonic() + 30
                     raise
                 time.sleep(0.5 * (attempt + 1))
         else:
             raise last
+        self._failures = 0
+        self._breaker_until = 0
         try:
             text = out["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError):
@@ -194,6 +210,7 @@ def from_config(cfg, usage_path=None):
         from . import keys
         return OpenAICompatibleProvider(ic.get("baseUrl") or "http://127.0.0.1:11434", ic.get("model"),
                                         allow_remote=ic.get("allowRemote") is True,
+                                        allow_insecure_lan=ic.get("allowInsecureLan") is True,
                                         api_key=keys.get("openai-compatible"))
     from . import budget, cloud, keys
     if kind not in cloud.CLOUD:
