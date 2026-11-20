@@ -831,7 +831,7 @@ local function dungeonRows()
     end
     return out
   end })
-  r({ "note", "Upgrades are scored for your class against what you wear. Hover an item for its tooltip. Level ranges from foreverdb.net, loot from QuestieDB (both unverified)." })
+  r({ "note", "Upgrades are scored for your class against what you wear. Hover an item for its tooltip. Level ranges and loot are community data, not yet checked in game." })
   return rows
 end
 
@@ -1292,7 +1292,7 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "buttons", { { "Put the bar back at the top", Run("bar reset"), 210 } } },
     { "header", "Map" },
     { "check", "Reveal unexplored map areas", function() return ns.MapReveal:Settings().on end, function(on) ns.MapReveal:Settings().on = on ns.MapReveal:Refresh() end },
-    { "note", function() return ns.MapReveal.enabled and ns.MapReveal:Activity() or "Off: Leatrix Maps or Mapster reveals the map instead." end },
+    { "note", function() return ns.MapReveal.enabled and ns.MapReveal:Activity() or "Off: another map addon you run reveals the map instead." end },
     { "header", "Bags" },
     { "check", "Bag slots: item level", function() return ns.BagExtras:Settings().ilvl end, function(on) ns.BagExtras:Settings().ilvl = on ns.BagExtras:UpdateAll() end },
     { "check", "Bag slots: upgrade arrows", function() return ns.BagExtras:Settings().upgrade end, function(on) ns.BagExtras:Settings().upgrade = on ns.BagExtras:UpdateAll() end },

@@ -74,7 +74,7 @@ function Modules:ShouldEnable(mod)
   end
   if mod.spec.yieldsTo then
     for _, addon in ipairs(mod.spec.yieldsTo) do
-      if ns.Compat.IsAddOnLoaded(addon) then return false, "off: " .. addon .. " is installed" end
+      if ns.Compat.IsAddOnLoaded(addon) then return false, "off: another addon you run does this" end
     end
   end
   if mod.spec.defaultEnabled == false then return false, "off by default" end

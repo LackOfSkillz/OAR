@@ -526,9 +526,10 @@ Hub:AddTab("overview", L.overview, function(p)
       { cap = "Layer", value = id and label or "—", note = id and string.format("%.0f%% sure", conf * 100) or "learning from nearby mobs" },
       { cap = "Build", value = tostring(ns.build):match("^(%d%d%d%d%d%d%d%d)") or tostring(ns.build), note = tostring(ns.build):match("%-(%x+)$") },
     })
-    local names = {}
-    for _, k in ipairs(ns.Conflicts:Detect()) do names[#names + 1] = k.addon .. " |cff8f96a6(" .. k.relation .. ")|r" end
-    self.addons:SetText("|cfff1d58eOther addons|r   " .. (#names > 0 and table.concat(names, ",  ") or "none detected"))
+    -- counted, not named (Gary, 2026-11-20: no other addon's name in Outrider)
+    local n = #ns.Conflicts:Detect()
+    self.addons:SetText("|cfff1d58eOther addons|r   " .. (n > 0 and (n .. " found; Outrider shares or steps aside, and never needs them")
+      or "none found; Outrider needs no other addon"))
   end
 end, 10)
 

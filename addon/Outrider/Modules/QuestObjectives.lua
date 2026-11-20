@@ -547,7 +547,7 @@ ns.Hub:AddTab("quests", "Quests", function(p)
     end },
     { "header", "Your quest log", icon = "INV_Misc_Note_01" },
     { "note", function()
-      if not M:Pack() then return "The quest data pack isn't installed: run python tools/import_questie_quests.py --deploy, then restart the game." end
+      if not M:Pack() then return "The quest data pack isn't installed yet." end
       return "Go puts the arrow on the nearest objective (or the turn-in when it's done). Pins on the map show every spot. Community data, unverified."
     end },
     { "cards", function()
@@ -606,6 +606,6 @@ end)
 
 function M:Activity()
   local pack = self:Pack()
-  if not pack then return "no quest pack: run tools/import_questie_quests.py --deploy" end
+  if not pack then return "no quest pack installed" end
   return string.format("%d objectives of your quests on the map", #self:Targets())
 end

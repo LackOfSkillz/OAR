@@ -193,7 +193,7 @@ function M.Describe(p, label)
   local first = label or p.kind
   if p.title and p.title ~= p.name then first = first .. " (" .. p.title .. ")" end
   local second = p.goods and #p.goods > 0 and ("Sells: " .. table.concat(p.goods, ", ")) or nil
-  if p.source == "questie" then second = (second and (second .. " | ") or "") .. "from QuestieDB, unverified" end
+  if p.source == "questie" then second = (second and (second .. " | ") or "") .. "community data, unverified" end
   return first, second
 end
 

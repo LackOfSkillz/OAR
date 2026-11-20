@@ -200,7 +200,8 @@ function M.Source(c)
   local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or nil
   local src = (M.KIND_LABEL[c.kind] or c.kind) .. (who and (" " .. who) or "")
   if c.kind == "gearquest" then
-    src = "GearQuest: " .. tostring(c.via or "") .. (who and (" " .. who) or "") .. (c.zone and (", " .. c.zone) or "")
+    -- no other addon's name on screen (Gary, 2026-11-20: Outrider stands alone)
+    src = (tostring(c.via or "upgrade"):gsub("^%l", string.upper)) .. (who and (" " .. who) or "") .. (c.zone and (", " .. c.zone) or "")
   end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end
   if w.note then src = src .. ", " .. w.note end

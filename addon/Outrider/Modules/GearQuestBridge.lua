@@ -17,7 +17,7 @@
 local _, ns = ...
 local C = ns.Compat
 local M = ns:NewModule("GearQuestBridge", {
-  title = "GearQuest picks in the Gear tab",
+  title = "Extra upgrade picks in the Gear tab (optional)",
   phase = "P6",
   order = 85,
   defaults = {},
@@ -66,7 +66,7 @@ function M:Picks()
       end
       out[#out + 1] = { itemID = id, name = fact.name or ("item " .. id), slot = slot, kind = "gearquest",
         -- never a raw token on screen ("boss_drop"): known words, else spaced out
-        label = (M.SOURCE[fact.sourceType or ""] or (tostring(fact.sourceType or "GearQuest"):gsub("_", " "))), where = where,
+        label = (M.SOURCE[fact.sourceType or ""] or (tostring(fact.sourceType or "upgrade"):gsub("_", " "))), where = where,
         zone = fact.zone }
     end
   end
@@ -74,9 +74,10 @@ function M:Picks()
 end
 
 function M:Activity()
-  if not self:GQ() then return "GearQuest Forever not installed" end
-  if self.broken then return "GearQuest changed (" .. self.broken .. " failed); bridge off this session" end
-  return "GearQuest picks show in the Gear tab"
+  -- no other addon's name on screen (Gary, 2026-11-20); the log keeps the detail
+  if not self:GQ() then return "Not needed: the Gear tab works on its own" end
+  if self.broken then return "Extra picks paused this session (" .. self.broken .. " failed)" end
+  return "Extra upgrade picks show in the Gear tab"
 end
 
 -- One line at login: is GearQuest Forever loaded, and does it expose the

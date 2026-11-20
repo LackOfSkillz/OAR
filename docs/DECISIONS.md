@@ -180,3 +180,6 @@ Gary asked for fewer macros that combine the best sequences, with scripts if the
 ## D-bagswap: moving items for a bag swap (2026-11-20, Claude, Gary asked)
 
 One press of Bag Swap moves the items of the smallest bag into free slots elsewhere, one move every 0.2 s, then puts the new bag in. Moving items and placing a bag are not protected actions (bag-sort addons and Blizzard's Clean Up do the same); the whole run starts only from Gary's press, runs only out of combat, stops when a fight starts, and never sells, deletes or drops anything. Rule 1 (no automation of protected actions) is unchanged.
+
+## D-standalone: no other addon named on screen (2026-11-20, Gary)
+Outrider needs no other addon (no `## Dependencies`/`RequiredDeps` in the TOC; `OptionalDeps` only orders loading). Gary: "it needs to be standalone ... lets get rid of in app mentions of other addons". Player-facing text never names another addon; detection, hooks and `yieldsTo` (hard rule 8) stay in code, and names stay in the log and comments only. The optional extra-picks bridge (Modules/GearQuestBridge.lua) is off-screen-named "Extra upgrade picks"; without it the Gear page uses Outrider's own packs.

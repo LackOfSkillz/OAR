@@ -64,7 +64,7 @@ function M:QuestList(dungeon)
   local d = self:ByName()[dungeon]
   if not d then return {}, "unknown dungeon" end
   local questPack = ns.QuestObjectives and ns.QuestObjectives:Pack()
-  if not questPack then return {}, "Questie quest data not installed" end
+  if not questPack then return {}, "quest data pack not installed" end
   local bosses = {}
   for _, boss in ipairs(d.bosses) do bosses[boss[1]] = true end
   local active = {}
