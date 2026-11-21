@@ -136,6 +136,7 @@ Modules\GearScore.lua
 Modules\DungeonGuide.lua
 Modules\DungeonJournal.lua
 Modules\DungeonQuests.lua
+Modules\QuestChains.lua
 Modules\BossTimeline.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua

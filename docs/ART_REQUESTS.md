@@ -435,7 +435,7 @@ and highlight as this image". One colour only (gold), transparent background,
 | `spec_warrior_arms.png` | a two-handed greatsword: make the blade broad and the grip long, so it can't be read as a dagger |
 | `spec_warrior_prot.png` | a tall tower shield with rivets |
 
-## Batch 7: auction house header (2026-11-20)
+## Batch 7: auction house header (2026-11-20) — DELIVERED and installed 2026-11-21
 
 The redesigned shopping window beside the auction house opens with a painted
 header strip, like the hub's page headers. One picture, same style line as the
@@ -447,7 +447,7 @@ rim light, no text, no logos). 4:1 wide strip, artwork centred: deliver
 |---|---|
 | `header_auction.png` | A grand auction hall at dusk: a long auctioneer's counter of dark wood with brass scales, stacked crates, bolts of cloth, potions on a shelf and a hanging lantern; gold coins on the counter catching the light; an arched window with a blue evening sky behind. Keep the left third darker and calmer (the emblem and title sit there) and the right edge quiet (the gold amount sits there). |
 
-## Batch 8: Journey page (2026-11-20)
+## Batch 8: Journey page (2026-11-20) — DELIVERED and installed 2026-11-21
 
 The Journey page is rebuilt to read at a glance: steps 1-2-3, three "best
 picks" picture cards, and a "Your trip" card. Two pictures, same style line as
@@ -483,7 +483,7 @@ highlights, soft rim light, no text, no logos).
 | `prof_mining.png` | A miner's pick stuck in a rock with a vein of copper ore |
 | `prof_skinning.png` | A skinning knife on a folded wolf pelt |
 
-## Batch 10: new sidebar groups and trainer pins (2026-11-20)
+## Batch 10: new sidebar groups and trainer pins (2026-11-20) — DELIVERED and installed 2026-11-21
 
 The sidebar was regrouped (World, Character, Professions, Gold, Social). Three
 groups are new and borrow another group's banner until their own arrives; the
