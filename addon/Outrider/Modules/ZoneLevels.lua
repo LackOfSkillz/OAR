@@ -193,7 +193,9 @@ function M:Labels(mapID)
         color = M.Color(a.lo, a.hi, level) }
     end
   end
-  if info.mapType == M.TYPE_ZONE then
+  if M.CITIES[info.name or ""] then
+    return out -- a capital: its guards are level 55, not the zone's level
+  elseif info.mapType == M.TYPE_ZONE then
     asZone()
   elseif info.mapType == M.TYPE_CONTINENT then
     for _, kid in ipairs(C.Call("C_Map.GetMapChildrenInfo", mapID) or {}) do

@@ -29,6 +29,7 @@ local function onoff(v) return v and "on" or "off" end
 local HOME_PAD = 8
 
 -- a card with a picture, a title and up to n clickable lines
+local HOME_ROWS = 6
 local function homeList(parent, title, art, n)
   local c = UI:Card(parent)
   c.pic = c:CreateTexture(nil, "ARTWORK")
@@ -80,7 +81,7 @@ local function homeList(parent, title, art, n)
   -- items = { { icon, text, fn, tip }, ... }
   function c:Fill(items, emptyText)
     for i, b in ipairs(self.rows) do
-      local it = items[i]
+      local it = i <= (self.cap or 3) and items[i] or nil
       if it then
         b.icon:SetTexture(it[1] or "Interface\\Icons\\INV_Misc_QuestionMark")
         b.text:SetText(it[2])
@@ -108,11 +109,23 @@ ns.Hub:AddTab("home", "Home", function(p)
   p.hero:SetPoint("RIGHT", p, "RIGHT", 0, 0)
   p.hero:SetHeight(164)
   Theme:ApplyPanel(p.hero, "bg", "gold")
-  p.hero.art = p.hero:CreateTexture(nil, "BACKGROUND")
-  p.hero.art:SetPoint("TOPLEFT", 1, -1)
-  p.hero.art:SetPoint("BOTTOMRIGHT", -1, 1)
-  if not (ns.Art and (ns.Art:Set(p.hero.art, "home_hero") or ns.Art:Set(p.hero.art, "header_world") or ns.Art:Set(p.hero.art, "header"))) then
-    p.hero.art:SetColorTexture(Theme:Color("panel"))
+  -- the painting comes in two halves (WoW loads addon pictures up to 1024
+  -- wide; one 2048-wide file showed black: Gary's screenshot, 2026-11-21)
+  p.hero.artL = p.hero:CreateTexture(nil, "BACKGROUND")
+  p.hero.artL:SetPoint("TOPLEFT", 1, -1)
+  p.hero.artL:SetPoint("BOTTOMRIGHT", p.hero, "BOTTOM", 0, 1)
+  p.hero.artR = p.hero:CreateTexture(nil, "BACKGROUND")
+  p.hero.artR:SetPoint("TOPLEFT", p.hero, "TOP", 0, -1)
+  p.hero.artR:SetPoint("BOTTOMRIGHT", -1, 1)
+  p.hero.halves = ns.Art and ns.Art:Set(p.hero.artL, "home_hero_l") and ns.Art:Set(p.hero.artR, "home_hero_r")
+  if not p.hero.halves then
+    p.hero.artR:Hide()
+    p.hero.artL:ClearAllPoints()
+    p.hero.artL:SetPoint("TOPLEFT", 1, -1)
+    p.hero.artL:SetPoint("BOTTOMRIGHT", -1, 1)
+    if not (ns.Art and (ns.Art:Set(p.hero.artL, "header_world") or ns.Art:Set(p.hero.artL, "header"))) then
+      p.hero.artL:SetColorTexture(Theme:Color("panel"))
+    end
   end
   -- darker on the left so the words read over the painting
   p.hero.shade = p.hero:CreateTexture(nil, "BORDER")
@@ -281,12 +294,12 @@ ns.Hub:AddTab("home", "Home", function(p)
 
   -- ---------------------------------------------------------- six cards
   p.cards = {
-    quests = homeList(p, "Quests for you", "kind_quest", 3),
-    gear = homeList(p, "Upgrades near you", "kind_gear", 3),
-    dungeon = homeList(p, "Your next dungeon", "kind_dungeon", 3),
-    rares = homeList(p, "Rares", "kind_rare", 3),
-    town = homeList(p, "To do in town", "kind_errand", 3),
-    trip = homeList(p, "Your trip", "kind_zone", 3),
+    quests = homeList(p, "Quests for you", "kind_quest", HOME_ROWS),
+    gear = homeList(p, "Upgrades near you", "kind_gear", HOME_ROWS),
+    dungeon = homeList(p, "Your next dungeon", "kind_dungeon", HOME_ROWS),
+    rares = homeList(p, "Rares", "kind_rare", HOME_ROWS),
+    town = homeList(p, "To do in town", "kind_errand", HOME_ROWS),
+    trip = homeList(p, "Your trip", "kind_zone", HOME_ROWS),
   }
   p.cards.quests.more:SetScript("OnClick", function() ns.Hub.frame.tabBar:Select("quests") end)
   p.cards.gear.more:SetScript("OnClick", function() ns.Hub.frame.tabBar:Select("gear") end)
@@ -305,10 +318,11 @@ ns.Hub:AddTab("home", "Home", function(p)
     -- stretching, a little above the middle (the adventurer's head and the
     -- dungeon gate sit there)
     local hw, hh = w - 2, (self.hero:GetHeight() or 150) - 2
-    if hw > 0 and hh > 0 and self.hero.art.SetTexCoord then
+    if self.hero.halves and hw > 0 and hh > 0 and self.hero.artL.SetTexCoord then
       local band = math.min(1, 4 * hh / hw)
       local top = math.max(0, math.min(1 - band, 0.46 - band / 2))
-      self.hero.art:SetTexCoord(0, 1, top, top + band)
+      self.hero.artL:SetTexCoord(0, 1, top, top + band)
+      self.hero.artR:SetTexCoord(0, 1, top, top + band)
     end
     self.next:SetWidth(math.floor((w - HOME_PAD) * 0.6))
     -- glance tiles in a row
@@ -327,14 +341,20 @@ ns.Hub:AddTab("home", "Home", function(p)
     end
     local rowsOfTiles = math.ceil(#self.where.tiles / per)
     self.where:SetHeight(46 + rowsOfTiles * (TH + 6))
-    -- cards: three columns, two rows
+    -- cards: three columns, two rows, as tall as the window allows (Gary's
+    -- screenshot: a third of the page was empty)
     local cw = math.floor((w - 2 * HOME_PAD) / 3)
+    local used = (self.hero:GetHeight() or 164) + (self.next:GetHeight() or 128) + (self.where:GetHeight() or 122) + 3 * HOME_PAD
+    local free = (self:GetHeight() or 0) - used - 2 * HOME_PAD
+    local ch = math.max(134, math.min(56 + HOME_ROWS * 26, math.floor(free / 2)))
+    self.cardRows = math.max(3, math.min(HOME_ROWS, math.floor((ch - 56) / 26)))
     for i, key in ipairs(ORDER) do
       local c = self.cards[key]
       c:ClearAllPoints()
-      c:SetSize(cw, 134)
+      c:SetSize(cw, ch)
       local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
-      c:SetPoint("TOPLEFT", self.where, "BOTTOMLEFT", col * (cw + HOME_PAD), -HOME_PAD - row * (134 + HOME_PAD))
+      c:SetPoint("TOPLEFT", self.where, "BOTTOMLEFT", col * (cw + HOME_PAD), -HOME_PAD - row * (ch + HOME_PAD))
+      c.cap = self.cardRows
     end
   end
   p:Layout()
@@ -350,12 +370,14 @@ ns.Hub:AddTab("home", "Home", function(p)
     local mapID = C.PlayerPosition("player")
     local zoneName = mapID and ns.Travel and ns.Travel.ZoneName(mapID) or ""
     local lo, hi = nil, nil
-    if mapID and ns.ZoneLevels and ns.ZoneLevels.Range then lo, hi = ns.ZoneLevels:Range(mapID) end
+    -- a capital city has no level range: its guards are 55 (Thunder Bluff read "50-60: too high")
+    local city = ns.ZoneLevels and ns.ZoneLevels.CITIES and ns.ZoneLevels.CITIES[zoneName]
+    if mapID and not city and ns.ZoneLevels and ns.ZoneLevels.Range then lo, hi = ns.ZoneLevels:Range(mapID) end
     if lo then
       local col = ns.ZoneLevels.Color(lo, hi, level)
       self.zone:SetText(string.format("%s   %s%d-%d: %s|r", zoneName, Theme:Hex(col), lo, hi, ns.ZoneLevels.WORDS[col] or ""))
     else
-      self.zone:SetText(zoneName)
+      self.zone:SetText(city and (zoneName .. "   |cff8f96a6a capital city: trainers, bank and auction house|r") or zoneName)
     end
     local xp = tonumber(C.Readable(C.Call("UnitXP", "player"))) or 0
     local need = tonumber(C.Readable(C.Call("UnitXPMax", "player"))) or 0
@@ -421,7 +443,7 @@ ns.Hub:AddTab("home", "Home", function(p)
     -- quests for you
     local items = {}
     for i, e in ipairs(ns.Finder and ns.Finder:Find({ kind = "quest" }) or {}) do
-      if i > 3 then break end
+      if i > HOME_ROWS then break end
       items[#items + 1] = { "Interface\\GossipFrame\\AvailableQuestIcon", string.format("|cff8f96a6[%d]|r %s  |cff8f96a6%s|r", e.level or 0, tostring(e.name), ns.Travel.Minutes(e.seconds)),
         e.target and function() ns.Journey:Go(e) end, tostring(e.sub or "") }
     end
@@ -429,7 +451,7 @@ ns.Hub:AddTab("home", "Home", function(p)
     -- upgrades near you
     items = {}
     for i, c in ipairs(ns.Nearby and ns.Nearby:Candidates() or {}) do
-      if i > 3 then break end
+      if i > HOME_ROWS then break end
       local w = c.where or {}
       items[#items + 1] = { itemIcon(c.itemID), string.format("%s  %s", tostring(c.name), ns.GearScore and ns.GearScore.UpText and ns.GearScore.UpText(c.pct) or ""),
         w.mapID and function() ns.Waypoints:Set(w.mapID, w.x, w.y, tostring(c.name)) end, ns.Nearby.Source and ns.Nearby.Source(c) or "" }
@@ -445,7 +467,7 @@ ns.Hub:AddTab("home", "Home", function(p)
         items[#items + 1] = { "Interface\\Icons\\INV_Misc_Key_14", string.format("%s  |cff8f96a6levels %d-%d|r", best.name, best.lo, best.hi),
           best.entrance and function() D:Go(best.entrance) end, "Go to the entrance" }
         for _, st in ipairs(best.steps) do
-          if #items >= 3 then break end
+          if #items >= HOME_ROWS then break end
           if D:Status(st, ctx) == "todo" then
             items[#items + 1] = { "Interface\\GossipFrame\\AvailableQuestIcon", string.format("Take %s  |cff8f96a6%s|r", tostring(st.quest), tostring(st.zone)),
               function() D:Go(st) end, tostring(st.note or "") }
@@ -459,12 +481,12 @@ ns.Hub:AddTab("home", "Home", function(p)
     -- rares: watched first, then known ones in this zone
     items = {}
     for k in pairs(set("RareScan").watch or {}) do
-      if #items >= 3 then break end
+      if #items >= HOME_ROWS then break end
       items[#items + 1] = { "Interface\\TargetingFrame\\UI-TargetingFrame-Skull", "Watching " .. ns.TitleCase(tostring(k)), function() ns.Hub.frame.tabBar:Select("rares") end }
     end
-    if #items < 3 and mapID and ns.MapPins then
+    if #items < HOME_ROWS and mapID and ns.MapPins then
       for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
-        if #items >= 3 then break end
+        if #items >= HOME_ROWS then break end
         if pin.kind == "rare" and pin.npcID and not tostring(pin.id):match("^rare%-%d+%-%d+$") then
           items[#items + 1] = { "Interface\\TargetingFrame\\UI-TargetingFrame-Skull", (tostring(pin.name):match("^([^%(,]+)") or pin.name) .. (pin.stateLine and ("  |cff8f96a6" .. pin.stateLine .. "|r") or ""),
             function() ns.Waypoints:Set(mapID, pin.x, pin.y, tostring(pin.name)) end, "Sets the arrow to where it spawns" }
@@ -475,7 +497,7 @@ ns.Hub:AddTab("home", "Home", function(p)
     -- to do in town
     items = {}
     for i, e in ipairs(ns.Errands and ns.Errands:List() or {}) do
-      if i > 3 then break end
+      if i > HOME_ROWS then break end
       items[#items + 1] = { "Interface\\Icons\\" .. ((ns.Errands.KIND_ICON or {})[e.kind] or "INV_Misc_Note_01"), e.text, function() ns.Errands:Go(e) end, "Sets the arrow to the nearest place for this." }
     end
     self.cards.town:Fill(items, "Nothing to do in town. You're good to go.")
