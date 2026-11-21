@@ -98,36 +98,98 @@ function M:TrainingStore()
   return ns.db.global.classTraining[class]
 end
 
+-- The trainer's own list is the truth (Gary, 2026-11-21: Outrider's typed-in
+-- list missed Backstab Rank 2, Parry and Sinister Strike Rank 3 and showed
+-- Pick Lock at 1). GetTrainerServiceInfo's returns differ between clients:
+-- on Forever the second value is the status ("available", "unavailable",
+-- "used"), elsewhere it is the rank. Read them by what they look like.
+M.STATUS = { available = true, unavailable = true, used = true }
+function M.ParseService(...)
+  local name, rank, status
+  for i = 1, select("#", ...) do
+    local v = C.Readable((select(i, ...)))
+    if type(v) == "string" then
+      if i == 1 then name = v
+      elseif M.STATUS[v] then status = v
+      elseif v:find("%d") and not rank then rank = v end
+    end
+  end
+  return name, rank, status
+end
+
 function M:ObserveTrainer()
   local num = tonumber(C.Readable(C.Call("GetNumTrainerServices")))
   local info = C.Resolve("GetTrainerServiceInfo")
   local price = C.Resolve("GetTrainerServiceCost")
   local levelOf = C.Resolve("GetTrainerServiceLevelReq")
+  local iconOf = C.Resolve("GetTrainerServiceIcon")
   -- Profession trainers belong to ProfExtras; this list is class spells only.
   if C.Readable(C.Call("IsTradeskillTrainer")) then return 0 end
-  if not (num and num > 0 and type(info) == "function" and type(price) == "function" and type(levelOf) == "function") then
-    self:Info("class training: vendor has no readable service list; no forecast inferred")
+  if not (num and num > 0 and type(info) == "function" and type(levelOf) == "function") then
+    self:Info("class training: trainer has no readable service list")
     return 0
   end
+  -- the filter can hide learned or too-high spells: the full list needs them all
   local saved, n = self:TrainingStore(), 0
+  for key, r in pairs(saved) do
+    -- older saves keyed by "name:available": drop them, this visit rewrites the list
+    if M.STATUS[tostring(r.rank or "")] then saved[key] = nil end
+  end
   for i = 1, math.min(300, num) do
-    -- GetTrainerServiceInfo gives name, rank, category; the level comes from
-    -- GetTrainerServiceLevelReq (Classic trainer API).
-    local ok, name, sub, category = pcall(info, i)
+    local packed = { pcall(info, i) }
+    local ok = table.remove(packed, 1)
+    local name, rank, status = M.ParseService(unpack(packed))
     local okLevel, reqLevel = pcall(levelOf, i)
-    if not okLevel then reqLevel = nil end
-    local okCost, copper = pcall(price, i)
-    name, reqLevel, copper = C.Readable(name), C.Readable(reqLevel), C.Readable(copper)
-    if ok and okCost and type(name) == "string" and
-      type(reqLevel) == "number" and reqLevel >= 1 and reqLevel <= 80 and
-      type(copper) == "number" and copper >= 0 then
-      local key = name:lower() .. ":" .. tostring(sub or "")
-      saved[key] = { name = name, rank = C.Readable(sub), level = reqLevel,
-        cost = copper, observedAt = time(), source = "trainer UI observed" }
+    reqLevel = okLevel and tonumber(C.Readable(reqLevel)) or nil
+    local copper = type(price) == "function" and select(2, pcall(price, i)) or nil
+    copper = tonumber(C.Readable(copper))
+    local icon = type(iconOf) == "function" and C.Readable(select(2, pcall(iconOf, i))) or nil
+    if not self.signatureLogged and ok then
+      self.signatureLogged = true
+      self:Info("trainer service 1 returns: %s", table.concat((function()
+        local t = {} for j, v in ipairs(packed) do t[j] = type(v) .. "=" .. tostring(C.Readable(v)) end return t end)(), ", "))
+    end
+    -- category headers have no level; skip them
+    if ok and type(name) == "string" and name ~= "" and reqLevel and reqLevel >= 1 and reqLevel <= 80 then
+      local key = name:lower() .. ":" .. (rank or ("level " .. reqLevel))
+      saved[key] = { name = name, rank = rank, level = reqLevel, status = status, cost = copper, icon = icon,
+        observedAt = time(), source = "your class trainer" }
       n = n + 1
     end
   end
+  if n > 0 then
+    self:Info("class training: %d services read from the trainer", n)
+    ns.Events:Fire("OTR_TRAINER_READ", n)
+  end
   return n
+end
+
+-- The class page's lists from what the trainer showed: ready now (your level
+-- or lower, not learned), coming next (the next two levels with spells), the
+-- next level, and whether anything was observed at all.
+function M:TrainerLists(level)
+  level = tonumber(level) or tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+  local now, later = {}, {}
+  local any = false
+  for _, r in pairs(self:TrainingStore()) do
+    if type(r) == "table" and r.name and r.level and not M.STATUS[tostring(r.rank or "")] then
+      any = true
+      local learned = r.status == "used"
+      local label = r.rank and (r.name .. " (" .. r.rank .. ")") or r.name
+      local e = { name = label, level = r.level, icon = r.icon, cost = r.cost }
+      if not learned and r.level <= level then now[#now + 1] = e
+      elseif not learned and r.level > level then later[#later + 1] = e end
+    end
+  end
+  local byLevel = function(a, b) if a.level ~= b.level then return a.level < b.level end return a.name < b.name end
+  table.sort(now, byLevel)
+  table.sort(later, byLevel)
+  local soon, levels = {}, {}
+  for _, sp in ipairs(later) do
+    if not levels[sp.level] then levels[sp.level] = true levels[#levels + 1] = sp.level end
+    if #levels <= 2 then soon[#soon + 1] = sp end
+  end
+  return now, soon, levels[1], any
 end
 
 function M:TrainingAt(level)
@@ -165,6 +227,7 @@ function M:OnEnable()
   self:On("SPELLS_CHANGED", function(mod) ns.Throttle("spellbook", 0.5, function() mod:Scan() end) end)
   -- the service list fills in just after the window opens
   self:On("TRAINER_SHOW", function(mod) ns.Timer.After(0.3, function() mod:ObserveTrainer() end, "spellbook:trainer") end)
+  self:On("TRAINER_UPDATE", function(mod) ns.Throttle("spellbook:trainerupdate", 0.5, function() mod:ObserveTrainer() end) end)
   self:On("PLAYER_LEVEL_UP", function(mod, _, level) mod:TrainingNotice(level) end)
   -- (LEARNED_SPELL_IN_TAB does not exist on Forever; SPELLS_CHANGED covers learning)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Scan() end)

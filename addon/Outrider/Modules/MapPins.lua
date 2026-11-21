@@ -281,8 +281,11 @@ function M:BuildPins(mapID)
   end
   -- The leveling guides (Data/Leveling.lua): trainers, flight masters,
   -- dungeon entrances and quest hubs, unless you recorded that NPC yourself.
+  -- trust: your own places, then the NPC pack, then the guides (docs/POI_AUDIT.md:
+  -- the pack was wrong 1% of the time against Gary's sightings, the guides 7%)
   local ownName, guided = {}, {}
   for _, p in pairs(ns.db.global.pois or {}) do if p.name then ownName[p.name] = true end end
+  if ns.NPCPack then for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do if p.name then ownName[p.name] = true end end end
   local zone = ns.Travel and ns.Travel.ZoneName(mapID)
   local GUIDE_KIND = { trainer = "trainer", flight_master = "flight_master", dungeon = "dungeon", quest_hub = "note" }
   for _, g in ipairs(zone and ns.Data:All("place") or {}) do
@@ -295,11 +298,10 @@ function M:BuildPins(mapID)
       end
     end
   end
-  -- Optional private NPC pack (D10); NPCs Gary visited himself win, and so
-  -- does a guide's spot for the same NPC.
+  -- Optional private NPC pack (D10); NPCs Gary visited himself win.
   if ns.NPCPack then
     for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do
-      if not own[p.npcID] and not guided[p.name] and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
+      if not own[p.npcID] and not hidden[p.kind] and (p.faction == nil or p.faction == faction) then
         local pin = { id = p.id, kind = p.kind, mapID = mapID, x = p.x, y = p.y, name = p.name, npcID = p.npcID, poi = p }
         if M.AddQuests(pin, p.kind == "quest_giver" and p) then out[#out + 1] = pin end
       end

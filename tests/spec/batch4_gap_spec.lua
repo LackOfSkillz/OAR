@@ -118,7 +118,7 @@ T.describe("batch4 training and dungeon data", function()
     local rows = ns.Spellbook:TrainingAt(22)
     T.eq(rows[1].name, "Cited Test Spell")
     T.eq(rows[1].cost, 550)
-    T.eq(rows[1].source, "trainer UI observed")
+    T.eq(rows[1].source, "your class trainer")
     T.eq(#ns.Errors.list, 0)
   end)
 

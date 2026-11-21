@@ -78,6 +78,9 @@ Data\Dungeons.lua
 Data\Talents.lua
 Data\Rares.lua
 Data\Leveling.lua
+Data\Leveling_Places.lua
+Data\Leveling_Facts.lua
+Data\Leveling_DungeonQuests.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\SharedData.lua

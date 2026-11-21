@@ -205,9 +205,27 @@ function M:Find(kind)
   local cls = kind == "class_trainer" and tostring(C.Call("UnitClass", "player") or ""):lower() or nil
   local titled = kind:match("^trainer:(.+)$")
   if titled and not (titled:find("trainer", 1, true) or titled:find("master", 1, true)) then titled = titled .. " trainer" end
-  -- trust: places you recorded, then the leveling guides, then the NPC pack
-  -- (Gary, 2026-11-20: the pack had the fishing trainer in the wrong spot)
+  -- trust: places you recorded, then the NPC pack, then the leveling guides.
+  -- Measured 2026-11-21 against 238 NPCs Gary stood next to (docs/POI_AUDIT.md):
+  -- the pack was wrong 1% of the time, the guides 7%. The guides fill gaps
+  -- (Forever's new and redrawn zones) where the pack has no such NPC.
   local named = {}
+  for _, p in ipairs(candidates) do if p.name then named[p.name] = true end end
+  if ns.NPCPack then
+    for _, p in ipairs(ns.NPCPack:OfKind(want)) do
+      if not named[p.name] then
+        candidates[#candidates + 1] = { kind = want, mapID = p.mapID, x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction }
+        named[p.name] = true
+      end
+    end
+  end
+  for _, g in ipairs(ns.Data:All("place")) do
+    local mapID = g.kind == want and not named[g.name] and ns.Travel and ns.Travel:MapByName(g.zone)
+    if mapID then
+      candidates[#candidates + 1] = { kind = want, mapID = mapID, x = g.x, y = g.y, name = g.name, title = g.title, faction = g.faction, guide = true }
+      named[g.name] = true
+    end
+  end
   for _, p in ipairs(candidates) do if p.name then named[p.name] = true end end
   for _, g in ipairs(ns.Data:All("place")) do
     local mapID = g.kind == want and not named[g.name] and ns.Travel and ns.Travel:MapByName(g.zone)

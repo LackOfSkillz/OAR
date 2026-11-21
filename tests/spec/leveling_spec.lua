@@ -3,7 +3,7 @@
 local T, mock = ...
 
 local function session(cls, faction)
-  local game = mock.new({ class = cls or "ROGUE", level = 20, faction = faction })
+  local game = mock.new({ class = cls or "ROGUE", level = 20, faction = faction, guides = true })
   local ns = game:loadAddon()
   game:login()
   return game, ns

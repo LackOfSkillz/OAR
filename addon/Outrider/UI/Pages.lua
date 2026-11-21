@@ -219,8 +219,8 @@ local function iconTiles(items, perRow)
       b.icon = b:CreateTexture(nil, "ARTWORK")
       b.icon:SetSize(36, 36)
       b.icon:SetPoint("TOP", 0, -8)
-      if not (ns.Art and it[2] and ns.Art:Set(b.icon, it[2], "Interface\Icons\\" .. (it[3] or "INV_Misc_QuestionMark"))) then
-        b.icon:SetTexture("Interface\Icons\\" .. (it[3] or "INV_Misc_QuestionMark"))
+      if not (ns.Art and it[2] and ns.Art:Set(b.icon, it[2], "Interface\\Icons\\" .. (it[3] or "INV_Misc_QuestionMark"))) then
+        b.icon:SetTexture("Interface\\Icons\\" .. (it[3] or "INV_Misc_QuestionMark"))
       end
       b.label = UI.Text(b, "normal", "text")
       b.label:SetPoint("BOTTOM", 0, 9)
@@ -374,6 +374,12 @@ local KEY_NOTE = {
 -- spellbook pages; talents left out): ready now (your level, not known yet)
 -- and the next two levels that bring something new.
 local function trainerSpells(cls)
+  -- what your trainer showed you is the truth (Gary, 2026-11-21); the typed-in
+  -- spell table is only a fallback until you've opened your trainer once
+  if ns.Spellbook and ns.Spellbook.TrainerLists and (not cls or cls == (ns.PlayerClass and ns.PlayerClass())) then
+    local now, soon, nextLevel, any = ns.Spellbook:TrainerLists()
+    if any then return now, soon, nextLevel, "trainer" end
+  end
   local info = ns.SpellInfo and ns.SpellInfo[cls or ""] or {}
   local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
   local now, later = {}, {}
@@ -392,16 +398,23 @@ local function trainerSpells(cls)
     if not levels[sp.level] then levels[sp.level] = true levels[#levels + 1] = sp.level end
     if #levels <= 2 then soon[#soon + 1] = sp end
   end
-  return now, soon, levels[1]
+  return now, soon, levels[1], "estimate"
 end
 ns.ClassPage = ns.ClassPage or {}
 ns.ClassPage.TrainerSpells = trainerSpells
+
+-- a spell icon: a file ID or full path (from the trainer) or an icon name (typed data)
+local function iconPath(icon, fallback)
+  if type(icon) == "number" then return icon end
+  if type(icon) == "string" and (icon:find("\\", 1, true) or icon:find("/", 1, true)) then return icon end
+  return "Interface\\Icons\\" .. tostring(icon or fallback or "INV_Misc_QuestionMark")
+end
 
 local function spellChips(list, max)
   local out = {}
   for i, sp in ipairs(list) do
     if i > (max or 6) then break end
-    out[#out + 1] = { icon = "Interface\Icons\\" .. tostring(sp.icon or "INV_Misc_QuestionMark"), text = sp.name .. "  |cff8f96a6" .. sp.level .. "|r",
+    out[#out + 1] = { icon = "Interface\\Icons\\" .. tostring(sp.icon or "INV_Misc_QuestionMark"), text = sp.name .. "  |cff8f96a6" .. sp.level .. "|r",
       tip = sp.name .. " (level " .. sp.level .. ")" }
   end
   return out
@@ -429,20 +442,25 @@ local function classRows(cls, page)
   end })
   r({ "header", "Spells from your trainer" })
   r({ "cards", function()
-    local now, soon = trainerSpells(cls)
+    local now, soon, _, from = trainerSpells(cls)
     local out = {}
+    if from ~= "trainer" then
+      out[#out + 1] = { title = "Open your class trainer once", pic = "Interface\\Icons\\INV_Misc_Book_09", tags = { { "estimate", "warn" } },
+        line = "Until you've talked to your trainer, this list is a guess. Talk to them once and Outrider shows exactly what they teach, with ranks.",
+        actions = { { "Arrow to trainer", function() ns.Slash:Run("near class") end, "Points the gold arrow at the nearest class trainer." } } }
+    end
     if #now > 0 then
       out[#out + 1] = { title = string.format("%d new spell%s ready to learn", #now, #now == 1 and "" or "s"), highlight = true,
-        pic = "Interface\Icons\\" .. tostring(now[1].icon or "INV_Misc_Book_09"),
-        line = "Your class trainer teaches these now. New spells make fights faster and safer.",
+        pic = "Interface\\Icons\\" .. tostring(now[1].icon or "INV_Misc_Book_09"),
+        line = from == "trainer" and "From your trainer's own list: you can learn these now." or "Your class trainer should teach these now.",
         chips = spellChips(now, 6), tags = { { "ready now", "gold" } },
-        actions = { { "Arrow to trainer", function() ns.Slash:Run("near trainer") end, "Points the gold arrow at the nearest trainer." } } }
+        actions = { { "Arrow to trainer", function() ns.Slash:Run("near class") end, "Points the gold arrow at your nearest class trainer." } } }
     else
-      out[#out + 1] = { title = "You know every spell for your level", pic = "Interface\Icons\INV_Misc_Book_09",
+      out[#out + 1] = { title = "You know every spell for your level", pic = "Interface\\Icons\\INV_Misc_Book_09",
         line = "Nothing to learn right now. Come back when you reach the level below." }
     end
     if #soon > 0 then
-      out[#out + 1] = { title = "Coming next", pic = "Interface\Icons\\" .. tostring(soon[1].icon or "INV_Misc_Book_09"),
+      out[#out + 1] = { title = "Coming next", pic = "Interface\\Icons\\" .. tostring(soon[1].icon or "INV_Misc_Book_09"),
         line = string.format("At level %d%s.", soon[1].level, soon[#soon].level ~= soon[1].level and (" and " .. soon[#soon].level) or ""),
         chips = spellChips(soon, 6) }
     end
@@ -598,7 +616,8 @@ local function profRows()
       if max > 0 and skill >= max then
         line = string.format("You've reached the most this rank allows (%d). Visit a %s trainer to learn the next rank and keep going.", max, name:lower())
         tag = { "visit a trainer", "gold" }
-        act = { { "Arrow to trainer", function() ns.Slash:Run("near trainer") end, "Points the gold arrow at the nearest trainer." } }
+        local which = name:lower()
+        act = { { "Arrow to trainer", function() ns.Slash:Run("near trainer " .. which) end, "Points the gold arrow at the nearest " .. which .. " trainer." } }
       elseif GATHER[name] then
         line = string.format("Raise it by doing it: %s. Harder ones give more skill as you go.", GATHER[name])
       else

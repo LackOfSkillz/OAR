@@ -624,6 +624,20 @@ function M.new(opts)
   end
   base.UnitInRange = function(unit) local d = game.units and game.units[unit] if d then return d.inRange ~= false, true end end
   base.UnitIsDeadOrGhost = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
+  -- class trainer window: game.trainer = { { name, rank, status, level, cost, icon }, ... }.
+  -- Forever's GetTrainerServiceInfo returns name, status (rank lives elsewhere);
+  -- game.trainerClassic = true gives the Classic order name, rank, status.
+  base.GetNumTrainerServices = function() return game.trainer and #game.trainer or 0 end
+  base.GetTrainerServiceInfo = function(i)
+    local t = game.trainer and game.trainer[i]
+    if not t then return nil end
+    if game.trainerClassic then return t[1], t[2], t[3] end
+    return t[1], t[3], t[2]
+  end
+  base.GetTrainerServiceLevelReq = function(i) local t = game.trainer and game.trainer[i] return t and t[4] end
+  base.GetTrainerServiceCost = function(i) local t = game.trainer and game.trainer[i] return t and t[5] end
+  base.GetTrainerServiceIcon = function(i) local t = game.trainer and game.trainer[i] return t and t[6] end
+  base.IsTradeskillTrainer = function() return game.tradeTrainer or false end
   -- index 3 is about 10 yards; game.units[unit].near = true when the player stands next to it
   base.CheckInteractDistance = function(unit, index)
     local d = game.units and game.units[unit]
@@ -1026,6 +1040,13 @@ function Game:loadAddon()
     for _, e in pairs(self.ns.Data.index.rare or {}) do
       if tostring(e.source or ""):find("2026-11-15", 1, true) then self.ns.Data.index.rare[e.npcID] = nil end
     end
+  end
+  -- The leveling knowledge base (Data/Leveling*.lua, Wowhead's Forever guides)
+  -- holds real trainers, flight masters and tips on the maps specs use with
+  -- made-up NPCs; left out unless a spec asks with mock.new({ guides = true }).
+  if not self.opts.guides and self.ns.Data and self.ns.Data.index then
+    self.ns.Data.index.place = {}
+    if self.ns.Leveling then self.ns.Leveling.FACTS = {} end
   end
   return self.ns
 end
