@@ -128,11 +128,27 @@ ns.Hub:AddTab("home", "Home", function(p)
     end
   end
   -- darker on the left so the words read over the painting
+  -- solid dark under the emblem and name, then a long soft fade to clear, so
+  -- every word reads even where the painting is bright (Gary's screenshot,
+  -- 2026-11-21: "rested" and step 3 ran into the adventurer)
   p.hero.shade = p.hero:CreateTexture(nil, "BORDER")
   p.hero.shade:SetPoint("TOPLEFT", 1, -1)
   p.hero.shade:SetPoint("BOTTOMLEFT", 1, 1)
-  p.hero.shade:SetWidth(560)
-  p.hero.shade:SetColorTexture(0, 0, 0, 0.55)
+  p.hero.shade:SetWidth(470)
+  p.hero.shade:SetColorTexture(0, 0, 0, 0.62)
+  p.hero.fade = p.hero:CreateTexture(nil, "BORDER")
+  p.hero.fade:SetPoint("TOPLEFT", p.hero.shade, "TOPRIGHT", 0, 0)
+  p.hero.fade:SetPoint("BOTTOMLEFT", p.hero.shade, "BOTTOMRIGHT", 0, 0)
+  p.hero.fade:SetWidth(480)
+  p.hero.fade:SetColorTexture(1, 1, 1, 1)
+  local okFade = false
+  if p.hero.fade.SetGradient and rawget(_G, "CreateColor") then
+    okFade = pcall(p.hero.fade.SetGradient, p.hero.fade, "HORIZONTAL", CreateColor(0, 0, 0, 0.62), CreateColor(0, 0, 0, 0))
+  end
+  if not okFade and p.hero.fade.SetGradientAlpha then
+    okFade = pcall(p.hero.fade.SetGradientAlpha, p.hero.fade, "HORIZONTAL", 0, 0, 0, 0.62, 0, 0, 0, 0)
+  end
+  if not okFade then p.hero.fade:SetColorTexture(0, 0, 0, 0.35) end
   p.hero.tile = CreateFrame("Frame", nil, p.hero, Theme:BackdropTemplate())
   p.hero.tile:SetSize(96, 96)
   p.hero.tile:SetPoint("LEFT", 20, 4)
@@ -164,8 +180,14 @@ ns.Hub:AddTab("home", "Home", function(p)
   p.xp.rest:SetColorTexture(0.35, 0.55, 1, 0.6)
   p.xp.text = UI.Text(p.hero, "small", "text")
   p.xp.text:SetPoint("LEFT", p.xp, "RIGHT", 10, 0)
-  p.gold = UI.Display(p.hero, "card", "goldText")
-  p.gold:SetPoint("BOTTOMRIGHT", -16, 14)
+  -- your gold on a dark pill: the painting's city is bright there
+  p.goldBack = CreateFrame("Frame", nil, p.hero, Theme:BackdropTemplate())
+  p.goldBack:SetPoint("BOTTOMRIGHT", -10, 10)
+  p.goldBack:SetSize(130, 30)
+  Theme:ApplyPanel(p.goldBack, "bg", "gold")
+  if p.goldBack.SetBackdropColor then p.goldBack:SetBackdropColor(0, 0, 0, 0.75) end
+  p.gold = UI.Display(p.goldBack, "card", "goldText")
+  p.gold:SetPoint("RIGHT", -10, 0)
   -- 1-2-3, on the painting's lower edge
   p.steps = {}
   local STEPS = { "Do your next step", "Pick where to go", "Click any line below for the arrow" }
@@ -391,6 +413,7 @@ ns.Hub:AddTab("home", "Home", function(p)
       rested > 0 and string.format(",  |cff5a8cffrested +%d%%|r", math.floor(rested / need * 100)) or "") or "")
     local money = tonumber(C.Call("GetMoney")) or 0
     self.gold:SetText(ns.Prices and ns.Prices.Coins and ns.Prices.Coins(money) or tostring(money))
+    self.goldBack:SetWidth(math.max(80, (self.gold:GetStringWidth() or 100) + 22))
     -- next step and two other ideas
     local list = ns.WhatNow and ns.WhatNow.enabled and ns.WhatNow:List() or {}
     local step = list[1]

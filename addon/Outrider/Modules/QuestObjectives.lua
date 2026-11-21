@@ -469,9 +469,35 @@ function M:Track(questID)
   return true
 end
 
+-- Is this spot in the zone you're standing in? (the game's quest arrow and
+-- our plain arrow only help there; elsewhere you need a route)
+function M.SameZone(spot)
+  local here = C.PlayerPosition("player")
+  return here ~= nil and spot ~= nil and spot.mapID == here
+end
+
 function M:Guide(questID)
-  if self:Track(questID) then return true end
   local spot = self:Nearest(questID)
+  -- in another zone or on another continent: plan the trip (flight masters,
+  -- zeppelins, skyboats, boats) and let the arrow lead step by step (Gary,
+  -- 2026-11-21: Exploring the Horde sends him to Undercity and the click did
+  -- nothing). The game's own quest arrow can't cross continents.
+  if spot and not M.SameZone(spot) and ns.Journey and ns.Travel then
+    local target = ns.Travel.Point(spot.mapID, spot.x, spot.y, spot.label)
+    if target then
+      local name = spot.label or ("quest " .. tostring(questID))
+      local ok = pcall(ns.Journey.Go, ns.Journey, { name = name, target = target, sub = "quest" })
+      if ok then
+        -- the game still highlights the quest's area on the map
+        local set = C.Resolve("C_SuperTrack.SetSuperTrackedQuestID")
+        if type(set) == "function" then pcall(set, questID) end
+        self.guideQuest = questID
+        self:Info("quest %d is in %s: trip planned", questID, tostring(ns.Travel.ZoneName(spot.mapID)))
+        return true
+      end
+    end
+  end
+  if self:Track(questID) then return true end
   if not (spot and ns.Waypoints) then return false end
   local ok, w = ns.Waypoints:Set(spot.mapID, spot.x, spot.y, spot.label)
   if ok then self.guideWP, self.guideQuest = w, questID end

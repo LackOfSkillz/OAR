@@ -493,6 +493,16 @@ function Hub:SubTabs(p, t)
       prev = c
     end
   end
+  if self.OWN_HEADING[t.id] and p.subTabs[1] then
+    local back = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
+    back:SetPoint("TOPLEFT", p.subTabs[1], "TOPLEFT", -6, 5)
+    back:SetPoint("BOTTOMRIGHT", p.subTabs[#p.subTabs], "BOTTOMRIGHT", 6, -5)
+    Theme:ApplyPanel(back, "bg", "border")
+    if back.SetBackdropColor then back:SetBackdropColor(0, 0, 0, 0.8) end
+    back:SetFrameLevel(math.max(1, (p.subTabs[1]:GetFrameLevel() or 2) - 1))
+    for _, c in ipairs(p.subTabs) do c:SetFrameLevel((back:GetFrameLevel() or 1) + 2) end
+    p.subBack = back
+  end
 end
 
 function Hub:ShowTab(id)
