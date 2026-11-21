@@ -168,6 +168,9 @@ local controls = {
 
   -- rares
   ["Sound"] = "Play a sound when a rare alert pops.",
+  ["Different sound for rare elites"] = "A rare elite plays its own deeper alarm, so you know before you look. Off: elites play no sound.",
+  ["Try a rare alert"] = "Shows and plays the alert for a normal rare (blue), so you know it when you hear it.",
+  ["Try an elite alert"] = "Shows and plays the alert for a rare elite (red, its own alarm).",
   ["Pop-up"] = "Show a pop-up with a Target button when a rare is near.",
   ["Sound with rare alerts"] = "Play a sound when a rare alert pops.",
   ["Only rares on your watch list"] = "Alert only for rares you're watching, not every rare.",

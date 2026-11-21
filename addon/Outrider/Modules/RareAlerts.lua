@@ -13,8 +13,11 @@ local M = ns:NewModule("RareAlerts", {
   phase = "P2",
   order = 30,
   yieldsTo = { "RareScanner" },
-  defaults = { mode = "all", sound = true, soundName = "RAID_WARNING", toast = true, cooldown = 300, flash = true, arrow = true, model = true },
+  defaults = { mode = "all", sound = true, soundName = "RAID_WARNING", eliteSound = true, eliteSoundName = "RAID_BOSS_EMOTE_WARNING", toast = true, cooldown = 300, flash = true, arrow = true, model = true },
 })
+
+ns.RareAlerts = M
+local C = ns.Compat
 
 local L = {
   nearby = "nearby", targeted = "targeted", hovered = "under your mouse",
@@ -40,10 +43,37 @@ function M:ShouldAlert(info, now)
   return true
 end
 
+-- Rare or rare elite (Gary, 2026-11-21: "make a distinction between rare and
+-- elite with a different sound and visual cue"): a rare is blue, a rare elite
+-- is red, with its own deeper alarm and a longer flash. The class comes from
+-- the unit (UnitClassification) or the rare pack (rank "rareelite").
+M.LOOK = {
+  rare = { word = "Rare", color = "accent", flash = { 0.35, 0.65, 1, 0.55 }, pulses = 4 },
+  elite = { word = "RARE ELITE", color = "bad", flash = { 1, 0.15, 0.1, 0.6 }, pulses = 7,
+    warn = "Elite: hits hard. Bring a friend or be ready." },
+}
+function M.IsElite(info)
+  if info.classification then return info.classification == "rareelite" end
+  local pack = info.npcID and ns.Data and ns.Data:Get("rare", info.npcID)
+  return pack and (pack.elite == true or pack.classification == "rareelite") or false
+end
+
+-- The sound for this kind of rare: the elite alarm falls back to the ready
+-- check sound when the client has no boss-warning sound (still different).
+function M:SoundFor(elite)
+  local s = self:Settings()
+  if elite then
+    if s.eliteSound == false then return nil end
+    return ns.Toast:SoundID(s.eliteSoundName or "RAID_BOSS_EMOTE_WARNING") or ns.Toast:SoundID("READY_CHECK")
+  end
+  if not s.sound then return nil end
+  return ns.Toast:SoundID(s.soundName)
+end
+
 function M:Text(info)
   local parts = {}
   if info.level then parts[#parts + 1] = "Level " .. info.level end
-  if info.classification == "rareelite" then parts[#parts + 1] = "elite" end
+  if M.IsElite(info) then parts[#parts + 1] = "elite" end
   if info.family then parts[#parts + 1] = info.family end
   parts[#parts + 1] = HOW[info.how] or info.how
   -- which way to look (Gary, 2026-11-15: lost The Rake among the beasts)
@@ -76,27 +106,35 @@ function M:OnRareSeen(_, info)
     local petName = ns.Compat.Readable(ns.Compat.Call("UnitName", "pet"))
     if petName then note = "Stable " .. petName .. " first: /ride near stable" end
   end
+  local elite = M.IsElite(info)
+  local look = elite and M.LOOK.elite or M.LOOK.rare
+  info.elite = elite
+  local text = self:Text(info)
+  if look.warn then text = look.warn .. "  " .. text end
+  if note then text = text .. ". " .. note end
+  local sound = self:SoundFor(elite)
   if s.toast and info.name then
     ns.Toast:Show({
-      title = "Rare: " .. info.name,
+      title = look.word .. ": " .. info.name,
       creature = info.npcID,
-      text = note and (self:Text(info) .. ". " .. note) or self:Text(info),
-      color = "warn",
-      sound = s.sound and ns.Toast:SoundID(s.soundName) or nil,
-      duration = 20,
+      text = text,
+      color = look.color,
+      sound = sound,
+      duration = elite and 25 or 20,
       button = button,
     })
-  elseif s.sound then
-    ns.Compat.Call("PlaySound", ns.Toast:SoundID(s.soundName), "Master")
+  elseif sound then
+    ns.Compat.Call("PlaySound", sound, "Master")
   end
-  -- Hard to miss while camping (Gary, 2026-11-14): a red pulse round the screen
-  -- edge, and the arrow to her when her exact spot is known (minimap marker).
-  if s.flash then self:Flash() end
+  -- Hard to miss while camping (Gary, 2026-11-14): a pulse round the screen
+  -- edge (blue for a rare, red and longer for a rare elite), and the arrow to
+  -- her when her exact spot is known (minimap marker).
+  if s.flash then self:Flash(look) end
   if ns.MinimapPins and ns.MinimapPins.enabled and ns.MinimapPins.MarkRare then ns.MinimapPins:MarkRare(info) end
   if s.arrow and info.exact and info.mapID and ns.Waypoints then
     ns.Waypoints:Set(info.mapID, info.x, info.y, "Rare: " .. info.name)
   end
-  self:Info("alert npcID=%d %s how=%s layer=%s", info.npcID, tostring(info.name), info.how, tostring(info.layer))
+  self:Info("alert npcID=%d %s (%s) how=%s layer=%s", info.npcID, tostring(info.name), elite and "rare elite" or "rare", info.how, tostring(info.layer))
 end
 
 -- DEEP-32: purely decorative model preview, never a protected action.
@@ -146,16 +184,18 @@ end
 
 -- A red border round the whole screen that pulses 4 times (plain frame, not
 -- secure; nothing clickable, so it never gets in the way).
-function M:Flash()
+function M:Flash(look)
+  look = look or M.LOOK.rare
   local f = self.flash
   if not f then
     f = CreateFrame("Frame", "Outrider_RareFlash", UIParent)
     f:SetAllPoints(UIParent)
     f:SetFrameStrata("FULLSCREEN_DIALOG")
     f:EnableMouse(false)
+    f.edges = {}
     local function edge(a1, a2, w, h)
       local t = f:CreateTexture(nil, "OVERLAY")
-      t:SetColorTexture(1, 0.15, 0.1, 0.55)
+      f.edges[#f.edges + 1] = t
       t:SetPoint(a1) t:SetPoint(a2)
       if w then t:SetWidth(w) end
       if h then t:SetHeight(h) end
@@ -169,15 +209,29 @@ function M:Flash()
         a:SetFromAlpha(1) a:SetToAlpha(0) a:SetDuration(0.6)
         ag:SetLooping("REPEAT")
         local n = 0
-        ag:SetScript("OnLoop", function() n = n + 1 if n >= 4 then ag:Stop() f:Hide() n = 0 end end)
+        ag:SetScript("OnLoop", function() n = n + 1 if n >= (f.pulses or 4) then ag:Stop() f:Hide() n = 0 end end)
       end
       f.ag = ag
     end
     f:Hide()
     self.flash = f
   end
+  local c = look.flash
+  for _, t in ipairs(f.edges or {}) do t:SetColorTexture(c[1], c[2], c[3], c[4]) end
+  f.pulses = look.pulses
+  f.look = look
   f:Show()
   if f.ag then f.ag:Stop() f.ag:Play() end
+end
+
+-- What an alert looks and sounds like, from the Watch and alerts page (no
+-- target button, nothing remembered).
+function M:Preview(elite)
+  local look = elite and M.LOOK.elite or M.LOOK.rare
+  ns.Toast:Show({ title = look.word .. ": " .. (elite and "Example Elite" or "Example Rare"), color = look.color,
+    text = (look.warn and (look.warn .. "  ") or "") .. "This is what you'll see and hear.", sound = self:SoundFor(elite), duration = 8, noFeed = true })
+  if self:Settings().flash then self:Flash(look) end
+  return look
 end
 
 function M:Snapshot()
