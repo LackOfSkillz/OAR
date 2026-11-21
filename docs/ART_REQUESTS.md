@@ -482,3 +482,37 @@ highlights, soft rim light, no text, no logos).
 | `prof_herbalism.png` | A hand trowel beside a freshly picked herb with its roots |
 | `prof_mining.png` | A miner's pick stuck in a rock with a vein of copper ore |
 | `prof_skinning.png` | A skinning knife on a folded wolf pelt |
+
+## Batch 10: new sidebar groups and trainer pins (2026-11-20)
+
+The sidebar was regrouped (World, Character, Professions, Gold, Social). Three
+groups are new and borrow another group's banner until their own arrives; the
+Map and places page has two new trainer tiles. Same style line as the rest
+(painted dark fantasy, deep blue-teal shadows, warm gold highlights, soft rim
+light, no text, no logos).
+
+### Section hero banners
+**1536x1024, opaque**, like `header_explore` (only a 4:1 strip across the
+middle is used, behind the page title). Keep the **left third calm and dark**
+(the title sits there); very dark overall so gold text reads on top.
+
+| File | Scene |
+|---|---|
+| `header_world.png` | A wide view from a cliff over a world map come to life: forests, a river, a distant city and mountains under a dusky sky, a faint gold glow where the road meets the horizon on the right |
+| `header_professions.png` | A craftsman's workshop: an anvil with a glowing ingot, an alchemy table with flasks, a loom with cloth and a fishing pole by the door, lit warm from the right |
+| `header_gold.png` | A merchant's counting table: neat stacks of gold coins, an open ledger, brass scales and a small treasure chest, lantern light from the right |
+
+### Map pin glyphs
+**1024x1024, TRANSPARENT background**, like `pin_trainer`: one bold simple
+symbol in polished gold metal with a thick dark outline, about 70% of the
+canvas, centred, no circle behind it (Outrider draws the ring). Must read at
+14-20 px.
+
+| File | Symbol |
+|---|---|
+| `pin_weaponmaster.png` | a sword and an axe crossed over a small round shield |
+| `pin_pettrainer.png` | a paw print with a small open book above it |
+
+Still waiting from earlier batches: Batch 7 `header_auction.png`, Batch 8
+`kind_zone.png` and `journey_empty.png`.
+

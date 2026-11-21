@@ -247,9 +247,9 @@ local function trainerTiles()
   local clsName = C.Readable(C.Call("UnitClass", "player")) or "Class"
   items[#items + 1] = { clsName .. " trainer", "class_" .. cls:lower(), "INV_Misc_Book_09", Run("near class"),
     "Your " .. clsName:lower() .. " trainer: new spells and ranks." }
-  items[#items + 1] = { "Weapon master", nil, "INV_Sword_04", Run("near trainer weapon master"), "Learn to use more kinds of weapons." }
+  items[#items + 1] = { "Weapon master", "pin_weaponmaster", "INV_Sword_04", Run("near trainer weapon master"), "Learn to use more kinds of weapons." }
   if cls == "HUNTER" then
-    items[#items + 1] = { "Pet trainer", nil, "Ability_Hunter_BeastCall", Run("near trainer pet trainer"), "Pet skills for your pet." }
+    items[#items + 1] = { "Pet trainer", "pin_pettrainer", "Ability_Hunter_BeastCall", Run("near trainer pet trainer"), "Pet skills for your pet." }
   end
   local profs, seen = {}, {}
   for name, d in pairs(ns.db.char.professions or {}) do
@@ -1295,13 +1295,6 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "check", "High contrast", function() return A().highContrast end, function(on) ns.Slash:Run("access contrast " .. onoff(on)) end },
     { "check", "Reduced motion", function() return A().reducedMotion end, function(on) ns.Slash:Run("access motion " .. onoff(not on)) end },
     { "buttons", { { "Reload now", function() C.Call("ReloadUI") end }, { "First-run setup", Run("setup") } } },
-    { "header", "Macros" },
-    { "check", "Missing-buffs row above your bars", function() return set("BuffRow").on end,
-      function(on) set("BuffRow").on = on if ns.BuffRow then ns.BuffRow:Update("settings") end end },
-    { "check", "Outrider's explanation in macro tooltips on your bars", function() return set("MacroTree").tooltips end,
-      function(on) set("MacroTree").tooltips = on end },
-    { "check", "Quiet presses: no 'not ready yet' text or voice", function() return set("HandyKeys").quiet end,
-      function(on) if ns.HandyKeys then ns.HandyKeys:SetQuiet(on) end end },
     { "header", "Info bar" },
     { "check", "Show the info bar", function() return ns.InfoBar:Settings().shown end, function(on) ns.Slash:Run("bar " .. onoff(on)) end },
     { "check", "Bar: gold", function() return ns.InfoBar:Settings().gold ~= false end, function(on) ns.InfoBar:Settings().gold = on ns.InfoBar:Apply() end },
