@@ -107,6 +107,8 @@ if (-not $Upload) { exit 0 }
 
 # ------------------------------------------------------------------ upload
 $token = $env:CF_API_KEY
+# saved after this terminal started (setx / SetEnvironmentVariable 'User'): read the stored value
+if (-not $token) { $token = [Environment]::GetEnvironmentVariable('CF_API_KEY', 'User') }
 if (-not $token) { Write-Host "Set the CF_API_KEY environment variable to your CurseForge API token first (docs/CURSEFORGE.md)." -ForegroundColor Red; exit 1 }
 if (-not $ProjectId) { $id = Get-TocField 'X-Curse-Project-ID'; if ($id -match '^\d+$') { $ProjectId = [int]$id } }
 if (-not $ProjectId) { Write-Host "No project ID: add '## X-Curse-Project-ID: <number>' to Outrider.toc or pass -ProjectId." -ForegroundColor Red; exit 1 }
