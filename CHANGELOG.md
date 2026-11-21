@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Walked paths ship with Outrider (Gary, 2026-11-21):** the roads and entrances walked by Gary's characters (7,683 points on 23 maps, positions only) ship as Outrider_Data_Trails, so the way-there dots follow them for every player, even in a zone you never walked. tools/export_trails.ps1 refreshes them before a release.
 - **The way there follows everything you click (Gary, 2026-11-21: a quest marker in Coldridge Valley, "no clue where to go"):** the dots now also lead to any quest you track or click on the map (the game's own next waypoint for it when the client gives one, cave entrances and flights included, else its nearest objective or turn-in) and to the game's own map pin. New data addon Outrider_Data_Paths: 515 NPC and creature patrol routes in 46 zones (QuestieDB) count as walked ground, so the dots follow roads and trails where you never walked. Dun Morogh and Zephras Isle have no patrol data: there the dots learn from your own walking. Probe: C_QuestLog.GetNextWaypoint, C_Map.GetUserWaypoint.
 - **Report copy box on top (Gary's screenshot, 2026-11-21):** the copy box opened under the report page's text boxes; every copy box now opens above Outrider's window. Reports list only Outrider's own errors (one carried a Blizzard chat frame error).
 - **Report or idea: Make my report always answers (Gary, 2026-11-21: "nothing happened"):** with no choice picked the button was switched off, but it still looked gold. It now always works and says in red to pick Something's broken or I have an idea first.

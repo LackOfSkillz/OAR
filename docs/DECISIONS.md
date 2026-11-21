@@ -34,6 +34,8 @@
 
 | D23 | **CurseForge distribution (2026-11-21):** Gary chose to publish Outrider on CurseForge. The release zip is built by `tools/curseforge.ps1` (Outrider, Outrider_Data_Words and the six QuestieDB-derived data addons with their GPLv3 notices; no installer, updater, shared world knowledge or any program file) and uploaded through CurseForge's upload API (`CF_API_KEY` token kept in Gary's user environment, project ID as `## X-Curse-Project-ID` in the TOC). Project creation, logo, description, categories and licence are set once on the website (the API has no endpoint for them). The one-click installer and updater stay on GitHub releases. The six data pack sources were published to `outrider-releases/data-packs` the same day, completing D21. Steps and listing text: [CURSEFORGE.md](CURSEFORGE.md) | CurseForge app and WowUp are how most players install addons; the source repo is private, so the BigWigs or CurseForge git packagers don't apply | 2026-11-21 |
 
+| D24 | **Gary's walked paths ship with Outrider (2026-11-21):** the breadcrumbs of all Gary's characters go into `addon/Outrider_Data_Trails` (positions only: no times, no names, rounded to 0.1% of the map), made by `tools/export_trails.ps1` from a copy of his SavedVariables, and ship in every package. The way-there dots use them as walked ground; they never show as anyone's own trail. Original Outrider data, GPL-3.0-only | Gary: "Yes, ship them" (so players get roads and cave entrances in zones they never walked; Dun Morogh and Zephras Isle have no patrol data) | 2026-11-21 |
+
 ## Open questions for Gary
 
 | # | Question | Options | Recommendation | Needed by |

@@ -100,6 +100,21 @@ T.describe("the way there", function()
     T.ok(walked > 10, "dots along the patrol route")
   end)
 
+  T.it("uses the walked paths shipped with Outrider, without drawing them as yours", function()
+    local game, ns, P = session()
+    local flat = {}
+    for i = 0, 6 do flat[#flat + 1] = 0.1 flat[#flat + 1] = 0.5 - i * 0.01 end
+    for i = 1, 20 do flat[#flat + 1] = 0.1 + i * 0.01 flat[#flat + 1] = 0.44 end
+    for i = 1, 6 do flat[#flat + 1] = 0.3 flat[#flat + 1] = 0.44 + i * 0.01 end
+    rawset(game.env, "Outrider_DataTrails", { source = "spec", maps = { [100] = flat } })
+    P.shipped = nil
+    ns.Waypoints:Set(100, 0.3, 0.5, "Cave")
+    local walked = 0
+    for _, p in ipairs(P:Pins(100)) do if p.walked then walked = walked + 1 end end
+    T.ok(walked > 10, "dots along the shipped path")
+    for _, pin in ipairs(ns.Trail:Pins(100, {})) do T.ok(pin.kind ~= "trail", "not shown as your own trail") end
+  end)
+
   T.it("any quest the game tracks gets dots: its own next waypoint first, else the quest data", function()
     local game, ns, P = session()
     game.trackedQuest = 77

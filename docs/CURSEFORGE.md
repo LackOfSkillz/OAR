@@ -34,7 +34,7 @@ The CurseForge API can upload files and read game versions; it has no documented
    ```
 
    Open a new terminal afterwards.
-2. **Release:** bump `## Version:` in `Outrider.toc`, write the CHANGELOG section, then
+2. **Release:** bump `## Version:` in `Outrider.toc`, write the CHANGELOG section, refresh the shipped walked paths with `tools/export_trails.ps1` (game closed or not: it reads a copy), then
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File tools/curseforge.ps1 -Upload

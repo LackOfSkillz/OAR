@@ -174,6 +174,31 @@ local function routeDots(mapID, lines)
   return c
 end
 
+-- Paths walked by Outrider's creator, shipped for everyone (Gary, 2026-11-21:
+-- "ship them"): Outrider_Data_Trails, positions only. Used to plan only; they
+-- never show as "You walked here".
+M.TRAILS_ADDON = "Outrider_Data_Trails"
+function M:Shipped()
+  if self.shipped ~= nil then return self.shipped end
+  if not rawget(_G, "Outrider_DataTrails") then C.LoadAddOn(M.TRAILS_ADDON) end
+  local d = rawget(_G, "Outrider_DataTrails")
+  self.shipped = type(d) == "table" and type(d.maps) == "table" and d.maps or false
+  return self.shipped
+end
+
+local function shippedDots(mapID, flat)
+  local key = "shipped:" .. mapID
+  local c = routeCache[key]
+  if c then return c end
+  c = {}
+  for i = 1, #flat - 1, 2 do
+    local cont, wx, wy = W.WorldPos(mapID, flat[i], flat[i + 1])
+    if wx then c[#c + 1] = { cont = cont, wx = wx, wy = wy, mapID = mapID } c.cont = cont end
+  end
+  routeCache[key] = c
+  return c
+end
+
 function M:Nodes(cont, a, b)
   local trails = ns.db.global.trails or {}
   local minX, maxX = math.min(a.wx, b.wx) - M.MARGIN, math.max(a.wx, b.wx) + M.MARGIN
@@ -191,6 +216,9 @@ function M:Nodes(cont, a, b)
   end
   for mapID, list in pairs(trails) do
     if type(list) == "table" and #list > 0 and take(worldDots(mapID, list)) then return out end
+  end
+  for mapID, flat in pairs(self:Shipped() or {}) do
+    if take(shippedDots(mapID, flat)) then return out end
   end
   for mapID, lines in pairs(self:Routes() or {}) do
     if take(routeDots(mapID, lines)) then return out end
