@@ -8,6 +8,8 @@
 local _, ns = ...
 
 local pages = {
+  questsnear = "The quests worth doing next from where you stand: XP and gold for the time, your level, gear upgrades. Click one to go.",
+  feedback = "Tell us about a problem or an idea: Outrider makes the report, you copy the link and post it on GitHub.",
   home = "Your character at a glance: the next step, errands, your pet or class keys, and the journey you're on.",
   whatnow = "What to do next with this character, ranked: errands, quests, gear, dungeons, training and gold. Pick a goal to narrow it.",
   journal = "Your quest diary: every quest you took, finished or gave up, with when and where. Handy to find a quest you lost or see how far you've come.",
@@ -222,6 +224,7 @@ local controls = {
   ["More"] = "Opens the page with the full list.",
   ["Class trainer"] = "Points the gold arrow at the nearest trainer for your class.",
   ["Options"] = "How your macro buttons behave: the missing-buffs row, tooltips and quiet presses.",
+  ["Near me"] = "The quests worth doing next from where you stand, best first.",
   ["Chains"] = "Quest chains: every step, done or not, and the arrow to the next one.",
   ["Quests and keys"] = "Every dungeon's quests for your side: who gives them, where, and what you've done.",
   ["Ready and gear"] = "Are you ready for a dungeon, and which ones have upgrades for you.",
@@ -251,6 +254,11 @@ local controls = {
   ["Status"] = "Is Outrider healthy: errors, saved settings, build.",
   ["Help"] = "What every page does and how to use it.",
   ["All commands"] = "Every /ride command, with a Run button.",
+  ["Report or idea"] = "Tell us about a problem or an idea, in three steps.",
+  ["Something's broken"] = "Report a problem: something didn't work or looked wrong.",
+  ["I have an idea"] = "Suggest something Outrider should do.",
+  ["Make my report"] = "Builds your report and a link to post it on GitHub. Copy the link with Ctrl+C, paste it in your web browser.",
+  ["Add my character name"] = "Adds your character's name and realm to the report. Off: only class, level and zone.",
   ["Gave up"] = "Only quests you abandoned; each shows where to take it again.",
   ["Take it again"] = "Points the gold arrow at the quest giver, so you can pick it up again.",
   ["Go"] = "Shows the trip and puts the gold arrow up. Then just follow it.",
@@ -368,6 +376,8 @@ local sections = {
 
 -- How to use a page in up to three short steps, shown under its title.
 local steps = {
+  questsnear = { "Best quests for you are at the top", "Click one", "Follow the gold arrow" },
+  feedback = { "Pick: something's broken, or an idea", "Tell us in your own words", "Make my report, copy the link, paste it in your browser" },
   class = { "See which new spells your trainer has for you", "Put your fight keys on your bar", "Pick your talents at level 10" },
   waypoints = { "Press a place (Inn, Vendor...)", "Follow the gold arrow", "Clear arrow when you're there" },
   rares = { "Click a rare to see it", "Press Waypoint for an arrow", "Press Watch to get an alert when it's up" },

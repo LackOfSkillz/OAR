@@ -65,18 +65,18 @@ Hub.PLACE = {
 Hub.SUBS = {
   home      = { { "home", "Overview" }, { "whatnow", "Next steps" }, { "errands", "Town errands" } },
   waypoints = { { "waypoints", "Places and arrow" }, { "map", "Map pins" } },
-  quests    = { { "quests", "Quest log" }, { "questchains", "Chains" }, { "journal", "Diary" } },
+  quests    = { { "quests", "Quest log" }, { "questsnear", "Near me" }, { "questchains", "Chains" }, { "journal", "Diary" } },
   rares     = { { "rares", "Rares" }, { "rarealerts", "Watch and alerts" } },
   gear      = { { "gear", "Wearing and upgrades" }, { "gearsets", "Sets and scoring" } },
   alts      = { { "alts", "Characters" }, { "characters", "Copy settings" } },
   money     = { { "money", "Earn" }, { "forecasts", "Forecasts" } },
   people    = { { "people", "Players and guilds" }, { "census", "Census" } },
   settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
-  help      = { { "help", "Help" }, { "commands", "All commands" } },
+  help      = { { "help", "Help" }, { "feedback", "Report or idea" }, { "commands", "All commands" } },
   dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" } },
 }
 -- the sub-tab a sidebar entry opens the first time (else the host itself)
-Hub.DEFAULT_SUB = { dungeons = "dungeonquests" }
+Hub.DEFAULT_SUB = { dungeons = "dungeonquests", quests = "questsnear" }
 -- clearer names for some pages (sidebar and page title)
 Hub.TITLES = { journey = "Find", feed = "Alerts", waypoints = "Map and places", alts = "My characters", people = "People" }
 -- page id -> the sidebar entry it lives under
@@ -520,6 +520,8 @@ function Hub:ShowTab(id)
   end
   if p.subTabs then for _, c in ipairs(p.subTabs) do c:SetOn(c.page == t.id) end end
   if p.Refresh then ns.Safe("hub:refresh:" .. t.id, p.Refresh, p) end
+  -- the page you came from, for a report (Feedback)
+  if t.id ~= "feedback" and t.id ~= "help" then self.lastPage = t.id end
   self.current = t.id
   ns.db.char.hub.tab = t.id
 end

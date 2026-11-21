@@ -122,7 +122,7 @@ function M:Candidates(opts)
           if s[7] == nil or s[7] == faction then
             local ok, note = M.QuestOpen(s, level)
             if ok then
-              add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note }, req)
+              add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note, qid = s[1] == "quest" and s[8] or nil }, req)
               break
             end
           end
@@ -138,7 +138,7 @@ function M:Candidates(opts)
           if s[2] == mapID and (s[7] == nil or s[7] == faction) then
             local ok, note = M.QuestOpen(s, level)
             if ok then
-              add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note }, req)
+              add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note, qid = s[1] == "quest" and s[8] or nil }, req)
               break
             end
           end
