@@ -20,7 +20,7 @@ The CurseForge API can upload files and read game versions; it has no documented
    - Name, Summary, Main category plus up to 4 more, Allow comments on, **Experimental off**, editor Markdown, Description, Licence **GNU General Public License version 3 (GPLv3)**.
    - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400): the official logo, the hooded rider at sunrise (Gary picked option 2 of 10 from GPT, 2026-11-21; full size in [curseforge/logo-full.png](curseforge/logo-full.png)). `python tools/logo.py` rebuilds it.
 3. **Submit.** CurseForge's moderators review new projects and every file (8 AM to 3 PM CET, 7 days a week, first in first out). Notifications: https://www.curseforge.com/my-notifications
-4. **Project ID.** On the project page under "About This Project". Tell Claude the number: it goes into `Outrider.toc` as `## X-Curse-Project-ID: <number>`.
+4. **Project ID: 1821625** ("Outrider Forever"; "Outrider" was taken). It is in `Outrider.toc` as `## X-Curse-Project-ID: 1821625`. The upload form has no game version field: CurseForge reads `## Interface: 16001` from the TOC.
 5. **First file.** Either upload `dist\curseforge\Outrider-<version>.zip` on the project's Files tab (game version **1.60.1**, the Forever one; release type Release), or let the script do it (next section).
 6. **Banner** (Images tab): upload [curseforge/banner.png](curseforge/banner.png) ("The Golden Road", the rider with the name and the tagline). Copy its image link and put it in place of `banner` on the first line of the description (`![Outrider](...)`), then save.
 7. **Screenshots** (Images tab, after the project exists): Home, Map with the way-there dots and rare pins, Quests with Chains, Dungeons quests and keys, Macros, the auction house window. `/ride tour` takes them one click at a time.
@@ -48,7 +48,7 @@ Why not CurseForge's own automatic packager or the BigWigs packager: both build 
 
 ## Listing text (paste into the project form)
 
-**Name:** Outrider. Fallback if taken: Outrider (WoW Forever).
+**Name:** Outrider Forever (the project name "Outrider" was taken; in game it is still Outrider).
 
 **Summary:** One addon to rule them all for WoW Forever: rare alerts, quest and dungeon guidance, the way to any place, hunter pet tools, macros, professions, auction shopping and gear advice, all for the character you're on.
 

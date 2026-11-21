@@ -8,6 +8,7 @@
 ## OptionalDeps: !BugGrabber, BugSack, LibStub, LibDataBroker-1.1, LibDBIcon-1.0, Questie, TomTom, Auctionator
 ## X-License: GPL-3.0-only (data addons: see their own licence files)
 ## X-Category: Interface Enhancements
+## X-Curse-Project-ID: 1821625
 
 # Core (order matters: Init first, Boot last)
 Core\Init.lua
