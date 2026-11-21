@@ -219,6 +219,7 @@ local controls = {
   ["Fishing HUD while a pole is equipped"] = "A small panel while fishing: skill, lure, what bites here, gold made and your goal.",
   ["Sound for rare catches"] = "A sound when you catch something rare.",
   ["Not set"] = "Click, then press the key you want. Right-click clears it.",
+  ["More"] = "Opens the page with the full list.",
   ["Class trainer"] = "Points the gold arrow at the nearest trainer for your class.",
   ["Options"] = "How your macro buttons behave: the missing-buffs row, tooltips and quiet presses.",
   ["Chains"] = "Quest chains: every step, done or not, and the arrow to the next one.",

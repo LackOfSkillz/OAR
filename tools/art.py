@@ -23,7 +23,7 @@ OUT = os.path.join(ROOT, "addon", "Outrider", "Art")
 # name: (width, height). Square art is centre-cropped to a square; the header
 # is cropped to a 4:1 strip a little above the middle (VY) to keep the castle.
 # Batch 4 headers (2026-11-19) come with the artwork centred in a 4:1 strip, so they crop at the middle.
-VY = {"header": 0.35, "header_explore": 0.5, "header_character": 0.5, "header_town": 0.5, "header_social": 0.5, "header_outrider": 0.5, "header_auction": 0.5, "header_world": 0.5, "header_professions": 0.5, "header_gold": 0.5}
+VY = {"header": 0.35, "header_explore": 0.5, "header_character": 0.5, "header_town": 0.5, "header_social": 0.5, "header_outrider": 0.5, "header_auction": 0.5, "header_world": 0.5, "header_professions": 0.5, "header_gold": 0.5, "home_hero": 0.5}
 SPECS = {
     "emblem": (128, 128),
     "header": (1024, 256),
@@ -142,6 +142,7 @@ SPECS = {
     # one hero banner per sidebar group
     "header_explore": (1024, 256),
     "header_world": (1024, 256),
+    "home_hero": (2048, 256),
     "header_professions": (1024, 256),
     "header_gold": (1024, 256),
     "header_character": (1024, 256),

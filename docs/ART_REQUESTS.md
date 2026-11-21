@@ -516,3 +516,21 @@ canvas, centred, no circle behind it (Outrider draws the ring). Must read at
 Still waiting from earlier batches: Batch 7 `header_auction.png`, Batch 8
 `kind_zone.png` and `journey_empty.png`.
 
+## Batch 11: the Home hero (2026-11-21)
+
+Gary: "this page needs to be epic legendary worthy ... give it the best art in
+the app." One picture, the best one in the set: it spans the whole top of the
+Home page (about 1100 x 150 on screen), behind the character's name, level,
+XP bar and gold. Same style line as the rest (painted dark fantasy, deep
+blue-teal shadows, warm gold highlights, soft rim light, no text, no logos),
+but grander: this is the first thing every player sees.
+
+**Size: 2048x512 (4:1), opaque.** Only the middle band (about 8:1, the middle
+half of the height) is shown, so keep everything important in a horizontal
+strip through the middle. Keep the **left 45% darker and calm** (the class
+emblem and the words sit there); put the drama on the right.
+
+| File | Scene |
+|---|---|
+| `home_hero.png` | An epic panorama at golden-hour dawn: from a high cliff edge, a lone adventurer with a cloak and a lantern looks out over a vast world. A winding gold-lit road leads down past a riverside village with warm windows, through forests, toward a great city of spires on the far right, with a dungeon gate glowing faintly in a distant mountain and a gryphon flying across the sky. Floating sky-isles faintly on the horizon (the Skyborne home). Rich detail, cinematic depth, light rays through clouds; the left side is the shadowed cliff and sky, darker and calm. |
+
