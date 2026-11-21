@@ -109,6 +109,22 @@ for name, gd in pairs(guideByName) do
 end
 table.sort(disagree)
 
+-- titles the pack itself marks uncertain ("Rogue Trainer?"): the role decides
+-- which button sends you there, so these must be checked in game
+local unsure = {}
+for _, rows in pairs(pk.Outrider_DataNPC and pk.Outrider_DataNPC.maps or {}) do
+  for _, r in ipairs(rows) do
+    if type(r[6]) == "string" and r[6]:find("?", 1, true) then
+      local t = truth[r[1]]
+      unsure[#unsure + 1] = string.format("| %s | %s | %s |", tostring(r[5]), r[6], t and "seen by you: yes" or "not seen yet")
+    end
+  end
+end
+table.sort(unsure)
+-- guide places nobody else knows: only the guide vouches for them
+local guideOnly = 0
+for name in pairs(guideByName) do if not packByName[name] then guideOnly = guideOnly + 1 end end
+
 local f = assert(io.open(OUT, "w"))
 local function w(s) f:write(s, "\n") end
 w("# Map places audit")
@@ -123,6 +139,9 @@ w(string.format("- Guides (Wowhead Forever): %d checked, %d wrong (%s%%)", stats
   stats.guide.n > 0 and string.format("%.0f", stats.guide.bad / stats.guide.n * 100) or "-"))
 w(string.format("- Pack and guide both list %d NPCs; they disagree on %d (no truth yet)", both, #disagree))
 w("")
+w(string.format("- Guide places no other source has (only the guide vouches for them): %d", guideOnly))
+w(string.format("- Pack titles marked uncertain with '?': %d", #unsure))
+w("")
 w("In game your own sighting always wins: these numbers say which source to trust where you haven't been.")
 w("")
 w("## Wrong against the truth")
@@ -136,6 +155,12 @@ w("")
 w("| NPC | zone | pack | guide | apart (% of map) |")
 w("|---|---|---|---|---|")
 for _, l in ipairs(disagree) do w(l) end
+w("")
+w("## Pack titles marked uncertain")
+w("")
+w("| NPC | title | checked |")
+w("|---|---|---|")
+for _, l in ipairs(unsure) do w(l) end
 f:close()
 print(string.format("truth %d | pack %d checked, %d wrong, %d other map | guide %d checked, %d wrong | disagree %d of %d",
   stats.truth, stats.pack.n, stats.pack.bad, stats.pack.other, stats.guide.n, stats.guide.bad, #disagree, both))

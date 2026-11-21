@@ -17,7 +17,7 @@ local function onoff(v) return v and "on" or "off" end
 
 -- ------------------------------------------------------------------ Home
 local NEAREST = { { "Inn", "inn" }, { "Vendor", "vendor" }, { "Repair", "repair" }, { "Flight", "flight" },
-  { "Trainer", "trainer" }, { "Mail", "mail" }, { "Bank", "bank" }, { "Auction", "ah" }, { "Stable", "stable" },
+  { "Class trainer", "class" }, { "Mail", "mail" }, { "Bank", "bank" }, { "Auction", "ah" }, { "Stable", "stable" },
   { "Spirit healer", "spirit" } }
 if ns.PlayerClass and ns.PlayerClass() == "HUNTER" then NEAREST[#NEAREST + 1] = { "Ammo", "ammo" } end
 
@@ -260,7 +260,14 @@ local function trainerTiles()
   local icons = ns.ProfExtras and ns.ProfExtras.PROF_ICON or {}
   for _, name in ipairs(profs) do
     items[#items + 1] = { name, "prof_" .. name:lower():gsub(" ", ""), icons[name] or "INV_Misc_Book_09",
-      Run("near trainer " .. name:lower()),
+      (function()
+        local d = seen[name] and ns.db.char.professions[name]
+        local need = d and ns.Nearest and ns.Nearest.NextRank(d.max)
+        return function()
+          local _, msg = ns.Nearest:Go("trainer:" .. name:lower() .. (need and (":" .. need) or ""))
+          ns.Print(tostring(msg))
+        end
+      end)(),
       (seen[name] and "Your " or "Learn ") .. name:lower() .. (seen[name] and " trainer: the next rank and new recipes." or " here: anyone can.") }
   end
   return items
@@ -616,8 +623,13 @@ local function profRows()
       if max > 0 and skill >= max then
         line = string.format("You've reached the most this rank allows (%d). Visit a %s trainer to learn the next rank and keep going.", max, name:lower())
         tag = { "visit a trainer", "gold" }
-        local which = name:lower()
-        act = { { "Arrow to trainer", function() ns.Slash:Run("near trainer " .. which) end, "Points the gold arrow at the nearest " .. which .. " trainer." } }
+        -- a trainer who teaches the rank you need next, not just any (2026-11-21)
+        local which, need = name:lower(), ns.Nearest and ns.Nearest.NextRank(max)
+        local RANKS = { "Apprentice", "Journeyman", "Expert", "Artisan" }
+        act = { { "Arrow to trainer", function()
+          local _, msg = ns.Nearest:Go("trainer:" .. which .. (need and (":" .. need) or ""))
+          ns.Print(tostring(msg))
+        end, "Points the gold arrow at the nearest " .. which .. " trainer who teaches " .. (RANKS[need or 0] or "the next rank") .. "." } }
       elseif GATHER[name] then
         line = string.format("Raise it by doing it: %s. Harder ones give more skill as you go.", GATHER[name])
       else

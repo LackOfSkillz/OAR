@@ -8,6 +8,9 @@ A spot more than 3.0% of the map away from the truth counts as wrong.
 - Guides (Wowhead Forever): 45 checked, 3 wrong (7%)
 - Pack and guide both list 430 NPCs; they disagree on 37 (no truth yet)
 
+- Guide places no other source has (only the guide vouches for them): 118
+- Pack titles marked uncertain with '?': 2
+
 In game your own sighting always wins: these numbers say which source to trust where you haven't been.
 
 ## Wrong against the truth
@@ -62,3 +65,10 @@ In game your own sighting always wins: these numbers say which source to trust w
 | Wilder Thistlenettle | Stormwind City | 70.3, 40.8 | 65.0, 21.0 | 19.8 |
 | Wilma Ranthal | Redridge Mountains | 83.7, 71.3 | 88.8, 71.0 | 5.1 |
 | Yonn Deepcut | Mulgore | 45.0, 61.4 | 45.6, 57.8 | 3.6 |
+
+## Pack titles marked uncertain
+
+| NPC | title | checked |
+|---|---|---|
+| Boarton Shadetotem | Rogue Trainer? | not seen yet |
+| Boarton Shadetotem | Rogue Trainer? | not seen yet |
