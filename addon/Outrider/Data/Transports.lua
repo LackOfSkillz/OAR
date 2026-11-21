@@ -20,6 +20,11 @@ local _, ns = ...
 local CWF, LEP, BOTH = "classicwowforever.com", "leprestore.com (beta data)", "classicwowforever.com, leprestore.com"
 local MGG = "method.gg (read 2026-11-16)"
 local WH = "wowhead.com Forever zone guides (read 2026-11-21)"
+-- Zeppelin masters and shipmasters stand on the towers and docks: their spots
+-- come from QuestieDB's Forever NPC data (read 2026-11-21) and "npc" lets
+-- Outrider's own sighting of that NPC move the spot (Gary, 2026-11-21: the
+-- arrow sent him to the middle of Durotar for the Undercity zeppelin).
+local QDB = "QuestieDB Forever NPC spawns (read 2026-11-21)"
 
 ns.Data:Register("link", "forever-guides", {
   { id = "boat-stormwind-auberdine", kind = "boat", faction = "Alliance", source = BOTH, verified = false,
@@ -37,14 +42,18 @@ ns.Data:Register("link", "forever-guides", {
   { id = "boat-steamwheedle-powderfuse", kind = "boat", source = BOTH .. "; docks: " .. WH, verified = false,
     from = { zone = "Tanaris", place = "Steamwheedle Port, east of Gadgetzan", x = 0.686, y = 0.230 },
     to = { zone = "Riverglades", place = "Powderfuse Port", x = 0.806, y = 0.546 } },
-  { id = "boat-ratchet-bootybay", kind = "boat", source = BOTH, verified = false,
-    from = { zone = "The Barrens", place = "Ratchet" }, to = { zone = "Stranglethorn Vale", place = "Booty Bay" } },
-  { id = "zep-org-undercity", kind = "zeppelin", faction = "Horde", source = BOTH, verified = false,
-    from = { zone = "Durotar", place = "zeppelin towers outside Orgrimmar" }, to = { zone = "Tirisfal Glades", place = "tower outside Undercity" } },
-  { id = "zep-org-gromgol", kind = "zeppelin", faction = "Horde", source = BOTH, verified = false,
-    from = { zone = "Durotar", place = "zeppelin towers outside Orgrimmar" }, to = { zone = "Stranglethorn Vale", place = "Grom'gol" } },
-  { id = "zep-undercity-gromgol", kind = "zeppelin", faction = "Horde", source = BOTH, verified = false,
-    from = { zone = "Tirisfal Glades", place = "tower outside Undercity" }, to = { zone = "Stranglethorn Vale", place = "Grom'gol" } },
+  { id = "boat-ratchet-bootybay", kind = "boat", source = BOTH .. "; docks: " .. QDB, verified = false,
+    from = { zone = "The Barrens", place = "Ratchet", npc = 9558, x = 0.6354, y = 0.3861 },
+    to = { zone = "Stranglethorn Vale", place = "Booty Bay", npc = 9559, x = 0.2608, y = 0.7335 } },
+  { id = "zep-org-undercity", kind = "zeppelin", faction = "Horde", source = BOTH .. "; towers: " .. QDB, verified = false,
+    from = { zone = "Durotar", place = "zeppelin towers outside Orgrimmar (Frezza)", npc = 9564, x = 0.5082, y = 0.1354 },
+    to = { zone = "Tirisfal Glades", place = "tower outside Undercity (Zapetta)", npc = 9566, x = 0.6074, y = 0.5887 } },
+  { id = "zep-org-gromgol", kind = "zeppelin", faction = "Horde", source = BOTH .. "; towers: " .. QDB, verified = false,
+    from = { zone = "Durotar", place = "zeppelin towers outside Orgrimmar (Snurk Bucksquick)", npc = 12136, x = 0.5069, y = 0.1289 },
+    to = { zone = "Stranglethorn Vale", place = "Grom'gol (Nez'raz)", npc = 3149, x = 0.3143, y = 0.2991 } },
+  { id = "zep-undercity-gromgol", kind = "zeppelin", faction = "Horde", source = BOTH .. "; towers: " .. QDB, verified = false,
+    from = { zone = "Tirisfal Glades", place = "tower outside Undercity (Hin Denburg)", npc = 3150, x = 0.6178, y = 0.5918 },
+    to = { zone = "Stranglethorn Vale", place = "Grom'gol (Squibby Overspeck)", npc = 12137, x = 0.3154, y = 0.2936 } },
   -- Wowhead (2026-11-21): two skyboats about every 5 minutes; either faction
   -- may ride either (Dalaran is meant for Alliance, Thunder Bluff for Horde).
   -- Docks: Thunder Bluff boat at Valanaar's westernmost dock, Dalaran boat at

@@ -174,6 +174,23 @@ T.describe("travel", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("a zeppelin starts at its zeppelin master's tower, and your own sighting of him moves it (Gary, 2026-11-21)", function()
+    local _, ns = session()
+    ns.Data:Register("link", "spec", {
+      { id = "zep-master", kind = "zeppelin", source = "spec", verified = false,
+        from = { zone = "Westfield", place = "Tower", npc = 9564, x = 0.51, y = 0.14 }, to = { zone = "Far Isle", place = "Isleport" } },
+    })
+    local function tower()
+      for _, r in ipairs(ns.Travel:Rides()) do if r.link and r.link.id == "zep-master" and r.from.label == "Tower" then return r.from end end
+    end
+    T.eq(tower().x, 0.51, "the tower, not the middle of the zone")
+    T.ok(not tower().approx)
+    ns.db.global.discovered = { npcs = { [9564] = { qualityRank = 3, mapID = 100, x = 0.52, y = 0.12 } } }
+    T.eq(tower().x, 0.52, "where you saw him")
+    ns.db.global.discovered = { npcs = { [9564] = { qualityRank = 3, mapID = 300, x = 0.9, y = 0.9 } } }
+    T.eq(tower().x, 0.51, "a sighting in another zone is not this tower")
+  end)
+
   T.it("travel finder: every portal, boat and zeppelin, searchable, on the map where the spot is known", function()
     local _, ns = session()
     ns.db.global.pois = {

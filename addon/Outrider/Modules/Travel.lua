@@ -211,6 +211,11 @@ function M:Dock(place)
 end
 
 local function endPoint(self, e)
+  -- the zeppelin master or shipmaster was seen standing somewhere: that wins
+  if e.npc and ns.NPCPack and ns.NPCPack.Seen then
+    local sm, sx, sy = ns.NPCPack.Seen(e.npc)
+    if sm and sm == self:MapByName(e.zone) then return M.Point(sm, sx, sy, e.place) end
+  end
   if e.x and e.y then return M.Point(self:MapByName(e.zone), e.x, e.y, e.place) end
   return self:Dock(e.place) or M.Point(self:MapByName(e.zone), nil, nil, e.place)
 end
