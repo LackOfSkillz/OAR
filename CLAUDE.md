@@ -57,6 +57,7 @@ All from the repo root. On Windows prefix each with `powershell -NoProfile -Exec
 | `tools/screenshot-latest.ps1 [-Count n] [-Minutes m]` | Paths of Gary's newest screenshots |
 | `tools/backup-sv.ps1 [-Restore stamp]` | Back up / restore SavedVariables (restore only with the game closed) |
 | `tools/package.ps1` | Release zip in `dist\` |
+| `tools/curseforge.ps1 [-Upload] [-ReleaseType beta]` | CurseForge zip in `dist\curseforge\`; `-Upload` sends it (needs `CF_API_KEY`, see docs/CURSEFORGE.md) |
 | `python tools/lua.py <script.lua> [args]` | Lua 5.1 without installing Lua (needs `pip install lupa`) |
 | `python tools/build_tasks.py` | Rebuild TASKS.md after editing phase files (keeps statuses and notes) |
 | `python tools/lua.py tools/build_guide.lua` | Rebuild docs/USER_GUIDE.md from UI/HelpData.lua (the in-game Help tab); do it whenever a feature or command changes |

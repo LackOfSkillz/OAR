@@ -123,3 +123,51 @@ function Format-Age([datetime]$When) {
   if ($span.TotalMinutes -lt 90) { return ('{0:N0} minutes ago' -f $span.TotalMinutes) }
   return ('{0:N1} hours ago' -f $span.TotalHours)
 }
+
+# Licence files for the QuestieDB-derived data addons in a staged build
+# (shared by tools/family.ps1 and tools/curseforge.ps1): LICENSE-DATA.txt and
+# the full GPLv3 text (taken from the QuestieDB source we built them from) go
+# into each, and the generated TOC's old "private copy" note is replaced.
+# Returns $false when the GPLv3 text can't be found.
+function Add-OarDataLicenses([string]$Root, [string]$Staging, [string[]]$Folders, [string]$Label) {
+  # licence note for the QuestieDB-derived packs, plus the full GPLv3 text taken
+  # from the QuestieDB source we built them from (QuestieDB/LICENSE.md: the
+  # Questie team allows copying under the GPLv3 terms; the Questie name and logo
+  # are not ours to use)
+  $note = @"
+Outrider build $Label
+
+The Outrider_Data_NPC, _Gear, _Mobs, _Nodes, _Dungeons and _Quests folders contain data
+converted from QuestieDB (https://github.com/Questie/Questie), shared under the
+GNU General Public License version 3 (full text in gpl-3.0.md next to this file).
+Upstream licensing notes: https://github.com/Questie/Questie/blob/master/LICENSE.md
+Outrider is not made by or affiliated with the Questie team.
+Outrider_Data_Words has its own licence file inside it.
+"@
+  Add-Type -AssemblyName System.IO.Compression
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $gpl = $null
+  $qzip = Get-ChildItem -Path (Join-Path $Root 'private\questie-source') -Filter '*.zip' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($qzip) {
+    $za = [System.IO.Compression.ZipFile]::OpenRead($qzip.FullName)
+    try {
+      $e = $za.GetEntry('QuestieDB/gpl-3.0.md')
+      if ($e) { $r = New-Object System.IO.StreamReader($e.Open()); $gpl = $r.ReadToEnd(); $r.Dispose() }
+    } finally { $za.Dispose() }
+  }
+  if (-not $gpl) { Write-Host "GPLv3 text not found in private\questie-source: not packaging." -ForegroundColor Red; return $false }
+  foreach ($f in $Folders) {
+    if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons|Quests)$') {
+      Write-Utf8NoBom (Join-Path $Staging "$f\LICENSE-DATA.txt") $note
+      Write-Utf8NoBom (Join-Path $Staging "$f\gpl-3.0.md") $gpl
+      # the generated TOC still carries the private-copy note: say what applies
+      $tocPath = Join-Path $Staging "$f\$f.toc"
+      if (Test-Path $tocPath) {
+        $lines = Get-Content $tocPath | ForEach-Object {
+          if ($_ -match '^##\s*Notes:') { '## Notes: Data converted from QuestieDB, shared under GPLv3 (see LICENSE-DATA.txt).' } else { $_ } }
+        Write-Utf8NoBom $tocPath (($lines -join "`n") + "`n")
+      }
+    }
+  }
+  return $true
+}
