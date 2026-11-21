@@ -16,7 +16,8 @@ end
 T.describe("feedback", function()
   T.it("a bug report becomes a GitHub link with the bug template and what a fix needs", function()
     local game, ns, M = start()
-    ns.Errors.list[#ns.Errors.list + 1] = { where = "Spec", msg = "boom", count = 2 }
+    ns.Errors.list[#ns.Errors.list + 1] = { where = "Spec", msg = "Outrider/Modules/Spec.lua:1: boom", count = 2 }
+    ns.Errors.list[#ns.Errors.list + 1] = { where = "Unknown", msg = "Blizzard_ChatFrameBase/ChatFrameOverrides.lua:32: bad argument", count = 1 }
     local url = M:Make("bug", "Arrow points the wrong way", "I clicked Go and it pointed to Orgrimmar.", false)
     T.ok(url, "a link")
     T.contains(url, "github.com/LackOfSkillz/outrider-releases/issues/new?template=bug_report.md")
@@ -25,10 +26,11 @@ T.describe("feedback", function()
     T.contains(text, "I clicked Go and it pointed to Orgrimmar.")
     T.contains(text, "Outrider:")
     T.contains(text, "level 14")
-    T.contains(text, "Spec: boom (x2)")
+    T.contains(text, "Spec: Outrider/Modules/Spec.lua:1: boom (x2)")
+    T.ok(not text:find("ChatFrameOverrides", 1, true), "Blizzard's own errors stay out")
     T.ok(not text:find(game.base.UnitName("player"), 1, true), "no character name unless asked")
     T.eq(#ns.db.global.feedback, 1, "kept on this PC")
-    T.eq(#ns.Errors.list, 1, "only the error the spec added")
+    T.eq(#ns.Errors.list, 2, "only the errors the spec added")
   end)
 
   T.it("an idea uses the idea template, and the name is added only when switched on", function()
@@ -52,7 +54,7 @@ T.describe("feedback", function()
 
   T.it("a very long report is trimmed to a link browsers accept", function()
     local _, ns, M = start()
-    for i = 1, 40 do ns.Errors.list[#ns.Errors.list + 1] = { where = "Spec" .. i, msg = string.rep("x", 400), count = 1 } end
+    for i = 1, 40 do ns.Errors.list[#ns.Errors.list + 1] = { where = "Spec" .. i, msg = "Outrider " .. string.rep("x", 400), count = 1 } end
     local url = M:Make("bug", "Long", string.rep("words and more words ", 200), false)
     T.ok(#url <= M.URL_MAX, "under the limit: " .. #url)
     for i = 1, 30 do M:Make("idea", "n" .. i, "t") end

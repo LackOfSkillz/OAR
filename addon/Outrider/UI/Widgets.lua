@@ -308,6 +308,10 @@ function UI:TextDialog(title, body, mode, onAccept, auto)
   local d = self.dialog
   if not d then
     d = self:Window("Outrider_TextDialog", title, 520, 300)
+    -- above the hub and its pages (Gary's screenshot, 2026-11-21: the report
+    -- page's text boxes drew over the copy box)
+    d:SetFrameStrata("FULLSCREEN_DIALOG")
+    if d.SetToplevel then d:SetToplevel(true) end
     local scroll = CreateFrame("ScrollFrame", nil, d.content, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 0, 0)
     scroll:SetPoint("BOTTOMRIGHT", -24, 34)
@@ -362,5 +366,6 @@ function UI:TextDialog(title, body, mode, onAccept, auto)
   end
   if d.edit.SetFocus then d.edit:SetFocus() end
   d:Show()
+  if d.Raise then d:Raise() end
   return d
 end

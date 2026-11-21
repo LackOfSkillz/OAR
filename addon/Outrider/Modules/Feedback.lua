@@ -76,7 +76,10 @@ function M.Errors(n)
   local list = ns.Errors and ns.Errors.list or {}
   for i = #list, 1, -1 do
     local e = list[i]
-    if type(e) == "table" then
+    -- only Outrider's own (Gary's report carried a Blizzard chat frame error)
+    local mine = type(e) == "table" and ((ns.Modules and ns.Modules.Get and ns.Modules:Get(e.where))
+      or tostring(e.msg):find("Outrider", 1, true) or tostring(e.trace or ""):find("Outrider", 1, true))
+    if mine then
       out[#out + 1] = string.format("%s: %s%s", tostring(e.where or "?"), tostring(e.msg or "?"), (e.count or 1) > 1 and (" (x" .. e.count .. ")") or "")
       if #out >= (n or 5) then break end
     end
