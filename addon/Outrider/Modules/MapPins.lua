@@ -30,6 +30,7 @@ local LABELS = {
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
   dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in", qpath = "Quest NPC path",
+  path = "The way there",
 }
 M.LABELS = LABELS
 
@@ -44,6 +45,7 @@ local GROUP = {
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", note = "service", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
   trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
+  path = "path",
 }
 M.RARE_STATE = { alive = { 1, 0.25, 0.25 }, open = { 1, 0.78, 0.3 }, dead = { 0.5, 0.5, 0.55 }, waiting = { 0.5, 0.5, 0.55 } }
 M.GROUP_COLOR = {
@@ -138,6 +140,17 @@ local function outline(frame)
 end
 
 function M.Paint(frame, pin)
+  -- the way there (Path): a plain bright dot, bright green-blue on ground
+  -- walked before, pale where the line only goes straight
+  if pin.kind == "path" then
+    local c = pin.walked and ns.Path.WALKED or ns.Path.GUESS
+    if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
+    frame:SetAlpha(pin.walked and 1 or 0.75)
+    frame.ring:Show() frame.icon:Show()
+    frame.ring:SetColorTexture(0, 0, 0, 0.7)
+    frame.icon:SetColorTexture(c[1], c[2], c[3], 1)
+    return
+  end
   local hollow = M.GATHER[pin.kind] or pin.box
   if hollow then
     local st = not pin.box and ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
@@ -564,7 +577,7 @@ end
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
 M.RARE_SCALE = 2 -- rares on the zone map: twice the size of other pins
-local NO_MERGE = { rare = true, note = true, guild = true, trail = true, ride = true, transport = true }
+local NO_MERGE = { path = true, rare = true, note = true, guild = true, trail = true, ride = true, transport = true }
 
 function M.Declutter(pins, px, py)
   local out, cells = {}, {}
@@ -671,7 +684,11 @@ function M:Refresh()
   local scale = (canvas.GetScale and canvas:GetScale() or 1)
   local pmap, px, py = C.PlayerPosition("player")
   if pmap ~= mapID then px, py = nil, nil end
-  for _, data in ipairs(M.Declutter(self:PinsFor(mapID), px, py)) do
+  -- the way to your destination first, so places draw on top of it
+  local list = {}
+  if ns.Path and ns.Path.enabled then for _, d in ipairs(ns.Path:Pins(mapID)) do list[#list + 1] = d end end
+  for _, d in ipairs(M.Declutter(self:PinsFor(mapID), px, py)) do list[#list + 1] = d end
+  for _, data in ipairs(list) do
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
@@ -711,6 +728,7 @@ end
 
 -- ------------------------------------------------------------- pin card
 function M:ShowCard(data)
+  if type(data) == "table" and data.kind == "path" then return end -- a dot of the way there, nothing to show
   local card = self.card
   if not card then
     card = UI:Window("Outrider_PinCard", "", 280, 170, ns.db.char.pinCard)

@@ -189,6 +189,7 @@ Modules\Waypoints.lua
 Modules\POICapture.lua
 Modules\Nearest.lua
 Modules\Trail.lua
+Modules\Path.lua
 Modules\MapPins.lua
 Modules\MapReveal.lua
 Modules\QuestObjectives.lua

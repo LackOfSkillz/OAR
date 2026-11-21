@@ -19,7 +19,7 @@ local M = ns:NewModule("MinimapPins", {
   order = 54,
   defaults = { max = 12, quests = false },
 })
-M.CLEAR, M.SIZE = 11, 10
+M.CLEAR, M.SIZE, M.PATH = 11, 10, 6
 ns.MinimapPins = M
 -- A rare that just showed up (Gary, 2026-11-15: "put a blue box around him",
 -- like the yellow herb boxes): the game gives no NPC positions, so the box
@@ -129,6 +129,16 @@ function M:Update()
       if x then live[#live + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast } end
     end
   end
+  -- the way to your destination: every dot in view, not counted in the 12
+  if ns.Path and ns.Path.enabled then
+    for _, pin in ipairs(ns.Path:Pins(mapID)) do
+      local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
+      local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
+      if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
+        table.insert(live, 1, { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast, path = true })
+      end
+    end
+  end
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
     -- breadcrumbs stay on the world map: on the minimap they would crowd out the 12 nearest places
     if (s.quests or pin.kind ~= "quest_giver") and pin.kind ~= "trail" then
@@ -154,7 +164,8 @@ function M:Update()
         if M.DIAG and (not nearest or dist < nearest.dist) then
           nearest = { name = pin.name, dist = dist, dN = -dSouth, dW = -dEast, x = x, y = y }
         end
-        d:SetSize(pin.box and M.BOX or M.SIZE, pin.box and M.BOX or M.SIZE)
+        local size = e.path and M.PATH or (pin.box and M.BOX or M.SIZE)
+        d:SetSize(size, size)
         if pin.box then d:SetFrameLevel((Minimap.GetFrameLevel and Minimap:GetFrameLevel() or 1) + 8) end
         ns.MapPins.Paint(d, pin)
         d:ClearAllPoints()
