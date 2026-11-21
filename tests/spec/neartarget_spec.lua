@@ -49,4 +49,22 @@ T.describe("take me there", function()
     T.eq(p, nil)
     T.contains(why, "rogue trainer")
   end)
+
+  T.it("Forever titles: a <Fisher> is a fishing trainer", function()
+    local _, ns, put = session("ROGUE")
+    put("a", "Baelann Swiftcurrent", "Fisher", 0.50, 0.40)
+    T.eq(ns.Nearest:Find("trainer:fishing").name, "Baelann Swiftcurrent")
+  end)
+
+  T.it("what an NPC was seen teaching beats its title", function()
+    local _, ns, put = session("ROGUE")
+    put("a", "Odd Title", "Keeper of Secrets", 0.47, 0.38)
+    ns.db.global.pois.a.npcID = 5001
+    put("b", "Plain", "Rogue Trainer", 0.80, 0.80)
+    ns.db.global.pois.b.npcID = 5002
+    ns.db.global.teaches = { [5001] = "rogue", [5002] = "cooking" }
+    T.eq(ns.Nearest:Find("class_trainer").name, "Odd Title")
+    T.eq(ns.Nearest:Find("trainer:cooking").name, "Plain")
+  end)
 end)
+

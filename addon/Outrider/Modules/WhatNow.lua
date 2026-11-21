@@ -403,7 +403,28 @@ SOURCES.tips = function()
   return out
 end
 
-M.ORDER = { "errands", "quests", "gear", "dungeons", "training", "rares", "gold", "gather", "tips" }
+-- Dungeon quests to take along (Modules/DungeonQuests.lua): for the next
+-- dungeon right for your level, the first quest you haven't done.
+SOURCES.dungeonquests = function()
+  local D = ns.DungeonQuests
+  if not (D and D.enabled) then return {} end
+  local ctx = D:Context()
+  local best = D:Next(ctx)
+  if not best then return {} end
+  for _, st in ipairs(best.steps) do
+    local status = D:Status(st, ctx)
+    if status == "todo" then
+      return { { key = "dq:" .. tostring(st.id), kind = "dungeon",
+        title = string.format("Pick up %s for %s", tostring(st.quest), best.name),
+        why = string.format("A dungeon quest is a lot of XP; %s is right for your level (%d-%d).", best.name, best.lo, best.hi),
+        where = string.format("%s, %s", tostring(st.name), tostring(st.zone)), benefit = 0.6, confidence = 0.6, label = "guide",
+        go = function() return D:Go(st) end } }
+    end
+  end
+  return {}
+end
+
+M.ORDER = { "errands", "quests", "gear", "dungeons", "dungeonquests", "training", "rares", "gold", "gather", "tips" }
 
 function M:Candidates()
   local all, failed = {}, {}

@@ -197,7 +197,7 @@ M.TRAINER_TITLES = {
   engineering = { "engineer" }, leatherworking = { "leatherworker", "leatherworking trainer" }, tailoring = { "tailor" },
   herbalism = { "herbalis" }, mining = { "mining trainer", "miner" }, skinning = { "skinning trainer", "skinner" },
   cooking = { "cooking trainer", "chef", "cook" }, ["first aid"] = { "first aid trainer", "physician", "surgeon" },
-  fishing = { "fishing trainer", "fisherman", "angler" }, riding = { "riding trainer", "riding instructor" },
+  fishing = { "fishing trainer", "fisher", "angler" }, -- Forever: "<Fisher>" riding = { "riding trainer", "riding instructor" },
   ["weapon master"] = { "weapon master" }, ["pet trainer"] = { "pet trainer" },
 }
 -- the highest rank a trainer teaches, from its title or a guide note
@@ -229,6 +229,14 @@ function M.Fits(p, kind, ctx)
     return false
   end
   if p.kind ~= ctx.want then return false end
+  -- seen teaching at its trainer window: that's the truth, whatever the title says
+  local taught = p.npcID and type(ns.db.global.teaches) == "table" and ns.db.global.teaches[p.npcID]
+  if taught and (ctx.cls or ctx.what) then
+    if ctx.cls then return taught == ctx.cls end
+    if taught ~= ctx.what then return false end
+    local r = ctx.rank and M.TrainerRank(p.title, p.note)
+    return not (r and r < ctx.rank)
+  end
   local title = tostring(p.title or ""):lower()
   if ctx.cls then
     if not title:find(ctx.cls .. " trainer", 1, true) then return false end
@@ -275,7 +283,7 @@ function M:Find(kind)
   if ns.NPCPack then
     for _, p in ipairs(ns.NPCPack:OfKind(ctx.want)) do
       if not named[p.name] then
-        candidates[#candidates + 1] = { kind = ctx.want, mapID = p.mapID, x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction }
+        candidates[#candidates + 1] = { kind = ctx.want, mapID = p.mapID, x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction, npcID = p.npcID }
         named[p.name] = true
       end
     end

@@ -84,6 +84,7 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 - **Map pins.** Vendors, trainers, flight masters, repair, mailboxes and rares on the world map and minimap, recorded as you meet them. Map pins tab on Map and places: which pins show.
 - **Zone levels.** Level ranges over each zone on the world map and over areas inside a zone map: from the creatures you met there, else from the WoW Forever leveling guides (Riverglades 36-44, Zephras Isle 1-12, Mount Hyjal 60), else from Classic data. /ride zonelevels on|off.
 - **Leveling knowledge.** Outrider knows what the WoW Forever leveling guides say: every Zephras Isle class and profession trainer, the Riverglades flight masters, breadcrumb quests, the Blood Master's Ring and Krol'dok Stronghold, the skyboat and Riverglades boat docks, and talent builds for Fury warriors and Elemental and Enhancement shamans. They show on the map and in Your trainers; what you see yourself always wins.
+- **Dungeon quests and keys.** Dungeons, Quests and keys tab: every dungeon for your side sorted by level, with how many of its quests you've done. Pick one: each quest shows its status (Done, In your log, To do, Later), its giver and where they stand; click it for the gold arrow. Go to the entrance points at the door; Won't do hides a dungeon; keys and secrets (the Tome of Dalaran) are listed under Good to know, and the bottom line shows how far each of your characters got. Next steps suggests the next quest to pick up. Data from the WoW Forever guides, unchecked: /ride dqwrong <quest> <what's wrong> notes a mistake.
 - **Cozy Sleeping Bag.** From level 14: a quest chain across Azeroth with good XP at every step that ends with the Cozy Sleeping Bag (lie in it for up to 3% more experience for an hour, and you become rested). /ride cozy queues every stop in your faction's order (Alliance starts in Westfall, Horde in The Barrens); follow the gold arrow. The last stop is a jumping puzzle inside Thoradin's Wall.
 - **Breadcrumbs.** Small gold dots where you walked, on the world map and minimap, so you can find your way back out. /ride trail clear.
 - **Waypoints.** /ride way <x> <y> [title] sets one on this map; /ride near <spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|ammo> goes to the nearest. When you die, a waypoint to the nearest spirit healer appears by itself.
@@ -215,6 +216,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride deals` | show \| reserve <wholeGold>  review, never auto-purchase |
 | `/ride debug` | on\|off  verbose logging to the saved log |
 | `/ride discovered` | [n]  last n NPCs Outrider recorded (default 10) |
+| `/ride dqwrong` | dqwrong <quest name> [what's wrong]  note a wrong dungeon quest step |
 | `/ride dungeonquests` | dungeonquests <dungeon name> \| link <questID> <dungeon name> |
 | `/ride errands` | what to do in town for this character |
 | `/ride errors` | [clear]  show recent Outrider errors |

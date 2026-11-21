@@ -73,7 +73,10 @@ Hub.SUBS = {
   people    = { { "people", "Players and guilds" }, { "census", "Census" } },
   settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
   help      = { { "help", "Help" }, { "commands", "All commands" } },
+  dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" } },
 }
+-- the sub-tab a sidebar entry opens the first time (else the host itself)
+Hub.DEFAULT_SUB = { dungeons = "dungeonquests" }
 -- clearer names for some pages (sidebar and page title)
 Hub.TITLES = { journey = "Find", feed = "Alerts", waypoints = "Map and places", alts = "My characters", people = "People" }
 -- page id -> the sidebar entry it lives under
@@ -95,7 +98,9 @@ function Hub.LastSub(host)
   local hub = ns.db and ns.db.char and ns.db.char.hub
   local last = hub and type(hub.sub) == "table" and hub.sub[host]
   if last and Hub.NAV[last] == host and Hub.byId[last] then return last end
-  return host
+  if last == host then return host end
+  local def = Hub.DEFAULT_SUB[host]
+  return (def and Hub.byId[def]) and def or host
 end
 
 function Hub:AddTab(id, title, build, order, opts)
