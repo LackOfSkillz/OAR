@@ -186,12 +186,15 @@ function M:Labels(mapID)
       out[#out + 1] = { mapID = id, name = name, lo = lo, hi = hi, source = source, x = x, y = y, color = M.Color(lo, hi, level) }
     end
   end
-  if info.mapType == M.TYPE_ZONE then
+  local function asZone()
     add(mapID, info.name, 0.5, 0.06)
     for _, a in ipairs(self:Areas(mapID)) do
       out[#out + 1] = { mapID = mapID, area = true, name = info.name, lo = a.lo, hi = a.hi, source = a.source, x = a.x, y = a.y,
         color = M.Color(a.lo, a.hi, level) }
     end
+  end
+  if info.mapType == M.TYPE_ZONE then
+    asZone()
   elseif info.mapType == M.TYPE_CONTINENT then
     for _, kid in ipairs(C.Call("C_Map.GetMapChildrenInfo", mapID) or {}) do
       local k = C.Call("C_Map.GetMapInfo", kid.mapID)
@@ -203,6 +206,9 @@ function M:Labels(mapID)
         end
       end
     end
+    -- a world of one zone (Zephras Isle is its own continent: Gary,
+    -- 2026-11-21, no levels on its map): label it like a zone
+    if #out == 0 then asZone() end
   end
   return out
 end
@@ -271,9 +277,13 @@ function M:Refresh()
     f:Show()
     self.used[#self.used + 1] = f
   end
-  if #self.used > 0 and not self.logged then
-    self.logged = true
-    self:Info("zone levels on map %d: %d zones", mapID, #self.used)
+  -- one line per map per session, also when nothing could be drawn (a blank
+  -- map is then visible in the log, not only on Gary's screen)
+  self.loggedMaps = self.loggedMaps or {}
+  if not self.loggedMaps[mapID] then
+    self.loggedMaps[mapID] = true
+    local info = C.Call("C_Map.GetMapInfo", mapID)
+    self:Info("zone levels on map %d (type %s): %d labels", mapID, tostring(type(info) == "table" and info.mapType), #self.used)
   end
 end
 

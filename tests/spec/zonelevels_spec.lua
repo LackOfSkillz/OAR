@@ -96,4 +96,18 @@ T.describe("zone levels", function()
     T.eq(ns.ZoneLevels.Color(14, 18, 11), "warn")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("a world that is its own continent with no zones (Zephras Isle) is labelled like a zone", function()
+    local game, ns = session(10)
+    game.maps[2521] = { name = "Isle", mapType = 2 }
+    game.env.Outrider_DataMobs.maps[2521] = { { 30, "Owl", 3, 4, 0, { 0.3, 0.3 } }, { 31, "Cat", 4, 5, 0, { 0.32, 0.31 } },
+      { 32, "Hawk", 5, 6, 0, { 0.31, 0.33 } }, { 33, "Bird", 6, 7, 0, { 0.33, 0.32 } } }
+    ns.Finder.mobs = nil
+    ns.ZoneLevels.cache = {}
+    local labels = ns.ZoneLevels:Labels(2521)
+    T.ok(#labels >= 1, "the island gets a range")
+    T.eq(labels[1].name, "Isle")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
+
