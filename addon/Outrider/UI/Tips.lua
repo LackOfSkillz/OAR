@@ -264,6 +264,8 @@ local controls = {
   ["Help"] = "What every page does and how to use it.",
   ["All commands"] = "Every /ride command, with a Run button.",
   ["Report or idea"] = "Tell us about a problem or an idea, in three steps.",
+  ["Check for lag (1 minute)"] = "Measures for one minute how much of your game's time Outrider uses, and which part. Play as usual meanwhile.",
+  ["Stop the check"] = "Stops the lag check now and shows what it measured so far.",
   ["Something's broken"] = "Report a problem: something didn't work or looked wrong.",
   ["I have an idea"] = "Suggest something Outrider should do.",
   ["Make my report"] = "Builds your report and a link to post it on GitHub. Copy the link with Ctrl+C, paste it in your web browser.",
@@ -404,6 +406,7 @@ ns.Tips = {
   steps = steps,
   controls = controls,
   patterns = {
+    { "^Turn off ", "Switches that part of Outrider off (Settings, Modules turns it back on)." },
     { "^Open ", "Goes straight to that Outrider page." },
     { "^Sort:", "Click to change the order: nearest first, by level, or by name." },
     { "^Run /ride ", "Runs the command now, as if you typed it in chat." },

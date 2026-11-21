@@ -67,6 +67,7 @@ function M.Details(withName)
   local zone = mapID and ns.Travel and ns.Travel.ZoneName and ns.Travel.ZoneName(mapID) or C.Readable(C.Call("GetZoneText"))
   add("Where", zone and (mapID and x and string.format("%s (map %d, %.1f, %.1f)", tostring(zone), mapID, x * 100, y * 100) or tostring(zone)) or nil)
   add("Page", ns.Hub and ns.Hub.lastPage)
+  for _, l in ipairs(ns.LagCheck and ns.LagCheck.ReportLines() or {}) do add(l[1], l[2]) end
   return out
 end
 
@@ -230,8 +231,30 @@ ns.Hub:AddTab("feedback", "Report or idea", function(p)
   p.status:SetPoint("LEFT", p.make, "RIGHT", 14, 0)
   p.status:SetPoint("RIGHT", p, "RIGHT", -10, 0)
   p.status:SetJustifyH("LEFT")
+  -- Laggy? A one-minute lag check (LagCheck); its result goes into the report.
+  p.lagHead = UI.Display(p, "card", "goldText")
+  p.lagHead:SetPoint("TOPLEFT", p.make, "BOTTOMLEFT", 0, -22)
+  p.lagHead:SetText("Game feels slow? Check if it's Outrider")
+  p.lagBtn = UI:Button(p, "Check for lag (1 minute)", 220, function()
+    if ns.LagCheck.on then ns.LagCheck:Stop("stopped") else ns.LagCheck:Start() end
+    p:Refresh()
+  end)
+  p.lagBtn:SetPoint("TOPLEFT", p.lagHead, "BOTTOMLEFT", 0, -8)
+  p.lagText = UI.Text(p, "normal", "text")
+  p.lagText:SetPoint("TOPLEFT", p.lagBtn, "BOTTOMLEFT", 0, -8)
+  p.lagText:SetPoint("RIGHT", p, "RIGHT", -10, 0)
+  p.lagText:SetJustifyH("LEFT")
+  p.lagOff = {}
+  for i = 1, 3 do
+    local b = UI:Button(p, "Turn off", 200, function(self) if self.part then ns.Modules:SetEnabled(self.part, false) ns.Print("%s is off (Settings, Modules turns it back on)", self.part) p:Refresh() end end)
+    b:SetPoint("TOPLEFT", p.lagText, "BOTTOMLEFT", (i - 1) * 210, -8)
+    b:Hide()
+    p.lagOff[i] = b
+  end
+  ns.Events:On("OTR_LAGCHECK", { name = "FeedbackPage" }, function() if p:IsShown() then p:Refresh() end end)
+
   p.note = UI.Text(p, "small", "muted")
-  p.note:SetPoint("TOPLEFT", p.make, "BOTTOMLEFT", 0, -12)
+  p.note:SetPoint("TOPLEFT", p.lagOff[1], "BOTTOMLEFT", 0, -16)
   p.note:SetPoint("RIGHT", p, "RIGHT", -10, 0)
   p.note:SetJustifyH("LEFT")
   p.note:SetText("The game can't send anything to the internet, so you post it yourself: it opens a page on GitHub with everything filled in (a free GitHub account is needed). "
@@ -240,6 +263,21 @@ ns.Hub:AddTab("feedback", "Report or idea", function(p)
   function p:Refresh()
     UI.SetPrimary(self.bug, self.kind == "bug")
     UI.SetPrimary(self.idea, self.kind == "idea")
+    -- lag check
+    local L = ns.LagCheck
+    if L then
+      self.lagBtn.label:SetText(L.on and "Stop the check" or "Check for lag (1 minute)")
+      local r = ns.db.global.lagCheck
+      self.lagText:SetText(L.on and ("Checking: play as usual for a minute (move, fight, open the map). " .. L:Activity() .. ".")
+        or (r and L.Verdict(r) .. (r.parts and r.parts[1] and "  It goes into your next report." or "")
+          or "Press it, then play as usual for one minute. Outrider measures how much of your game's time it uses."))
+      for i, b in ipairs(self.lagOff) do
+        local part = not L.on and r and r.level ~= "fine" and r.parts and r.parts[i]
+        local mod = part and ns.Modules:Get(part.name)
+        if mod and mod.enabled then b.part = part.name b.label:SetText("Turn off " .. (mod.spec and mod.spec.title or part.name)) b:Show()
+        else b.part = nil b:Hide() end
+      end
+    end
     local k = self.kind and K[self.kind]
     self.text.edit.hint:SetText(k and k.ask or "Pick one above first.")
     -- the button always answers (Gary, 2026-11-21: a switched-off button

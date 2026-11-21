@@ -57,6 +57,15 @@ function Timer.DriverRunning()
   return driver ~= nil and driver:IsShown() and true or false
 end
 
+-- A timer or ticker run, timed while a lag check runs (Modules/LagCheck.lua).
+local function run(label, fn, ...)
+  local lag = ns.LagCheck and ns.LagCheck.on and rawget(_G, "debugprofilestop")
+  if not lag then return ns.Safe(label, fn, ...) end
+  local t0 = lag()
+  ns.Safe(label, fn, ...)
+  ns.LagCheck:Note("timer " .. tostring(label), lag() - t0)
+end
+
 -- ---------------------------------------------------------------- handles
 local Handle = {}
 Handle.__index = Handle
@@ -107,7 +116,7 @@ function Timer.After(delay, fn, label)
     if h.cancelled then return end
     h.cancelled = true
     Timer.Untrack(h)
-    ns.Safe(h.label, fn)
+    run(h.label, fn)
   end)
   return h
 end
@@ -123,7 +132,7 @@ function Timer.Ticker(interval, fn, label)
     h.job = schedule(interval, function()
       if h.cancelled then return end
       h.runs = h.runs + 1
-      ns.Safe(h.label, fn, h)
+      run(h.label, fn, h)
       if not h.cancelled then arm() end
     end)
   end
