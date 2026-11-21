@@ -535,7 +535,7 @@ emblem and the words sit there); put the drama on the right.
 | `home_hero.png` | An epic panorama at golden-hour dawn: from a high cliff edge, a lone adventurer with a cloak and a lantern looks out over a vast world. A winding gold-lit road leads down past a riverside village with warm windows, through forests, toward a great city of spires on the far right, with a dungeon gate glowing faintly in a distant mountain and a gryphon flying across the sky. Floating sky-isles faintly on the horizon (the Skyborne home). Rich detail, cinematic depth, light rays through clouds; the left side is the shadowed cliff and sky, darker and calm. |
 
 
-## Batch 12: the official Outrider logo, 10 options (2026-11-21)
+## Batch 12: the official Outrider logo, 10 options (2026-11-21) — logo DELIVERED, Gary picked option 2 (the rider); banner still to come
 
 Gary: "let's make an official Outrider logo for our project in CurseForge; a
 tagline like 'one addon to rule them all' might be cool ... let's get GPT to

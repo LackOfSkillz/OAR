@@ -18,7 +18,7 @@ The CurseForge API can upload files and read game versions; it has no documented
 1. **Author account.** Sign in at https://authors.curseforge.com (accepting the Mod Author Terms is part of signing up).
 2. **Create the project:** https://authors.curseforge.com/#/projects/create/choose-game, game **World of Warcraft**. Fill in from "Listing text" below:
    - Name, Summary, Main category plus up to 4 more, Allow comments on, **Experimental off**, editor Markdown, Description, Licence **GNU General Public License version 3 (GPLv3)**.
-   - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400, made by `python tools/logo.py`; the official logo is being designed, ART_REQUESTS batch 12, 10 options to pick from; until then it is the in-game emblem).
+   - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400): the official logo, the hooded rider at sunrise (Gary picked option 2 of 10 from GPT, 2026-11-21; full size in [curseforge/logo-full.png](curseforge/logo-full.png)). `python tools/logo.py` rebuilds it.
 3. **Submit.** CurseForge's moderators review new projects and every file (8 AM to 3 PM CET, 7 days a week, first in first out). Notifications: https://www.curseforge.com/my-notifications
 4. **Project ID.** On the project page under "About This Project". Tell Claude the number: it goes into `Outrider.toc` as `## X-Curse-Project-ID: <number>`.
 5. **First file.** Either upload `dist\curseforge\Outrider-<version>.zip` on the project's Files tab (game version **1.60.1**, the Forever one; release type Release), or let the script do it (next section).
