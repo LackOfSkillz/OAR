@@ -22,7 +22,8 @@ The CurseForge API can upload files and read game versions; it has no documented
 3. **Submit.** CurseForge's moderators review new projects and every file (8 AM to 3 PM CET, 7 days a week, first in first out). Notifications: https://www.curseforge.com/my-notifications
 4. **Project ID.** On the project page under "About This Project". Tell Claude the number: it goes into `Outrider.toc` as `## X-Curse-Project-ID: <number>`.
 5. **First file.** Either upload `dist\curseforge\Outrider-<version>.zip` on the project's Files tab (game version **1.60.1**, the Forever one; release type Release), or let the script do it (next section).
-6. **Screenshots** (Images tab, after the project exists): Home, Map with the way-there dots and rare pins, Quests with Chains, Dungeons quests and keys, Macros, the auction house window. `/ride tour` takes them one click at a time.
+6. **Banner** (Images tab): upload [curseforge/banner.png](curseforge/banner.png) ("The Golden Road", the rider with the name and the tagline). Copy its image link and put it in place of `banner` on the first line of the description (`![Outrider](...)`), then save.
+7. **Screenshots** (Images tab, after the project exists): Home, Map with the way-there dots and rare pins, Quests with Chains, Dungeons quests and keys, Macros, the auction house window. `/ride tour` takes them one click at a time.
 
 ## Every release after that (one command)
 
@@ -58,7 +59,7 @@ Why not CurseForge's own automatic packager or the BigWigs packager: both build 
 ```markdown
 # Outrider: one addon to rule them all
 
-![Outrider](banner)  <!-- the banner from ART_REQUESTS batch 12, uploaded on the Images tab -->
+![Outrider](banner)  <!-- replace "banner" with the link of docs/curseforge/banner.png once uploaded on the Images tab -->
 
 Outrider replaces a stack of addons with one that knows which character you're on: class, race, level, talents, professions and gold. Every page shows what fits that character, in plain words, with one button to go there.
 
