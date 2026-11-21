@@ -1,58 +1,61 @@
 ![Outrider: one addon to rule them all](https://raw.githubusercontent.com/LackOfSkillz/outrider-releases/main/docs/banner.png)
 
-# You know this night.
+# Imagine your next login.
 
-You log in with an hour to play. The quest says *Speak with Lady Sylvanas*. Undercity is somewhere across an ocean. You open the map, then a guide in another window, then a second addon for the zeppelin, then a third for the rare that spawns near you. By the time you find the zeppelin tower, the hour is gone and the rare is dead. Somebody else looted it.
+You've got an hour. You sit down, log in, and before you've even cleared the loading screen, you already know what to do.
 
-**Outrider exists so that never happens again.**
+Not because you looked it up. Because **Outrider** looked at your character (your class, your level, your talents, your professions, the gold in your bags) and put your best next move right in front of you, with one gold button: **Go**.
 
-## One press. Then you're moving.
+You press it. A gold arrow turns toward the horizon. On your map, a trail of glowing dots leads from your boots to the spot. The quest is in another zone? Outrider has already planned the trip: the flight master, the zeppelin tower, the walk at the other end. You don't alt-tab. You don't squint at a guide. You just ride.
 
-Type `/ride`. Outrider already knows who you are: your class, your race, your level, your talents, your professions, the gold in your bags. It doesn't show you everything in the game. It shows you **your next step**, why it's worth doing, and a big gold **Go** button.
-
-Press it, and a gold arrow points the way. On your map and minimap, a line of dots runs from your feet to the spot, along roads you've actually walked. Quest in another zone? It plans the whole trip: the flight master, the zeppelin, the skyboat, the walk at the other end. Leg by leg, one line in chat each time.
-
-You stop planning. You start playing.
+**That's the whole evening now. Less wondering, more playing.**
 
 ![Home](https://raw.githubusercontent.com/LackOfSkillz/outrider-releases/main/docs/screenshots/home.png)
 
-## Then the little things stop costing you.
+## Picture the moments that used to go wrong.
 
-- **The rare you've been hunting spawns** while you're fishing two hills over. Your screen edge flashes red, a sound plays, and the arrow is already on it.
-- **You hit level 16.** Outrider knows which spells your trainer has waiting, points you to *your* class trainer (not the cook next door), and rewrites your fight macro from your new spellbook.
-- **Your bags are full of grey junk** and your boots are falling apart. The merchant button sells and repairs in one press. "To do in town" reminds you before you leave.
-- **That chest piece in your bags** isn't for you, but it's a big upgrade for your alt. Outrider tells you, and fills in the mailbox address.
-- **You walk into the auction house** with a crafting list. Outrider finds the cheapest listing for every reagent, adds up the total, and never spends more than you carry.
-- **You're 13 and bored of questing.** It tells you which dungeon fits your level, which quests to pick up before you go, who gives them and where they stand. You walk in with five quests instead of zero.
+**The rare you've chased for three days** pops while you're fishing two hills away. The edge of your screen flashes red, a sound cuts through, and the arrow is already pointing at it. This time, *you* get the kill.
+
+**You ding 16.** Before you can wonder what's new, Outrider shows the spells your trainer has waiting, walks you to *your* class trainer (not the cook next door), and rewrites your fight macro to use them.
+
+**You hit town with full bags.** One press sells the junk and repairs your gear. Your errands are waiting on a short list: auction house, mailbox, trainer. In and out.
+
+**You loot a piece of armor you can't use.** Outrider tells you it's a big upgrade for your alt and fills in the mailbox name for you.
+
+**You're tired of questing.** It shows the dungeon that fits your level right now, and the five quests to grab before you go, with who gives them and where they stand. You walk in with a full quest log instead of an empty one, and walk out a level higher.
+
+**You open the auction house** with a crafting plan. Outrider finds the cheapest listing for every reagent, adds up the total, and never spends more gold than you have.
 
 ![Find](https://raw.githubusercontent.com/LackOfSkillz/outrider-releases/main/docs/screenshots/find.png)
 
-## Built for the character you're actually playing.
+## Now imagine it on every character you play.
 
-A level 14 rogue doesn't need a page about hunter pets. A shaman doesn't need warrior macros. Every page in Outrider is cut to the character you're on: your class, your build, your level, your professions. Switch to your alt and the whole addon changes with you.
+Log into your priest and the whole addon changes with you: different spells, different macros, different trainers, different gear advice. A level 14 rogue never sees hunter pet tips. A shaman never wades through warrior macros. Every page is cut to the character in front of you.
 
-And it learns. Stand next to an NPC and Outrider fixes its spot on the map. Walk a new road and the next trip follows it. WoW Forever's new zones don't trip it up: what isn't confirmed yet says so, until you or Outrider have seen it in game.
+And it gets sharper the more you play. Stand next to an NPC and Outrider fixes its spot on the map. Walk a new road and your next trip follows it. WoW Forever's brand-new zones don't throw it: anything not yet confirmed says so, until it's been seen in game.
 
 ![Dungeons](https://raw.githubusercontent.com/LackOfSkillz/outrider-releases/main/docs/screenshots/dungeons.png)
 
-## One addon. Not fourteen.
+## Imagine one addon folder instead of fourteen.
 
-Quest pins and quest chains. Dungeon quests and keys. Rare alerts and spawn timers. Macros for all nine classes, explained line by line. Hunter pet care. Profession skill-ups, a crafting planner, one-key fishing. An auction shopping window. Gear advice weighted for your build. All your characters on one page.
+Quest pins and quest chains. Dungeon quests and keys. Rare alerts and spawn timers. Macros for all nine classes, explained line by line. Hunter pet care. Profession skill-ups, a crafting planner and one-key fishing. An auction shopping window. Gear advice weighted for your build. Every character on one page.
 
-All of it in one window, with one look and one set of buttons, talking to itself instead of fighting over your screen.
+One window. One look. One set of buttons. Everything talking to each other instead of fighting over your screen.
 
-## It plays fair.
+## And you never have to wonder if it's safe.
 
-- **Advice only.** Outrider tells you what's worth doing and points the way. Every cast, target, purchase and craft is still your click or your key press. It never plays for you.
-- **Your data stays home.** Nothing leaves your PC. Sharing rares and gathering spots with your guild or party is off until you turn it on.
-- **Stands alone.** No other addon needed. If you already run a favourite or two, Outrider works alongside them.
+- **Advice only.** Outrider shows you what's worth doing and points the way. Every cast, target, purchase and craft is still your own click or key press. It never plays for you.
+- **Your data stays home.** Nothing leaves your PC. Sharing rares and gathering spots with your guild or party stays off until you turn it on.
+- **Stands on its own.** No other addon required, and it works alongside the ones you already love.
 
-## Try it tonight.
+## Give it one evening.
 
-Install it, log in, type `/ride`, and press **Go** on the first thing it suggests. Give it one evening.
+Install it. Log in. Type `/ride`. Press **Go** on the first thing it suggests, and see how far you get in an hour.
 
-*One addon to rule them all.*
+You won't want to play without it again.
+
+***One addon to rule them all.***
 
 ---
 
-<sub>Quest, NPC, creature, herb and ore, gear and dungeon data is converted from QuestieDB and shared under the GNU GPLv3 (licence and source notes inside each data folder). Outrider is not made by or affiliated with the Questie team or Blizzard Entertainment. Created by Gary Mix. Licensed under GPLv3.</sub>
+Quest, NPC, creature, herb and ore, gear and dungeon data is converted from QuestieDB and shared under the GNU GPLv3 (licence and source notes inside each data folder). Outrider is not made by or affiliated with the Questie team or Blizzard Entertainment. Created by Gary Mix. Licensed under GPLv3.
