@@ -243,8 +243,15 @@ function CASTER.PALADIN(kind, add)
   -- On Forever Judgement doesn't use up the Seal (research 2026-11-18), so
   -- re-sealing after each Judgement wasted a global cooldown and mana: Seal
   -- once per fight, Judgement whenever it's off cooldown.
-  if seal then add(2, "/castsequence reset=combat " .. seal .. ",null", "Seal once per fight (it stays up)") end
-  if seal and known("Judgement") then add(3, "/cast Judgement", "whenever it is off cooldown") end
+  -- Gary, 2026-11-21 (Gul's fights): ",null" doesn't hold on Forever, the
+  -- sequence wraps and the Seal was recast every press (25 casts in 15 s). A
+  -- sequence of real spells parks on Judgement while it cools down: Seal, then
+  -- three Judgements (about 30 s, the Seal's length), then Seal again.
+  if seal and known("Judgement") then
+    add(2, "/castsequence reset=combat " .. seal .. ",Judgement,Judgement,Judgement", "Seal, then Judgement on cooldown; Seal again after three Judgements")
+  elseif seal then
+    add(2, "/castsequence reset=combat " .. seal .. ",null", "Seal once per fight (it stays up)")
+  end
   for i, n in ipairs({ "Holy Strike", "Crusader Strike", "Consecration" }) do
     if known(n) then add(2 + i, "/cast " .. n, "whenever it is off cooldown") end
   end
