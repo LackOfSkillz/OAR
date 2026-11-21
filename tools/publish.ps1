@@ -25,9 +25,16 @@ Outrider for WoW Forever, build $stamp ($date).
 
 $Notes
 
-**New install:** close WoW, download Install-Outrider.cmd below and double-click it.
-**Already installed:** double-click "Update Outrider" on your desktop (WoW closed).
-If Windows warns about the file, click More info, then Run anyway.
+**New install (5 minutes):**
+1. Close World of Warcraft.
+2. Download **Install-Outrider.cmd** below. If the browser says it "isn't commonly downloaded", choose **Keep** (Edge: ..., Keep, Show more, Keep anyway).
+3. Double-click it in your Downloads folder. If a blue box says "Windows protected your PC", click **More info**, then **Run anyway**.
+4. When it says Outrider is installed, start the game. On the character screen click **AddOns** and make sure Outrider is ticked (and "Load out of date AddOns" if you see it).
+5. Log in and type /ride.
+
+Step by step with help for problems: https://github.com/LackOfSkillz/outrider-releases#how-to-install-5-minutes-windows
+
+**Already installed:** close WoW and double-click "Update Outrider" on your desktop.
 
 Includes data converted from QuestieDB (https://github.com/Questie/Questie), shared under GPLv3 (gpl-3.0.md inside each data folder), and world knowledge collected by Outrider (no player names). Outrider is not made by or affiliated with the Questie team.
 "@

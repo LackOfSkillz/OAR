@@ -136,4 +136,9 @@ if (-not $TestAddOns) { try {
   }
 } catch { $updaterNote = '' } }
 Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-Say ("Outrider is installed in:`n$addons`n`nStart World of Warcraft Forever, log in, and type /ride to open it.`n`nInstalled: " + ($names -join ', ') + $updaterNote)
+# plain steps (Gary, 2026-11-21: "super simple, my daughters will try it")
+Say ("Outrider is installed!`n`n" +
+  "1. Start World of Warcraft Forever.`n" +
+  "2. On the character screen, click AddOns (bottom left) and make sure Outrider is ticked. If you see 'Load out of date AddOns', tick that too.`n" +
+  "3. Log in and type /ride to open Outrider." + $updaterNote +
+  "`n`n(" + $names.Count + " folders installed in " + $addons + ")")
