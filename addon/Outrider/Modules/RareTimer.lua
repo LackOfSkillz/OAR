@@ -6,7 +6,7 @@
 -- restarts from that death. The claim stays marked unverified; the spawn log
 -- and sightings show whether she really comes on time.
 -- One pop-up about 5 minutes before a window (Gary asked for rare alerts). Home's
--- rare card and the Rare alerts page show the countdown.
+-- rare card and the Watch and alerts tab on Rares show the countdown.
 
 local _, ns = ...
 local C = ns.Compat

@@ -759,7 +759,7 @@ function M:Refresh()
   local _, skipped = 0, 0
   if M.PROFIT_VIEWS[self.mode] then
     if ns.Deals and ns.Deals.enabled then cards, statusText = ns.Deals:View(self.mode) end
-    statusText = statusText or "Deals are switched off (Modules page)."
+    statusText = statusText or "Deals are switched off (Modules tab in Settings)."
   elseif training then
     if T then cards, statusText, searching, pos, total = T:View(self.mode) end
     statusText = statusText or ""

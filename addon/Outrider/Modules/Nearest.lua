@@ -28,6 +28,7 @@ M.ALIASES = {
   bank = "bank", ah = "auction", auction = "auction", stable = "stable_master",
   inn = "innkeeper", innkeeper = "innkeeper", guild = "guild_master", tabard = "tabard",
   ammo = "ammo", arrows = "ammo", bullets = "ammo", -- a vendor whose goods include ammo (POICapture)
+  class = "class_trainer", -- your own class trainer (Map and places, 2026-11-20)
 }
 
 function M:OnEnable()
@@ -197,9 +198,13 @@ function M:Find(kind)
   local best, bestD
   local candidates = {}
   for _, p in pairs(ns.db.global.pois or {}) do candidates[#candidates + 1] = p end
-  -- "class_trainer": a trainer whose title names this character's class
-  local want = kind == "class_trainer" and "trainer" or kind
+  -- "class_trainer": a trainer whose title names this character's class;
+  -- "trainer:<what>": a trainer whose title says it ("trainer:fishing" ->
+  -- Fishing Trainer, "trainer:weapon master" -> Weapon Master; 2026-11-20)
+  local want = (kind == "class_trainer" or kind:match("^trainer:")) and "trainer" or kind
   local cls = kind == "class_trainer" and tostring(C.Call("UnitClass", "player") or ""):lower() or nil
+  local titled = kind:match("^trainer:(.+)$")
+  if titled and not (titled:find("trainer", 1, true) or titled:find("master", 1, true)) then titled = titled .. " trainer" end
   if ns.NPCPack then
     for _, p in ipairs(ns.NPCPack:OfKind(want)) do candidates[#candidates + 1] = { kind = want, mapID = p.mapID,
       x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction } end
@@ -208,6 +213,9 @@ function M:Find(kind)
     local match = p.kind == want
     if match and cls then
       match = cls ~= "" and tostring(p.title or ""):lower():find(cls .. " trainer", 1, true) ~= nil
+    end
+    if match and titled then
+      match = tostring(p.title or ""):lower():find(titled, 1, true) ~= nil
     end
     if kind == "ammo" then
       match = false
@@ -221,7 +229,7 @@ function M:Find(kind)
       end
     end
   end
-  if not best then return nil, "no " .. (cls and (cls .. " trainer") or kind:gsub("_", " ")) .. " known on this continent yet" end
+  if not best then return nil, "no " .. (cls and (cls .. " trainer") or titled or kind:gsub("_", " ")) .. " known on this continent yet" end
   return best, bestD
 end
 
@@ -291,6 +299,9 @@ function M:Activity()
 end
 
 ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo>  waypoint to the nearest one", function(arg)
+  -- "/ride near trainer fishing": a trainer for that profession or role
+  local what = (arg or ""):lower():match("^trainer%s+(.+)$")
+  if what then local _, msg = M:Go("trainer:" .. what) ns.Print(msg) return end
   local kind = M.ALIASES[(arg or ""):lower()]
   if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo") return end
   local _, msg = M:Go(kind)

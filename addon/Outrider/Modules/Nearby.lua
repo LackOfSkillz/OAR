@@ -114,7 +114,7 @@ function M:Candidates(opts)
     end
   end
   if self:Load() and world then
-    -- every map (Journey tab): the first source this character can use
+    -- every map (Find page): the first source this character can use
     for id, it in pairs(self.pack) do
       local req = it[2] or 0
       if M.LevelFits(it, level) then

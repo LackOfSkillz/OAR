@@ -430,7 +430,7 @@ end
 -- ------------------------------------------------------------ show / hide
 -- (Gary, 2026-11-17: "be able to hide them or show them in the ui") A
 -- "Pins" button on the world map opens switches per group of pins and one
--- for all of them; the same settings as the Map page, per character, also
+-- for all of them; the same settings as the Map pins tab on Map and places, per character, also
 -- for the minimap.
 M.MENU = {
   { "Rares", { "rare" } },

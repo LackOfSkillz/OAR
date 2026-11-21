@@ -248,7 +248,7 @@ function M:PinLines()
     if r.steps[2] then out[#out + 1] = { string.format("Then: %s", r.steps[2].text), "muted" } end
     if #r.steps > 2 then out[#out + 1] = { string.format("%d steps in all, about %s", #r.steps, ns.Travel.Minutes(r.seconds)), "muted" } end
   end
-  out[#out + 1] = { "Stop the guide on Outrider's Journey page.", "muted" }
+  out[#out + 1] = { "Stop the guide on Outrider's Find page.", "muted" }
   return out
 end
 
@@ -332,7 +332,7 @@ function M:OnDisable() ns.ThrottleCancel("journey") end
 
 function M:Activity()
   if self.goal then return "guiding to " .. tostring(self.goal.name) end
-  return "Journey tab: best gear and XP quests anywhere, with a route"
+  return "Find page: best gear and XP quests anywhere, with a route"
 end
 
 -- -------------------------------------------------------------------- tab

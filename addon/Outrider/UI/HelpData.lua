@@ -9,7 +9,7 @@ local _, ns = ...
 
 ns.HelpData = {
   { icon = "INV_Misc_Book_09", "Getting started", "Outrider is one addon for WoW Forever that replaces a stack of others. It advises and informs; you press every key.", {
-    { "Open Outrider", "Type /ride (or /outrider), or click the minimap button. The window has a sidebar of pages, grouped Explore, Character, Town, Social and Outrider. The search box at the top finds any rare, place, NPC, item, macro or page.", page = "home" },
+    { "Open Outrider", "Type /ride (or /outrider), or click the minimap button. The window has a sidebar of pages grouped by what you are doing: World, Character, Professions, Gold and Social, with Advisor, Settings and Help at the bottom. Some pages have tabs across the top (Quests: Quest log and Diary). The search box at the top finds any rare, place, NPC, item, macro or page.", page = "home" },
     { "First-run setup", "The first time a character logs in, a short setup asks about rare sounds, font size and colour-blind options. Open it again any time with /ride setup.", cmd = "setup" },
     { "Key bindings", "Game Menu > Options > Keybindings > Outrider: Find (the command bar), Ask advisor and Paste advice." },
     { "Reload or restart", "Most updates need /reload. When Outrider gains new files, exit the game fully and start it again; a /reload can't load new files." },
@@ -50,11 +50,11 @@ ns.HelpData = {
   } },
 
   { icon = "Ability_Hunter_SniperShot", "Rares", "Outrider spots rares by itself from nameplates, your target and mouseover.", {
-    { "Alerts", "A pop-up and sound when a rare is alive near you, with a Target button (your click targets it). Rare alerts page: sound and which rares.", page = "rarealerts" },
+    { "Alerts", "A pop-up and sound when a rare is alive near you, with a Target button (your click targets it). Watch and alerts tab on Rares: sound and which rares.", page = "rarealerts" },
     { "Nameplate star", "A big pulsing star over a rare's nameplate so you can find it in a crowd: gold for one you're watching." },
     { "Watch list", "/ride watch <name> alerts you for any NPC on this character; /ride unwatch <name> stops.", page = "rarealerts" },
     { "Rares page", "Every rare Outrider knows, for this zone or all: last seen, respawn window on your layer, and a waypoint button.", page = "rares" },
-    { "Sightings and respawns", "Every sighting is remembered; respawn windows are worked out per layer from the gaps seen. Forecasts page: respawn and gold forecasts.", page = "forecasts", cmd = "forecast" },
+    { "Sightings and respawns", "Every sighting is remembered; respawn windows are worked out per layer from the gaps seen. Forecasts tab on Money: respawn and gold forecasts.", page = "forecasts", cmd = "forecast" },
     { "Rare timers", "For rares said to spawn every N hours: a countdown from a time you give it." },
     { "Rare profiles and spawn log", "What a watched rare is like in a fight (level, family, attack speed), and what spawns at its spot, in order, to learn its pattern." },
     { "Layers", "Which copy (layer) of the zone you are on, so a sighting on another layer doesn't fool you." },
@@ -62,11 +62,11 @@ ns.HelpData = {
   } },
 
   { icon = "INV_Misc_Map_01", "Maps and travel", nil, {
-    { "Map pins", "Vendors, trainers, flight masters, repair, mailboxes and rares on the world map and minimap, recorded as you meet them. Map page: which pins show.", page = "map" },
+    { "Map pins", "Vendors, trainers, flight masters, repair, mailboxes and rares on the world map and minimap, recorded as you meet them. Map pins tab on Map and places: which pins show.", page = "map" },
     { "Zone levels", "Level ranges over each zone on the world map and over areas inside a zone map. /ride zonelevels on|off.", page = "map", cmd = "zonelevels" },
     { "Breadcrumbs", "Small gold dots where you walked, on the world map and minimap, so you can find your way back out. /ride trail clear.", page = "map", cmd = "trail" },
     { "Waypoints", "/ride way <x> <y> [title] sets one on this map; /ride near <spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|ammo> goes to the nearest. When you die, a waypoint to the nearest spirit healer appears by itself.", page = "waypoints" },
-    { "Travel planner and Journey", "Journey page: 1, pick a place, quest or item (the three best picks for you are on top, or choose what you're looking for on the left, or type a name); 2, press Go; 3, follow the gold arrow. Your trip on the right shows each step, across zones by flight, boat or portal.", page = "journey" },
+    { "Travel planner and Journey", "Find page: 1, pick a place, quest or item (the three best picks for you are on top, or choose what you're looking for on the left, or type a name); 2, press Go; 3, follow the gold arrow. Your trip on the right shows each step, across zones by flight, boat or portal.", page = "journey" },
     { "Coordinates", "Under the minimap while you move. /ride coords prints them.", cmd = "coords" },
     { "Herbs and ore", "Herb and ore spawn points for the world (with the optional node pack), a reminder when Find Herbs is off, and where each herb grows (/ride herbs).", cmd = "herbs" },
     { "Discovery", "Outrider records the NPCs you meet (account-wide) to build its own map of WoW Forever, since zones were redrawn. /ride discovered.", page = "map", cmd = "discovered" },
@@ -98,7 +98,7 @@ ns.HelpData = {
     { "Money page", "The best ways to earn gold at your level and with your professions, and your own earnings per hour.", page = "money" },
     { "Gold ledger", "Where your gold came from and went, per session and character.", page = "money" },
     { "Merchant's Favor", "Waylaid Crates: what each crate needs and your Favor balance. /ride favor.", cmd = "favor" },
-    { "Errands", "Entering a town, one pop-up with what to do there: sell junk, repair, buy ammo, train. Errands page lists them.", page = "errands", cmd = "errands" },
+    { "Errands", "Entering a town, one pop-up with what to do there: sell junk, repair, buy ammo, train. Town errands tab on Home lists them.", page = "errands", cmd = "errands" },
     { "Vendor and mailbox", "Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click) that says what's waiting in total. Send to: your characters on this realm and the last people you mailed, one click fills the To: box. At login, one line warns about mail with gold or items expiring within 3 days on any of your characters." },
   } },
 
@@ -118,7 +118,7 @@ ns.HelpData = {
     { "Info bar", "A thin strip at the top of the screen: gold (hover for every character's), free bag slots, durability (warns on your worst item), ammo, XP with rested XP and what your quest log is worth, clock, latency and frame rate. Click gold, bags, durability or XP to open the matching page. Shift-drag to move; Settings picks the parts. /ride bar on|off|reset.", page = "settings", cmd = "bar" },
     { "My characters", "Every character at a glance: level, gold, rested XP (it keeps growing offline, faster in an inn), free bag slots, durability, ammo, professions, where and when last seen. Updated whenever you play them.", page = "alts" },
     { "Dungeon lockouts and runs", "Classic allows 5 new instances an hour and 30 a day per account. My characters counts the ones you enter and says when the next slot frees (an estimate). Every run is timed with the XP, kills and gold it gave. /ride runs.", page = "alts", cmd = "runs" },
-    { "Map extras", "Dungeon and raid entrances, portals, boats and zeppelins, and guildmates who share their location show as pins on the world map and minimap (Map page picks which).", page = "map" },
+    { "Map extras", "Dungeon and raid entrances, portals, boats and zeppelins, and guildmates who share their location show as pins on the world map and minimap (Map pins tab on Map and places picks which).", page = "map" },
     { "Reveal the map", "Areas of the world map this character hasn't explored show tinted, for every zone: Outrider carries the game's own list of map areas for WoW Forever, and also records what each of your characters explored. Settings > Map.", page = "settings" },
     { "Flight times", "Every flight you take is timed. The flight map tooltip then shows how long a flight takes, and the info bar counts down to landing.", page = "settings" },
     { "Quest objectives on the map", "For every quest in your log, pins on the world map and minimap show where its mobs, objects, items and places are, from the quest database (community data, unverified). Finished objectives drop off. Mouse over an object a quest needs and a pop-up says so; the spot is saved as seen on Forever. Settings > Quests.", page = "settings" },
@@ -156,10 +156,10 @@ ns.HelpData = {
   } },
 
   { icon = "Trade_Engineering", "Settings and troubleshooting", nil, {
-    { "Settings page", "Every option in one place. Modules page: switch any feature on or off for this character (/ride module <Name> on|off).", page = "settings" },
+    { "Settings page", "Every option in one place. Modules tab in Settings: switch any feature on or off for this character (/ride module <Name> on|off).", page = "settings" },
     { "Characters", "/ride chars lists your characters; /ride copy <Name-Realm> copies another character's settings; /ride export and /ride import move them as text.", page = "characters", cmd = "chars" },
     { "Something wrong?", "/ride errors shows Outrider's recent errors; /ride status shows modules, saved settings and errors; /ride version shows the build.", cmd = "errors" },
     { "Helping fix it", "/ride mark <text> writes a marker in the log; /ride debug on logs more. The log is saved when you log out or /reload.", cmd = "status" },
-    { "All commands", "The All commands page lists every /ride command with what it needs: click one, fill in, Run.", page = "commands" },
+    { "All commands", "The All commands tab in Help lists every /ride command with what it needs: click one, fill in, Run.", page = "commands" },
   } },
 }

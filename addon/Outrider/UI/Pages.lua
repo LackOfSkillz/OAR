@@ -2,7 +2,7 @@
 -- Hub pages that turn /ride commands into controls (Gary, 2026-11-13: "do
 -- everything inside the Outrider window, logical and helpful"). Buttons run
 -- the same code as the typed command (UI.Run), so nothing behaves differently.
--- Anything without its own control is on the All commands page.
+-- Anything without its own control is on the All commands tab in Help.
 -- Home: what you need right now (nearest places, where you're headed, best
 -- quests, upgrades, rare watch, errands, pet).
 
@@ -184,7 +184,7 @@ ns.Hub:AddTab("home", "Home", function(p)
     table.sort(lines)
     local timers = {}
     for npcID in pairs(ns.db.global.rareTimers or {}) do timers[#timers + 1] = ns.RareTimer and ns.RareTimer:Line(npcID) end
-    self.rares.body:SetText((#lines > 0 and ("Watching: " .. table.concat(lines, ", ")) or "Not watching any rare. Add one in Rare alerts.")
+    self.rares.body:SetText((#lines > 0 and ("Watching: " .. table.concat(lines, ", ")) or "Not watching any rare. Add one on Rares, Watch and alerts.")
       .. (#timers > 0 and ("\n" .. table.concat(timers, "\n")) or ""))
     lines = {}
     for _, e in ipairs(ns.Errands and ns.Errands:List() or {}) do lines[#lines + 1] = e.text end
@@ -236,7 +236,60 @@ end
 ns.ClassPage = ns.ClassPage or {}
 ns.ClassPage.IconTiles = iconTiles
 
+-- The trainers that matter to this character (Gary, 2026-11-20: "waypoints
+-- should have all the trainers ... anything relevant to the character"):
+-- class trainer, weapon master, pet trainer for hunters, the cooking, first
+-- aid and fishing trainers everyone can use, and one per profession learned.
+local SECONDARY = { "Cooking", "First Aid", "Fishing" }
+local function trainerTiles()
+  local items = {}
+  local cls = ns.PlayerClass and ns.PlayerClass() or ""
+  local clsName = C.Readable(C.Call("UnitClass", "player")) or "Class"
+  items[#items + 1] = { clsName .. " trainer", "class_" .. cls:lower(), "INV_Misc_Book_09", Run("near class"),
+    "Your " .. clsName:lower() .. " trainer: new spells and ranks." }
+  items[#items + 1] = { "Weapon master", nil, "INV_Sword_04", Run("near trainer weapon master"), "Learn to use more kinds of weapons." }
+  if cls == "HUNTER" then
+    items[#items + 1] = { "Pet trainer", nil, "Ability_Hunter_BeastCall", Run("near trainer pet trainer"), "Pet skills for your pet." }
+  end
+  local profs, seen = {}, {}
+  for name, d in pairs(ns.db.char.professions or {}) do
+    if type(d) == "table" and d.skill then profs[#profs + 1] = name seen[name] = true end
+  end
+  table.sort(profs)
+  for _, n in ipairs(SECONDARY) do if not seen[n] then profs[#profs + 1] = n end end
+  local icons = ns.ProfExtras and ns.ProfExtras.PROF_ICON or {}
+  for _, name in ipairs(profs) do
+    items[#items + 1] = { name, "prof_" .. name:lower():gsub(" ", ""), icons[name] or "INV_Misc_Book_09",
+      Run("near trainer " .. name:lower()),
+      (seen[name] and "Your " or "Learn ") .. name:lower() .. (seen[name] and " trainer: the next rank and new recipes." or " here: anyone can.") }
+  end
+  return items
+end
+
+local function placeTiles()
+  local hunter = ns.PlayerClass and ns.PlayerClass() == "HUNTER"
+  local places = {
+    { "Inn", "pin_inn", "INV_Misc_Rune_01", Run("near inn"), "The nearest inn: rest for bonus XP and set your hearthstone." },
+    { "Vendor", "pin_vendor", "INV_Misc_Bag_10", Run("near vendor"), "The nearest vendor: sell junk, buy food and drink." },
+    { "Repair", "pin_repair", "Trade_BlackSmithing", Run("near repair"), "The nearest place to repair your gear." },
+    { "Flight", "pin_flight", "Ability_Mount_Gryphon_01", Run("near flight"), "The nearest flight master." },
+    { "Mail", "pin_mail", "INV_Letter_15", Run("near mail"), "The nearest mailbox." },
+    { "Bank", "pin_bank", "INV_Misc_Coin_02", Run("near bank"), "The nearest bank." },
+    { "Auction", "pin_auction", "INV_Misc_Coin_01", Run("near ah"), "The nearest auction house." },
+    { "Spirit healer", "pin_spirit", "Spell_Holy_Resurrection", Run("near spirit"), "The nearest spirit healer." },
+  }
+  -- stable and ammo only for the class that needs them
+  if hunter then
+    places[#places + 1] = { "Stable", "pin_stable", "Ability_Hunter_BeastCall", Run("near stable"), "The nearest stable master." }
+    places[#places + 1] = { "Ammo", "pin_ammo", "INV_Ammo_Arrow_02", Run("near ammo"), "The nearest arrow and bullet vendor." }
+  end
+  return places
+end
+ns.ClassPage.PlaceTiles, ns.ClassPage.TrainerTiles = placeTiles, trainerTiles
+
 ns.Hub:AddTab("waypoints", "Waypoints", function(p)
+  local places, trainers = placeTiles(), trainerTiles()
+  local rows = function(n) return math.ceil(n / 6) * 84 + 4 end
   UI:FormPage(p, {
     { "header", "Your arrow" },
     -- where the arrow points, at a glance (premium rebuild 2026-11-18)
@@ -259,19 +312,10 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
     { "header", "Take me to the nearest..." },
     { "note", "Press a place: the gold arrow points to the closest one Outrider knows. Follow it; it clears when you arrive." },
     -- picture tiles (Gary, 2026-11-20): the map-pin pictures, one press each
-    { "custom", iconTiles({
-      { "Inn", "pin_inn", "INV_Misc_Rune_01", Run("near inn"), "The nearest inn: rest for bonus XP and set your hearthstone." },
-      { "Vendor", "pin_vendor", "INV_Misc_Bag_10", Run("near vendor"), "The nearest vendor: sell junk, buy food and drink." },
-      { "Repair", "pin_repair", "Trade_BlackSmithing", Run("near repair"), "The nearest place to repair your gear." },
-      { "Flight", "pin_flight", "Ability_Mount_Gryphon_01", Run("near flight"), "The nearest flight master." },
-      { "Trainer", "pin_trainer", "INV_Misc_Book_09", Run("near trainer"), "The nearest trainer: new spells and skills." },
-      { "Mail", "pin_mail", "INV_Letter_15", Run("near mail"), "The nearest mailbox." },
-      { "Bank", "pin_bank", "INV_Misc_Coin_02", Run("near bank"), "The nearest bank." },
-      { "Auction", "pin_auction", "INV_Misc_Coin_01", Run("near ah"), "The nearest auction house." },
-      { "Stable", "pin_stable", "Ability_Hunter_BeastCall", Run("near stable"), "The nearest stable master." },
-      { "Spirit healer", "pin_spirit", "Spell_Holy_Resurrection", Run("near spirit"), "The nearest spirit healer." },
-      { "Ammo", "pin_ammo", "INV_Ammo_Arrow_02", Run("near ammo"), "The nearest arrow and bullet vendor." },
-    }, 6), 172 },
+    { "custom", iconTiles(places, 6), rows(#places) },
+    { "header", "Your trainers" },
+    { "note", "Every trainer that matters to you, nearest first when you press one. A trainer Outrider hasn't seen yet says so: talk to one once, or stand next to it." },
+    { "custom", iconTiles(trainers, 6), rows(#trainers) },
     { "header", "Go to map coordinates" },
     { "note", "Got coordinates from a quest or a friend, like 45.2 61.8? Type them here." },
     { "input", "Coordinates (x y)", "45.2 61.8", "Set arrow", function(t) ns.Slash:Run("way " .. t) end },
@@ -642,7 +686,7 @@ local function moneyRows()
   local function r(t) rows[#rows + 1] = t end
   if not (G and G.enabled) then
     r({ "header", "Money" })
-    r({ "note", "The Money guide module is off (Modules page)." })
+    r({ "note", "The Money guide module is off (Modules tab in Settings)." })
     return rows
   end
   local level = ns.Compat.Call("UnitLevel", "player") or 1
@@ -671,7 +715,7 @@ local function moneyRows()
       local actions = {}
       for z = 1, math.min(#(e.zones or {}), 2) do
         local zone = e.zones[z]
-        actions[#actions + 1] = { "Find " .. zone, function() ns.Hub:Search(zone) end, "Finds " .. zone .. " on the Journey page." }
+        actions[#actions + 1] = { "Find " .. zone, function() ns.Hub:Search(zone) end, "Finds " .. zone .. " on the Find page." }
       end
       -- a picture per way of earning when installed (money_mob, money_skin...), else the gold one
       local cat = type(e.category) == "table" and e.category[1] or e.category
@@ -714,7 +758,7 @@ local function dungeonRows()
   local function r(t) rows[#rows + 1] = t end
   if not (D and D.enabled) then
     r({ "header", "Dungeons" })
-    r({ "note", "The dungeon guide module is off (Modules page)." })
+    r({ "note", "The dungeon guide module is off (Modules tab in Settings)." })
     return rows
   end
   if not D:Pack() then
@@ -975,7 +1019,7 @@ local function moneyText(c) return ns.Prices and ns.Prices.Money and ns.Prices.M
 
 ns.Hub:AddTab("whatnow", "What now?", function(p)
   local W = ns.WhatNow
-  if not W then UI:FormPage(p, { { "note", "What now? is switched off (Modules page)." } }) return end
+  if not W then UI:FormPage(p, { { "note", "What now? is switched off (Modules tab in Settings)." } }) return end
   -- page title
   p.mark = p:CreateTexture(nil, "ARTWORK")
   p.mark:SetSize(36, 36)

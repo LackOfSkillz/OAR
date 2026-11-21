@@ -130,7 +130,7 @@ local controls = {
   ["Sort: nearest"] = "Click to change the order: nearest first, by level, or by name.",
   ["Upgrades in this zone"] = "Gear upgrades you can get in the zone you're in.",
 
-  -- map pin kinds (Map page)
+  -- map pin kinds (Map pins tab on Map and places)
   ["Vendor"] = "Show vendors on the maps.", ["Repair"] = "Show repair vendors on the maps.",
   ["Trainer"] = "Show class and profession trainers on the maps.", ["Flight master"] = "Show flight masters on the maps.",
   ["Flight"] = "Waypoint to the nearest flight master.", ["Innkeeper"] = "Show innkeepers on the maps.", ["Inn"] = "Waypoint to the nearest inn.",

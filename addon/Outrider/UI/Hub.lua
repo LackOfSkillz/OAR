@@ -75,7 +75,7 @@ Hub.SUBS = {
   help      = { { "help", "Help" }, { "commands", "All commands" } },
 }
 -- clearer names for some pages (sidebar and page title)
-Hub.TITLES = { journey = "Find", feed = "Alerts", waypoints = "Map and places", alts = "My characters" }
+Hub.TITLES = { journey = "Find", feed = "Alerts", waypoints = "Map and places", alts = "My characters", people = "People" }
 -- page id -> the sidebar entry it lives under
 Hub.NAV = {}
 for host, subs in pairs(Hub.SUBS) do
@@ -393,7 +393,10 @@ function Hub:Panel(t)
     -- hides with it. A form page's first heading replaces the title text.
     p:SetPoint("TOPLEFT", SIDE + 14, -(self.TITLE_H + 2))
     -- each sidebar group gets its own banner when the art is in (batch 4b)
-    local banner = "header_" .. tostring(t.group or ""):lower()
+    -- the 2026-11-20 groups reuse the banners painted for the old ones
+    local BANNER = { world = "explore", gold = "town", professions = "character" }
+    local g = tostring(t.group or ""):lower()
+    local banner = "header_" .. (BANNER[g] and not (ns.Art and ns.Art:Has("header_" .. g)) and BANNER[g] or g)
     if not (ns.Art and ns.Art:Has(banner)) then banner = "header" end
     if ns.Art and ns.Art:Has(banner) then
       p.scene = p:CreateTexture(nil, "BACKGROUND")
