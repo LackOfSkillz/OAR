@@ -42,6 +42,7 @@ local W -- ns.Waypoints, set at enable
 -- ---------------------------------------------------------------- geometry
 -- A map's corners in world yards, to turn world spots back into map spots.
 local corners = {}
+local routeCache = {} -- walked routes in world yards, per map (Routes)
 local function frame(mapID)
   local f = corners[mapID]
   if f ~= nil then return f or nil end
@@ -56,7 +57,7 @@ local function frame(mapID)
   corners[mapID] = f
   return f
 end
-function M.Forget() corners = {} end
+function M.Forget() corners = {} routeCache = {} end
 
 -- World spot -> map spot (x, y in 0..1), or nil when it isn't on this map.
 function M.ToMap(mapID, cont, wx, wy)
@@ -77,15 +78,38 @@ end
 -- ---------------------------------------------------------------- the destination
 -- Outrider's own waypoint (also every Journey leg), else the quest Outrider
 -- handed to the game's quest arrow.
+-- Anything you point the game at counts (Gary, 2026-11-21: "everything that
+-- a user clicks on"): Outrider's waypoint (and every Journey leg), a quest
+-- you track (clicked on the map or in the tracker: the game's own next
+-- waypoint for it when the client has one, cave entrances and flights
+-- included, else its nearest objective or turn-in from the quest pack), and
+-- the game's own map pin.
+function M.QuestSpot(questID)
+  if not questID or questID == 0 then return nil end
+  local m, x, y = C.Call("C_QuestLog.GetNextWaypoint", questID)
+  m, x, y = tonumber(C.Readable(m)), tonumber(C.Readable(x)), tonumber(C.Readable(y))
+  if m and x and y and x > 0 and y > 0 then
+    local text = C.Readable(C.Call("C_QuestLog.GetNextWaypointText", questID))
+    return { mapID = m, x = x, y = y, title = type(text) == "string" and text ~= "" and text or nil, game = true }
+  end
+  local Q = ns.QuestObjectives
+  if Q and Q.enabled and Q.Nearest then
+    local ok, spot = pcall(Q.Nearest, Q, questID)
+    if ok and spot and spot.mapID and spot.x and spot.y then return { mapID = spot.mapID, x = spot.x, y = spot.y, title = spot.label } end
+  end
+end
+
 function M:Target()
   local w = W and W.current
   if w and w.mapID and w.x and w.y then return { mapID = w.mapID, x = w.x, y = w.y, title = w.title } end
   local Q = ns.QuestObjectives
-  if Q and Q.enabled and Q.guideQuest and Q.Nearest then
-    local ok, spot = pcall(Q.Nearest, Q, Q.guideQuest)
-    if ok and spot and spot.mapID and spot.x and spot.y then
-      return { mapID = spot.mapID, x = spot.x, y = spot.y, title = spot.label }
-    end
+  local tracked = tonumber(C.Readable(C.Call("C_SuperTrack.GetSuperTrackedQuestID")))
+  local spot = M.QuestSpot(tracked and tracked > 0 and tracked or (Q and Q.guideQuest))
+  if spot then return spot end
+  local uw = C.Call("C_Map.GetUserWaypoint")
+  if type(uw) == "table" and uw.uiMapID and uw.position then
+    local ok, x, y = pcall(uw.position.GetXY, uw.position)
+    if ok and x and y then return { mapID = uw.uiMapID, x = x, y = y, title = "your map pin" } end
   end
 end
 
@@ -105,23 +129,71 @@ local function worldDots(mapID, list)
   return c
 end
 
+-- Walked routes: NPC and creature patrols (Outrider_Data_Paths, QuestieDB;
+-- guards walk roads and gates, creatures trails and cave mouths). Each route
+-- is filled in every LINK*0.6 yards so it joins up like your breadcrumbs; a
+-- jump longer than ROUTE_GAP (a patrol that wraps round) is not joined.
+M.ROUTES_ADDON, M.ROUTE_GAP = "Outrider_Data_Paths", 250
+function M:Routes()
+  if self.routes ~= nil then return self.routes end
+  if not rawget(_G, "Outrider_DataPaths") then C.LoadAddOn(M.ROUTES_ADDON) end
+  local d = rawget(_G, "Outrider_DataPaths")
+  self.routes = type(d) == "table" and type(d.maps) == "table" and d.maps or false
+  self:Info(self.routes and "walked routes loaded from %s" or "no walked routes pack (%s): only your own breadcrumbs",
+    self.routes and tostring(d.source) or M.ROUTES_ADDON)
+  return self.routes
+end
+
+local function routeDots(mapID, lines)
+  local c = routeCache[mapID]
+  if c then return c end
+  c = {}
+  for _, line in ipairs(lines) do
+    local prev
+    for i = 1, #line - 1, 2 do
+      local cont, wx, wy = W.WorldPos(mapID, line[i], line[i + 1])
+      if wx then
+        local pt = { cont = cont, wx = wx, wy = wy, mapID = mapID, route = true }
+        if prev and prev.cont == cont then
+          local d = math.sqrt((pt.wx - prev.wx) ^ 2 + (pt.wy - prev.wy) ^ 2)
+          if d <= M.ROUTE_GAP then
+            local n = math.floor(d / (M.LINK * 0.6))
+            for k = 1, n do
+              local f = k / (n + 1)
+              c[#c + 1] = { cont = cont, wx = prev.wx + (pt.wx - prev.wx) * f, wy = prev.wy + (pt.wy - prev.wy) * f, mapID = mapID, route = true }
+            end
+          end
+        end
+        c[#c + 1] = pt
+        prev = pt
+      end
+    end
+  end
+  c.cont = c[1] and c[1].cont
+  routeCache[mapID] = c
+  return c
+end
+
 function M:Nodes(cont, a, b)
   local trails = ns.db.global.trails or {}
   local minX, maxX = math.min(a.wx, b.wx) - M.MARGIN, math.max(a.wx, b.wx) + M.MARGIN
   local minY, maxY = math.min(a.wy, b.wy) - M.MARGIN, math.max(a.wy, b.wy) + M.MARGIN
   local out = {}
-  for mapID, list in pairs(trails) do
-    if type(list) == "table" and #list > 0 then
-      local c = worldDots(mapID, list)
-      if c.cont == nil or c.cont == cont then
-        for _, p in ipairs(c) do
-          if p.wx >= minX and p.wx <= maxX and p.wy >= minY and p.wy <= maxY then
-            out[#out + 1] = p
-            if #out >= M.MAX_NODES then return out end
-          end
+  local function take(c)
+    if c.cont == nil or c.cont == cont then
+      for _, p in ipairs(c) do
+        if p.wx >= minX and p.wx <= maxX and p.wy >= minY and p.wy <= maxY then
+          out[#out + 1] = p
+          if #out >= M.MAX_NODES then return true end
         end
       end
     end
+  end
+  for mapID, list in pairs(trails) do
+    if type(list) == "table" and #list > 0 and take(worldDots(mapID, list)) then return out end
+  end
+  for mapID, lines in pairs(self:Routes() or {}) do
+    if take(routeDots(mapID, lines)) then return out end
   end
   return out
 end
@@ -305,6 +377,8 @@ function M:OnEnable()
   self:On("OTR_WAYPOINT_SET", function(mod) mod:Replan("new destination") end)
   self:On("OTR_WAYPOINT_CLEARED", function(mod) mod:Replan("destination cleared") end)
   self:On("SUPER_TRACKING_CHANGED", function(mod) mod:Replan("quest arrow") end)
+  self:On("USER_WAYPOINT_UPDATED", function(mod) mod:Replan("map pin") end)
+  self:On("QUEST_WATCH_LIST_CHANGED", function(mod) mod:Replan("quest tracked") end)
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) M.Forget() mod:Replan("new zone") end)
   self:On("PLAYER_STARTED_MOVING", function(mod)
     if not mod.ticker then mod.ticker = ns.Timer.Ticker(M.EVERY, function() M:Tick() end, "path") end

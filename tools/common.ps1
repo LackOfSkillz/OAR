@@ -137,7 +137,7 @@ function Add-OarDataLicenses([string]$Root, [string]$Staging, [string[]]$Folders
   $note = @"
 Outrider build $Label
 
-The Outrider_Data_NPC, _Gear, _Mobs, _Nodes, _Dungeons, _Quests and _Reagents folders contain data
+The Outrider_Data_NPC, _Gear, _Mobs, _Nodes, _Dungeons, _Quests, _Reagents and _Paths folders contain data
 converted from QuestieDB (https://github.com/Questie/Questie), shared under the
 GNU General Public License version 3 (full text in gpl-3.0.md next to this file).
 Upstream licensing notes: https://github.com/Questie/Questie/blob/master/LICENSE.md
@@ -157,7 +157,7 @@ Outrider_Data_Words has its own licence file inside it.
   }
   if (-not $gpl) { Write-Host "GPLv3 text not found in private\questie-source: not packaging." -ForegroundColor Red; return $false }
   foreach ($f in $Folders) {
-    if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons|Quests|Reagents)$') {
+    if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons|Quests|Reagents|Paths)$') {
       Write-Utf8NoBom (Join-Path $Staging "$f\LICENSE-DATA.txt") $note
       Write-Utf8NoBom (Join-Path $Staging "$f\gpl-3.0.md") $gpl
       # the generated TOC still carries the private-copy note: say what applies
