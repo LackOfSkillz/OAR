@@ -368,6 +368,15 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
     { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
     { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
     { "note", "Puts on your best fishing pole and any gear with a Fishing bonus from your bags; Usual gear back puts back what you wore. Out of combat." },
+    -- the fishing key and HUD (moved from Professions, 2026-11-20 layout)
+    { "header", "Fishing key and HUD", icon = "INV_Misc_Fish_02" },
+    { "key", "Fishing key", function() return ns.Modules:Get("Fishing") and ns.Modules:Get("Fishing"):Settings().key end,
+      function(k) ns.Slash:Run("fishkey " .. (k or "off")) end, "only while a pole is equipped" },
+    { "note", "Press 1 casts (or puts a lure on when yours has run out), press 2 hooks and loots. Click the box, then press the key you want; right-click clears it." },
+    { "check", "Fishing HUD while a pole is equipped", function() return ns.FishingHUD and ns.FishingHUD:Settings().show end,
+      function(on) if ns.FishingHUD then ns.FishingHUD:Settings().show = on ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" },
+    { "check", "Sound for rare catches", function() return ns.FishingHUD and ns.FishingHUD:Settings().rareSound end,
+      function(on) if ns.FishingHUD then ns.FishingHUD:Settings().rareSound = on end end },
     { "header", "Your fishing", icon = "Trade_Fishing" },
     { "tiles", function()
       local skill, max = M:Skill()

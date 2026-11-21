@@ -277,15 +277,6 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
     { "input", "Coordinates (x y)", "45.2 61.8", "Set arrow", function(t) ns.Slash:Run("way " .. t) end },
     { "check", "Arrow to the spirit healer when you die", function() return set("Nearest").spiritOnDeath end,
       function(on) set("Nearest").spiritOnDeath = on end },
-    { "header", "Map and minimap pins" },
-    { "slider", "Places on the minimap", 0, 30, 1, function() return set("MinimapPins").max or 12 end,
-      function(v) ns.Slash:Run("minipins " .. v) end, "%d" },
-    { "check", "Quest givers on the minimap", function() return set("MinimapPins").quests end,
-      function(on) ns.Slash:Run("minipins quests " .. onoff(on)) end },
-    { "check", "Grey quests (no XP) on the map", function() return set("NPCPack").grey end,
-      function(on) ns.Slash:Run("questpins grey " .. onoff(on)) end },
-    { "check", "Herb and ore spots from the database", function() return set("NodePack").show end,
-      function(on) ns.NodePack:SetShown(on) end, "off: only nodes you gathered" },
   })
 end)
 
@@ -622,33 +613,15 @@ local function profRows()
       r({ "input", "Profession and target", example, "Plan", function(t) ns.Slash:Run("skillup " .. t) end, true })
     end
   end
-  if owned.Herbalism or owned.Mining then
-    r({ "header", "Herb and ore map" })
-    r({ "check", "Herb and ore spots from the database", function() return set("NodePack").show end,
-      function(on) ns.NodePack:SetShown(on) end, "off: only nodes you gathered" })
-  end
   if owned.Herbalism then
     r({ "header", "Herbalism" })
     r({ "buttons", { { "Where each herb grows", Run("herbs") } } })
     r({ "note", function() local m = mod("HerbHelper") return m and m.enabled and m:Activity() or "" end })
   end
-  if owned.Fishing then
-    r({ "header", "Fishing" })
-    r({ "key", "Fishing key", function() return set("Fishing").key end,
-      function(k) ns.Slash:Run("fishkey " .. (k or "off")) end, "only while a pole is equipped" })
-    r({ "note", "Press 1 casts (or puts a lure on when yours has run out), press 2 hooks and loots. Click the box, then press the key you want; right-click clears it." })
-    r({ "check", "Fishing HUD while a pole is equipped", function() return set("FishingHUD").show end,
-      function(on) set("FishingHUD").show = on if ns.FishingHUD then ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" })
-    r({ "check", "Sound for rare catches", function() return set("FishingHUD").rareSound end,
-      function(on) set("FishingHUD").rareSound = on end })
-  end
   if not next(owned) then
     r({ "header", "Professions" })
     r({ "note", "No professions yet. Visit a trainer; their tools appear here once you've learned one." })
   end
-  r({ "header", "Auction house" })
-  r({ "input", "Undercut by", "2% or 50c", "Set", function(t) ns.Slash:Run("undercut " .. t) end })
-  r({ "note", function() local s = set("AuctionHelper") return "Now: " .. (s.undercutCopper and (s.undercutCopper .. " copper") or ((s.undercutPct or 2) .. "%")) end })
   -- trainer list, skill-up chance, craft cooldowns, profitable crafts, undercuts (gap analysis 2026-11-17)
   if ns.ProfExtras then
     local ok, extra = pcall(ns.ProfExtras.PageRows, ns.ProfExtras)
@@ -722,6 +695,10 @@ local function moneyRows()
     return #lines > 0 and table.concat(lines, "\n") or "Nothing yet: loot, gather, skin or fish and Outrider adds up what it's worth."
   end, 80 })
   r({ "note", "Prices: auction price less 5% when Outrider has seen one (open the auction house now and then), else the vendor price." })
+  -- selling at the auction house (moved from Professions, 2026-11-20 layout)
+  r({ "header", "Selling at the auction house" })
+  r({ "input", "Undercut by", "2% or 50c", "Set", function(t) ns.Slash:Run("undercut " .. t) end })
+  r({ "note", function() local s = set("AuctionHelper") return "Your listings go this far under the cheapest one. Now: " .. (s.undercutCopper and (s.undercutCopper .. " copper") or ((s.undercutPct or 2) .. "%")) end })
   return rows
 end
 
@@ -1176,6 +1153,7 @@ ns.Hub:AddTab("chat", "Chat", function(p)
     { "check", "LFG and Trade in their own tab", function() return set("Chat").lfgTab end, function(on) ns.Slash:Run("chat lfgtab " .. onoff(on)) end },
     { "check", "Time stamps", function() return (C.Call("GetCVar", "showTimestamps") or "none") ~= "none" end,
       function(on) ns.Slash:Run("chat time " .. onoff(on)) end },
+    { "check", "Keep chat after a reload", function() return ns.Tweaks:Settings().history end, function(on) ns.Tweaks:Settings().history = on end },
     { "buttons", { { "Copy the last 100 chat lines", Run("copychat") }, { "Recent alerts", Run("feed") } } },
     { "header", "Highlighted words" },
     { "input", "Highlight a word", "Mystmane", "Add", function(t) ns.Slash:Run("chat word add " .. t) end },
@@ -1290,9 +1268,6 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "check", "Bar: clock", function() return ns.InfoBar:Settings().clock ~= false end, function(on) ns.InfoBar:Settings().clock = on ns.InfoBar:Apply() end },
     { "check", "Bar: latency and frame rate", function() return ns.InfoBar:Settings().net ~= false end, function(on) ns.InfoBar:Settings().net = on ns.InfoBar:Apply() end },
     { "buttons", { { "Put the bar back at the top", Run("bar reset"), 210 } } },
-    { "header", "Map" },
-    { "check", "Reveal unexplored map areas", function() return ns.MapReveal:Settings().on end, function(on) ns.MapReveal:Settings().on = on ns.MapReveal:Refresh() end },
-    { "note", function() return ns.MapReveal.enabled and ns.MapReveal:Activity() or "Off: another map addon you run reveals the map instead." end },
     { "header", "Bags" },
     { "check", "Bag slots: item level", function() return ns.BagExtras:Settings().ilvl end, function(on) ns.BagExtras:Settings().ilvl = on ns.BagExtras:UpdateAll() end },
     { "check", "Bag slots: upgrade arrows", function() return ns.BagExtras:Settings().upgrade end, function(on) ns.BagExtras:Settings().upgrade = on ns.BagExtras:UpdateAll() end },
@@ -1324,12 +1299,7 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "check", "Hide the talking head", function() return ns.Tweaks:Settings().talkingHead end, function(on) ns.Tweaks:Settings().talkingHead = on ns.Tweaks:ApplyClutter() end },
     { "check", "Camera zooms out further", function() return ns.Tweaks:Settings().zoom end, function(on) ns.Tweaks:Settings().zoom = on ns.Tweaks:ApplyZoom() end },
     { "check", "Gather addon minimap buttons", function() return ns.Tweaks:Settings().buttonBag end, function(on) ns.Tweaks:Settings().buttonBag = on ns.Tweaks:Gather(on) end },
-    { "check", "Keep chat after a reload", function() return ns.Tweaks:Settings().history end, function(on) ns.Tweaks:Settings().history = on  end },
     { "note", "Wowhead link: hover an item, NPC or spell and press the key you bind to Outrider: Wowhead link (Key Bindings, AddOns), or type /ride wowhead." },
-    { "header", "Quests" },
-    { "check", "Quest objectives on the map", function() return ns.QuestObjectives:Settings().show end, function(on) ns.QuestObjectives:Settings().show = on ns.MapPins:Invalidate() end },
-    { "check", "Alert when I mouse over a quest object", function() return ns.QuestObjectives:Settings().hoverAlert end, function(on) ns.QuestObjectives:Settings().hoverAlert = on end },
-    { "check", "Quest marks on nameplates", function() return ns.QuestExtras:Settings().plates end, function(on) ns.QuestExtras:Settings().plates = on ns.QuestExtras:RefreshAll() end },
     { "header", "Edit Mode layout per situation" },
     { "input", "Situation and layout", "questing Questing", "Set", function(t) ns.Slash:Run("layout " .. t) end },
     { "buttons", { { "Show layouts", Run("layout") }, { "Turn off", Run("layout off") } } },

@@ -581,6 +581,11 @@ ns.Hub:AddTab("quests", "Quests", function(p)
     { "check", "Hide the game's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().hideBlizzard end,
       function(on) if ns.QuestTracker then ns.QuestTracker:Settings().hideBlizzard = on ns.QuestTracker:Refresh() end end },
     { "note", "Click a quest for the arrow, right-click to fold it, drag the title to move. /ride tracker level or nearest sorts it." },
+    { "header", "Quests on the map and nameplates", icon = "INV_Misc_Map_01" },
+    { "check", "Quest objectives on the map", function() return M:Settings().show end, function(on) M:Settings().show = on ns.MapPins:Invalidate() end },
+    { "check", "Alert when I mouse over a quest object", function() return M:Settings().hoverAlert end, function(on) M:Settings().hoverAlert = on end },
+    { "check", "Quest marks on nameplates", function() return ns.QuestExtras and ns.QuestExtras:Settings().plates end,
+      function(on) if ns.QuestExtras then ns.QuestExtras:Settings().plates = on ns.QuestExtras:RefreshAll() end end },
     { "header", "Quest givers and sounds", icon = "INV_Misc_Bell_01" },
     { "check", "Show event quests (Darkmoon Faire, holidays)", function() return ns.QuestInfo and ns.QuestInfo:Settings().showEvent end,
       function(on) if ns.QuestInfo then ns.QuestInfo:Settings().showEvent = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
@@ -596,11 +601,6 @@ ns.Hub:AddTab("quests", "Quests", function(p)
       function(on) if ns.QuestInfo then ns.QuestInfo:Settings().warnBreadcrumb = on end end },
     { "check", "Walking paths of escort NPCs on the map", function() return ns.QuestInfo and ns.QuestInfo:Settings().paths end,
       function(on) if ns.QuestInfo then ns.QuestInfo:Settings().paths = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
-    { "header", "Quest history", icon = "INV_Misc_Book_09" },
-    { "note", function()
-      local lines = ns.QuestInfo and ns.QuestInfo:HistoryLines(15) or {}
-      return #lines > 0 and table.concat(lines, "\n") or "Quests you take, hand in or abandon show here, with the date, your level and the zone."
-    end },
   })
 end)
 

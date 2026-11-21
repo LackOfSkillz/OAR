@@ -30,6 +30,7 @@ T.describe("hub", function()
         T.eq(lit, 1, id .. " has one sub-tab lit")
       end
     end
+
     T.eq(#ns.Errors.list, 0)
     T.contains(ns.Hub.byId.overview.panel.who:GetText(), "Torrant")
     T.contains(f.who:GetText(), "Torrant")
