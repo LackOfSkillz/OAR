@@ -62,6 +62,7 @@ ns.ArtFiles = {
   header_social = true,
   header_town = true,
   header_world = true,
+  home_hero = true,
   journey_empty = true,
   kind_dungeon = true,
   kind_errand = true,

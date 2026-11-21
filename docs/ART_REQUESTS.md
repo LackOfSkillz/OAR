@@ -516,7 +516,7 @@ canvas, centred, no circle behind it (Outrider draws the ring). Must read at
 Still waiting from earlier batches: Batch 7 `header_auction.png`, Batch 8
 `kind_zone.png` and `journey_empty.png`.
 
-## Batch 11: the Home hero (2026-11-21)
+## Batch 11: the Home hero (2026-11-21) — DELIVERED and installed 2026-11-21
 
 Gary: "this page needs to be epic legendary worthy ... give it the best art in
 the app." One picture, the best one in the set: it spans the whole top of the

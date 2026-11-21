@@ -106,7 +106,7 @@ ns.Hub:AddTab("home", "Home", function(p)
   p.hero = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
   p.hero:SetPoint("TOPLEFT", 0, 0)
   p.hero:SetPoint("RIGHT", p, "RIGHT", 0, 0)
-  p.hero:SetHeight(150)
+  p.hero:SetHeight(164)
   Theme:ApplyPanel(p.hero, "bg", "gold")
   p.hero.art = p.hero:CreateTexture(nil, "BACKGROUND")
   p.hero.art:SetPoint("TOPLEFT", 1, -1)
@@ -301,6 +301,15 @@ ns.Hub:AddTab("home", "Home", function(p)
   function p:Layout()
     local w = self:GetWidth() or 1100
     if w < 400 then w = 1100 end
+    -- the hero painting is 4:1; show the band that fills the banner without
+    -- stretching, a little above the middle (the adventurer's head and the
+    -- dungeon gate sit there)
+    local hw, hh = w - 2, (self.hero:GetHeight() or 150) - 2
+    if hw > 0 and hh > 0 and self.hero.art.SetTexCoord then
+      local band = math.min(1, 4 * hh / hw)
+      local top = math.max(0, math.min(1 - band, 0.46 - band / 2))
+      self.hero.art:SetTexCoord(0, 1, top, top + band)
+    end
     self.next:SetWidth(math.floor((w - HOME_PAD) * 0.6))
     -- glance tiles in a row
     local gw = (w - HOME_PAD) * 0.4
