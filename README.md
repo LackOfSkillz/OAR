@@ -1,3 +1,5 @@
+![Outrider: one addon to rule them all](docs/curseforge/banner.png)
+
 # Outrider: one addon for WoW Forever
 
 One character-aware addon for World of Warcraft Forever instead of ten. It knows which character you're on (class, race, level, professions, gold) and shows only what applies to that character. It works on its own: no Questie, TomTom, Auctionator or TSM needed (if they're installed, Outrider uses their data or steps aside).
@@ -17,6 +19,42 @@ Pick one. Each puts the same addon folders into `World of Warcraft\_forever_\Int
 Then start the game, log in and type `/ride`. In game, Outrider tells you when your build is two weeks old or another Outrider user has a newer one.
 
 The one-click installer also brings Gary's shared world knowledge (NPCs met, places, gathering spots, rare sightings, prices). It's merged once and never overwrites what you've collected. It holds no character names, gold or logs.
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/home.png"><img src="docs/screenshots/home.png" alt="Home"></a><br><b>Home</b>: Your next step, where to go, XP and rested, and six cards of quests, upgrades, dungeons, rares and errands.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/find.png"><img src="docs/screenshots/find.png" alt="Find"></a><br><b>Find</b>: Search anything; best quest, gear upgrade and zone for your level, one Go away.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/quests.png"><img src="docs/screenshots/quests.png" alt="Quests"></a><br><b>Quests</b>: Every quest with its progress, reputation and an arrow to the nearest objective or turn-in.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/dungeons.png"><img src="docs/screenshots/dungeons.png" alt="Dungeons"></a><br><b>Dungeons</b>: Which dungeons fit your level, the quests to take along and who gives them.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/rares.png"><img src="docs/screenshots/rares.png" alt="Rares"></a><br><b>Rares</b>: Rare monsters near you, when they were last seen and on which layer, with a waypoint.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/map-and-places.png"><img src="docs/screenshots/map-and-places.png" alt="Map and places"></a><br><b>Map and places</b>: The gold arrow to the nearest inn, vendor, flight master or any of your trainers.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/class.png"><img src="docs/screenshots/class.png" alt="Your class"></a><br><b>Your class</b>: Spells your trainer has for you now and next, and fight keys written from your spellbook.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/macros.png"><img src="docs/screenshots/macros.png" alt="Macros"></a><br><b>Macros</b>: Every macro for your class by level and build, explained line by line, drag to your bar.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/gear.png"><img src="docs/screenshots/gear.png" alt="Gear"></a><br><b>Gear</b>: Upgrades for your character and where to get them.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/my-characters.png"><img src="docs/screenshots/my-characters.png" alt="My characters"></a><br><b>My characters</b>: Gold, rested XP, bags, professions and lockouts for every character.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/professions.png"><img src="docs/screenshots/professions.png" alt="Professions"></a><br><b>Professions</b>: Your skills and what to do next for each.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/crafting.png"><img src="docs/screenshots/crafting.png" alt="Crafting"></a><br><b>Crafting</b>: Pick recipes; Outrider adds up what you still need and what it costs.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/fishing.png"><img src="docs/screenshots/fishing.png" alt="Fishing"></a><br><b>Fishing</b>: One-key fishing, your catches, where to fish for your skill and the next book to read.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/sharing.png"><img src="docs/screenshots/sharing.png" alt="Sharing"></a><br><b>Sharing</b>: Everything is off until you switch it on: rares, gathering spots, gear for alts and family.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/help.png"><img src="docs/screenshots/help.png" alt="Help"></a><br><b>Help</b>: Every feature, one topic at a time, with buttons that take you there.</td>
+</tr>
+</table>
 
 ## What it does
 
