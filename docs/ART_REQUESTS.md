@@ -534,3 +534,46 @@ emblem and the words sit there); put the drama on the right.
 |---|---|
 | `home_hero.png` | An epic panorama at golden-hour dawn: from a high cliff edge, a lone adventurer with a cloak and a lantern looks out over a vast world. A winding gold-lit road leads down past a riverside village with warm windows, through forests, toward a great city of spires on the far right, with a dungeon gate glowing faintly in a distant mountain and a gryphon flying across the sky. Floating sky-isles faintly on the horizon (the Skyborne home). Rich detail, cinematic depth, light rays through clouds; the left side is the shadowed cliff and sky, darker and calm. |
 
+
+## Batch 12: the official Outrider logo, 10 options (2026-11-21)
+
+Gary: "let's make an official Outrider logo for our project in CurseForge; a
+tagline like 'one addon to rule them all' might be cool ... let's get GPT to
+design the artwork, 10 options and we'll pick the best." The banner with the
+tagline comes after Gary picks, in the winner's style.
+
+**Brief for GPT (paste as is):**
+
+> Design 10 different logo options for **Outrider**, a World of Warcraft addon
+> for WoW Forever (Blizzard's Classic+ servers). Outrider is one addon that
+> replaces many: it guides the player (maps, the way to any place, quests,
+> dungeons, rare monsters, hunter pets, professions, gold, gear). Its tagline
+> is **"One addon to rule them all"**. The logo is the project picture on
+> CurseForge, shown from 400 px down to 64 px, so it must read when small.
+>
+> Every option: 1024x1024 PNG, opaque, fantasy MMO style (painted or
+> polished metal, warm gold on deep blue-teal or charcoal), the name
+> **OUTRIDER** spelled exactly, in capitals, large and readable. No other
+> words in the logo (the tagline is too small at 64 px). No Blizzard, World
+> of Warcraft or CurseForge logos, no copies of existing game art.
+>
+> Make the 10 options really different from each other, for example:
+> 1. a gold eight-pointed compass star on a ring (our current in-game emblem) above the name
+> 2. a hooded rider on horseback silhouetted against a rising sun, name below
+> 3. a heraldic shield with a compass rose and crossed arrows
+> 4. a lantern on a winding gold road leading to the name
+> 5. a gryphon or wyvern wing wrapped around a compass
+> 6. a monogram "O" made of a compass ring with a road through it
+> 7. a map scroll unrolling with the name on it and a gold route line
+> 8. a minimalist flat badge: one bold gold symbol and the name, very clean
+> 9. a signet-ring style seal with the name around the edge
+> 10. your own best idea
+>
+> Name the files `curseforge_logo_01.png` to `curseforge_logo_10.png`, in
+> that order.
+
+When they land in Downloads, Claude puts them side by side on one page for
+Gary to choose. The winner becomes `curseforge_logo.png` (`python tools/logo.py`
+then writes docs/curseforge/logo.png), and a follow-up asks GPT for
+`curseforge_banner.png` (1800x600) in the same style with the name and the
+tagline **One addon to rule them all**.

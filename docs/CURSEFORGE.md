@@ -18,7 +18,7 @@ The CurseForge API can upload files and read game versions; it has no documented
 1. **Author account.** Sign in at https://authors.curseforge.com (accepting the Mod Author Terms is part of signing up).
 2. **Create the project:** https://authors.curseforge.com/#/projects/create/choose-game, game **World of Warcraft**. Fill in from "Listing text" below:
    - Name, Summary, Main category plus up to 4 more, Allow comments on, **Experimental off**, editor Markdown, Description, Licence **GNU General Public License version 3 (GPLv3)**.
-   - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400, made by `python tools/logo.py` from the in-game emblem).
+   - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400, made by `python tools/logo.py`; the official logo is being designed, ART_REQUESTS batch 12, 10 options to pick from; until then it is the in-game emblem).
 3. **Submit.** CurseForge's moderators review new projects and every file (8 AM to 3 PM CET, 7 days a week, first in first out). Notifications: https://www.curseforge.com/my-notifications
 4. **Project ID.** On the project page under "About This Project". Tell Claude the number: it goes into `Outrider.toc` as `## X-Curse-Project-ID: <number>`.
 5. **First file.** Either upload `dist\curseforge\Outrider-<version>.zip` on the project's Files tab (game version **1.60.1**, the Forever one; release type Release), or let the script do it (next section).
@@ -49,14 +49,16 @@ Why not CurseForge's own automatic packager or the BigWigs packager: both build 
 
 **Name:** Outrider. Fallback if taken: Outrider (WoW Forever).
 
-**Summary:** One addon for WoW Forever: rare alerts, quest and dungeon guidance, the way to any place, hunter pet tools, macros, professions, auction shopping and gear advice, all for the character you're on.
+**Summary:** One addon to rule them all for WoW Forever: rare alerts, quest and dungeon guidance, the way to any place, hunter pet tools, macros, professions, auction shopping and gear advice, all for the character you're on.
 
 **Main category:** Quests & Leveling. **More categories:** Map & Minimap, Professions, Auction & Economy, Hunter.
 
 **Description:**
 
 ```markdown
-# Outrider: one addon for WoW Forever
+# Outrider: one addon to rule them all
+
+![Outrider](banner)  <!-- the banner from ART_REQUESTS batch 12, uploaded on the Images tab -->
 
 Outrider replaces a stack of addons with one that knows which character you're on: class, race, level, talents, professions and gold. Every page shows what fits that character, in plain words, with one button to go there.
 
