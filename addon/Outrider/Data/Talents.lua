@@ -105,3 +105,102 @@ ns.Data:Register("talentbuild", "forever-levelling", {
       { "Arcane Meditation", 3 },             -- 58-60
     } },
 })
+
+-- Wowhead WoW Forever leveling guides (user guides by Drakanthos, client
+-- 1.60.1, updated 2026-10-20; read in the browser 2026-11-21). Same rule:
+-- verified = false until the points are spent and the names match the tree.
+local WHF = "wowhead.com/forever guide by Drakanthos: %s (read 2026-11-21)"
+ns.Data:Register("talentbuild", "wowhead-forever-levelling", {
+  { id = "warrior-fury", class = "WARRIOR", rank = 1, name = "Fury (levelling, 16/35/0)",
+    source = WHF:format("Fury Warrior Leveling and PvE"), verified = false,
+    note = "Dual wield: Furious Precision fixes off-hand misses. Fury to 44, then 16 in Arms for Deep Wounds and rage. Train Dual Wield as soon as the trainer offers it; Berserker Stance from 30, Whirlwind from 36.",
+    order = {
+      { "Cruelty", 5 },                       -- 10-14
+      { "Unbridled Wrath", 5 },               -- 15-19
+      { "Furious Precision", 3 },             -- 20-22
+      { "Piercing Howl", 1 },                 -- 23
+      { "Booming Voice", 1 },                 -- 24
+      { "Dual Wield Specialization", 5 },     -- 25-29
+      { "Death Wish", 1 },                    -- 30
+      { "Enrage", 5 },                        -- 31-35
+      { "Flurry", 4 },                        -- 36-39
+      { "Bloodthirst", 1 },                   -- 40
+      { "Flurry", 1 },                        -- 41
+      { "Raging Blows", 1 },                  -- 42
+      { "Blood Craze", 2 },                   -- 43-44
+      { "Improved Rend", 3 },                 -- 45-47 (Arms)
+      { "Improved Heroic Strike", 2 },        -- 48-49
+      { "Improved Tactical Mastery", 5 },     -- 50-54
+      { "Anger Management", 1 },              -- 55
+      { "Deep Wounds", 3 },                   -- 56-58
+      { "Improved Overpower", 2 },            -- 59-60
+    } },
+  { id = "shaman-elemental", class = "SHAMAN", rank = 1, name = "Elemental (levelling, 31/20/0)",
+    source = WHF:format("Elemental Shaman Leveling, Branch A"), verified = false,
+    note = "Lightning Bolt does the work, Flame Shock sets up Lava Burst from 30, Elemental Mastery at 40. Hold the Lava Burst point until 30 if your points come early.",
+    order = {
+      { "Concussion", 5 },                    -- 10-14
+      { "Call of Flame", 3 },                 -- 15-17
+      { "Reverberation", 2 },                 -- 18-19
+      { "Elemental Focus", 1 },               -- 20
+      { "Elemental Alacrity", 3 },            -- 21-23
+      { "Convection", 5 },                    -- 24-28
+      { "Eye of the Storm", 1 },              -- 29
+      { "Lava Burst", 1 },                    -- 30
+      { "Lightning Overload", 3 },            -- 31-33
+      { "Elemental Reach", 1 },               -- 34
+      { "Elemental Fury", 5 },                -- 35-39
+      { "Elemental Mastery", 1 },             -- 40
+      { "Thundering Strikes", 5 },            -- 41-45 (Enhancement)
+      { "Ancestral Knowledge", 5 },           -- 46-50
+      { "Improved Ghost Wolf", 2 },           -- 51-52
+      { "Shamanistic Focus", 1 },             -- 53
+      { "Anticipation", 3 },                  -- 54-56
+      { "Toughness", 4 },                     -- 57-60
+    } },
+  { id = "shaman-enhancement", class = "SHAMAN", rank = 2, name = "Enhancement (levelling, 17/34/0)",
+    source = WHF:format("Enhancement Shaman Leveling, Branch A"), verified = false,
+    note = "Mental Dexterity turns Intellect into attack power, Flurry and Windfury swing fast, Maelstrom Weapon makes Lightning Bolt instant. Stormstrike can't be trained before 40.",
+    order = {
+      { "Thundering Strikes", 5 },            -- 10-14
+      { "Mental Dexterity", 3 },              -- 15-17
+      { "Improved Ghost Wolf", 2 },           -- 18-19
+      { "Shamanistic Focus", 1 },             -- 20
+      { "Elemental Weapons", 3 },             -- 21-23
+      { "Anticipation", 1 },                  -- 24
+      { "Flurry", 5 },                        -- 25-29
+      { "Mental Quickness", 2 },              -- 30-31
+      { "Toughness", 3 },                     -- 32-34
+      { "Maelstrom Weapon", 5 },              -- 35-39
+      { "Stormstrike", 1 },                   -- 40
+      { "Rage of the Farseer", 1 },           -- 41
+      { "Improved Stormstrike", 2 },          -- 42-43
+      { "Convection", 5 },                    -- 44-48 (Elemental)
+      { "Elemental Devastation", 3 },         -- 49-51
+      { "Reverberation", 5 },                 -- 52-56
+      { "Call of Flame", 3 },                 -- 57-59
+      { "Elemental Focus", 1 },               -- 60
+    } },
+  { id = "shaman-elemental-group", class = "SHAMAN", rank = 3, name = "Elemental (dungeons and raids, 38/13/0)",
+    source = WHF:format("Elemental Shaman Leveling, Branch B (community build)"), verified = false,
+    note = "The same core with Reverberation 5/5, Eye of the Storm 3/3, Elemental Reach 2/2 and Earthbound: the better pick once you group up.",
+    order = {
+      { "Convection", 5 },                    -- 10-14
+      { "Concussion", 5 },                    -- 15-19
+      { "Reverberation", 5 },                 -- 20-24
+      { "Call of Flame", 3 },                 -- 25-27
+      { "Elemental Focus", 1 },               -- 28
+      { "Elemental Alacrity", 3 },            -- 29-31
+      { "Eye of the Storm", 3 },              -- 32-34
+      { "Earthbound", 1 },                    -- 35
+      { "Elemental Reach", 2 },               -- 36-37
+      { "Lightning Overload", 3 },            -- 38-40
+      { "Lava Burst", 1 },                    -- 41
+      { "Elemental Fury", 5 },                -- 42-46
+      { "Elemental Mastery", 1 },             -- 47
+      { "Thundering Strikes", 5 },            -- 48-52 (Enhancement)
+      { "Ancestral Knowledge", 5 },           -- 53-57
+      { "Improved Ghost Wolf", 2 },           -- 58-59
+      { "Shamanistic Focus", 1 },             -- 60
+    } },
+})

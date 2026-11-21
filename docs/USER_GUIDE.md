@@ -82,7 +82,9 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 ## Maps and travel
 
 - **Map pins.** Vendors, trainers, flight masters, repair, mailboxes and rares on the world map and minimap, recorded as you meet them. Map pins tab on Map and places: which pins show.
-- **Zone levels.** Level ranges over each zone on the world map and over areas inside a zone map. /ride zonelevels on|off.
+- **Zone levels.** Level ranges over each zone on the world map and over areas inside a zone map: from the creatures you met there, else from the WoW Forever leveling guides (Riverglades 36-44, Zephras Isle 1-12, Mount Hyjal 60), else from Classic data. /ride zonelevels on|off.
+- **Leveling knowledge.** Outrider knows what the WoW Forever leveling guides say: every Zephras Isle class and profession trainer, the Riverglades flight masters, breadcrumb quests, the Blood Master's Ring and Krol'dok Stronghold, the skyboat and Riverglades boat docks, and talent builds for Fury warriors and Elemental and Enhancement shamans. They show on the map and in Your trainers; what you see yourself always wins.
+- **Cozy Sleeping Bag.** From level 14: a quest chain across Azeroth with good XP at every step that ends with the Cozy Sleeping Bag (lie in it for up to 3% more experience for an hour, and you become rested). /ride cozy queues every stop in your faction's order (Alliance starts in Westfall, Horde in The Barrens); follow the gold arrow. The last stop is a jumping puzzle inside Thoradin's Wall.
 - **Breadcrumbs.** Small gold dots where you walked, on the world map and minimap, so you can find your way back out. /ride trail clear.
 - **Waypoints.** /ride way <x> <y> [title] sets one on this map; /ride near <spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|ammo> goes to the nearest. When you die, a waypoint to the nearest spirit healer appears by itself.
 - **Travel planner and Journey.** Find page: 1, pick a place, quest or item (the three best picks for you are on top, or choose what you're looking for on the left, or type a name); 2, press Go; 3, follow the gold arrow. Your trip on the right shows each step, across zones by flight, boat or portal.
@@ -209,6 +211,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride coords` | print map id and your coordinates |
 | `/ride copy` | <Name-Realm>  copy settings from another of your characters |
 | `/ride copychat` | copy the last 100 lines of the main chat window |
+| `/ride cozy` | cozy  the Cozy Sleeping Bag chain (level 14+) as a queue of waypoints |
 | `/ride deals` | show \| reserve <wholeGold>  review, never auto-purchase |
 | `/ride debug` | on\|off  verbose logging to the saved log |
 | `/ride discovered` | [n]  last n NPCs Outrider recorded (default 10) |

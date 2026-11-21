@@ -223,6 +223,7 @@ function M.Describe(p, label)
   if p.title and p.title ~= p.name then first = first .. " (" .. p.title .. ")" end
   local second = p.goods and #p.goods > 0 and ("Sells: " .. table.concat(p.goods, ", ")) or nil
   if p.source == "questie" then second = (second and (second .. " | ") or "") .. "community data, unverified" end
+  if p.source == "guide" then second = (second and (second .. " | ") or "") .. (p.note and (p.note .. " | ") or "") .. "from the leveling guides, unverified" end
   return first, second
 end
 

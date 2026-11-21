@@ -73,7 +73,9 @@ local function isMob(e)
     and not (e.roles and next(e.roles)) and cls ~= "rare" and cls ~= "rareelite" and cls ~= "worldboss"
 end
 
--- Level range for one zone: lo, hi, source ("seen" | "classic"), count.
+-- Level range for one zone: lo, hi, source ("seen" | "guide" | "classic"), count.
+-- "guide": the leveling knowledge base (Data/Leveling.lua, Wowhead's Forever
+-- guides) beats Classic data, so new zones like Riverglades get a range.
 function M:Range(mapID)
   local c = self.cache[mapID]
   if c then return c.lo, c.hi, c.source, c.n end
@@ -86,7 +88,11 @@ function M:Range(mapID)
   if #seen >= M.SEEN then
     lo, hi = M.Trim(seen)
     source, n = "seen", #seen
-  else
+  end
+  local guide = not lo and ns.Travel and ns.Data:Get("zoneguide", tostring(ns.Travel.ZoneName(mapID) or ""))
+  if guide and guide.lo and guide.hi then
+    lo, hi, source, n = guide.lo, guide.hi, "guide", 0
+  elseif not lo then
     local mobs = ns.Finder and ns.Finder:Mobs()
     local rows = mobs and mobs[mapID]
     local levels = {}
@@ -224,6 +230,7 @@ local function label(self, canvas, i)
       GameTooltip:AddLine(string.format("%s%s: levels %d-%d", tostring(l.name), l.area and " (this area)" or "", l.lo, l.hi))
       GameTooltip:AddLine(M.WORDS[l.color] or "", ns.Theme:Color(l.color))
       GameTooltip:AddLine(l.source == "seen" and "From the creatures you met there."
+        or l.source == "guide" and "From the WoW Forever leveling guides: checked once you meet the creatures there."
         or "From Classic creature data: Forever may differ until you've been there.", ns.Theme:Color("muted"))
       GameTooltip:Show()
     end)

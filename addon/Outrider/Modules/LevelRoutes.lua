@@ -207,3 +207,47 @@ ns.AddCommand("levelroute", "levelroute seed [level]|list|start <name>|next|skip
   elseif action == "stop" then M:Store().current = nil ns.Print("route paused")
   else ns.Print("usage: /ride levelroute seed [level]|list|start <name>|skip|undo|guide|stop") end
 end)
+
+-- ------------------------------------------------------------ chains
+-- A quest chain from the leveling knowledge base (Data/Leveling.lua) as a
+-- queue of waypoints, in your faction's order: the Cozy Sleeping Bag chain
+-- starts in Westfall for Alliance and in The Barrens for Horde (Wowhead,
+-- 2026-11-21). The arrow moves on by itself as you arrive. Player-run only.
+function M.ChainSteps(chain, faction)
+  local steps = {}
+  for _, p in ipairs(ns.Data:All("place")) do if p.chain == chain then steps[#steps + 1] = p end end
+  table.sort(steps, function(a, b) return a.step < b.step end)
+  -- the two start steps: your faction's first
+  local first, second
+  for i, p in ipairs(steps) do if p.start then if not first then first = i else second = i end end end
+  if first and second and steps[second].start == faction then steps[first], steps[second] = steps[second], steps[first] end
+  return steps
+end
+
+function M:QueueChain(chain)
+  local W, T = ns.Waypoints, ns.Travel
+  if not (W and T) then return false, "waypoints are off" end
+  local faction = C.Call("UnitFactionGroup", "player")
+  local steps = M.ChainSteps(chain, faction)
+  if #steps == 0 then return false, "no such chain" end
+  W:Settings().queue = {}
+  local n = 0
+  for _, p in ipairs(steps) do
+    local mapID = T:MapByName(p.zone)
+    if mapID and W:QueueAdd(mapID, p.x, p.y, string.format("%s (%s)", p.name, p.zone)) then n = n + 1 end
+  end
+  if n == 0 then return false, "those zones aren't on this client's map" end
+  W:Clear("chain")
+  W:QueueStart()
+  self:Info("chain %s queued: %d stops for %s", chain, n, tostring(faction))
+  return true, n
+end
+
+ns.AddCommand("cozy", "cozy  the Cozy Sleeping Bag chain (level 14+) as a queue of waypoints", function()
+  local info = ns.Leveling and ns.Leveling.COZY
+  local level = tonumber(C.Call("UnitLevel", "player")) or 1
+  if info and level < info.level then ns.Print("the Cozy Sleeping Bag chain starts at level %d", info.level) return end
+  local ok, n = M:QueueChain("cozy")
+  if not ok then ns.Print("%s", tostring(n)) return end
+  ns.Print("Cozy Sleeping Bag: %d stops queued, follow the gold arrow. %s", n, info and info.what or "")
+end)

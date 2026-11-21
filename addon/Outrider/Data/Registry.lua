@@ -27,11 +27,14 @@ Data.SCHEMAS = {
   dungeon = { name = "string", min = "number", max = "number", source = "string", verified = "boolean" },
   money  = { id = "string", title = "string", minLevel = "number", maxLevel = "number", source = "string", verified = "boolean" },
   talentbuild = { id = "string", class = "string", name = "string", source = "string", verified = "boolean", order = "table" },
+  -- leveling knowledge base (Data/Leveling.lua): zone ranges and guide places
+  zoneguide = { name = "string", source = "string", verified = "boolean" },
+  place  = { id = "string", kind = "string", zone = "string", x = "number", y = "number", source = "string", verified = "boolean" },
 }
 
 Data.CONFIDENCE = { verified = true, community = true, inferred = true, unknown = true }
 
-Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id", dungeon = "name", talentbuild = "id" }
+Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id", dungeon = "name", talentbuild = "id", zoneguide = "name", place = "id" }
 
 function Data:Validate(kind, entry)
   local schema = self.SCHEMAS[kind]
@@ -42,7 +45,7 @@ function Data:Validate(kind, entry)
       return false, string.format("%s.%s should be %s, got %s", kind, field, t, type(entry[field]))
     end
   end
-  if (kind == "poi" or kind == "rare") and entry.x ~= nil then
+  if (kind == "poi" or kind == "rare" or kind == "place") and entry.x ~= nil then
     if type(entry.x) ~= "number" or entry.x < 0 or entry.x > 1 or type(entry.y) ~= "number" or entry.y < 0 or entry.y > 1 then
       return false, kind .. " x/y must be 0..1 map fractions"
     end
