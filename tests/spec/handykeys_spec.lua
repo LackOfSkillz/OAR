@@ -50,15 +50,15 @@ T.describe("handy keys", function()
     T.ok(ok) T.contains(msg, "gold this session")
   end)
 
-  T.it("the four keys show in the keys card, not in the tree", function()
+  T.it("the handy keys show in the keys card, not in the tree", function()
     local game, ns = rogue()
     game:slash("")
     ns.Hub.frame.tabBar:Select("macros")
     local p = ns.Hub.byId.macros.panel
-    T.eq(#p.keys.handy, 4)
+    T.eq(#p.keys.handy, 5)
     local names = {}
     for _, b in ipairs(p.keys.handy) do names[#names + 1] = b.item.name end
-    T.same(names, { "Nameplates", "Next Step", "Status", "Vendor" })
+    T.same(names, { "Bag Swap", "Nameplates", "Next Step", "Status", "Vendor" })
     T.eq(#ns.Errors.list, 0)
   end)
 end)

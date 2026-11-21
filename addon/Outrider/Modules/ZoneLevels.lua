@@ -73,7 +73,9 @@ local function isMob(e)
     and not (e.roles and next(e.roles)) and cls ~= "rare" and cls ~= "rareelite" and cls ~= "worldboss"
 end
 
--- Level range for one zone: lo, hi, source ("seen" | "classic"), count.
+-- Level range for one zone: lo, hi, source ("seen" | "guide" | "classic"), count.
+-- "guide": the leveling knowledge base (Data/Leveling.lua, Wowhead's Forever
+-- guides) beats Classic data, so new zones like Riverglades get a range.
 function M:Range(mapID)
   local c = self.cache[mapID]
   if c then return c.lo, c.hi, c.source, c.n end
@@ -86,7 +88,11 @@ function M:Range(mapID)
   if #seen >= M.SEEN then
     lo, hi = M.Trim(seen)
     source, n = "seen", #seen
-  else
+  end
+  local guide = not lo and ns.Travel and ns.Data:Get("zoneguide", tostring(ns.Travel.ZoneName(mapID) or ""))
+  if guide and guide.lo and guide.hi then
+    lo, hi, source, n = guide.lo, guide.hi, "guide", 0
+  elseif not lo then
     local mobs = ns.Finder and ns.Finder:Mobs()
     local rows = mobs and mobs[mapID]
     local levels = {}
@@ -180,12 +186,17 @@ function M:Labels(mapID)
       out[#out + 1] = { mapID = id, name = name, lo = lo, hi = hi, source = source, x = x, y = y, color = M.Color(lo, hi, level) }
     end
   end
-  if info.mapType == M.TYPE_ZONE then
+  local function asZone()
     add(mapID, info.name, 0.5, 0.06)
     for _, a in ipairs(self:Areas(mapID)) do
       out[#out + 1] = { mapID = mapID, area = true, name = info.name, lo = a.lo, hi = a.hi, source = a.source, x = a.x, y = a.y,
         color = M.Color(a.lo, a.hi, level) }
     end
+  end
+  if M.CITIES[info.name or ""] then
+    return out -- a capital: its guards are level 55, not the zone's level
+  elseif info.mapType == M.TYPE_ZONE then
+    asZone()
   elseif info.mapType == M.TYPE_CONTINENT then
     for _, kid in ipairs(C.Call("C_Map.GetMapChildrenInfo", mapID) or {}) do
       local k = C.Call("C_Map.GetMapInfo", kid.mapID)
@@ -197,6 +208,9 @@ function M:Labels(mapID)
         end
       end
     end
+    -- a world of one zone (Zephras Isle is its own continent: Gary,
+    -- 2026-11-21, no levels on its map): label it like a zone
+    if #out == 0 then asZone() end
   end
   return out
 end
@@ -224,6 +238,7 @@ local function label(self, canvas, i)
       GameTooltip:AddLine(string.format("%s%s: levels %d-%d", tostring(l.name), l.area and " (this area)" or "", l.lo, l.hi))
       GameTooltip:AddLine(M.WORDS[l.color] or "", ns.Theme:Color(l.color))
       GameTooltip:AddLine(l.source == "seen" and "From the creatures you met there."
+        or l.source == "guide" and "From the WoW Forever leveling guides: checked once you meet the creatures there."
         or "From Classic creature data: Forever may differ until you've been there.", ns.Theme:Color("muted"))
       GameTooltip:Show()
     end)
@@ -264,9 +279,13 @@ function M:Refresh()
     f:Show()
     self.used[#self.used + 1] = f
   end
-  if #self.used > 0 and not self.logged then
-    self.logged = true
-    self:Info("zone levels on map %d: %d zones", mapID, #self.used)
+  -- one line per map per session, also when nothing could be drawn (a blank
+  -- map is then visible in the log, not only on Gary's screen)
+  self.loggedMaps = self.loggedMaps or {}
+  if not self.loggedMaps[mapID] then
+    self.loggedMaps[mapID] = true
+    local info = C.Call("C_Map.GetMapInfo", mapID)
+    self:Info("zone levels on map %d (type %s): %d labels", mapID, tostring(type(info) == "table" and info.mapType), #self.used)
   end
 end
 

@@ -52,9 +52,46 @@ local function scan() return ns.Modules:Get("RareScan") end
 -- the same colours as its map pin), what Outrider knows in words, the layer
 -- it was last on, a star to watch it and a Waypoint button.
 R.STATE = {
-  alive = { "ALIVE", "bad" }, open = { "WINDOW OPEN", "warn" }, waiting = { "WAITING", "muted" },
-  dead = { "DEAD", "muted" }, passed = { "WINDOW PASSED", "warn" }, unknown = { "UNKNOWN", "muted" },
+  alive = { "ALIVE", "bad" }, open = { "MAY BE UP", "warn" }, waiting = { "NOT YET", "muted" },
+  dead = { "DEAD", "muted" }, passed = { "OVERDUE", "warn" }, unknown = { "NOT SEEN LATELY", "muted" },
 }
+-- the same, in a sentence (Gary, 2026-11-20: at a glance)
+R.STATE_SAYS = {
+  alive = "Someone saw it alive in the last 15 minutes. Go now!",
+  open = "It could be up now: its usual respawn time has come.",
+  waiting = "Killed recently: it won't be back for a while yet.",
+  dead = "Killed. Outrider doesn't know its respawn time yet; it learns from the kills it sees.",
+  passed = "Its usual respawn time has passed: it may be up, or someone killed it unseen.",
+  unknown = "Nobody with Outrider has seen it lately.",
+}
+
+-- Everything a player wants to know about one rare, in plain words.
+function R:Details(r)
+  local out = {}
+  local pack
+  for _, e in ipairs(ns.Data:All("rare")) do if e.npcID == r.npcID then pack = e end end
+  local d = ns.db.global.discovered and ns.db.global.discovered.npcs and ns.db.global.discovered.npcs[r.npcID]
+  out.level = (pack and pack.level and pack.level[1]) or (d and d.level)
+  out.zone = r.mapID and ns.Travel and ns.Travel.ZoneName(r.mapID) or nil
+  local lines = {}
+  if pack and pack.elite then lines[#lines + 1] = "Elite: much tougher than a normal monster. Bring a friend if you're low level." end
+  if pack and pack.beast and pack.beast.tameable then
+    lines[#lines + 1] = string.format("A %s hunters can tame.", tostring(pack.beast.family or "beast"):lower())
+  end
+  if pack and pack.notes then lines[#lines + 1] = tostring(pack.notes) end
+  local prof = ns.RareProfile and ns.RareProfile.Summary and ns.RareProfile:Summary(r.npcID)
+  if prof then lines[#lines + 1] = "Seen fighting: " .. prof:gsub("^[^:]+: ", "") end
+  local loot = ns.RareAlerts and ns.RareAlerts.KnownLoot and ns.RareAlerts:KnownLoot(r.npcID) or {}
+  local drops = {}
+  for i, row in ipairs(loot) do
+    if i > 4 then break end
+    local info = C.ItemInfo(row.id)
+    drops[#drops + 1] = info and info.name or ("item " .. row.id)
+  end
+  out.drops = #drops > 0 and table.concat(drops, ", ") or nil
+  out.lines = lines
+  return out
+end
 
 function R:State(npcID, layer)
   local w = ns.Sightings:Window(npcID, layer)
@@ -79,14 +116,10 @@ ns.Hub:AddTab("rares", "Rares", function(p)
   p.list = UI:ScrollList(p, {
     rows = 11, rowHeight = 44,
     build = function(row)
-      row.star = UI:Button(row, "", 30)
+      -- a word, not a bare star (Gary, 2026-11-20: clear at a glance)
+      row.star = UI:Button(row, "Watch", 86)
       row.star:SetHeight(26)
       row.star:SetPoint("RIGHT", -10, 0)
-      -- the game's raid-target star (fonts may lack a star character)
-      row.star.icon = row.star:CreateTexture(nil, "OVERLAY")
-      row.star.icon:SetSize(16, 16)
-      row.star.icon:SetPoint("CENTER")
-      row.star.icon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1")
       row.go = UI:Button(row, "Waypoint", 96)
       row.go:SetHeight(26)
       row.go:SetPoint("RIGHT", row.star, "LEFT", -6, 0)
@@ -115,8 +148,8 @@ ns.Hub:AddTab("rares", "Rares", function(p)
       row.sub:SetText(ns.TitleCase(desc:sub(1, 1)) .. desc:sub(2) .. where)
       local watched = scan():IsWatched(r.npcID, r.name)
       row.star.watched = watched
-      if row.star.icon.SetDesaturated then row.star.icon:SetDesaturated(not watched) end
-      row.star.icon:SetAlpha(watched and 1 or 0.45)
+      row.star.label:SetText(watched and "Watching" or "Watch")
+      UI.SetPrimary(row.star, watched)
       ns.UI.Tip(row.star, watched and "Watching" or "Watch", watched and "Click to stop watching this rare." or "Click to be alerted when it shows up.")
       row.star:SetScript("OnClick", function() scan():Watch(r.npcID, not watched) p:Refresh() end)
       local spot = last and last.mapID and last.x and last
@@ -125,9 +158,71 @@ ns.Hub:AddTab("rares", "Rares", function(p)
         if spot and ns.Waypoints then ns.Waypoints:Set(spot.mapID, spot.x, spot.y, r.name) end
       end)
     end,
+    onClick = function(r) p:Select(r) end,
   })
+  -- the chosen rare, explained (Gary, 2026-11-20)
+  local d = UI:Card(p, true)
+  d:SetWidth(330)
+  d:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -110)
+  d:SetPoint("BOTTOM", p, "BOTTOM", 0, 4)
+  p.detail = d
+  d.pic = d:CreateTexture(nil, "ARTWORK")
+  d.pic:SetSize(96, 96)
+  d.pic:SetPoint("TOP", 0, -16)
+  d.name = UI.Display(d, "side", "goldText")
+  d.name:SetPoint("TOP", d.pic, "BOTTOM", 0, -10)
+  d.name:SetWidth(300)
+  d.state = UI.Text(d, "normal", "text")
+  d.state:SetPoint("TOP", d.name, "BOTTOM", 0, -6)
+  d.text = UI.Text(d, "normal", "body")
+  d.text:SetPoint("TOPLEFT", 16, -170)
+  d.text:SetPoint("RIGHT", d, "RIGHT", -16, 0)
+  d.text:SetJustifyH("LEFT")
+  if d.text.SetJustifyV then d.text:SetJustifyV("TOP") end
+  d.go = UI:Button(d, "Waypoint", 140, function() if p.sel and p.sel.go then p.sel.go() end end)
+  d.go:SetHeight(32)
+  d.go:SetPoint("BOTTOMLEFT", 16, 16)
+  UI.SetPrimary(d.go, true)
+  UI.Tip(d.go, "Waypoint", "Points the gold arrow at where it was last seen.")
+  d.watch = UI:Button(d, "Watch", 140, function()
+    local r = p.sel and p.sel.r
+    if r then scan():Watch(r.npcID, not scan():IsWatched(r.npcID, r.name)) p:Refresh() end
+  end)
+  d.watch:SetHeight(32)
+  d.watch:SetPoint("LEFT", d.go, "RIGHT", 8, 0)
   p.list:SetPoint("TOPLEFT", 0, -110)
-  p.list:SetPoint("RIGHT", 0, 0)
+  p.list:SetPoint("RIGHT", d, "LEFT", -12, 0)
+
+  function p:Select(r)
+    local layer = ns.Layers.current
+    local st = R:State(r.npcID, layer)
+    local tag = R.STATE[st] or R.STATE.unknown
+    local info = R:Details(r)
+    local last = ns.Sightings:Last(r.npcID)
+    local spot = last and last.mapID and last.x and last
+    if not spot then
+      for _, e in ipairs(ns.Data:All("rare")) do
+        if e.npcID == r.npcID and e.spawns and e.spawns[1] then spot = { mapID = e.mapID, x = e.spawns[1].x, y = e.spawns[1].y } end
+      end
+    end
+    self.sel = { r = r, go = spot and function() ns.Waypoints:Set(spot.mapID, spot.x, spot.y, r.name) end }
+    if not (ns.Art and ns.Art:Set(d.pic, "kind_rare", "Interface\\Icons\\Ability_Hunter_MarkedForDeath")) then
+      d.pic:SetTexture("Interface\\Icons\\Ability_Hunter_MarkedForDeath")
+    end
+    d.name:SetText(r.name)
+    d.state:SetText(string.format("%s%s|r%s", Theme:Hex(tag[2]), tag[1], info.level and ("   |cff8f96a6level " .. info.level .. "|r") or ""))
+    local lines = { R.STATE_SAYS[st] or "" }
+    if info.zone then lines[#lines + 1] = "\n|cfff1d58eWhere|r  " .. info.zone end
+    lines[#lines + 1] = "\n|cfff1d58eLast seen|r  " .. ns.Sightings:Describe(r.npcID, layer)
+    if info.drops then lines[#lines + 1] = "\n|cfff1d58eDrops|r  " .. info.drops end
+    for _, l in ipairs(info.lines) do lines[#lines + 1] = "\n" .. l end
+    lines[#lines + 1] = "\n|cff8f96a6Layers: the server runs several copies of a zone. A rare killed on one copy can be alive on another.|r"
+    d.text:SetText(table.concat(lines, "\n"))
+    d.go:SetShown(spot ~= nil)
+    local watched = scan():IsWatched(r.npcID, r.name)
+    d.watch.label:SetText(watched and "Stop watching" or "Watch")
+    UI.Tip(d.watch, "Watch", "Watched rares give a sound and a pop-up when one shows up nearby.")
+  end
   function p:Refresh()
     local _, conf, label = ns.Layers:Current()
     self.layer:SetText(ns.Layers.current and string.format("You are on %s (%.0f%% sure)", label, conf * 100) or "Layer not known yet: respawn timers are per layer")
@@ -148,6 +243,11 @@ ns.Hub:AddTab("rares", "Rares", function(p)
     })
     self.list:SetItems(rows)
     self.empty:SetShown(#rows == 0)
+    -- keep the chosen rare (or the first) explained on the right
+    local pick = rows[1]
+    for _, r in ipairs(rows) do if self.sel and self.sel.r and self.sel.r.npcID == r.npcID then pick = r end end
+    self.detail:SetShown(pick ~= nil)
+    if pick then self:Select(pick) end
     self.scope:Refresh()
   end
 end, 40)

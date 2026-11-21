@@ -2,8 +2,8 @@
 -- The pack below is test data shaped like tools/import_questie_quests.py output.
 local T, mock = ...
 
-local function start()
-  local game = mock.new({ class = "HUNTER", level = 20 })
+local function start(mapID)
+  local game = mock.new({ class = "HUNTER", level = 20, mapID = mapID })
   local pack = { source = "test",
     quests = {
       [3741] = { "Hilary's Necklace", 15, { { "item", 10958 } }, fin = { 8962 } },
@@ -37,6 +37,17 @@ local function start()
 end
 
 T.describe("quest objectives", function()
+  T.it("a quest in another zone plans a trip instead of doing nothing (Gary, 2026-11-21)", function()
+    local game, ns, M = start()
+    local planned
+    ns.Journey.Go = function(_, entry) planned = entry return true end
+    -- Done Already is handed in to Hilary, who stands on map 1433; you're on 1412
+    T.ok(M:Guide(102))
+    T.ok(planned, "a trip was planned")
+    T.eq(planned.target.mapID, 1433)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("pins the unfinished objectives of your quests on their maps", function()
     local game, ns, M = start()
     local lake = M:Pins(1433)
@@ -151,7 +162,7 @@ T.describe("quest objectives: Questie parity", function()
   end)
 
   T.it("clicking a quest tracks it with the game's own arrow and area, like the world map", function()
-    local game, ns, M = start()
+    local game, ns, M = start(1433) -- in the quest's zone
     T.ok(M:Guide(3741))
     T.eq(game.trackedQuest, 3741, "the game tracks the quest")
     T.eq(ns.Waypoints.current, nil, "no second arrow from Outrider")
@@ -159,7 +170,7 @@ T.describe("quest objectives: Questie parity", function()
   end)
 
   T.it("when a quest becomes ready the arrow moves to its turn-in, but never over your own waypoint", function()
-    local game, ns, M = start()
+    local game, ns, M = start(1433) -- in the quest's zone
     -- without the game's quest tracking, Outrider's own arrow does the job
     game.env.C_SuperTrack.SetSuperTrackedQuestID = nil
     game:fire("QUEST_LOG_UPDATE") game:advance(1)
@@ -169,7 +180,7 @@ T.describe("quest objectives: Questie parity", function()
     game:fire("QUEST_LOG_UPDATE") game:advance(1)
     T.contains(ns.Waypoints.current.title, "Hand in", "arrow moved to the turn-in by itself")
     -- your own waypoint stays put
-    local game2, ns2, M2 = start()
+    local game2, ns2, M2 = start(1433)
     game2.env.C_SuperTrack.SetSuperTrackedQuestID = nil
     game2:fire("QUEST_LOG_UPDATE") game2:advance(1)
     ns2.Waypoints:Set(1433, 0.5, 0.5, "My spot")

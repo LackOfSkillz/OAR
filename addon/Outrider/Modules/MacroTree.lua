@@ -806,6 +806,27 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   end)
   p.import:SetPoint("RIGHT", p.export, "LEFT", -6, 0)
   p.singles:SetPoint("RIGHT", p.import, "LEFT", -6, 0)
+  -- how your macro buttons behave (moved from Settings, 2026-11-20 layout):
+  -- an Options button opens a small panel above it
+  local function mset(name) local m = ns.Modules:Get(name) return m and m:Settings() or {} end
+  p.opts = UI:Card(p, true)
+  p.opts:SetSize(380, 112)
+  p.opts:SetFrameStrata("DIALOG")
+  p.opts:Hide()
+  p.optBtn = UI:Button(p, "Options", 90, function() p.opts:SetShown(not p.opts:IsShown()) if p.opts:IsShown() then p.opts:Refresh() end end)
+  p.optBtn:SetPoint("RIGHT", p.singles, "LEFT", -6, 0)
+  UI.Tip(p.optBtn, "Options", "How your macro buttons behave: the missing-buffs row, tooltips and quiet presses.")
+  p.opts:SetPoint("BOTTOMLEFT", p.optBtn, "TOPLEFT", 0, 6)
+  p.opts.checks = {
+    UI:Check(p.opts, "Missing-buffs row above your bars", function() return mset("BuffRow").on end,
+      function(on) mset("BuffRow").on = on if ns.BuffRow then ns.BuffRow:Update("settings") end end),
+    UI:Check(p.opts, "Outrider's explanation in macro tooltips on your bars", function() return T:Settings().tooltips end,
+      function(on) T:Settings().tooltips = on end),
+    UI:Check(p.opts, "Quiet presses: no 'not ready yet' text or voice", function() return mset("HandyKeys").quiet end,
+      function(on) if ns.HandyKeys then ns.HandyKeys:SetQuiet(on) end end),
+  }
+  for i, c in ipairs(p.opts.checks) do c:SetPoint("TOPLEFT", 14, -12 - (i - 1) * 30) c:SetWidth(350) end
+  function p.opts:Refresh() for _, c in ipairs(self.checks) do c:Refresh() end end
 
   local function hookButton(b)
     b:SetScript("OnClick", function(self) p:ShowItem(self.item) end)

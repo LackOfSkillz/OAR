@@ -30,50 +30,83 @@ local L = {
   noOthers = "no other characters saved yet: log in on another character once.",
 }
 
--- Where each page sits in the sidebar (Gary chose a grouped sidebar,
--- 2026-11-13). Pages not listed land under "More" in the order they ask for.
-Hub.GROUPS = { "", "Explore", "Character", "Town", "Social", "Outrider", "More" }
+-- Where each page sits in the sidebar. Redesigned 2026-11-20 (Gary: "a more
+-- logical grouping ... use all best practice ui/ux"): grouped by what you're
+-- doing, most-used first, Advisor / Settings / Help at the bottom. Twin pages
+-- became one sidebar entry with sub-tabs (Hub.SUBS); every old page id still
+-- opens (links, commands, the remembered page), on its host's sub-tab.
+Hub.GROUPS = { "", "World", "Character", "Professions", "Gold", "Social", "Outrider", "More" }
 local ICON = "Interface\\Icons\\"
 Hub.PLACE = {
   home        = { "", 1, "INV_Misc_Book_09" },
-  whatnow     = { "", 2, "INV_Misc_Map_01" },
-  help        = { "", 3, "INV_Misc_Book_07" },
-  journey     = { "Explore", 10, "INV_Misc_Map_01" },
-  map         = { "Explore", 11, "INV_Misc_Map02" },
-  waypoints   = { "Explore", 12, "Ability_Tracking" },
-  rares       = { "Explore", 13, "Ability_Hunter_SniperShot" },
-  rarealerts  = { "Explore", 14, "INV_Misc_Spyglass_02" },
-  dungeons    = { "Explore", 15, "INV_Misc_Key_14" },
-  quests      = { "Explore", 16, "INV_Misc_Note_01" },
-  journal     = { "Explore", 16.5, "INV_Misc_Book_09" },
+  journey     = { "", 2, "INV_Misc_Spyglass_03" },
+  feed        = { "", 3, "INV_Letter_15" },
+  waypoints   = { "World", 10, "INV_Misc_Map02" },
+  quests      = { "World", 11, "INV_Misc_Note_01" },
+  rares       = { "World", 12, "Ability_Hunter_SniperShot" },
+  dungeons    = { "World", 13, "INV_Misc_Key_14" },
   class       = { "Character", 20 }, -- icon and title follow the character's class
   gear        = { "Character", 21, "INV_Chest_Chain" },
-  gearsets    = { "Character", 22, "INV_Shoulder_02" },
-  professions = { "Character", 23, "Trade_Alchemy" },
-  fishing     = { "Character", 23.5, "Trade_Fishing" },
-  crafting    = { "Character", 24, "Trade_BlackSmithing" },
-  alts        = { "Character", 26, "INV_Misc_Head_Human_01" },
-  macros      = { "Character", 25, "INV_Misc_Note_01" },
-  money       = { "Town", 29, "INV_Misc_Coin_02" },
-  errands     = { "Town", 30, "INV_Misc_Bag_08" },
-  forecasts   = { "Town", 31, "INV_Misc_Coin_01" },
-  feed        = { "Town", 32, "INV_Letter_15" },
-  chat        = { "Social", 40, "INV_Misc_Note_02" },
-  sharing     = { "Social", 41, "INV_Letter_09" },
-  census      = { "Social", 42, "INV_Misc_GroupLooking" },
-  people      = { "Social", 43, "INV_Shirt_GuildTabard_01" },
-  settings    = { "Outrider", 50, "Trade_Engineering" },
-  modules     = { "Outrider", 51, "INV_Gizmo_01" },
-  characters  = { "Outrider", 52, "INV_Misc_Head_Human_01" },
-  advisor     = { "Outrider", 53, "INV_Misc_Book_11" },
-  overview    = { "Outrider", 54, "INV_Misc_QuestionMark" },
-  tools       = { "Outrider", 55, "INV_Misc_Wrench_01" },
-  commands    = { "Outrider", 56, "INV_Misc_Note_06" },
+  macros      = { "Character", 22, "INV_Misc_Note_06" },
+  alts        = { "Character", 23, "INV_Misc_Head_Human_01" },
+  professions = { "Professions", 30, "Trade_Alchemy" },
+  crafting    = { "Professions", 31, "Trade_BlackSmithing" },
+  fishing     = { "Professions", 32, "Trade_Fishing" },
+  money       = { "Gold", 40, "INV_Misc_Coin_02" },
+  chat        = { "Social", 50, "INV_Misc_Note_02" },
+  sharing     = { "Social", 51, "INV_Letter_09" },
+  people      = { "Social", 52, "INV_Shirt_GuildTabard_01" },
+  advisor     = { "Outrider", 60, "INV_Misc_Book_11" },
+  settings    = { "Outrider", 61, "Trade_Engineering" },
+  help        = { "Outrider", 62, "INV_Misc_Book_07" },
 }
+-- One sidebar entry, several pages: { host = { {page id, sub-tab label}, ... } }.
+-- The first page is the host itself.
+Hub.SUBS = {
+  home      = { { "home", "Overview" }, { "whatnow", "Next steps" }, { "errands", "Town errands" } },
+  waypoints = { { "waypoints", "Places and arrow" }, { "map", "Map pins" } },
+  quests    = { { "quests", "Quest log" }, { "questchains", "Chains" }, { "journal", "Diary" } },
+  rares     = { { "rares", "Rares" }, { "rarealerts", "Watch and alerts" } },
+  gear      = { { "gear", "Wearing and upgrades" }, { "gearsets", "Sets and scoring" } },
+  alts      = { { "alts", "Characters" }, { "characters", "Copy settings" } },
+  money     = { { "money", "Earn" }, { "forecasts", "Forecasts" } },
+  people    = { { "people", "Players and guilds" }, { "census", "Census" } },
+  settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
+  help      = { { "help", "Help" }, { "commands", "All commands" } },
+  dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" } },
+}
+-- the sub-tab a sidebar entry opens the first time (else the host itself)
+Hub.DEFAULT_SUB = { dungeons = "dungeonquests" }
+-- clearer names for some pages (sidebar and page title)
+Hub.TITLES = { journey = "Find", feed = "Alerts", waypoints = "Map and places", alts = "My characters", people = "People" }
+-- page id -> the sidebar entry it lives under
+Hub.NAV = {}
+for host, subs in pairs(Hub.SUBS) do
+  for i, s in ipairs(subs) do
+    if s[1] ~= host then
+      Hub.NAV[s[1]] = host
+      local hp = Hub.PLACE[host]
+      Hub.PLACE[s[1]] = { hp[1], hp[2] + i / 100, hp[3] }
+    end
+  end
+end
+
+-- The sidebar entry for a page, and the sub-tab to open when that entry is clicked
+-- (the one you looked at last).
+function Hub.NavOf(id) return Hub.NAV[id] or id end
+function Hub.LastSub(host)
+  local hub = ns.db and ns.db.char and ns.db.char.hub
+  local last = hub and type(hub.sub) == "table" and hub.sub[host]
+  if last and Hub.NAV[last] == host and Hub.byId[last] then return last end
+  if last == host then return host end
+  local def = Hub.DEFAULT_SUB[host]
+  return (def and Hub.byId[def]) and def or host
+end
 
 function Hub:AddTab(id, title, build, order, opts)
   if self.byId[id] then return self.byId[id] end
   local place = self.PLACE[id]
+  title = self.TITLES[id] or title
   local t = { id = id, title = title, build = build, opts = opts,
     group = place and place[1] or (opts and opts.group) or "More",
     order = place and place[2] or order or (100 + #self.tabs),
@@ -142,7 +175,7 @@ local function Sidebar(parent, onSelect)
     b.label:SetPoint("LEFT", 28, 0)
     b.label:SetText(title)
     b.id = id
-    b:SetScript("OnClick", function() self:Select(id) end)
+    b:SetScript("OnClick", function() self:Select(Hub.LastSub(id)) end)
     self.buttons[id] = b
     self.order[#self.order + 1] = id
     return b
@@ -207,9 +240,10 @@ local function Sidebar(parent, onSelect)
     end
   end
   function bar:Select(id)
-    if not self.buttons[id] then id = self.order[1] end
+    -- a sub-tab page lights up its sidebar entry
+    if not (Hub.byId[id] and self.buttons[Hub.NavOf(id)]) then id = self.order[1] end
     if not id then return end
-    self:Highlight(id)
+    self:Highlight(Hub.NavOf(id))
     if onSelect then ns.Safe("tabs:select", onSelect, id) end
   end
   return bar
@@ -218,6 +252,7 @@ end
 function Hub:AddTabButton(t)
   local bar = self.frame.tabBar
   if not self:Visible(t) then return end
+  if self.NAV[t.id] then return end -- a sub-tab: no sidebar row of its own
   -- the page's custom picture when Gary's art is in (sidebar icons match the page header)
   local art = ns.Art and ns.Art:Path(t.id == "class" and ("class_" .. tostring(ns.PlayerClass and ns.PlayerClass() or "")):lower() or ("page_" .. t.id))
   local btn = bar:Add(t.id, t.title, art or t.icon)
@@ -337,7 +372,7 @@ end
 
 -- Pages that draw their own heading (Expedition layouts) skip the title strip.
 Hub.OWN_HEADING = { home = true, whatnow = true }
-Hub.TITLE_H = 80
+Hub.TITLE_H = 100
 
 -- The page's picture: custom art page_<id> (or class_<CLASS> for the class
 -- page) when Gary's art is in, else the sidebar icon.
@@ -363,7 +398,10 @@ function Hub:Panel(t)
     -- hides with it. A form page's first heading replaces the title text.
     p:SetPoint("TOPLEFT", SIDE + 14, -(self.TITLE_H + 2))
     -- each sidebar group gets its own banner when the art is in (batch 4b)
-    local banner = "header_" .. tostring(t.group or ""):lower()
+    -- the 2026-11-20 groups reuse the banners painted for the old ones
+    local BANNER = { world = "explore", gold = "town", professions = "character" }
+    local g = tostring(t.group or ""):lower()
+    local banner = "header_" .. (BANNER[g] and not (ns.Art and ns.Art:Has("header_" .. g)) and BANNER[g] or g)
     if not (ns.Art and ns.Art:Has(banner)) then banner = "header" end
     if ns.Art and ns.Art:Has(banner) then
       p.scene = p:CreateTexture(nil, "BACKGROUND")
@@ -378,7 +416,8 @@ function Hub:Panel(t)
     -- for, and Help on the right.
     p.hubTile = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
     p.hubTile:SetSize(52, 52)
-    p.hubTile:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, 12)
+    -- higher when the page has steps under its title (they sit above the rule)
+    p.hubTile:SetPoint("BOTTOMLEFT", p, "TOPLEFT", 0, (ns.Tips and ns.Tips.steps and ns.Tips.steps[t.id]) and 34 or 22)
     Theme:ApplyPanel(p.hubTile, "bg", "gold")
     p.hubPic = p.hubTile:CreateTexture(nil, "ARTWORK")
     p.hubPic:SetPoint("TOPLEFT", 2, -2)
@@ -386,13 +425,34 @@ function Hub:Panel(t)
     Hub.SetPagePicture(p.hubPic, t)
     p.hubTitle = UI.Display(p, "page", "text")
     p.hubTitle:SetPoint("TOPLEFT", p.hubTile, "TOPRIGHT", 14, 0)
-    p.hubTitle:SetText(t.title or "")
+    local host = self.byId[self.NavOf(t.id)]
+    p.hubTitle:SetText((host and host.title) or t.title or "")
     p.hubSub = UI.Text(p, "normal", "muted")
     p.hubSub:SetPoint("TOPLEFT", p.hubTitle, "BOTTOMLEFT", 0, -6)
     p.hubSub:SetPoint("RIGHT", p, "RIGHT", -60, 0)
     p.hubSub:SetJustifyH("LEFT")
     if p.hubSub.SetWordWrap then p.hubSub:SetWordWrap(false) end
     p.hubSub:SetText(ns.Tips and ns.Tips.pages[t.id] or "")
+    -- how to use it, in numbered steps (Gary, 2026-11-20: an 8th grader gets the page at a glance)
+    local steps = ns.Tips and ns.Tips.steps and ns.Tips.steps[t.id]
+    if steps then
+      p.hubSteps = {}
+      local prev
+      for i, txt in ipairs(steps) do
+        local n = p:CreateTexture(nil, "ARTWORK")
+        n:SetSize(16, 16)
+        if prev then n:SetPoint("LEFT", prev, "RIGHT", 18, 0) else n:SetPoint("TOPLEFT", p.hubSub, "BOTTOMLEFT", 0, -8) end
+        n:SetColorTexture(Theme:Color("gold"))
+        local num = UI.Text(p, "small", "onGold")
+        num:SetPoint("CENTER", n, "CENTER", 0, 0)
+        num:SetText(tostring(i))
+        local tx = UI.Text(p, "normal", "text")
+        tx:SetPoint("LEFT", n, "RIGHT", 6, 0)
+        tx:SetText(txt)
+        p.hubSteps[i] = { box = n, num = num, text = tx }
+        prev = tx
+      end
+    end
     if t.id ~= "help" then
       p.helpBtn = UI:Button(p, "?", 30, function() if ns.HelpPage then ns.HelpPage.Open(t.id) end end)
       p.helpBtn:SetHeight(26)
@@ -406,8 +466,43 @@ function Hub:Panel(t)
     local r, g, b = Theme:Color("gold")
     p.hubRule:SetColorTexture(r, g, b, 0.5)
   end
+  self:SubTabs(p, t)
   if t.build then ns.Safe("hub:build:" .. t.id, t.build, p) end
   return p
+end
+
+-- The sub-tabs of a sidebar entry, at the right of the page header (on pages
+-- that draw their own heading: top right). The one on screen is gold.
+function Hub:SubTabs(p, t)
+  local nav = self.NavOf(t.id)
+  local subs = self.SUBS[nav]
+  if not subs then return end
+  p.subTabs = {}
+  local prev
+  for i = #subs, 1, -1 do
+    local id, label = subs[i][1], subs[i][2]
+    if self.byId[id] then
+      local c = UI:Chip(p, label, function() Hub.frame.tabBar:Select(id) end)
+      c.page = id
+      UI.Tip(c, label, ns.Tips and ns.Tips.pages[id] or label)
+      if prev then c:SetPoint("RIGHT", prev, "LEFT", -6, 0)
+      elseif self.OWN_HEADING[t.id] then c:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -6)
+      else c:SetPoint("BOTTOMRIGHT", p, "TOPRIGHT", -40, 18) end
+      c:SetOn(id == t.id)
+      table.insert(p.subTabs, 1, c)
+      prev = c
+    end
+  end
+  if self.OWN_HEADING[t.id] and p.subTabs[1] then
+    local back = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
+    back:SetPoint("TOPLEFT", p.subTabs[1], "TOPLEFT", -6, 5)
+    back:SetPoint("BOTTOMRIGHT", p.subTabs[#p.subTabs], "BOTTOMRIGHT", 6, -5)
+    Theme:ApplyPanel(back, "bg", "border")
+    if back.SetBackdropColor then back:SetBackdropColor(0, 0, 0, 0.8) end
+    back:SetFrameLevel(math.max(1, (p.subTabs[1]:GetFrameLevel() or 2) - 1))
+    for _, c in ipairs(p.subTabs) do c:SetFrameLevel((back:GetFrameLevel() or 1) + 2) end
+    p.subBack = back
+  end
 end
 
 function Hub:ShowTab(id)
@@ -416,7 +511,14 @@ function Hub:ShowTab(id)
   for _, o in ipairs(self.tabs) do if o.panel and o ~= t then o.panel:Hide() end end
   local p = self:Panel(t)
   p:Show()
-  if self.frame and self.frame.tabBar and self.frame.tabBar.selected ~= t.id then self.frame.tabBar:Highlight(t.id) end
+  local nav = self.NavOf(t.id)
+  if self.frame and self.frame.tabBar and self.frame.tabBar.selected ~= nav then self.frame.tabBar:Highlight(nav) end
+  if self.SUBS[nav] then
+    local hub = ns.db.char.hub
+    hub.sub = type(hub.sub) == "table" and hub.sub or {}
+    hub.sub[nav] = t.id
+  end
+  if p.subTabs then for _, c in ipairs(p.subTabs) do c:SetOn(c.page == t.id) end end
   if p.Refresh then ns.Safe("hub:refresh:" .. t.id, p.Refresh, p) end
   self.current = t.id
   ns.db.char.hub.tab = t.id
@@ -505,9 +607,10 @@ Hub:AddTab("overview", L.overview, function(p)
       { cap = "Layer", value = id and label or "—", note = id and string.format("%.0f%% sure", conf * 100) or "learning from nearby mobs" },
       { cap = "Build", value = tostring(ns.build):match("^(%d%d%d%d%d%d%d%d)") or tostring(ns.build), note = tostring(ns.build):match("%-(%x+)$") },
     })
-    local names = {}
-    for _, k in ipairs(ns.Conflicts:Detect()) do names[#names + 1] = k.addon .. " |cff8f96a6(" .. k.relation .. ")|r" end
-    self.addons:SetText("|cfff1d58eOther addons|r   " .. (#names > 0 and table.concat(names, ",  ") or "none detected"))
+    -- counted, not named (Gary, 2026-11-20: no other addon's name in Outrider)
+    local n = #ns.Conflicts:Detect()
+    self.addons:SetText("|cfff1d58eOther addons|r   " .. (n > 0 and (n .. " found; Outrider shares or steps aside, and never needs them")
+      or "none found; Outrider needs no other addon"))
   end
 end, 10)
 
@@ -664,33 +767,17 @@ Hub:AddTab("tools", L.tools, function(p)
     b:SetPoint("TOPLEFT", x, y)
     return b
   end
-  head("Your data", 0)
-  btn("Export settings", 0, -24, function()
-    local s2, err = ns.Profiles:Export()
-    if s2 then UI:TextDialog("Export settings (" .. ns.db.key .. ")", s2, "copy")
-    else ns.Print("export failed: %s", tostring(err)) end
-  end, 150)
-  btn("Import settings", 158, -24, function()
-    UI:TextDialog("Import settings into " .. ns.db.key, "", "paste", function(text)
-      local ok, err = ns.Profiles:Import(text)
-      if ok then ns.Print("settings imported. Type /reload to apply everything.") end
-      return ok, err
-    end)
-  end, 150)
-  head("Diagnostics", -64)
-  btn("Run probe", 0, -88, function() ns.Slash:Run("probe") p:Refresh() end)
+  -- export, import, reload and the class colour live on Settings (one place each, 2026-11-20 layout)
+  head("Diagnostics", 0)
+  btn("Run probe", 0, -24, function() ns.Slash:Run("probe") p:Refresh() end)
+  btn("Reload UI", 138, -24, function() ReloadUI() end)
   p.debug = UI:Check(p, "Debug logging", function() return ns.db.global.debug end,
     function(on) ns.db.global.debug = on and true or false end)
-  p.debug:SetPoint("TOPLEFT", 150, -88)
-  head("Interface", -128)
-  btn("Reload UI", 0, -152, function() ReloadUI() end)
-  p.accent = UI:Check(p, "Class color accent (after /reload)", function() return ns.db.char.classAccent ~= false end,
-    function(on) ns.db.char.classAccent = on and true or false end)
-  p.accent:SetPoint("TOPLEFT", 150, -152)
-  p.errHead = head("Errors", -196)
+  p.debug:SetPoint("TOPLEFT", 290, -24)
+  p.errHead = head("Errors", -68)
   p.errorsBtn = btn("Copy report", 0, -196, function() ns.Slash:Run("errors") end, 120)
   p.errorsBtn:ClearAllPoints()
-  p.errorsBtn:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -192)
+  p.errorsBtn:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -64)
   local clear = btn("Clear errors", 0, -196, function() ns.Slash:Run("errors clear") p:Refresh() end, 120)
   clear:ClearAllPoints()
   clear:SetPoint("RIGHT", p.errorsBtn, "LEFT", -8, 0)
@@ -715,7 +802,7 @@ Hub:AddTab("tools", L.tools, function(p)
       row.full = tostring(e.msg or "")
     end,
   })
-  p.errList:SetPoint("TOPLEFT", 0, -222)
+  p.errList:SetPoint("TOPLEFT", 0, -94)
   p.errList:SetPoint("RIGHT", p, "RIGHT", -4, 0)
   p.empty = UI.Text(p, "normal", "good")
   p.empty:SetPoint("TOPLEFT", 4, -228)
@@ -727,7 +814,6 @@ Hub:AddTab("tools", L.tools, function(p)
     local fresh = ns.Errors:Fresh()
     self.errHead:SetText(n > 0 and string.format("Errors (%d on this build, %d earlier)", fresh, n - fresh) or "Errors")
     self.debug:Refresh()
-    self.accent:Refresh()
     self.probe:SetText(ns.Probe:Summary())
     local list = ns.Errors:Recent(100)
     self.errList:SetItems(list)

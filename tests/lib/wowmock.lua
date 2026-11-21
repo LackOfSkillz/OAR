@@ -469,10 +469,18 @@ function M.new(opts)
     -- gear: a browse with itemClassFilters returns game.ahGear rows whose class (and inventoryType, if given) match
     -- item listings: game.ahAuctions[itemID] = { {auctionID, buyout}, ... }; PlaceBid records game.bought
     SendSearchQuery = function(key) game.itemSearch = key and key.itemID end,
-    GetNumItemSearchResults = function(key) return #((game.ahAuctions or {})[key.itemID] or {}) end,
+    -- {auctionID, buyout (whole listing), quantity (default 1), mine}; game.partial[itemID] = n shows only
+    -- the first n until RequestMoreItemSearchResults
+    GetNumItemSearchResults = function(key)
+      local all = #((game.ahAuctions or {})[key.itemID] or {})
+      local part = game.partial and game.partial[key.itemID]
+      return part and math.min(part, all) or all
+    end,
+    HasFullItemSearchResults = function(key) return not (game.partial and game.partial[key.itemID]) end,
+    RequestMoreItemSearchResults = function(key) if game.partial then game.partial[key.itemID] = nil end game.moreAsked = (game.moreAsked or 0) + 1 end,
     GetItemSearchResultInfo = function(key, i)
       local a = ((game.ahAuctions or {})[key.itemID] or {})[i]
-      return a and { auctionID = a[1], buyoutAmount = a[2], containsOwnerItem = false }
+      return a and { auctionID = a[1], buyoutAmount = a[2], quantity = a[3] or 1, containsOwnerItem = a[4] and true or false }
     end,
     StartCommoditiesPurchase = function(id, qty) game.commodityStart = { id = id, qty = qty } end,
     ConfirmCommoditiesPurchase = function(id, qty) game.bought = game.bought or {} game.bought[#game.bought + 1] = { commodity = id, qty = qty } end,
@@ -616,6 +624,25 @@ function M.new(opts)
   end
   base.UnitInRange = function(unit) local d = game.units and game.units[unit] if d then return d.inRange ~= false, true end end
   base.UnitIsDeadOrGhost = function(unit) return game.units and game.units[unit] and game.units[unit].dead or false end
+  -- class trainer window: game.trainer = { { name, rank, status, level, cost, icon }, ... }.
+  -- Forever's GetTrainerServiceInfo returns name, status (rank lives elsewhere);
+  -- game.trainerClassic = true gives the Classic order name, rank, status.
+  base.GetNumTrainerServices = function() return game.trainer and #game.trainer or 0 end
+  base.GetTrainerServiceInfo = function(i)
+    local t = game.trainer and game.trainer[i]
+    if not t then return nil end
+    if game.trainerClassic then return t[1], t[2], t[3] end
+    return t[1], t[3], t[2]
+  end
+  base.GetTrainerServiceLevelReq = function(i) local t = game.trainer and game.trainer[i] return t and t[4] end
+  base.GetTrainerServiceCost = function(i) local t = game.trainer and game.trainer[i] return t and t[5] end
+  base.GetTrainerServiceIcon = function(i) local t = game.trainer and game.trainer[i] return t and t[6] end
+  base.IsTradeskillTrainer = function() return game.tradeTrainer or false end
+  -- index 3 is about 10 yards; game.units[unit].near = true when the player stands next to it
+  base.CheckInteractDistance = function(unit, index)
+    local d = game.units and game.units[unit]
+    return d and d.near and (index == 3 or index == 2) or false
+  end
   base.CanMerchantRepair = function() return game.canRepair or false end
   base.C_TooltipInfo = { GetUnit = function(unit)
     local d = game.units and game.units[unit]
@@ -708,6 +735,43 @@ function M.new(opts)
         questID = game.questStartItems and game.questStartItems[id] or nil } end
     end,
   }
+  -- cursor and bag slots (BagSwap): game.cursorItem = { id, bag, slot }; the bag in slot n is
+  -- game.bagItem[n] (its size game.bagSize[n]); a bag item's size is game.items[id].slots
+  base.C_Container.ContainerIDToInventoryID = function(bag) return 30 + bag end
+  base.C_Container.PickupContainerItem = function(bag, slot)
+    if game.combat then error("item moved in combat") end
+    game.bags = game.bags or {}
+    game.bags[bag] = game.bags[bag] or {}
+    local here = game.bags[bag][slot]
+    local cur = game.cursorItem
+    if not cur then
+      if here then game.cursorItem = { id = here, bag = bag, slot = slot } game.bags[bag][slot] = nil end
+      return
+    end
+    if slot > base.C_Container.GetContainerNumSlots(bag) then error("no such slot") end
+    game.bags[bag][slot] = cur.id
+    game.cursorItem = nil
+    if here then game.bags[cur.bag][cur.slot] = here end -- swap
+    game.moves = (game.moves or 0) + 1
+  end
+  base.CursorHasItem = function() return game.cursorItem ~= nil end
+  base.PutItemInBag = function(inv)
+    local bag = inv - 30
+    local cur = game.cursorItem
+    if not cur then return end
+    for _ in pairs(game.bags[bag] or {}) do
+      game.bags[cur.bag][cur.slot] = cur.id game.cursorItem = nil
+      game.uiError = "That bag must be empty" return
+    end
+    local it = game.items[cur.id]
+    local old = game.bagItem and game.bagItem[bag]
+    game.cursorItem = nil
+    game.bagItem = game.bagItem or {}
+    game.bagSize = game.bagSize or {}
+    game.bagItem[bag], game.bagSize[bag] = cur.id, it.slots
+    game.bags[bag] = {}
+    if old then game.bags[cur.bag][cur.slot] = old end -- the old bag lands where the new one was
+  end
   -- gear: game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 5, ... }; items[id].equipLoc / class / subclass
   base.C_Item.EquipItemByName = function(link, slot)
     if game.combat then error("EquipItemByName in combat") end
@@ -913,7 +977,11 @@ function M.new(opts)
     game.actions = game.actions or {}
     game.actions[slot] = game.cursorSpell
   end
-  base.ClearCursor = function() game.cursorSpell = nil end
+  base.ClearCursor = function()
+    game.cursorSpell = nil
+    local cur = game.cursorItem
+    if cur then game.bags[cur.bag][cur.slot] = cur.id game.cursorItem = nil end
+  end
   base.C_TaxiMap = { GetTaxiNodesForMap = function(mapID)
     return game.taxi and game.taxi[mapID] or {}
   end }
@@ -972,6 +1040,13 @@ function Game:loadAddon()
     for _, e in pairs(self.ns.Data.index.rare or {}) do
       if tostring(e.source or ""):find("2026-11-15", 1, true) then self.ns.Data.index.rare[e.npcID] = nil end
     end
+  end
+  -- The leveling knowledge base (Data/Leveling*.lua, Wowhead's Forever guides)
+  -- holds real trainers, flight masters and tips on the maps specs use with
+  -- made-up NPCs; left out unless a spec asks with mock.new({ guides = true }).
+  if not self.opts.guides and self.ns.Data and self.ns.Data.index then
+    self.ns.Data.index.place = {}
+    if self.ns.Leveling then self.ns.Leveling.FACTS = {} end
   end
   return self.ns
 end

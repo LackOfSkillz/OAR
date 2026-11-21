@@ -298,7 +298,7 @@ function M:OnWho()
 end
 
 -- ------------------------------------------------------------------ people
--- Players & guilds page (Gary, 2026-11-17): find a player, whisper them,
+-- People page (Gary, 2026-11-17): find a player, whisper them,
 -- invite them to your group or guild; a catalog of guilds; /who for a guild
 -- or a zone. Every action is Gary's click; whispers only open the chat box
 -- (he types and sends).

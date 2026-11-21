@@ -15,11 +15,38 @@ T.describe("hub", function()
     local f = ns.Hub.frame
     T.ok(f:IsShown())
     T.eq(ns.Hub.current, "home")
-    T.same(f.tabBar.order, { "home", "whatnow", "help", "journey", "map", "waypoints", "rares", "rarealerts", "dungeons", "quests", "journal", "class", "gear", "gearsets", "professions", "fishing", "crafting", "macros", "alts", "money", "errands", "forecasts", "feed", "chat", "sharing", "census", "people", "settings", "modules", "characters", "advisor", "overview", "tools", "commands" })
+    -- the 2026-11-20 layout: 21 entries, settings and help at the bottom
+    T.same(f.tabBar.order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "crafting", "fishing", "money", "chat", "sharing", "people", "advisor", "settings", "help" })
     for _, id in ipairs(f.tabBar.order) do f.tabBar:Select(id) T.eq(ns.Hub.current, id) end
+    -- every page still opens, under its sidebar entry, with its sub-tab lit
+    for id in pairs(ns.Hub.byId) do
+      f.tabBar:Select(id)
+      T.eq(ns.Hub.current, id)
+      T.eq(f.tabBar.selected, ns.Hub.NavOf(id), id)
+      local subs = ns.Hub.byId[id].panel.subTabs
+      if subs then
+        local lit = 0
+        for _, c in ipairs(subs) do if c.on then lit = lit + 1 T.eq(c.page, id) end end
+        T.eq(lit, 1, id .. " has one sub-tab lit")
+      end
+    end
+
     T.eq(#ns.Errors.list, 0)
     T.contains(ns.Hub.byId.overview.panel.who:GetText(), "Torrant")
     T.contains(f.who:GetText(), "Torrant")
+  end)
+
+  T.it("a sidebar entry reopens the sub-tab you looked at last", function()
+    local game, ns = session()
+    game:slash("")
+    local f = ns.Hub.frame
+    f.tabBar:Select("journal")
+    f.tabBar:Select("home")
+    f.tabBar.buttons.quests.__scripts.OnClick(f.tabBar.buttons.quests)
+    T.eq(ns.Hub.current, "journal")
+    T.eq(f.tabBar.selected, "quests")
+    T.eq(ns.Hub.byId.journal.panel.hubTitle:GetText(), "Quests", "the header names the sidebar entry")
+    T.eq(#ns.Errors.list, 0)
   end)
 
   T.it("the Esc key closes it (named frame in UISpecialFrames)", function()
@@ -36,7 +63,7 @@ T.describe("hub", function()
     game:slash("")
     ns.Hub:AddTab("pet", "Pet", function(p) p.built = true end, 50)
     local order = ns.Hub.frame.tabBar.order
-    T.same(order, { "home", "whatnow", "help", "journey", "map", "waypoints", "rares", "rarealerts", "dungeons", "quests", "journal", "class", "gear", "gearsets", "professions", "fishing", "crafting", "macros", "alts", "money", "errands", "forecasts", "feed", "chat", "sharing", "census", "people", "settings", "modules", "characters", "advisor", "overview", "tools", "commands", "pet" })
+    T.same(order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "crafting", "fishing", "money", "chat", "sharing", "people", "advisor", "settings", "help", "pet" })
     ns.Hub.frame.tabBar:Select("pet")
     T.ok(ns.Hub.byId.pet.panel.built)
   end)

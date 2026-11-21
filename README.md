@@ -8,14 +8,15 @@ Created by **Gary Mix** and developed with AI-assisted coding tools. Tested by G
 
 ## Install (players)
 
-1. Close World of Warcraft.
-2. Download **Install-Outrider.cmd** from the newest release: https://github.com/LackOfSkillz/outrider-releases/releases/latest
-3. Double-click it. It finds WoW Forever and installs Outrider with all its data (if Windows warns, click **More info**, then **Run anyway**).
-4. Start the game, log in and type `/ride`.
+Pick one. Each puts the same addon folders into `World of Warcraft\_forever_\Interface\AddOns`.
 
-**Updates:** double-click **Update Outrider** on your desktop (WoW closed). In game, Outrider tells you when your build is two weeks old or another Outrider user has a newer one.
+1. **CurseForge app or WowUp** (easiest, updates with one click): search **Outrider** and click Install. Coming once the CurseForge project is approved; steps and status in [docs/CURSEFORGE.md](docs/CURSEFORGE.md). WowUp lists WoW Forever as a supported client; in the CurseForge app, add your `World of Warcraft` folder by hand if it doesn't find Forever.
+2. **One-click installer (Windows):** close World of Warcraft, download **Install-Outrider.cmd** from the [newest release](https://github.com/LackOfSkillz/outrider-releases/releases/latest) and double-click it. It finds WoW Forever, backs up an older Outrider and installs it with all its data (if Windows warns, click **More info**, then **Run anyway**). Updates: double-click **Update Outrider** on your desktop (WoW closed).
+3. **By hand:** download the zip, unzip it straight into `_forever_\Interface\AddOns` so you get `AddOns\Outrider`, `AddOns\Outrider_Data_Quests` and so on (not `AddOns\Outrider-0.3.0\Outrider`).
 
-A new install also gets Gary's shared world knowledge (NPCs met, places, gathering spots, rare sightings, prices). It's merged once and never overwrites what you've collected. It holds no character names, gold or logs.
+Then start the game, log in and type `/ride`. In game, Outrider tells you when your build is two weeks old or another Outrider user has a newer one.
+
+The one-click installer also brings Gary's shared world knowledge (NPCs met, places, gathering spots, rare sightings, prices). It's merged once and never overwrites what you've collected. It holds no character names, gold or logs.
 
 ## What it does
 
@@ -29,6 +30,7 @@ Open the hub with `/ride` (or the minimap button). Pages are grouped in the side
 
 **Maps and travel**
 - Waypoints with an arrow, coordinates, quest givers colored by your level, service NPCs, flight paths, rare spawn spots, herb, ore and fishing spots (picked nodes dim for 15 minutes, nodes seen up show green).
+- The way there: pick any destination and a line of dots runs from you to it on the world map and minimap, along paths walked before (straight, in paler dots, where nobody walked yet). Quests in another zone plan the trip, zeppelins and skyboats included.
 - Finder: search gear, items, quests, rares, creatures, NPCs and places. Journey: best quests anywhere and the quickest route, including flights, boats and portals.
 
 **What now?**
@@ -64,7 +66,7 @@ Open the hub with `/ride` (or the minimap button). Pages are grouped in the side
 
 NPC, gear, creature, node, quest and dungeon packs are derived from [QuestieDB](https://github.com/Questie/QuestieDB), whose GPLv3 redistribution permission includes a **documented historical-contributor rights caveat**. The upstream source retains its own copyrights. Follow [our provenance and publication checklist](docs/QUESTIEDB_PUBLICATION_REVIEW_2026-11-18.md), preserve full upstream notices and license terms, and ensure corresponding generated sources are provided. Outrider is not affiliated with Questie. New-in-Forever game data stays marked unverified until checked on WoW Forever.
 
-**Public-pack decision (2026-11-18):** Gary Mix elected to publish the data and quest packs. However, the GitHub repo presently contains only the Words data addon; QuestieDB-derived generated files remain under the local git-ignored `private/` folder. They have **not been imported into this GitHub repository**. Publishing those generated files requires accessing the local build outputs, reviewing their provenance, and committing them with per-pack notices and GPLv3 documents. Public availability of the repository itself does not make missing pack files downloadable.
+**Public data packs (2026-11-21):** the six QuestieDB-derived packs are published as source in [outrider-releases/data-packs](https://github.com/LackOfSkillz/outrider-releases/tree/main/data-packs), each with its GPLv3 copy, provenance note and the QuestieDB revision it was built from. Every release zip carries `LICENSE-DATA.txt` and the GPLv3 text inside each data folder.
 
 ## Outrider Intelligence 2.0 — engineering design
 
@@ -82,8 +84,8 @@ These are **new design documents**, not a claim that Intelligence 2.0 is already
 - `TASKS.md` and `phases/`: the engineering plan, Phase 0 to 9, with acceptance checks.
 - `docs/`: architecture, Forever constraints, probe results, conventions, data formats, the test loop, decisions.
 - `addon/Outrider/`: the addon. `addon/Outrider_Data_*` and `private/Outrider_Data_*`: data addons (the private ones are built from a local QuestieDB copy by `tools/import_*.py`).
-- `tests/`: 466 specs that load the addon in a fake WoW client. `tools/test.ps1` runs them.
-- `tools/`: deploy, log reader, screenshots, SavedVariables backup, `family.ps1` (one-file installer) and `publish.ps1` (public release).
+- `tests/`: about 900 specs that load the addon in a fake WoW client. `tools/test.ps1` runs them.
+- `tools/`: deploy, log reader, screenshots, SavedVariables backup, `family.ps1` (one-file installer), `publish.ps1` (GitHub release with the installer), `curseforge.ps1` (CurseForge zip and upload, see [docs/CURSEFORGE.md](docs/CURSEFORGE.md)), `publish_public_packs.py` (data pack sources to the public repo) and `logo.py` (the CurseForge logo).
 
 First-time setup on a new PC: double-click `Setup.cmd` (installs Git, the GitHub CLI, Python with lupa for Lua 5.1 tests, and Claude Code; finds WoW), then run `claude` in this folder and say `Read CLAUDE.md`. Recommended in game for error capture: BugGrabber and BugSack.
 

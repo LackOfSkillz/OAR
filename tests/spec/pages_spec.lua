@@ -91,7 +91,12 @@ T.describe("hub pages", function()
   T.it("Home shows its cards; the class page follows the character's class", function()
     local _, ns = session()
     local p = page(ns, "home")
-    T.ok(p.near and p.quests and p.pet)
+    -- the 2026-11-21 Home: hero, next step, at a glance, where to, six cards
+    T.ok(p.hero and p.next and p.glance and p.where)
+    T.ok(#p.where.tiles >= 9, "place tiles and the class trainer")
+    for _, key in ipairs({ "quests", "gear", "dungeon", "rares", "town", "trip" }) do T.ok(p.cards[key]:IsShown(), key) end
+    T.contains(p.heading:GetText(), "Welcome back")
+    T.contains(p.glance.tiles[1].cap:GetText(), "Bag space")
     T.eq(#ns.Errors.list, 0)
     T.eq(ns.Hub.byId.class.title, "Hunter")
     local game2 = mock.new({ class = "MAGE" })

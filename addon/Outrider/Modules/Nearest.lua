@@ -28,6 +28,7 @@ M.ALIASES = {
   bank = "bank", ah = "auction", auction = "auction", stable = "stable_master",
   inn = "innkeeper", innkeeper = "innkeeper", guild = "guild_master", tabard = "tabard",
   ammo = "ammo", arrows = "ammo", bullets = "ammo", -- a vendor whose goods include ammo (POICapture)
+  class = "class_trainer", -- your own class trainer (Map and places, 2026-11-20)
 }
 
 function M:OnEnable()
@@ -186,6 +187,77 @@ function M:OnResurrected()
   self.corpseWP, self.corpseArrived, self.savedWaypoint, self.dead, self.corpseAttempts = nil, nil, nil, nil, nil
 end
 
+-- What a trainer's title looks like for each kind of training, as the game
+-- writes it: Classic titles name the rank ("Journeyman Leatherworker", "Expert
+-- Alchemist"), Forever and the guides use "Leatherworking Trainer" (2026-11-21:
+-- a leatherworking arrow found nothing because only "leatherworking trainer"
+-- was looked for).
+M.TRAINER_TITLES = {
+  alchemy = { "alchemist", "alchemy trainer" }, blacksmithing = { "blacksmith" }, enchanting = { "enchanter", "enchanting trainer" },
+  engineering = { "engineer" }, leatherworking = { "leatherworker", "leatherworking trainer" }, tailoring = { "tailor" },
+  herbalism = { "herbalis" }, mining = { "mining trainer", "miner" }, skinning = { "skinning trainer", "skinner" },
+  cooking = { "cooking trainer", "chef", "cook" }, ["first aid"] = { "first aid trainer", "physician", "surgeon" },
+  fishing = { "fishing trainer", "fisher", "angler" }, -- Forever: "<Fisher>" riding = { "riding trainer", "riding instructor" },
+  ["weapon master"] = { "weapon master" }, ["pet trainer"] = { "pet trainer" },
+}
+-- the highest rank a trainer teaches, from its title or a guide note
+-- (1 Apprentice 75, 2 Journeyman 150, 3 Expert 225, 4 Artisan 300); nil = not stated
+function M.TrainerRank(title, note)
+  local t = (tostring(title or "") .. " " .. tostring(note or "")):lower()
+  if t:find("artisan", 1, true) then return 4 end
+  if t:find("expert", 1, true) then return 3 end
+  if t:find("journeyman", 1, true) then return 2 end
+  if t:find("apprentice", 1, true) then return 1 end
+end
+-- the rank you need next for a skill cap (75 -> 2 Journeyman ...)
+function M.RankFor(max)
+  max = tonumber(max) or 0
+  if max < 75 then return 1 elseif max < 150 then return 2 elseif max < 225 then return 3 else return 4 end
+end
+function M.NextRank(max)
+  max = tonumber(max) or 0
+  if max >= 300 then return nil end
+  if max >= 225 then return 4 elseif max >= 150 then return 3 elseif max >= 75 then return 2 end
+  return 1
+end
+
+-- Does this place fit what was asked for? kind is a place kind, or
+-- "class_trainer", or "trainer:<what>[:<rank>]".
+function M.Fits(p, kind, ctx)
+  if kind == "ammo" then
+    for _, g in ipairs(p.goods or {}) do if g == "ammo" then return true end end
+    return false
+  end
+  if p.kind ~= ctx.want then return false end
+  -- seen teaching at its trainer window: that's the truth, whatever the title says
+  local taught = p.npcID and type(ns.db.global.teaches) == "table" and ns.db.global.teaches[p.npcID]
+  if taught and (ctx.cls or ctx.what) then
+    if ctx.cls then return taught == ctx.cls end
+    if taught ~= ctx.what then return false end
+    local r = ctx.rank and M.TrainerRank(p.title, p.note)
+    return not (r and r < ctx.rank)
+  end
+  local title = tostring(p.title or ""):lower()
+  if ctx.cls then
+    if not title:find(ctx.cls .. " trainer", 1, true) then return false end
+    -- a starter trainer that only teaches to level 6 (Zephras Isle) is no use later
+    local cap = tonumber(tostring(p.note or ""):match("up to level (%d+)"))
+    if cap and ctx.level > cap then return false end
+    return true
+  end
+  if ctx.what then
+    local words = M.TRAINER_TITLES[ctx.what] or { ctx.what .. " trainer" }
+    local ok = false
+    for _, w in ipairs(words) do if title:find(w, 1, true) then ok = true break end end
+    if not ok then return false end
+    -- a trainer known to stop below the rank you need can't help
+    local r = ctx.rank and M.TrainerRank(p.title, p.note)
+    if r and r < ctx.rank then return false end
+    return true
+  end
+  return true
+end
+
 -- Returns poi, yards (or nil, reason).
 function M:Find(kind)
   local W = ns.Waypoints
@@ -194,26 +266,39 @@ function M:Find(kind)
   if not (mapID and px) then return nil, "your position is unknown here" end
   local here = W.WorldPos(mapID, 0.5, 0.5)
   local faction = C.Call("UnitFactionGroup", "player")
-  local best, bestD
-  local candidates = {}
-  for _, p in pairs(ns.db.global.pois or {}) do candidates[#candidates + 1] = p end
-  -- "class_trainer": a trainer whose title names this character's class
-  local want = kind == "class_trainer" and "trainer" or kind
-  local cls = kind == "class_trainer" and tostring(C.Call("UnitClass", "player") or ""):lower() or nil
-  if ns.NPCPack then
-    for _, p in ipairs(ns.NPCPack:OfKind(want)) do candidates[#candidates + 1] = { kind = want, mapID = p.mapID,
-      x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction } end
+  local ctx = { level = tonumber(C.Call("UnitLevel", "player")) or 1 }
+  local what, rank = kind:match("^trainer:([^:]+):?(%d*)$")
+  ctx.want = (kind == "class_trainer" or what) and "trainer" or kind
+  ctx.cls = kind == "class_trainer" and tostring(C.Readable(C.Call("UnitClass", "player")) or ""):lower() or nil
+  ctx.what, ctx.rank = what, tonumber(rank)
+  -- trust: places you recorded, then the NPC pack, then the leveling guides.
+  -- Measured 2026-11-21 against 238 NPCs Gary stood next to (docs/POI_AUDIT.md):
+  -- the pack was wrong 1% of the time, the guides 7%. The guides fill gaps
+  -- (Forever's new and redrawn zones) where the pack has no such NPC.
+  local candidates, named = {}, {}
+  for _, p in pairs(ns.db.global.pois or {}) do
+    candidates[#candidates + 1] = p
+    if p.name then named[p.name] = true end
   end
+  if ns.NPCPack then
+    for _, p in ipairs(ns.NPCPack:OfKind(ctx.want)) do
+      if not named[p.name] then
+        candidates[#candidates + 1] = { kind = ctx.want, mapID = p.mapID, x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction, npcID = p.npcID }
+        named[p.name] = true
+      end
+    end
+  end
+  for _, g in ipairs(ns.Data:All("place")) do
+    local gm = g.kind == ctx.want and not named[g.name] and ns.Travel and ns.Travel:MapByName(g.zone)
+    if gm then
+      candidates[#candidates + 1] = { kind = ctx.want, mapID = gm, x = g.x, y = g.y, name = g.name, title = g.title,
+        faction = g.faction, note = g.note, guide = true }
+      named[g.name] = true
+    end
+  end
+  local best, bestD
   for _, p in ipairs(candidates) do
-    local match = p.kind == want
-    if match and cls then
-      match = cls ~= "" and tostring(p.title or ""):lower():find(cls .. " trainer", 1, true) ~= nil
-    end
-    if kind == "ammo" then
-      match = false
-      for _, g in ipairs(p.goods or {}) do if g == "ammo" then match = true end end
-    end
-    if match and (p.faction == nil or p.faction == faction) then
+    if M.Fits(p, kind, ctx) and (p.faction == nil or p.faction == faction) then
       local cont, wx, wy = W.WorldPos(p.mapID, p.x, p.y)
       if wx and cont == here then
         local d = math.sqrt((wx - px) ^ 2 + (wy - py) ^ 2)
@@ -221,7 +306,10 @@ function M:Find(kind)
       end
     end
   end
-  if not best then return nil, "no " .. (cls and (cls .. " trainer") or kind:gsub("_", " ")) .. " known on this continent yet" end
+  if not best then
+    local label = ctx.cls and (ctx.cls .. " trainer") or what and (what .. (what:find("trainer") or what:find("master") and "" or " trainer")) or kind:gsub("_", " ")
+    return nil, "no " .. label .. " known on this continent yet"
+  end
   return best, bestD
 end
 
@@ -291,6 +379,9 @@ function M:Activity()
 end
 
 ns.AddCommand("near", "<spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo>  waypoint to the nearest one", function(arg)
+  -- "/ride near trainer fishing": a trainer for that profession or role
+  local what = (arg or ""):lower():match("^trainer%s+(.+)$")
+  if what then local _, msg = M:Go("trainer:" .. what) ns.Print(msg) return end
   local kind = M.ALIASES[(arg or ""):lower()]
   if not kind then ns.Print("usage: /ride near spirit|flight|vendor|repair|trainer|mail|bank|ah|stable|inn|guild|ammo") return end
   local _, msg = M:Go(kind)

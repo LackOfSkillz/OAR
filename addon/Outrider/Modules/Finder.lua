@@ -1,5 +1,5 @@
 -- Modules/Finder.lua
--- The Journey tab's search engine (Gary, 2026-11-13: "a feature-rich map:
+-- The Find page's search engine (Gary, 2026-11-13: "a feature-rich map:
 -- pick a place, a critter to hunt, a quest, the best XP or gear for my
 -- level, an item, an NPC; searchable and sortable; use the available data,
 -- not only places I know"). One list of entries from every source:
@@ -365,5 +365,5 @@ function M.Line(e)
 end
 
 function M:Activity()
-  return "search gear, items, quests, rares, creatures, NPCs and places anywhere (Journey tab)"
+  return "search gear, items, quests, rares, creatures, NPCs and places anywhere (Find page)"
 end

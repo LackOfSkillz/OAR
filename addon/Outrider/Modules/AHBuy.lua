@@ -31,6 +31,7 @@ function M.Money() return tonumber(C.Readable(C.Call("GetMoney"))) or 0 end
 -- e = { name, itemKey = {...} } for one item, or { name, itemID, qty, commodity = true }
 function M:Add(e)
   if not self.open then ns.Print("open the auction house first") return end
+  self:DropHover()
   self.queue[#self.queue + 1] = e
   self:Info("buy queued: %s%s", tostring(e.name), e.qty and (" x" .. e.qty) or "")
   if not self.current and not self.pending then self:Next() else self:Refresh() end
@@ -39,8 +40,10 @@ end
 function M:Next()
   self.current, self.quote = nil, nil
   local e = table.remove(self.queue, 1)
-  if not e then self:Refresh() return end
+  if not e then self:Refresh() self:Pump() return end
   self.current = e
+  self.fetching = nil -- a lookup ahead gives way: the next answer is this one
+  e.askedMore = nil
   if e.commodity then
     pcall(C_AuctionHouse.StartCommoditiesPurchase, e.itemID, e.qty)
   else
@@ -56,18 +59,153 @@ function M:Next()
   self:Refresh()
 end
 
-function M:OnItemResults()
-  local e = self.current
-  if not e or e.commodity or self.quote then return end
-  local n = C.Call("C_AuctionHouse.GetNumItemSearchResults", e.itemKey) or 0
+-- The cheapest listing someone else posted for an item, by price per item
+-- (Gary, 2026-11-20: "make sure it buys the lowest price"; a listing of 2 at
+-- 3s is cheaper per item than 1 at 2s): { auctionID, price, n } or nil.
+-- Every result is compared, whatever order the game sends them in.
+function M.Cheapest(itemKey)
+  local n = C.Call("C_AuctionHouse.GetNumItemSearchResults", itemKey) or 0
   local best
   for i = 1, n do
-    local r = C.Call("C_AuctionHouse.GetItemSearchResultInfo", e.itemKey, i)
+    local r = C.Call("C_AuctionHouse.GetItemSearchResultInfo", itemKey, i)
     local price = type(r) == "table" and C.Readable(r.buyoutAmount)
-    if type(price) == "number" and not r.containsOwnerItem and (not best or price < best.price) then
-      best = { auctionID = r.auctionID, price = price, n = tonumber(C.Readable(r.quantity)) or 1 }
+    local q = type(r) == "table" and tonumber(C.Readable(r.quantity)) or 1
+    if q < 1 then q = 1 end
+    if type(price) == "number" and price > 0 and not C.Readable(r.containsOwnerItem) then
+      local per = price / q
+      if not best or per < best.per or (per == best.per and price < best.price) then
+        best = { auctionID = C.Readable(r.auctionID), price = price, n = q, per = per }
+      end
     end
   end
+  return best
+end
+
+-- The game can send a long result list in parts: ask for the rest once before
+-- deciding, so the cheapest can't be on a part not seen yet. true = wait.
+function M.NeedMore(e)
+  local full = C.Call("C_AuctionHouse.HasFullItemSearchResults", e.itemKey)
+  if full == false and not e.askedMore then
+    e.askedMore = true
+    pcall(C_AuctionHouse.RequestMoreItemSearchResults, e.itemKey)
+    return true
+  end
+  return false
+end
+
+-- ------------------------------------------------------------ one click
+-- (Gary, 2026-11-20: "I push the buy button once, and it actually buys it.")
+-- The game buys only from a fresh click, and it needs the listing first. So
+-- the listing is looked up before the click: single items for the cards on
+-- screen, one search at a time (looking is free, only buying needs a click);
+-- stackable goods while the mouse rests on that card's Buy (the server keeps
+-- one price quote at a time). The click then buys at the price on the card.
+-- If the lookup isn't back yet, the click falls back to the cart (two clicks).
+M.FRESH, M.FETCH_WAIT = 60, 3
+
+function M:Prefetch(list)
+  self.known = self.known or {}
+  self.toFetch = {}
+  local now = time()
+  for _, e in ipairs(list or {}) do
+    local k = M.KeyOf(e)
+    local kn = k and self.known[k]
+    if k and not e.commodity and e.itemKey and not (kn and now - kn.at < M.FRESH) then self.toFetch[#self.toFetch + 1] = e end
+  end
+  self:Pump()
+end
+
+function M:Pump()
+  if self.fetching or self.current or self.pending or not self.open then return end
+  local e = table.remove(self.toFetch or {}, 1)
+  if not e then return end
+  self.fetching = e
+  e.askedMore = nil
+  pcall(C_AuctionHouse.SendSearchQuery, e.itemKey, { { sortOrder = 0, reverseSort = false } }, false)
+  ns.Timer.After(M.FETCH_WAIT, function()
+    if M.fetching == e then M.fetching = nil M:Pump() end
+  end, "ahbuy:fetch")
+end
+
+function M:OnFetched()
+  local e = self.fetching
+  if M.NeedMore(e) then return end
+  self.fetching = nil
+  local best = M.Cheapest(e.itemKey)
+  self.known = self.known or {}
+  local k = M.KeyOf(e)
+  if k then self.known[k] = { auctionID = best and best.auctionID, price = best and best.price, n = best and best.n, at = time() } end
+  local G = ns.GearShop
+  if G and G.frame and G.UpdateButtons then G:UpdateButtons() end
+  ns.Timer.After(0.2, function() M:Pump() end, "ahbuy:pump")
+end
+
+-- The listing looked up ahead for this item, while it's fresh.
+function M:Known(e)
+  local kn = self.known and self.known[M.KeyOf(e) or ""]
+  if kn and kn.auctionID and time() - kn.at < M.FRESH then return kn end
+end
+
+-- A price quote for stackable goods while the mouse rests on its Buy.
+function M:Prequote(e)
+  if not (self.open and e and e.commodity) or self.pending or C.InCombat() then return end
+  local k = M.KeyOf(e)
+  if self.current and M.KeyOf(self.current) == k then return end
+  if self.current and not self.current.hover then return end -- a cart lookup is running
+  if #(self.queue or {}) > 0 then return end
+  self:DropHover()
+  local h = {}
+  for key, v in pairs(e) do h[key] = v end
+  h.hover = true
+  self.current, self.quote = h, nil
+  pcall(C_AuctionHouse.StartCommoditiesPurchase, e.itemID, e.qty)
+  ns.Timer.After(M.WAIT, function()
+    if M.current == h and not M.quote then M.current = nil end
+  end, "ahbuy:hover")
+end
+
+function M:DropHover()
+  if self.current and self.current.hover then
+    pcall(C_AuctionHouse.CancelCommoditiesPurchase)
+    self.current, self.quote = nil, nil
+  end
+end
+
+-- A card's Buy: "bought" when the click could buy at once, else "queued".
+function M:BuyNow(e)
+  if not self.open then ns.Print("open the auction house first") return nil end
+  if self.pending then return "busy" end
+  local k = M.KeyOf(e)
+  if e.commodity then
+    if self.current and M.KeyOf(self.current) == k and self.quote then
+      self.current.hover = nil
+      self:Confirm()
+      return "bought"
+    end
+  else
+    local kn = self:Known(e)
+    if kn and (not self.current or self.current.hover) then
+      if e.maxUnit and kn.price / math.max(1, kn.n or 1) > e.maxUnit then
+        ns.Print("%s: the cheap listing is gone, skipped", tostring(e.name))
+        return "skipped"
+      end
+      self:DropHover()
+      self.known[k] = nil -- that listing is being bought
+      self.current, self.quote = e, { auctionID = kn.auctionID, price = kn.price, n = kn.n }
+      self:Confirm()
+      return "bought"
+    end
+  end
+  self:Add(e)
+  return "queued"
+end
+
+function M:OnItemResults()
+  if self.fetching then return self:OnFetched() end
+  local e = self.current
+  if not e or e.commodity or self.quote then return end
+  if M.NeedMore(e) then return end
+  local best = M.Cheapest(e.itemKey)
   if not best then ns.Print("%s: no buyout left, skipped", tostring(e.name)) return self:Next() end
   -- a deal's price cap (Deals): the cheap listing may be gone
   if e.maxUnit and best.price / math.max(1, best.n) > e.maxUnit then
@@ -92,6 +230,23 @@ function M:OnCommodityPrice(_, unitPrice, totalPrice)
   end
   self.quote = { price = total, unit = C.Readable(unitPrice) }
   self:Refresh()
+end
+
+-- A purchase's key, the same for the card that asked for it and the cart.
+function M.KeyOf(e)
+  local id = e and (e.itemID or (e.itemKey and e.itemKey.itemID))
+  return id and (tostring(id) .. ":" .. tostring(e.qty or 1)) or nil
+end
+
+-- Where a purchase stands: nil, "queued", "finding", "quote", "buying" or "bought".
+function M:StateOf(e)
+  local k = M.KeyOf(e)
+  if not k then return nil end
+  if self.pending and M.KeyOf(self.pending.e) == k then return "buying" end
+  if self.current and M.KeyOf(self.current) == k then return self.quote and "quote" or "finding" end
+  for _, q in ipairs(self.queue or {}) do if M.KeyOf(q) == k then return "queued" end end
+  if self.bought and self.bought[k] then return "bought" end
+  return nil
 end
 
 -- The confirm click. The purchase goes out, then Outrider waits for the
@@ -151,6 +306,8 @@ function M:Finish(ok, why)
   self.results = self.results or { bought = 0, failed = 0 }
   if ok then
     self.results.bought = self.results.bought + 1
+    self.bought = self.bought or {}
+    if e then self.bought[M.KeyOf(e) or "?"] = true end
     self:Info("bought %s%s", what, p and p.error and (" (the game also showed " .. p.error .. "; the gold was taken, so it went through)") or "")
   else
     self.results.failed = self.results.failed + 1
@@ -161,6 +318,10 @@ function M:Finish(ok, why)
     end
   end
   self.lastResult = { ok = ok, why = why, what = what }
+  if ok and e and not e.commodity and e.itemKey then
+    self.toFetch = self.toFetch or {}
+    table.insert(self.toFetch, 1, e)
+  end
   self:Next()
 end
 
@@ -233,9 +394,12 @@ end
 
 function M:Refresh()
   if not self.open then return end
+  -- the shopping window's buttons and cart bar follow the cart
+  local G = ns.GearShop
+  if G and G.frame and G.UpdateButtons then G:UpdateButtons() end
   local f = self:Build()
   local e, q, p = self.current, self.quote, self.pending
-  if not e and not p then f:Hide() return end
+  if (not e and not p) or (e and e.hover and not p) then f:Hide() return end
   local more = #self.queue > 0 and string.format("%d more after this", #self.queue) or ""
   local shown = e or p.e
   local id = shown.itemID or (shown.itemKey and shown.itemKey.itemID)
@@ -264,7 +428,8 @@ function M:OnEnable()
   self:On("AUCTION_HOUSE_CLOSED", function(mod)
     mod.open = false
     if mod.pending then mod:Info("auction house closed while buying %s", tostring(mod.pending.e.name)) end
-    mod.queue, mod.current, mod.quote, mod.pending = {}, nil, nil, nil
+    mod.queue, mod.current, mod.quote, mod.pending, mod.bought = {}, nil, nil, nil, nil
+    mod.known, mod.toFetch, mod.fetching = nil, nil, nil
     if mod.frame then mod.frame:Hide() end
   end)
   self:On("ITEM_SEARCH_RESULTS_UPDATED", self.OnItemResults)

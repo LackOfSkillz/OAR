@@ -362,26 +362,90 @@ ns.Hub:AddTab("journal", "Journal", function(p)
   p.stats = UI:StatStrip(p)
   p.stats:SetPoint("TOPLEFT", 0, 0)
   p.stats:SetPoint("RIGHT", p, "RIGHT", -4, 0)
+  -- filters (Gary, 2026-11-20: clear at a glance)
+  p.filter = "all"
+  p.chips = {}
+  local FILTERS = { { "all", "All" }, { "handed in", "Finished" }, { "took", "Took" }, { "abandoned", "Gave up" } }
+  local x = 0
+  for _, fl in ipairs(FILTERS) do
+    local c = UI:Chip(p, fl[2], function() p.filter = fl[1] p.picked = nil p:Refresh() end)
+    c:SetPoint("TOPLEFT", p.stats, "BOTTOMLEFT", x, -12)
+    x = x + (c:GetWidth() or 70) + 6
+    c.key = fl[1]
+    p.chips[#p.chips + 1] = c
+  end
   p.list = UI:ScrollList(p, {
-    rows = 22, rowHeight = 22,
+    rows = 20, rowHeight = 22,
     render = function(row, e)
       local col = Theme:Hex(M.WHAT_COLOR[e.what] or "body")
       row.text:SetText(string.format("|cff8f96a6%s|r  %s%s|r  %s", date("%b %d %H:%M", e.t or 0),
         col, ns.TitleCase(tostring(e.what or "")), tostring(e.name or "?")))
     end,
-    onClick = function(e) p.picked = e p.detail:SetText(M:JournalDetail(e)) end,
+    onClick = function(e) p.picked = e p:ShowEntry(e) end,
   })
-  p.list:SetPoint("TOPLEFT", p.stats, "BOTTOMLEFT", 0, -12)
+  p.list:SetPoint("TOPLEFT", p.chips[1], "BOTTOMLEFT", 0, -8)
   p.list:SetWidth(460)
   p.card = UI:Card(p, true)
   p.card:SetPoint("TOPLEFT", p.list, "TOPRIGHT", 12, 0)
   p.card:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  p.card:SetHeight(22 * 22 + 4)
+  p.card:SetHeight(20 * 22 + 4)
+  p.pic = p.card:CreateTexture(nil, "ARTWORK")
+  p.pic:SetSize(64, 64)
+  p.pic:SetPoint("TOPLEFT", 18, -16)
+  p.title = UI.Display(p.card, "side", "goldText")
+  p.title:SetPoint("TOPLEFT", p.pic, "TOPRIGHT", 14, -6)
+  p.title:SetPoint("RIGHT", p.card, "RIGHT", -18, 0)
+  p.title:SetJustifyH("LEFT")
+  p.what = UI.Text(p.card, "normal", "text")
+  p.what:SetPoint("TOPLEFT", p.title, "BOTTOMLEFT", 0, -6)
   p.detail = UI.Text(p.card, "normal", "body")
-  p.detail:SetPoint("TOPLEFT", 18, -16)
+  p.detail:SetPoint("TOPLEFT", p.pic, "BOTTOMLEFT", 0, -14)
   p.detail:SetPoint("RIGHT", p.card, "RIGHT", -18, 0)
   p.detail:SetJustifyH("LEFT")
   if p.detail.SetSpacing then p.detail:SetSpacing(3) end
+  p.again = UI:Button(p.card, "Take it again", 150, function() if p.giver and ns.Journey then ns.Journey:Go(p.giver) end end)
+  p.again:SetHeight(30)
+  p.again:SetPoint("BOTTOMLEFT", 18, 16)
+  UI.SetPrimary(p.again, true)
+  UI.Tip(p.again, "Take it again", "Points the gold arrow at the quest giver, so you can pick it up again.")
+  p.again:Hide()
+  if not (ns.Art and ns.Art:Set(p.pic, "kind_quest", "Interface\\Icons\\INV_Misc_Note_01")) then p.pic:SetTexture("Interface\\Icons\\INV_Misc_Note_01") end
+
+  -- One entry, explained: what happened, when, where; a way back to a quest you gave up.
+  function p:ShowEntry(e)
+    self.giver = nil
+    self.again:Hide()
+    if not e then
+      self.title:SetText("Your quest diary")
+      self.what:SetText("")
+      self.detail:SetText("Quests you take, finish or give up show on the left as you play, newest first. Click one to see when and where.")
+      return
+    end
+    self.title:SetText(tostring(e.name or ("Quest " .. tostring(e.id))))
+    local col = Theme:Hex(M.WHAT_COLOR[e.what] or "body")
+    local word = e.what == "handed in" and "Finished" or e.what == "abandoned" and "Gave up" or ns.TitleCase(tostring(e.what or ""))
+    self.what:SetText(col .. word .. "|r  |cff8f96a6" .. date("%A %b %d, %H:%M", e.t or 0) .. "|r")
+    local lines = { string.format("You were level %s%s.", tostring(e.lvl or "?"), e.zone and (", in " .. e.zone) or "") }
+    local ok, more = pcall(self.Lines or M.Lines, M, e.id)
+    if ok and type(more) == "table" and #more > 0 then
+      lines[#lines + 1] = ""
+      for _, l in ipairs(more) do lines[#lines + 1] = "|cff8fb4ff" .. l .. "|r" end
+    end
+    -- gave it up: where to pick it up again, when Outrider knows the giver
+    if e.what == "abandoned" and ns.Finder then
+      local list = ns.Finder:Find({ kind = "quest", text = tostring(e.name or "") })
+      for _, q in ipairs(list) do
+        if q.name == e.name and q.target then self.giver = q break end
+      end
+      if self.giver then
+        lines[#lines + 1] = ""
+        lines[#lines + 1] = string.format("You can take it again from %s (%s away).", tostring(self.giver.sub or "its giver"):gsub("^from ", ""),
+          ns.Travel.Minutes(self.giver.seconds))
+        self.again:Show()
+      end
+    end
+    self.detail:SetText(table.concat(lines, "\n"))
+  end
   function p:Refresh()
     local st = M:JournalStats()
     self.stats:SetItems({
@@ -391,10 +455,13 @@ ns.Hub:AddTab("journal", "Journal", function(p)
       { cap = "Abandoned", value = tostring(st.abandoned), color = st.abandoned > 0 and "bad" or nil },
     })
     local list, out = M:History(), {}
-    for i = #list, 1, -1 do out[#out + 1] = list[i] end
+    for i = #list, 1, -1 do
+      local e = list[i]
+      if self.filter == "all" or e.what == self.filter then out[#out + 1] = e end
+    end
+    for _, c in ipairs(self.chips) do c:SetOn(c.key == self.filter) end
     self.list:SetItems(out)
     if not self.picked then self.picked = out[1] end
-    self.detail:SetText(#out == 0 and "Quests you take, hand in or abandon show here as you play, with the date, your level and the zone."
-      or M:JournalDetail(self.picked))
+    self:ShowEntry(self.picked)
   end
 end)

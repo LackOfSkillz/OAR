@@ -47,7 +47,7 @@ LEGACY_LABELS = (
 SENSITIVE = re.compile(
     r"(?:BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY|"
     r"(?i:api[_-]?key|access[_-]?token|password)\s*[:=]\s*['\"][^'\"]+['\"]|"
-    r"(?i:savedvariables|\\\\users\\\\|/users/[^/]+/|private/questie-source)"
+    r"(?i:savedvariables|\\\\users\\\\|/users/[^/]+/|private/questie-source))"
 )
 
 

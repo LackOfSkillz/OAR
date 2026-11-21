@@ -162,8 +162,16 @@ function M:People(kind)
   return out
 end
 
--- where an NPC stands, from the NPC pack or what Outrider discovered
+-- where an NPC stands: where you saw it yourself first (Gary, 2026-11-20),
+-- then places Outrider recorded, then the NPC pack
 function M.Place(name)
+  local d = ns.db.global.discovered
+  for _, e in pairs(type(d) == "table" and d.npcs or {}) do
+    if type(e) == "table" and e.name == name and (e.qualityRank or 0) >= 3 and e.mapID and e.x then return e.mapID, e.x, e.y end
+  end
+  for _, p in pairs(ns.db.global.pois or {}) do
+    if type(p) == "table" and p.name == name and p.mapID and p.source ~= "questie" then return p.mapID, p.x, p.y end
+  end
   local pack = rawget(_G, "Outrider_DataNPC")
   if not pack and ns.NPCPack and ns.NPCPack.Load then pcall(ns.NPCPack.Load, ns.NPCPack) pack = rawget(_G, "Outrider_DataNPC") end
   for mapID, list in pairs(pack and pack.maps or {}) do
@@ -356,6 +364,19 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
           note = not skill and "any fishing trainer, free" or nxt and nxt.how or nil },
       }
     end },
+    -- gear swap first: it's what you reach for every time (Gary, 2026-11-20)
+    { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
+    { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
+    { "note", "Puts on your best fishing pole and any gear with a Fishing bonus from your bags; Usual gear back puts back what you wore. Out of combat." },
+    -- the fishing key and HUD (moved from Professions, 2026-11-20 layout)
+    { "header", "Fishing key and HUD", icon = "INV_Misc_Fish_02" },
+    { "key", "Fishing key", function() return ns.Modules:Get("Fishing") and ns.Modules:Get("Fishing"):Settings().key end,
+      function(k) ns.Slash:Run("fishkey " .. (k or "off")) end, "only while a pole is equipped" },
+    { "note", "Press 1 casts (or puts a lure on when yours has run out), press 2 hooks and loots. Click the box, then press the key you want; right-click clears it." },
+    { "check", "Fishing HUD while a pole is equipped", function() return ns.FishingHUD and ns.FishingHUD:Settings().show end,
+      function(on) if ns.FishingHUD then ns.FishingHUD:Settings().show = on ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" },
+    { "check", "Sound for rare catches", function() return ns.FishingHUD and ns.FishingHUD:Settings().rareSound end,
+      function(on) if ns.FishingHUD then ns.FishingHUD:Settings().rareSound = on end end },
     { "header", "Your fishing", icon = "Trade_Fishing" },
     { "tiles", function()
       local skill, max = M:Skill()
@@ -404,9 +425,6 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       return out
     end },
     { "note", function() local t = M:Tier(M:Skill() or 1) return t and (t.note .. " Zones from the WoW Forever fishing guide (unverified).") or "" end },
-    { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
-    { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
-    { "note", "Puts on your best fishing pole and any gear with a Fishing bonus from your bags; Usual gear back puts back what you wore. Out of combat." },
     { "header", "Trainers and supplies", icon = "INV_Misc_Book_09" },
     { "cards", function()
       local out = {}

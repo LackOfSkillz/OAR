@@ -178,6 +178,32 @@ ns.Hub:AddTab("map", "Map", function(p)
   end)
   p.noteAdd:SetPoint("LEFT", p.noteBox, "RIGHT", 6, 0)
   UI.Tip(p.noteAdd, "Add map note", "Hover a point on the world map, type a note and click to save it.")
+  -- map options, beside Recording (moved from Waypoints and Settings, 2026-11-20 layout)
+  local OX = 420
+  local head3 = UI.Display(p, "side", "goldText")
+  head3:SetPoint("TOPLEFT", OX, y)
+  head3:SetText("Map options")
+  local function mset(name) local m = ns.Modules:Get(name) return m and m:Settings() or {} end
+  p.opts = {}
+  local function opt(label, get, setf, dy)
+    local c = UI:Check(p, label, get, setf)
+    c:SetPoint("TOPLEFT", OX, y - dy)
+    c:SetWidth(320)
+    p.opts[#p.opts + 1] = c
+    return c
+  end
+  opt("Reveal unexplored map areas", function() return ns.MapReveal and ns.MapReveal:Settings().on end,
+    function(on) if ns.MapReveal then ns.MapReveal:Settings().on = on ns.MapReveal:Refresh() end end, 24)
+  opt("Quest givers on the minimap", function() return mset("MinimapPins").quests end,
+    function(on) ns.Slash:Run("minipins quests " .. (on and "on" or "off")) end, 46)
+  opt("Grey quests (no XP) on the map", function() return mset("NPCPack").grey end,
+    function(on) ns.Slash:Run("questpins grey " .. (on and "on" or "off")) end, 68)
+  opt("Herb and ore spots from the database", function() return mset("NodePack").show end,
+    function(on) if ns.NodePack then ns.NodePack:SetShown(on) end end, 90)
+  p.miniMax = UI:Slider(p, "Places on the minimap", 0, 30, 1, function() return mset("MinimapPins").max or 12 end,
+    function(v) ns.Slash:Run("minipins " .. v) end, "%d")
+  p.miniMax:SetPoint("TOPLEFT", OX, y - 116)
+  p.miniMax:SetWidth(300)
   -- legend: group colours
   local lx = 0
   for _, g in ipairs({ "merchant", "trainer", "service", "quest", "rare", "gather" }) do
@@ -195,6 +221,7 @@ ns.Hub:AddTab("map", "Map", function(p)
     for _, c in ipairs(self.checks) do c:Refresh() end
     self.disc:Refresh()
     self.poi:Refresh()
+    for _, c in ipairs(self.opts or {}) do c:Refresh() end
     local g = ns.db.global
     local places, npcs = 0, 0
     for _ in pairs(g.pois or {}) do places = places + 1 end

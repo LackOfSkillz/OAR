@@ -64,7 +64,7 @@ end
 
 function M:OnSpell(event, unit, _, spellID)
   -- In combat the spell can be a secret value: never use it as a table key or
-  -- compare it (hard rule 4; the Tools page logged this 83 times, B3).
+  -- compare it (hard rule 4; the Tools tab in Settings logged this 83 times, B3).
   if C.IsSecret(unit) or C.IsSecret(spellID) then return end
   local npcID = self:RareOn(unit)
   if not npcID or C.IsSecret(npcID) then return end

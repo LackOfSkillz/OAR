@@ -112,8 +112,8 @@ function Theme:RegisterMedia()
   if type(LibStub) ~= "table" and type(LibStub) ~= "function" then return false end
   local ok, LSM = pcall(LibStub, "LibSharedMedia-3.0", true)
   if not ok or type(LSM) ~= "table" or type(LSM.Register) ~= "function" then return false end
-  pcall(LSM.Register, LSM, "statusbar", "Outrider Flat", "Interface\Buttons\WHITE8x8")
-  pcall(LSM.Register, LSM, "border", "Outrider 1px", "Interface\Buttons\WHITE8x8")
+  pcall(LSM.Register, LSM, "statusbar", "Outrider Flat", "Interface\\Buttons\\WHITE8x8")
+  pcall(LSM.Register, LSM, "border", "Outrider 1px", "Interface\\Buttons\\WHITE8x8")
   self.mediaRegistered = true
   return true
 end

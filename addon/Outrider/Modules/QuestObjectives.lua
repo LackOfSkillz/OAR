@@ -469,9 +469,35 @@ function M:Track(questID)
   return true
 end
 
+-- Is this spot in the zone you're standing in? (the game's quest arrow and
+-- our plain arrow only help there; elsewhere you need a route)
+function M.SameZone(spot)
+  local here = C.PlayerPosition("player")
+  return here ~= nil and spot ~= nil and spot.mapID == here
+end
+
 function M:Guide(questID)
-  if self:Track(questID) then return true end
   local spot = self:Nearest(questID)
+  -- in another zone or on another continent: plan the trip (flight masters,
+  -- zeppelins, skyboats, boats) and let the arrow lead step by step (Gary,
+  -- 2026-11-21: Exploring the Horde sends him to Undercity and the click did
+  -- nothing). The game's own quest arrow can't cross continents.
+  if spot and not M.SameZone(spot) and ns.Journey and ns.Travel then
+    local target = ns.Travel.Point(spot.mapID, spot.x, spot.y, spot.label)
+    if target then
+      local name = spot.label or ("quest " .. tostring(questID))
+      local ok = pcall(ns.Journey.Go, ns.Journey, { name = name, target = target, sub = "quest" })
+      if ok then
+        -- the game still highlights the quest's area on the map
+        local set = C.Resolve("C_SuperTrack.SetSuperTrackedQuestID")
+        if type(set) == "function" then pcall(set, questID) end
+        self.guideQuest = questID
+        self:Info("quest %d is in %s: trip planned", questID, tostring(ns.Travel.ZoneName(spot.mapID)))
+        return true
+      end
+    end
+  end
+  if self:Track(questID) then return true end
   if not (spot and ns.Waypoints) then return false end
   local ok, w = ns.Waypoints:Set(spot.mapID, spot.x, spot.y, spot.label)
   if ok then self.guideWP, self.guideQuest = w, questID end
@@ -547,7 +573,7 @@ ns.Hub:AddTab("quests", "Quests", function(p)
     end },
     { "header", "Your quest log", icon = "INV_Misc_Note_01" },
     { "note", function()
-      if not M:Pack() then return "The quest data pack isn't installed: run python tools/import_questie_quests.py --deploy, then restart the game." end
+      if not M:Pack() then return "The quest data pack isn't installed yet." end
       return "Go puts the arrow on the nearest objective (or the turn-in when it's done). Pins on the map show every spot. Community data, unverified."
     end },
     { "cards", function()
@@ -581,6 +607,11 @@ ns.Hub:AddTab("quests", "Quests", function(p)
     { "check", "Hide the game's quest tracker", function() return ns.QuestTracker and ns.QuestTracker:Settings().hideBlizzard end,
       function(on) if ns.QuestTracker then ns.QuestTracker:Settings().hideBlizzard = on ns.QuestTracker:Refresh() end end },
     { "note", "Click a quest for the arrow, right-click to fold it, drag the title to move. /ride tracker level or nearest sorts it." },
+    { "header", "Quests on the map and nameplates", icon = "INV_Misc_Map_01" },
+    { "check", "Quest objectives on the map", function() return M:Settings().show end, function(on) M:Settings().show = on ns.MapPins:Invalidate() end },
+    { "check", "Alert when I mouse over a quest object", function() return M:Settings().hoverAlert end, function(on) M:Settings().hoverAlert = on end },
+    { "check", "Quest marks on nameplates", function() return ns.QuestExtras and ns.QuestExtras:Settings().plates end,
+      function(on) if ns.QuestExtras then ns.QuestExtras:Settings().plates = on ns.QuestExtras:RefreshAll() end end },
     { "header", "Quest givers and sounds", icon = "INV_Misc_Bell_01" },
     { "check", "Show event quests (Darkmoon Faire, holidays)", function() return ns.QuestInfo and ns.QuestInfo:Settings().showEvent end,
       function(on) if ns.QuestInfo then ns.QuestInfo:Settings().showEvent = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
@@ -596,16 +627,11 @@ ns.Hub:AddTab("quests", "Quests", function(p)
       function(on) if ns.QuestInfo then ns.QuestInfo:Settings().warnBreadcrumb = on end end },
     { "check", "Walking paths of escort NPCs on the map", function() return ns.QuestInfo and ns.QuestInfo:Settings().paths end,
       function(on) if ns.QuestInfo then ns.QuestInfo:Settings().paths = on end if ns.MapPins then ns.MapPins:Invalidate() end end },
-    { "header", "Quest history", icon = "INV_Misc_Book_09" },
-    { "note", function()
-      local lines = ns.QuestInfo and ns.QuestInfo:HistoryLines(15) or {}
-      return #lines > 0 and table.concat(lines, "\n") or "Quests you take, hand in or abandon show here, with the date, your level and the zone."
-    end },
   })
 end)
 
 function M:Activity()
   local pack = self:Pack()
-  if not pack then return "no quest pack: run tools/import_questie_quests.py --deploy" end
+  if not pack then return "no quest pack installed" end
   return string.format("%d objectives of your quests on the map", #self:Targets())
 end

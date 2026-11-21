@@ -46,16 +46,21 @@ end
 -- player's map chain, all descendants).
 function M:MapByName(name)
   if type(name) ~= "string" then return nil end
-  if not self.byName then
-    self.byName = {}
-    local id = C.PlayerPosition("player")
-    for _ = 1, 10 do
-      local info = id and C.Call("C_Map.GetMapInfo", id)
-      local parent = type(info) == "table" and info.parentMapID
-      if not parent or parent == 0 then break end
-      id = parent
-    end
-    local kids = id and C.Call("C_Map.GetMapChildrenInfo", id, nil, true)
+  -- the top of the player's map chain; Zephras Isle hangs off a different
+  -- root than Kalimdor (Gary, 2026-11-21: a cache built in Thunder Bluff
+  -- found no Zephras Isle places), so one cache per root, merged
+  local id = C.PlayerPosition("player")
+  for _ = 1, 10 do
+    local info = id and C.Call("C_Map.GetMapInfo", id)
+    local parent = type(info) == "table" and info.parentMapID
+    if not parent or parent == 0 then break end
+    id = parent
+  end
+  self.byName = self.byName or {}
+  self.rootsRead = self.rootsRead or {}
+  if id and not self.rootsRead[id] then
+    self.rootsRead[id] = true
+    local kids = C.Call("C_Map.GetMapChildrenInfo", id, nil, true)
     for _, k in ipairs(type(kids) == "table" and kids or {}) do
       local n = C.Readable(k.name)
       if type(n) == "string" and not self.byName[n:lower()] then self.byName[n:lower()] = k.mapID end
@@ -206,6 +211,11 @@ function M:Dock(place)
 end
 
 local function endPoint(self, e)
+  -- the zeppelin master or shipmaster was seen standing somewhere: that wins
+  if e.npc and ns.NPCPack and ns.NPCPack.Seen then
+    local sm, sx, sy = ns.NPCPack.Seen(e.npc)
+    if sm and sm == self:MapByName(e.zone) then return M.Point(sm, sx, sy, e.place) end
+  end
   if e.x and e.y then return M.Point(self:MapByName(e.zone), e.x, e.y, e.place) end
   return self:Dock(e.place) or M.Point(self:MapByName(e.zone), nil, nil, e.place)
 end

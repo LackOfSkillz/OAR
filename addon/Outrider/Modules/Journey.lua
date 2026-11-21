@@ -248,7 +248,7 @@ function M:PinLines()
     if r.steps[2] then out[#out + 1] = { string.format("Then: %s", r.steps[2].text), "muted" } end
     if #r.steps > 2 then out[#out + 1] = { string.format("%d steps in all, about %s", #r.steps, ns.Travel.Minutes(r.seconds)), "muted" } end
   end
-  out[#out + 1] = { "Stop the guide on Outrider's Journey page.", "muted" }
+  out[#out + 1] = { "Stop the guide on Outrider's Find page.", "muted" }
   return out
 end
 
@@ -332,15 +332,215 @@ function M:OnDisable() ns.ThrottleCancel("journey") end
 
 function M:Activity()
   if self.goal then return "guiding to " .. tostring(self.goal.name) end
-  return "Journey tab: best gear and XP quests anywhere, with a route"
+  return "Find page: best gear and XP quests anywhere, with a route"
 end
 
 -- -------------------------------------------------------------------- tab
+-- ------------------------------------------------------------------ page
+-- Journey, rebuilt so anyone gets it at a glance (Gary, 2026-11-20: "I really
+-- have no clue how to use this page ... an average 8th grader could understand
+-- at a glance what the page is for and how to use it"):
+--   * three steps across the top: 1 pick a place, 2 press Go, 3 follow the arrow
+--   * "Best picks for you": the best quest for XP, the best gear upgrade and
+--     the best zone for your level, each with Go
+--   * left: what to look for, in plain words, with icons
+--   * middle: the results, each row with an icon, a plain line and how far
+--   * right: "Your trip": the steps of the route and one big Go / Stop
+
+-- What each kind is called and what it's for, in plain words.
+M.KINDS_PLAIN = {
+  { "all", "Everything", "INV_Misc_Map_01", "All of it, nearest first" },
+  { "quest", "Quests", "INV_Misc_Note_01", "Quests you can pick up now, most XP for your time first" },
+  { "zone", "Zones to level in", "INV_Misc_Map02", "Places with lots of quests for your level" },
+  { "gear", "Gear upgrades", "INV_Chest_Chain_05", "Better gear you can get, biggest upgrade first" },
+  { "rare", "Rare monsters", "Ability_Hunter_MarkedForDeath", "Rare monsters with good loot" },
+  { "node", "Herbs and ore", "Trade_Herbalism", "Where herbs and ore grow" },
+  { "place", "Services", "INV_Misc_Bag_10", "Vendors, trainers, inns, repairs, mail" },
+  { "npc", "People", "INV_Misc_GroupNeedMore", "Find a person by name" },
+  { "mob", "Creatures", "Ability_Hunter_Pet_Wolf", "Monsters to fight, nearest your level first" },
+  { "item", "Items", "INV_Misc_Bag_08", "Type an item's name to see where it comes from" },
+  { "travel", "Flights and boats", "Ability_Mount_Gryphon_01", "Flight masters, boats and portals" },
+}
+M.KIND_ICON = {}
+for _, k in ipairs(M.KINDS_PLAIN) do M.KIND_ICON[k[1]] = "Interface\\Icons\\" .. k[3] end
+M.STEP_ICON = { walk = "Ability_Rogue_Sprint", fly = "Ability_Mount_Gryphon_01", flight = "Ability_Mount_Gryphon_01",
+  boat = "INV_Misc_Fish_09", zeppelin = "INV_Misc_Bomb_04", portal = "Spell_Arcane_PortalOrgrimmar", tram = "INV_Misc_Gear_01",
+  skycutter = "Ability_Mount_Gryphon_01", learned = "INV_Misc_Map_01", hearth = "INV_Misc_Rune_01" }
+
+-- Plain words for one result: title, the line under it, how far.
+function M.Plain(e)
+  local title = tostring(e.name)
+  if e.level then title = title .. string.format("  |cff8f96a6level %d|r", e.level) end
+  local bits = {}
+  if e.kind == "quest" then
+    bits[#bits + 1] = tostring(e.sub or "")
+    if e.xp then bits[#bits + 1] = string.format("about %d XP", e.xp) end
+  elseif e.kind == "gear" then
+    if e.gain then bits[#bits + 1] = string.format("|cff7fff7f%d%% better|r than what you wear", math.floor(e.gain + 0.5)) end
+    if e.sub and e.sub ~= "" then bits[#bits + 1] = tostring(e.sub) end
+  elseif e.sub and e.sub ~= "" then
+    bits[#bits + 1] = tostring(e.sub)
+  end
+  bits[#bits + 1] = e.zone or ns.Travel.ZoneName(e.mapID)
+  local far = e.seconds and (ns.Travel.Minutes(e.seconds) .. " away") or "no known way yet"
+  return title, table.concat(bits, "  ·  "), far
+end
+
+-- The best pick of each: { {label, art, entry} } (cached a little: Find works out every trip)
+M.PICKS = {
+  { "quest", "xpmin", "Best quest for XP", "kind_quest" },
+  { "gear", "gain", "Best gear upgrade", "kind_gear" },
+  { "zone", "xp", "Best zone for your level", "kind_zone" },
+}
+function M:Picks()
+  local now = GetTime and GetTime() or 0
+  if self.picks and now - (self.picksAt or 0) < 30 then return self.picks end
+  local out = {}
+  for _, pk in ipairs(M.PICKS) do
+    local list = ns.Finder:Find({ kind = pk[1], sort = pk[2] })
+    out[#out + 1] = { label = pk[3], art = pk[4], kind = pk[1], entry = list[1] }
+  end
+  self.picks, self.picksAt = out, now
+  return out
+end
+
 ns.Hub:AddTab("journey", "Journey", function(p)
   local F = ns.Finder
+  local Theme = ns.Theme
   p.kind, p.text = "all", ""
-  p.search = UI:SearchBox(p, 220, "Search anything", function(t) p.text = t p:Refresh() end)
-  p.search:SetPoint("TOPLEFT", 0, 0)
+
+  -- 1, 2, 3 across the top
+  p.steps = {}
+  local STEPS = { "Pick a place, quest or item below", "Press Go", "Follow the gold arrow on your screen" }
+  for i, txt in ipairs(STEPS) do
+    local s = CreateFrame("Frame", nil, p)
+    s:SetSize(300, 30)
+    s:SetPoint("TOPLEFT", (i - 1) * 300, 0)
+    s.num = s:CreateTexture(nil, "ARTWORK")
+    s.num:SetSize(24, 24)
+    s.num:SetPoint("LEFT", 0, 0)
+    s.num:SetColorTexture(Theme:Color("gold"))
+    s.n = UI.Text(s, "large", "onGold")
+    s.n:SetPoint("CENTER", s.num, "CENTER", 0, 0)
+    s.n:SetText(tostring(i))
+    s.text = UI.Text(s, "normal", "text")
+    s.text:SetPoint("LEFT", s.num, "RIGHT", 10, 0)
+    s.text:SetText(txt)
+    p.steps[i] = s
+  end
+
+  -- best picks: three picture cards
+  p.picksHead = UI.Display(p, "side", "goldText")
+  p.picksHead:SetPoint("TOPLEFT", 0, -44)
+  p.picksHead:SetText("Best picks for you right now")
+  p.pickCards = {}
+  for i = 1, #M.PICKS do
+    local c = UI:Card(p, true)
+    c:SetHeight(92)
+    c.art = c:CreateTexture(nil, "ARTWORK")
+    c.art:SetSize(72, 72)
+    c.art:SetPoint("LEFT", 12, 0)
+    c.label = UI.Text(c, "small", "gold")
+    c.label:SetPoint("TOPLEFT", c.art, "TOPRIGHT", 12, -2)
+    c.title = UI.Text(c, "large", "text")
+    c.title:SetPoint("TOPLEFT", c.label, "BOTTOMLEFT", 0, -4)
+    c.title:SetPoint("RIGHT", c, "RIGHT", -84, 0)
+    c.title:SetJustifyH("LEFT")
+    if c.title.SetWordWrap then c.title:SetWordWrap(false) end
+    c.sub = UI.Text(c, "small", "muted")
+    c.sub:SetPoint("TOPLEFT", c.title, "BOTTOMLEFT", 0, -4)
+    c.sub:SetPoint("RIGHT", c, "RIGHT", -84, 0)
+    c.sub:SetJustifyH("LEFT")
+    if c.sub.SetWordWrap then c.sub:SetWordWrap(false) end
+    c.far = UI.Text(c, "small", "goldText")
+    c.far:SetPoint("TOPLEFT", c.sub, "BOTTOMLEFT", 0, -4)
+    c.go = UI:Button(c, "Go", 64, function() if c.entry then p:Select(c.entry) p:GoNow() end end)
+    c.go:SetHeight(30)
+    c.go:SetPoint("RIGHT", -12, 0)
+    UI.SetPrimary(c.go, true)
+    UI.Tip(c.go, "Go", "Shows the trip on the right and puts the gold arrow up. Then just follow it.")
+    p.pickCards[i] = c
+  end
+
+  -- left: what to look for
+  local TOP = -152
+  p.kindsHead = UI.Text(p, "small", "gold")
+  p.kindsHead:SetPoint("TOPLEFT", 0, TOP)
+  p.kindsHead:SetText("WHAT ARE YOU LOOKING FOR?")
+  p.kindBtns = {}
+  for i, k in ipairs(M.KINDS_PLAIN) do
+    local b = CreateFrame("Button", nil, p, Theme:BackdropTemplate())
+    b:SetSize(196, 30)
+    b:SetPoint("TOPLEFT", 0, TOP - 18 - (i - 1) * 32)
+    b.bar = b:CreateTexture(nil, "ARTWORK")
+    b.bar:SetPoint("TOPLEFT") b.bar:SetPoint("BOTTOMLEFT") b.bar:SetWidth(3)
+    b.bar:SetColorTexture(Theme:Color("gold"))
+    b.icon = b:CreateTexture(nil, "ARTWORK")
+    b.icon:SetSize(20, 20)
+    b.icon:SetPoint("LEFT", 10, 0)
+    b.icon:SetTexture(M.KIND_ICON[k[1]])
+    b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    b.label = UI.Text(b, "normal", "body")
+    b.label:SetPoint("LEFT", b.icon, "RIGHT", 8, 0)
+    b.label:SetText(k[2])
+    b:SetScript("OnClick", function() p.kind, p.sort = k[1], nil p:Refresh() end)
+    UI.Tip(b, k[2], k[4])
+    p.kindBtns[k[1]] = b
+  end
+
+  -- right: your trip
+  local trip = UI:Card(p, true)
+  trip:SetWidth(330)
+  trip:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, TOP)
+  trip:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -4, 4)
+  p.trip = trip
+  trip.head = UI.Text(trip, "small", "gold")
+  trip.head:SetPoint("TOPLEFT", 16, -12)
+  trip.head:SetText("YOUR TRIP")
+  trip.title = UI.Display(trip, "side", "text")
+  trip.title:SetPoint("TOPLEFT", trip.head, "BOTTOMLEFT", 0, -6)
+  trip.title:SetPoint("RIGHT", trip, "RIGHT", -14, 0)
+  trip.title:SetJustifyH("LEFT")
+  trip.sub = UI.Text(trip, "small", "muted")
+  trip.sub:SetPoint("TOPLEFT", trip.title, "BOTTOMLEFT", 0, -6)
+  trip.sub:SetPoint("RIGHT", trip, "RIGHT", -14, 0)
+  trip.sub:SetJustifyH("LEFT")
+  trip.pic = trip:CreateTexture(nil, "ARTWORK")
+  trip.pic:SetSize(256, 128)
+  trip.pic:SetPoint("TOP", trip, "TOP", 0, -90)
+  trip.stepRows = {}
+  for i = 1, 6 do
+    local r = CreateFrame("Frame", nil, trip)
+    r:SetSize(298, 40)
+    r:SetPoint("TOPLEFT", 16, -96 - (i - 1) * 46)
+    r.icon = r:CreateTexture(nil, "ARTWORK")
+    r.icon:SetSize(28, 28)
+    r.icon:SetPoint("LEFT", 0, 0)
+    r.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    r.num = UI.Text(r, "small", "gold")
+    r.num:SetPoint("TOPLEFT", r.icon, "TOPRIGHT", 10, -1)
+    r.text = UI.Text(r, "normal", "text")
+    r.text:SetPoint("TOPLEFT", r.num, "BOTTOMLEFT", 0, -2)
+    r.text:SetWidth(250)
+    r.text:SetJustifyH("LEFT")
+    r:Hide()
+    trip.stepRows[i] = r
+  end
+  trip.go = UI:Button(trip, "Go", 140, function() p:GoNow() end)
+  trip.go:SetHeight(34)
+  trip.go:SetPoint("BOTTOMLEFT", 16, 16)
+  UI.SetPrimary(trip.go, true)
+  UI.Tip(trip.go, "Go", "Puts the gold arrow and a map marker up for the first step. When you finish a step, the next one comes by itself.")
+  trip.stop = UI:Button(trip, "Stop", 100, function() M:Stop("button") p:Refresh() end)
+  trip.stop:SetHeight(34)
+  trip.stop:SetPoint("LEFT", trip.go, "RIGHT", 8, 0)
+  UI.Tip(trip.stop, "Stop", "Takes the arrow and marker away.")
+  -- the old names (Guide me again)
+  p.go, p.stop = trip.go, trip.stop
+
+  -- middle: search and results
+  p.search = UI:SearchBox(p, 300, "Type a name: a quest, item, person or place", function(t) p.text = t p:Refresh() end)
+  p.search:SetPoint("TOPLEFT", 212, TOP - 2)
   p.sortBtn = UI:Button(p, "Sort: nearest", 150, function()
     local cur, nxt = p.sort or F.DEFAULT_SORT[p.kind], 1
     for i, s in ipairs(F.SORTS) do if s == cur then nxt = i % #F.SORTS + 1 end end
@@ -348,41 +548,93 @@ ns.Hub:AddTab("journey", "Journey", function(p)
     p:Refresh()
   end)
   p.sortBtn:SetPoint("LEFT", p.search, "RIGHT", 8, 0)
+  UI.Tip(p.sortBtn, "Sort", "Changes the order: nearest, most XP for your time, most XP, best gear, closest to your level, name or zone.")
   p.count = UI.Text(p, "small", "muted")
-  p.count:SetPoint("LEFT", p.sortBtn, "RIGHT", 8, 0)
-  p.kindBtns = {}
-  local prev
-  for _, k in ipairs(F.KINDS) do
-    -- as wide as its word (tour 2026-11-19: "Creatures" and "Herbs, ore" ran into each other)
-    local label = F.KIND_LABEL[k]
-    local b = UI:Button(p, label, math.max(62, #label * 7 + 20), function() p.kind, p.sort = k, nil p:Refresh() end)
-    if prev then b:SetPoint("LEFT", prev, "RIGHT", 4, 0) else b:SetPoint("TOPLEFT", p.search, "BOTTOMLEFT", 0, -6) end
-    p.kindBtns[k], prev = b, b
-  end
+  p.count:SetPoint("TOPLEFT", p.search, "BOTTOMLEFT", 2, -6)
   p.list = UI:ScrollList(p, {
-    rows = 20, rowHeight = 22, -- 16 left the bottom third of the page empty
-    render = function(row, e) row.text:SetText(F.Line(e)) end,
-    onClick = function(e) p:ShowRoute(e) if e.target then M:Go(e) end end, -- one click: route, marker and arrow
+    rows = 12, rowHeight = 40,
+    build = function(row)
+      row.text:ClearAllPoints()
+      row.icon = row:CreateTexture(nil, "ARTWORK")
+      row.icon:SetSize(28, 28)
+      row.icon:SetPoint("LEFT", 6, 0)
+      row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+      row.text:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 10, -1)
+      row.text:SetPoint("RIGHT", row, "RIGHT", -110, 0)
+      row.sub = UI.Text(row, "small", "muted")
+      row.sub:SetPoint("TOPLEFT", row.text, "BOTTOMLEFT", 0, -3)
+      row.sub:SetPoint("RIGHT", row, "RIGHT", -110, 0)
+      row.sub:SetJustifyH("LEFT")
+      if row.sub.SetWordWrap then row.sub:SetWordWrap(false) end
+      row.far = UI.Text(row, "small", "goldText")
+      row.far:SetPoint("RIGHT", row, "RIGHT", -10, 0)
+      row.far:SetJustifyH("RIGHT")
+    end,
+    render = function(row, e)
+      local title, sub, far = M.Plain(e)
+      row.icon:SetTexture(M.KIND_ICON[e.kind] or M.KIND_ICON.all)
+      row.text:SetText(title)
+      row.sub:SetText(sub)
+      row.far:SetText(far)
+    end,
+    onClick = function(e) p:Select(e) end,
   })
-  p.list:SetPoint("TOPLEFT", p.kindBtns.all, "BOTTOMLEFT", 0, -6)
-  p.list:SetPoint("RIGHT", p, "RIGHT", -4, 0) -- as wide as the window
-  p.route = UI.Text(p, "small", "text")
-  p.route:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 0, -6)
-  p.route:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  p.route:SetJustifyH("LEFT")
-  p.go = UI:Button(p, "Guide me again", 130, function() if p.current then M:Go(p.current) end end)
-  p.go:SetPoint("TOPLEFT", p.route, "BOTTOMLEFT", 0, -8) -- right under the route, never off the bottom
-  p.stop = UI:Button(p, "Stop", 80, function() M:Stop("button") end)
-  p.stop:SetPoint("LEFT", p.go, "RIGHT", 6, 0)
-  function p:ShowRoute(e)
+  p.list:SetPoint("TOPLEFT", p.count, "BOTTOMLEFT", -2, -6)
+  p.list:SetPoint("RIGHT", trip, "LEFT", -12, 0)
+  p.hint = UI.Text(p, "small", "muted")
+  p.hint:SetPoint("TOPLEFT", p.list, "BOTTOMLEFT", 2, -6)
+  p.hint:SetText("Click a line to see the trip on the right, then press Go. 'Seen' means you met it; community data is unchecked.")
+  -- the old name kept for tests and other pages
+  p.route = trip.sub
+
+  function p:Select(e)
     self.current = e
-    if not e.target then self.route:SetText("No position for this one.") return end
-    local route, why = ns.Travel:Route(e.target)
-    if not route then self.route:SetText(why) return end
-    local lines = { string.format("%s: about %s", tostring(e.name), ns.Travel.Minutes(route.seconds)) }
-    for i, st in ipairs(route.steps) do lines[#lines + 1] = string.format("%d. %s", i, st.text) end
-    self.route:SetText(table.concat(lines, "\n"))
+    self:ShowTrip()
   end
+
+  function p:GoNow()
+    local e = self.current
+    if e and e.target then M:Go(e) end
+    self:ShowTrip()
+  end
+
+  -- The right card: the trip you're on, the one you picked, or what to do.
+  function p:ShowTrip()
+    local e = self.current
+    local going = M.goal
+    for _, r in ipairs(trip.stepRows) do r:Hide() end
+    trip.stop:SetShown(going ~= nil)
+    if not e and going then e = going end
+    if not e then
+      trip.title:SetText("Pick something")
+      trip.sub:SetText("Choose a best pick above or a line in the list. Its trip shows here, step by step.")
+      local pic = ns.Art and (ns.Art:Path("journey_empty") or ns.Art:Path("empty_search"))
+      trip.pic:SetShown(pic ~= nil)
+      if pic then trip.pic:SetTexture(pic) end
+      trip.go:Hide()
+      return
+    end
+    trip.pic:Hide()
+    local onIt = going and going.name == e.name
+    trip.title:SetText(tostring(e.name))
+    trip.go:Show()
+    trip.go.label:SetText(onIt and "Point again" or "Go")
+    if not e.target then trip.sub:SetText("Outrider doesn't know where this is.") trip.go:Hide() return end
+    local route, why = ns.Travel:Route(e.target)
+    if not route then trip.sub:SetText(tostring(why)) return end
+    trip.sub:SetText(string.format("%s%s, about %s, %d step%s", onIt and "|cff7fff7fYou're on your way.|r  " or "",
+      ns.Travel.ZoneName(e.mapID), ns.Travel.Minutes(route.seconds), #route.steps, #route.steps == 1 and "" or "s"))
+    for i, st in ipairs(route.steps) do
+      local r = trip.stepRows[i]
+      if r then
+        r.icon:SetTexture("Interface\\Icons\\" .. (M.STEP_ICON[st.kind] or "INV_Misc_Map_01"))
+        r.num:SetText("STEP " .. i)
+        r.text:SetText(st.text)
+        r:Show()
+      end
+    end
+  end
+
   function p:Refresh()
     -- a search typed in the hub's top bar lands here
     local pending = ns.Hub.pendingSearch
@@ -391,12 +643,50 @@ ns.Hub:AddTab("journey", "Journey", function(p)
       self.kind, self.sort, self.text = "all", nil, pending
       self.search:SetText(pending)
     end
+    -- best picks, three across the middle and left
+    local W = (self.GetWidth and self:GetWidth()) or 1000
+    if not W or W < 600 then W = 1000 end
+    local cw = math.floor((W - 16) / 3)
+    for i, pk in ipairs(M:Picks()) do
+      local c = self.pickCards[i]
+      c:ClearAllPoints()
+      c:SetPoint("TOPLEFT", self, "TOPLEFT", (i - 1) * (cw + 8), -66)
+      c:SetWidth(cw)
+      c.entry = pk.entry
+      c.label:SetText(pk.label:upper())
+      local art = ns.Art and (ns.Art:Path(pk.art) or ns.Art:Path("kind_errand"))
+      c.art:SetTexture(art or M.KIND_ICON[pk.kind])
+      if pk.entry then
+        local title, sub, far = M.Plain(pk.entry)
+        c.title:SetText(title) c.sub:SetText(sub) c.far:SetText(far)
+        c.go:Show()
+      else
+        c.title:SetText("Nothing yet")
+        c.sub:SetText(pk.kind == "gear" and "No upgrade found that you can reach" or "Nothing found for your level here yet")
+        c.far:SetText("")
+        c.go:Hide()
+      end
+    end
+    -- left menu: the chosen kind lit
+    for k, b in pairs(self.kindBtns) do
+      local on = k == self.kind
+      Theme:ApplyPanel(b, on and "goldSoft" or "bg", on and "gold" or "bg")
+      b.bar:SetShown(on)
+      b.label:SetTextColor(Theme:Color(on and "goldText" or "body"))
+    end
     local list, total, sort = F:Find({ kind = self.kind, text = self.text, sort = self.sort })
     self.sortBtn.label:SetText("Sort: " .. (F.SORT_LABEL[sort] or sort))
-    self.count:SetText(string.format("%d found%s", total, total > #list and (", first " .. #list .. " shown") or ""))
+    local plain
+    for _, k in ipairs(M.KINDS_PLAIN) do if k[1] == self.kind then plain = k end end
+    if #list == 0 then
+      self.count:SetText(self.kind == "item" and "Type at least 3 letters of an item's name above."
+        or "Nothing found. Item data may still be loading: try again in a moment.")
+    else
+      self.count:SetText(string.format("%s: %d found%s", plain and plain[2] or "Results", total,
+        total > #list and string.format(" (first %d shown)", #list) or ""))
+    end
     self.list:SetItems(list)
-    self.route:SetText(#list == 0 and "Nothing found (item data may still be loading: try again in a moment)."
-      or "Click a line: the route shows here and the marker and arrow go up. Community data is unverified; 'seen' means you met it.")
+    self:ShowTrip()
   end
 end, 45)
 

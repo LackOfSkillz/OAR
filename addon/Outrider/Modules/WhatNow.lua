@@ -35,12 +35,12 @@ M.GOALS = {
 
 -- how much each kind of step counts for each goal
 M.WEIGHTS = {
-  level       = { quest = 1.0, dungeon = 0.8, errand = 0.7, gear = 0.6, profession = 0.3, rare = 0.3, gold = 0.3, gather = 0.2 },
-  gold        = { gold = 1.0, gather = 0.8, errand = 0.7, profession = 0.6, quest = 0.4, gear = 0.3, dungeon = 0.3, rare = 0.3 },
-  gear        = { gear = 1.0, dungeon = 1.0, quest = 0.6, errand = 0.6, rare = 0.4, gold = 0.3, profession = 0.3, gather = 0.2 },
-  professions = { profession = 1.0, gather = 0.9, gold = 0.5, errand = 0.5, quest = 0.3, gear = 0.3, dungeon = 0.2, rare = 0.2 },
-  explore     = { rare = 1.0, quest = 0.7, dungeon = 0.6, gather = 0.5, errand = 0.5, gear = 0.4, profession = 0.2, gold = 0.2 },
-  mix         = { quest = 0.8, gear = 0.8, dungeon = 0.7, profession = 0.7, errand = 0.8, rare = 0.6, gold = 0.6, gather = 0.5 },
+  level       = { quest = 1.0, dungeon = 0.8, errand = 0.7, gear = 0.6, profession = 0.3, rare = 0.3, gold = 0.3, gather = 0.2, tip = 0.6 },
+  gold        = { gold = 1.0, gather = 0.8, errand = 0.7, profession = 0.6, quest = 0.4, gear = 0.3, dungeon = 0.3, rare = 0.3, tip = 0.3 },
+  gear        = { gear = 1.0, dungeon = 1.0, quest = 0.6, errand = 0.6, rare = 0.4, gold = 0.3, profession = 0.3, gather = 0.2, tip = 0.3 },
+  professions = { profession = 1.0, gather = 0.9, gold = 0.5, errand = 0.5, quest = 0.3, gear = 0.3, dungeon = 0.2, rare = 0.2, tip = 0.4 },
+  explore     = { rare = 1.0, quest = 0.7, dungeon = 0.6, gather = 0.5, errand = 0.5, gear = 0.4, profession = 0.2, gold = 0.2, tip = 0.5 },
+  mix         = { quest = 0.8, gear = 0.8, dungeon = 0.7, profession = 0.7, errand = 0.8, rare = 0.6, gold = 0.6, gather = 0.5, tip = 0.5 },
 }
 
 local function clamp(v) return math.max(0, math.min(1, v or 0)) end
@@ -380,7 +380,51 @@ function M.Safe(fn, ...)
 end
 
 -- ------------------------------------------------------------ build
-M.ORDER = { "errands", "quests", "gear", "dungeons", "training", "rares", "gold", "gather" }
+-- Tips from the leveling knowledge base (Data/Leveling_Facts.lua, Wowhead's
+-- Forever guides): a fact shows for the first levels after it becomes useful
+-- (riding at 40, the Cozy Sleeping Bag at 14), for your class and race only.
+M.TIP_SPAN = 5
+SOURCES.tips = function()
+  local facts = ns.Leveling and ns.Leveling.FACTS or {}
+  local level = tonumber(ns.Compat.Call("UnitLevel", "player")) or 1
+  local cls = ns.PlayerClass and ns.PlayerClass()
+  local race = select(2, ns.Compat.Call("UnitRace", "player"))
+  local out = {}
+  for _, f in ipairs(facts) do
+    local from = tonumber(f.minLevel)
+    local to = tonumber(f.maxLevel) or (from and from + M.TIP_SPAN)
+    if from and level >= from and level <= to and (not f.class or f.class == cls)
+      and (not f.race or tostring(race or ""):lower() == tostring(f.race):lower()) then
+      out[#out + 1] = { key = "tip:" .. tostring(f.id), kind = "tip", title = tostring(f.text),
+        why = "From the WoW Forever leveling guides (" .. tostring(f.topic or "tip") .. ").",
+        where = "", benefit = 0.5, confidence = 0.6, label = "guide", panel = "help", go = hub("help") }
+    end
+  end
+  return out
+end
+
+-- Dungeon quests to take along (Modules/DungeonQuests.lua): for the next
+-- dungeon right for your level, the first quest you haven't done.
+SOURCES.dungeonquests = function()
+  local D = ns.DungeonQuests
+  if not (D and D.enabled) then return {} end
+  local ctx = D:Context()
+  local best = D:Next(ctx)
+  if not best then return {} end
+  for _, st in ipairs(best.steps) do
+    local status = D:Status(st, ctx)
+    if status == "todo" then
+      return { { key = "dq:" .. tostring(st.id), kind = "dungeon",
+        title = string.format("Pick up %s for %s", tostring(st.quest), best.name),
+        why = string.format("A dungeon quest is a lot of XP; %s is right for your level (%d-%d).", best.name, best.lo, best.hi),
+        where = string.format("%s, %s", tostring(st.name), tostring(st.zone)), benefit = 0.6, confidence = 0.6, label = "guide",
+        go = function() return D:Go(st) end } }
+    end
+  end
+  return {}
+end
+
+M.ORDER = { "errands", "quests", "gear", "dungeons", "dungeonquests", "training", "rares", "gold", "gather", "tips" }
 
 function M:Candidates()
   local all, failed = {}, {}

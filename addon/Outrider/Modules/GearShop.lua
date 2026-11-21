@@ -373,8 +373,14 @@ function M.NewCard(parent, width)
   card.price = UI.Text(card, "normal", "text")
   card.price:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -84, 9)
   card.price:SetJustifyH("RIGHT")
-  card.buy = UI:Button(card, "Buy", 64, function()
-    for _, e in ipairs(card.action or {}) do if ns.AHBuy then ns.AHBuy:Add(e) end end
+  -- one button, two clicks on the same spot (Gary, 2026-11-20: "I don't like
+  -- how I have to chase the buy button"): Add puts it in the cart; once its
+  -- price is in, the same button says Buy and that click buys it.
+  card.buy = UI:Button(card, "Buy", 64, function() M.CardClick(card) end)
+  -- stackable goods: the price quote comes while the mouse rests here, so the click buys
+  card.buy:HookScript("OnEnter", function()
+    local a = card.action
+    if a and #a == 1 and a[1].commodity and ns.AHBuy then ns.AHBuy:Prequote(a[1]) end
   end)
   card.buy:SetHeight(26)
   card.buy:SetPoint("RIGHT", -10, 0)
@@ -395,6 +401,76 @@ function M.NewCard(parent, width)
 end
 
 -- Fill a card. d = { itemID, title, sub, pill, price (copper), reagents = { {itemID, n, short} }, action, item, dim }
+-- What the cart is doing with a card's purchase: nil (not in it), "queued",
+-- "finding", "quote" (ready: Buy), "buying" or "bought".
+function M.CartState(action)
+  local A, e = ns.AHBuy, action and action[1]
+  if not (A and e) then return nil end
+  return A:StateOf(e)
+end
+
+-- One click buys when the listing or quote is already in (AHBuy:BuyNow);
+-- a card with several things to buy (a skill-up's ingredients) goes to the cart.
+function M.CardClick(card)
+  local A = ns.AHBuy
+  if not (A and card.action) then return end
+  local st = M.CartState(card.action)
+  if #card.action == 1 and (st == nil or st == "bought" or (st == "quote")) then
+    if st == "quote" and not (A.current and A.current.hover) then A:Confirm() else A:BuyNow(card.action[1]) end
+  elseif st == "quote" then A:Confirm()
+  elseif st == nil or st == "bought" then
+    for _, e in ipairs(card.action) do A:Add(e) end
+  end
+  M:UpdateButtons()
+end
+
+-- Labels for every card's button and the cart bar, without redrawing the page.
+M.BUTTON = { queued = "In cart", finding = "...", quote = "Buy", buying = "Buying", bought = "Bought" }
+function M:UpdateButtons()
+  local f = self.frame
+  if not f then return end
+  for _, card in ipairs(f.rows or {}) do
+    if card:IsShown() and card.action then
+      local st = M.CartState(card.action)
+      local single = #card.action == 1
+      card.buy.label:SetText(M.BUTTON[st or ""] or (single and "Buy" or "Add"))
+      UI.SetPrimary(card.buy, st == nil or st == "quote")
+      -- the price the click will pay: the quote or the listing looked up ahead
+      local A = ns.AHBuy
+      if st == "quote" and A.quote then card.price:SetText(ns.Prices.Coins(A.quote.price))
+      elseif single and A.Known then
+        local kn = A:Known(card.action[1])
+        if kn then card.price:SetText(ns.Prices.Coins(kn.price)) end
+      end
+    end
+  end
+  self:CartBar()
+end
+
+-- The cart bar, fixed at the bottom of the window: what's next and one Buy.
+function M:CartBar()
+  local f, A = self.frame, ns.AHBuy
+  if not (f and f.cart and A) then return end
+  local e, q, p = A.current, A.quote, A.pending
+  if e and e.hover then e, q = nil, nil end -- a hover quote isn't in the cart
+  local n = #(A.queue or {}) + (e and 1 or 0) + (p and 1 or 0)
+  if n == 0 then
+    f.cart.text:SetText("|cff8f96a6Cart empty: Add puts an item here; Buy here or on its card.|r")
+    f.cart.buy:Hide()
+    return
+  end
+  local shown = e or (p and p.e)
+  local what = tostring(shown.name) .. (shown.qty and (" x" .. shown.qty) or "")
+  local status
+  if p then status = "buying " .. what .. "..."
+  elseif q then status = what .. "  " .. ns.Prices.Coins(q.price)
+  else status = "finding the cheapest " .. what .. "..." end
+  f.cart.text:SetText(string.format("|cffd4a84aCart %d|r   %s", n, status))
+  f.cart.buy.label:SetText(q and not p and "Buy" or "...")
+  UI.SetPrimary(f.cart.buy, q and not p and true or false)
+  f.cart.buy:Show()
+end
+
 function M.FillCard(card, d)
   card.item, card.action = d.item, d.action
   card.icon:SetTexture(d.icon or (d.itemID and M.Icon(d.itemID)) or "Interface\\Icons\\INV_Misc_QuestionMark")
@@ -563,10 +639,34 @@ function M:Build()
   for i = 1, M.PAGE do f.rows[i] = M.NewCard(f, cw) end
   -- footer: total and Buy all, pager
   f.total = UI.Text(f, "normal", "text")
-  f.buyAll = UI:Button(f, "Buy all", 96, function() M:BuyAll() end)
+  f.buyAll = UI:Button(f, "Add all", 96, function() M:BuyAll() end)
   f.buyAll:SetHeight(26)
   UI.SetPrimary(f.buyAll, true)
-  UI.Tip(f.buyAll, "Buy all", "Queues every line here. The bar above the auction window still asks for your click on each purchase, with its price.")
+  UI.Tip(f.buyAll, "Add all", "Puts every line here in the cart. Then press Buy in the cart bar at the bottom, once per purchase, without moving the mouse.")
+  -- the cart bar: always in the same place at the bottom
+  f.cart = CreateFrame("Frame", nil, f, Theme:BackdropTemplate())
+  Theme:ApplyPanel(f.cart, "panel", "gold")
+  f.cart:SetHeight(40)
+  f.cart:SetPoint("BOTTOMLEFT", M.NAV + 12, 10)
+  f.cart:SetPoint("BOTTOMRIGHT", -12, 10)
+  f.cart.icon = f.cart:CreateTexture(nil, "ARTWORK")
+  f.cart.icon:SetSize(22, 22)
+  f.cart.icon:SetPoint("LEFT", 10, 0)
+  f.cart.icon:SetTexture("Interface\\Icons\\INV_Misc_Bag_10")
+  f.cart.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  f.cart.text = UI.Text(f.cart, "normal", "text")
+  f.cart.text:SetPoint("LEFT", f.cart.icon, "RIGHT", 8, 0)
+  f.cart.text:SetPoint("RIGHT", f.cart, "RIGHT", -180, 0)
+  f.cart.text:SetJustifyH("LEFT")
+  if f.cart.text.SetWordWrap then f.cart.text:SetWordWrap(false) end
+  f.cart.clear = UI:Button(f.cart, "Clear", 64, function() if ns.AHBuy then ns.AHBuy:Cancel() end M:UpdateButtons() end)
+  f.cart.clear:SetHeight(26)
+  f.cart.clear:SetPoint("RIGHT", -8, 0)
+  UI.Tip(f.cart.clear, "Clear cart", "Empties the cart. Nothing is bought.")
+  f.cart.buy = UI:Button(f.cart, "Buy", 96, function() if ns.AHBuy then ns.AHBuy:Confirm() end M:UpdateButtons() end)
+  f.cart.buy:SetHeight(28)
+  f.cart.buy:SetPoint("RIGHT", f.cart.clear, "LEFT", -6, 0)
+  UI.Tip(f.cart.buy, "Buy", "Buys the next item in the cart at the price shown. Press again for the next one.")
   f.prev = UI:Button(f, "<", 28, function() M.page = math.max(1, (M.page or 1) - 1) M:Refresh() end)
   f.next = UI:Button(f, ">", 28, function() M.page = (M.page or 1) + 1 M:Refresh() end)
   f.pageText = UI.Text(f, "small", "muted")
@@ -601,6 +701,7 @@ function M:BuyAll()
   local n = 0
   for _, a in ipairs(list) do for _, e in ipairs(a) do if ns.AHBuy then ns.AHBuy:Add(e) n = n + 1 end end end
   self:Info("buy all: %d queued (%s)", n, tostring(self.mode))
+  self:UpdateButtons()
 end
 
 function M:Resize() end
@@ -658,7 +759,7 @@ function M:Refresh()
   local _, skipped = 0, 0
   if M.PROFIT_VIEWS[self.mode] then
     if ns.Deals and ns.Deals.enabled then cards, statusText = ns.Deals:View(self.mode) end
-    statusText = statusText or "Deals are switched off (Modules page)."
+    statusText = statusText or "Deals are switched off (Modules tab in Settings)."
   elseif training then
     if T then cards, statusText, searching, pos, total = T:View(self.mode) end
     statusText = statusText or ""
@@ -761,7 +862,15 @@ function M:Refresh()
     f.nav.flips.count:SetText(tostring(#(D:VendorFlips())))
     f.nav.resale.count:SetText(tostring(#D:Resale()))
   end
-  f:SetHeight(math.max(540, -y + 14))
+  f:SetHeight(math.max(560, -y + 14 + 50))
+  -- look up the single items on screen now, so one click buys them
+  local ahead = {}
+  for _, card in ipairs(f.rows) do
+    local a = card:IsShown() and card.action
+    if a and #a == 1 and not a[1].commodity then ahead[#ahead + 1] = a[1] end
+  end
+  if ns.AHBuy and ns.AHBuy.Prefetch then ns.AHBuy:Prefetch(ahead) end
+  self:UpdateButtons()
   f:Show()
 end
 

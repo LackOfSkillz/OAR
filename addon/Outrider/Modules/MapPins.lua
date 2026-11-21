@@ -30,6 +30,7 @@ local LABELS = {
   tabard = "Tabard vendor", quest_giver = "Quest giver", herb = "Herb", ore = "Ore", fish = "Fishing spot", pool = "Fishing pool",
   guildmate = "Guildmate", trail = "Your trail", ride = "Ride you took", transport = "Portal, boat or zeppelin",
   dungeon = "Dungeon entrance", objective = "Quest objective", turnin = "Quest turn-in", qpath = "Quest NPC path",
+  path = "The way there",
 }
 M.LABELS = LABELS
 
@@ -44,6 +45,7 @@ local GROUP = {
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", note = "service", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
   trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
+  path = "path",
 }
 M.RARE_STATE = { alive = { 1, 0.25, 0.25 }, open = { 1, 0.78, 0.3 }, dead = { 0.5, 0.5, 0.55 }, waiting = { 0.5, 0.5, 0.55 } }
 M.GROUP_COLOR = {
@@ -138,6 +140,17 @@ local function outline(frame)
 end
 
 function M.Paint(frame, pin)
+  -- the way there (Path): a plain bright dot, bright green-blue on ground
+  -- walked before, pale where the line only goes straight
+  if pin.kind == "path" then
+    local c = pin.walked and ns.Path.WALKED or ns.Path.GUESS
+    if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
+    frame:SetAlpha(pin.walked and 1 or 0.75)
+    frame.ring:Show() frame.icon:Show()
+    frame.ring:SetColorTexture(0, 0, 0, 0.7)
+    frame.icon:SetColorTexture(c[1], c[2], c[3], 1)
+    return
+  end
   local hollow = M.GATHER[pin.kind] or pin.box
   if hollow then
     local st = not pin.box and ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
@@ -166,7 +179,9 @@ function M.Paint(frame, pin)
   if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
   local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
   frame.ring:SetColorTexture(c[1], c[2], c[3], (pin.questColor or pin.ringColor) and 0.95 or 0.55)
-  if pin.faded then frame:SetAlpha(0.55) end -- a dead rare fades; focus dimming above stays
+  -- a dead rare dims a little, never out of sight: it still marks where it
+  -- spawns (Gary, 2026-11-20: a dead rare's pin was too faint to find)
+  if pin.faded then frame:SetAlpha(0.85) end
   local ok = frame.icon:SetTexture(M.IconFor(pin))
   if ok == false then
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1) -- missing file: plain round dot
@@ -277,6 +292,25 @@ function M:BuildPins(mapID)
       if M.AddQuests(pin, p.kind == "quest_giver" and ns.NPCPack and p.npcID and ns.NPCPack:Npc(p.npcID, mapID)) then out[#out + 1] = pin end
     end
   end
+  -- The leveling guides (Data/Leveling.lua): trainers, flight masters,
+  -- dungeon entrances and quest hubs, unless you recorded that NPC yourself.
+  -- trust: your own places, then the NPC pack, then the guides (docs/POI_AUDIT.md:
+  -- the pack was wrong 1% of the time against Gary's sightings, the guides 7%)
+  local ownName, guided = {}, {}
+  for _, p in pairs(ns.db.global.pois or {}) do if p.name then ownName[p.name] = true end end
+  if ns.NPCPack then for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do if p.name then ownName[p.name] = true end end end
+  local zone = ns.Travel and ns.Travel.ZoneName(mapID)
+  local GUIDE_KIND = { trainer = "trainer", flight_master = "flight_master", dungeon = "dungeon", quest_hub = "note" }
+  for _, g in ipairs(zone and ns.Data:All("place") or {}) do
+    local kind = GUIDE_KIND[g.kind]
+    if kind and g.zone == zone and not ownName[g.name] then
+      guided[g.name] = true
+      if not hidden[kind] and (g.faction == nil or g.faction == faction) then
+        out[#out + 1] = { id = "guide-" .. g.id, kind = kind, mapID = mapID, x = g.x, y = g.y, name = g.name,
+          poi = { kind = kind, name = g.name, title = g.title, source = "guide", note = g.note } }
+      end
+    end
+  end
   -- Optional private NPC pack (D10); NPCs Gary visited himself win.
   if ns.NPCPack then
     for _, p in ipairs(ns.NPCPack:PlacesFor(mapID)) do
@@ -363,6 +397,20 @@ function M:BuildPins(mapID)
     for _, e in ipairs(ns.Data:All("rare")) do
       if e.mapID == mapID and e.spawns and e.spawns[1] then addRare(e.npcID, e.name, e.spawns[1].x, e.spawns[1].y) end
     end
+    -- Spots Gary reported a rare at before Outrider saw it (Data poi kind
+    -- "rare_spot", Gary 2026-11-20). Gone once a known rare pin is within ~4%.
+    for _, e in ipairs(ns.Data:All("poi")) do
+      if e.kind == "rare_spot" and e.mapID == mapID then
+        local near = false
+        for _, pin in ipairs(out) do
+          if pin.kind == "rare" and math.abs(pin.x - e.x) < 0.04 and math.abs(pin.y - e.y) < 0.04 then near = true break end
+        end
+        if not near then
+          out[#out + 1] = { id = "rarespot-" .. e.id, kind = "rare", mapID = mapID, x = e.x, y = e.y, rare = true,
+            name = e.name or "A rare spawns near here", stateLine = e.note }
+        end
+      end
+    end
     -- Every rare and rare elite in the creature pack (Gary, 2026-11-13: "how
     -- was I supposed to find that rare elite?"), at every spawn spot it has
     -- (Gary, 2026-11-14: Slydris has 4).
@@ -414,7 +462,7 @@ end
 -- ------------------------------------------------------------ show / hide
 -- (Gary, 2026-11-17: "be able to hide them or show them in the ui") A
 -- "Pins" button on the world map opens switches per group of pins and one
--- for all of them; the same settings as the Map page, per character, also
+-- for all of them; the same settings as the Map pins tab on Map and places, per character, also
 -- for the minimap.
 M.MENU = {
   { "Rares", { "rare" } },
@@ -528,7 +576,8 @@ end
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
 M.PIN_SIZE, M.CLUSTER, M.CLEAR = 13, 0.02, 0.03
-local NO_MERGE = { rare = true, note = true, guild = true, trail = true, ride = true, transport = true }
+M.RARE_SCALE = 2 -- rares on the zone map: twice the size of other pins
+local NO_MERGE = { path = true, rare = true, note = true, guild = true, trail = true, ride = true, transport = true }
 
 function M.Declutter(pins, px, py)
   local out, cells = {}, {}
@@ -577,6 +626,21 @@ function M:AcquirePin(canvas)
   if not pin then
     pin = CreateFrame("Button", nil, canvas)
     M.Decorate(pin, M.PIN_SIZE)
+    -- rares stand out on the zone map: a red halo and the name under the pin
+    pin.halo = pin:CreateTexture(nil, "BACKGROUND", nil, -1)
+    pin.halo:SetPoint("CENTER")
+    pin.halo:SetSize(M.PIN_SIZE + 8, M.PIN_SIZE + 8)
+    pin.halo:SetColorTexture(1, 0.2, 0.2, 0.45)
+    if pin.CreateMaskTexture and pin.halo.AddMaskTexture then
+      local m = pin:CreateMaskTexture()
+      if m then m:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+      m:SetAllPoints(pin.halo)
+      pin.halo:AddMaskTexture(m) end
+    end
+    pin.halo:Hide()
+    pin.label = pin:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    pin.label:SetPoint("TOP", pin, "BOTTOM", 0, -1)
+    pin.label:Hide()
     pin:SetScript("OnClick", function(self) M:ShowCard(self.data) end)
     pin:SetScript("OnEnter", function(self)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -620,12 +684,27 @@ function M:Refresh()
   local scale = (canvas.GetScale and canvas:GetScale() or 1)
   local pmap, px, py = C.PlayerPosition("player")
   if pmap ~= mapID then px, py = nil, nil end
-  for _, data in ipairs(M.Declutter(self:PinsFor(mapID), px, py)) do
+  -- the way to your destination first, so places draw on top of it
+  local list = {}
+  if ns.Path and ns.Path.enabled then for _, d in ipairs(ns.Path:Pins(mapID)) do list[#list + 1] = d end end
+  for _, d in ipairs(M.Declutter(self:PinsFor(mapID), px, py)) do list[#list + 1] = d end
+  for _, data in ipairs(list) do
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
-    pin:SetScale((data.small and 0.55 or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
+    -- rares are twice the size, with a red halo and their name (Gary, 2026-11-20:
+    -- "make it really noticeable")
+    local big = data.kind == "rare" and not data.small
+    pin:SetScale((data.small and 0.55 or big and M.RARE_SCALE or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
     M.Paint(pin, data)
+    if pin.halo then
+      pin.halo:SetShown(big)
+      -- the name once per rare (not on every extra spawn spot)
+      local first = big and not tostring(data.id or ""):match("^rare%-%d+%-%d+$")
+      pin.label:SetText(first and (tostring(data.name or ""):match("^([^%(,]+)") or "") or "")
+      pin.label:SetShown(first and true or false)
+      if first then pin:SetFrameLevel(pin:GetFrameLevel() + 2) end
+    end
     pin:ClearAllPoints()
     pin:SetPoint("CENTER", canvas, "TOPLEFT", data.x * w * scale, -data.y * h * scale)
     pin:Show()
@@ -649,6 +728,7 @@ end
 
 -- ------------------------------------------------------------- pin card
 function M:ShowCard(data)
+  if type(data) == "table" and data.kind == "path" then return end -- a dot of the way there, nothing to show
   local card = self.card
   if not card then
     card = UI:Window("Outrider_PinCard", "", 280, 170, ns.db.char.pinCard)

@@ -435,7 +435,7 @@ and highlight as this image". One colour only (gold), transparent background,
 | `spec_warrior_arms.png` | a two-handed greatsword: make the blade broad and the grip long, so it can't be read as a dagger |
 | `spec_warrior_prot.png` | a tall tower shield with rivets |
 
-## Batch 7: auction house header (2026-11-20)
+## Batch 7: auction house header (2026-11-20) — DELIVERED and installed 2026-11-21
 
 The redesigned shopping window beside the auction house opens with a painted
 header strip, like the hub's page headers. One picture, same style line as the
@@ -446,3 +446,91 @@ rim light, no text, no logos). 4:1 wide strip, artwork centred: deliver
 | File | Picture |
 |---|---|
 | `header_auction.png` | A grand auction hall at dusk: a long auctioneer's counter of dark wood with brass scales, stacked crates, bolts of cloth, potions on a shelf and a hanging lantern; gold coins on the counter catching the light; an arched window with a blue evening sky behind. Keep the left third darker and calmer (the emblem and title sit there) and the right edge quiet (the gold amount sits there). |
+
+## Batch 8: Journey page (2026-11-20) — DELIVERED and installed 2026-11-21
+
+The Journey page is rebuilt to read at a glance: steps 1-2-3, three "best
+picks" picture cards, and a "Your trip" card. Two pictures, same style line as
+the rest (painted dark fantasy, deep blue-teal shadows, warm gold highlights,
+soft rim light, no text, no logos).
+
+| File | Size | Picture |
+|---|---|---|
+| `kind_zone.png` | 1024x1024, opaque, like the other `kind_*` pictures | A wide landscape seen from a hilltop: rolling green hills, a winding road, a small village with smoke from chimneys, mountains in the distance at dusk. The "Best zone for your level" card. |
+| `journey_empty.png` | 2048x1024 (2:1), transparent or dark vignette background | An open traveller's map on a wooden table, a brass compass on it, and a glowing gold arrow drawn across the map toward a small marked spot. Shown in "Your trip" before anything is picked. |
+
+## Batch 9: profession pictures (2026-11-20) — DELIVERED and installed 2026-11-20
+
+The Professions page now has a card per profession saying what to do next.
+One picture per profession, like the `kind_*` pictures: 1024x1024, opaque, one
+object centred in three-quarter view on the dark vignette background (deep
+blue-black, lighter in the middle), filling about 75%, no frame. Same style
+line as the rest (painted dark fantasy, deep blue-teal shadows, warm gold
+highlights, soft rim light, no text, no logos).
+
+| File | Picture |
+|---|---|
+| `prof_cooking.png` | A cast-iron pan over a small campfire, a steak sizzling, a wooden spoon beside it |
+| `prof_firstaid.png` | A rolled linen bandage and a small corked red potion on a cloth |
+| `prof_fishing.png` | A wooden fishing pole with a red-and-white bobber and a fish on the line |
+| `prof_leatherworking.png` | A curved leather-cutting knife on a piece of tanned leather with stitching |
+| `prof_tailoring.png` | A spool of thread, a needle and a folded bolt of purple cloth |
+| `prof_blacksmithing.png` | A hammer resting on an anvil with a glowing orange ingot |
+| `prof_engineering.png` | A brass gear, a wrench and a small copper gadget with a spring |
+| `prof_alchemy.png` | Two glass flasks, one green and one blue, with a curl of vapour |
+| `prof_enchanting.png` | A glowing violet rod over a small pile of shimmering dust |
+| `prof_herbalism.png` | A hand trowel beside a freshly picked herb with its roots |
+| `prof_mining.png` | A miner's pick stuck in a rock with a vein of copper ore |
+| `prof_skinning.png` | A skinning knife on a folded wolf pelt |
+
+## Batch 10: new sidebar groups and trainer pins (2026-11-20) — DELIVERED and installed 2026-11-21
+
+The sidebar was regrouped (World, Character, Professions, Gold, Social). Three
+groups are new and borrow another group's banner until their own arrives; the
+Map and places page has two new trainer tiles. Same style line as the rest
+(painted dark fantasy, deep blue-teal shadows, warm gold highlights, soft rim
+light, no text, no logos).
+
+### Section hero banners
+**1536x1024, opaque**, like `header_explore` (only a 4:1 strip across the
+middle is used, behind the page title). Keep the **left third calm and dark**
+(the title sits there); very dark overall so gold text reads on top.
+
+| File | Scene |
+|---|---|
+| `header_world.png` | A wide view from a cliff over a world map come to life: forests, a river, a distant city and mountains under a dusky sky, a faint gold glow where the road meets the horizon on the right |
+| `header_professions.png` | A craftsman's workshop: an anvil with a glowing ingot, an alchemy table with flasks, a loom with cloth and a fishing pole by the door, lit warm from the right |
+| `header_gold.png` | A merchant's counting table: neat stacks of gold coins, an open ledger, brass scales and a small treasure chest, lantern light from the right |
+
+### Map pin glyphs
+**1024x1024, TRANSPARENT background**, like `pin_trainer`: one bold simple
+symbol in polished gold metal with a thick dark outline, about 70% of the
+canvas, centred, no circle behind it (Outrider draws the ring). Must read at
+14-20 px.
+
+| File | Symbol |
+|---|---|
+| `pin_weaponmaster.png` | a sword and an axe crossed over a small round shield |
+| `pin_pettrainer.png` | a paw print with a small open book above it |
+
+Still waiting from earlier batches: Batch 7 `header_auction.png`, Batch 8
+`kind_zone.png` and `journey_empty.png`.
+
+## Batch 11: the Home hero (2026-11-21) — DELIVERED and installed 2026-11-21
+
+Gary: "this page needs to be epic legendary worthy ... give it the best art in
+the app." One picture, the best one in the set: it spans the whole top of the
+Home page (about 1100 x 150 on screen), behind the character's name, level,
+XP bar and gold. Same style line as the rest (painted dark fantasy, deep
+blue-teal shadows, warm gold highlights, soft rim light, no text, no logos),
+but grander: this is the first thing every player sees.
+
+**Size: 2048x512 (4:1), opaque.** Only the middle band (about 8:1, the middle
+half of the height) is shown, so keep everything important in a horizontal
+strip through the middle. Keep the **left 45% darker and calm** (the class
+emblem and the words sit there); put the drama on the right.
+
+| File | Scene |
+|---|---|
+| `home_hero.png` | An epic panorama at golden-hour dawn: from a high cliff edge, a lone adventurer with a cloak and a lantern looks out over a vast world. A winding gold-lit road leads down past a riverside village with warm windows, through forests, toward a great city of spires on the far right, with a dungeon gate glowing faintly in a distant mountain and a gryphon flying across the sky. Floating sky-isles faintly on the horizon (the Skyborne home). Rich detail, cinematic depth, light rays through clouds; the left side is the shadowed cliff and sky, darker and calm. |
+

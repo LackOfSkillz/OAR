@@ -23,7 +23,7 @@ OUT = os.path.join(ROOT, "addon", "Outrider", "Art")
 # name: (width, height). Square art is centre-cropped to a square; the header
 # is cropped to a 4:1 strip a little above the middle (VY) to keep the castle.
 # Batch 4 headers (2026-11-19) come with the artwork centred in a 4:1 strip, so they crop at the middle.
-VY = {"header": 0.35, "header_explore": 0.5, "header_character": 0.5, "header_town": 0.5, "header_social": 0.5, "header_outrider": 0.5, "header_auction": 0.5}
+VY = {"header": 0.35, "header_explore": 0.5, "header_character": 0.5, "header_town": 0.5, "header_social": 0.5, "header_outrider": 0.5, "header_auction": 0.5, "header_world": 0.5, "header_professions": 0.5, "header_gold": 0.5, "home_hero_l": 0.5, "home_hero_r": 0.5}
 SPECS = {
     "emblem": (128, 128),
     "header": (1024, 256),
@@ -46,6 +46,20 @@ SPECS = {
     "money_mob": (128, 128), "money_skin": (128, 128), "money_herb": (128, 128), "money_ore": (128, 128),
     "money_cloth": (128, 128), "money_craft": (128, 128), "money_fish": (128, 128),
     "kind_quest": (128, 128),
+    "kind_zone": (128, 128),
+    "prof_cooking": (128, 128),
+    "prof_firstaid": (128, 128),
+    "prof_fishing": (128, 128),
+    "prof_leatherworking": (128, 128),
+    "prof_tailoring": (128, 128),
+    "prof_blacksmithing": (128, 128),
+    "prof_engineering": (128, 128),
+    "prof_alchemy": (128, 128),
+    "prof_enchanting": (128, 128),
+    "prof_herbalism": (128, 128),
+    "prof_mining": (128, 128),
+    "prof_skinning": (128, 128),
+    "journey_empty": (256, 128),
     "kind_dungeon": (128, 128),
     "kind_gear": (128, 128),
     "kind_profession": (128, 128),
@@ -127,6 +141,11 @@ SPECS = {
     "page_status": (128, 128),
     # one hero banner per sidebar group
     "header_explore": (1024, 256),
+    "header_world": (1024, 256),
+    "home_hero_l": (1024, 512),
+    "home_hero_r": (1024, 512),
+    "header_professions": (1024, 256),
+    "header_gold": (1024, 256),
     "header_character": (1024, 256),
     "header_town": (1024, 256),
     "header_social": (1024, 256),
@@ -136,6 +155,8 @@ SPECS = {
     "pin_vendor": (64, 64),
     "pin_repair": (64, 64),
     "pin_trainer": (64, 64),
+    "pin_weaponmaster": (64, 64),
+    "pin_pettrainer": (64, 64),
     "pin_flight": (64, 64),
     "pin_inn": (64, 64),
     "pin_mail": (64, 64),

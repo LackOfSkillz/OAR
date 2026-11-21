@@ -13,7 +13,7 @@ ns.Probe = Probe
 Probe.APIS = {
   -- core
   { "C_AddOns.GetAddOnMetadata", "P1" }, { "C_AddOns.IsAddOnLoaded", "P1" }, { "C_AddOns.LoadAddOn", "P1" },
-  { "C_Timer.After", "P1" }, { "GetLootRollItemLink", "P6" }, { "GetLootRollItemInfo", "P6" }, { "C_Timer.NewTicker", "P1" }, { "GetServerTime", "P1" },
+  { "C_Timer.After", "P1" }, { "GetLootRollItemLink", "P6" }, { "GetLootRollItemInfo", "P6" }, { "C_Timer.NewTicker", "P1" }, { "GetServerTime", "P1" }, { "CheckInteractDistance", "P3", "sure NPC spots from standing next to them" },
   { "issecretvalue", "P1", "secret values present" }, { "Settings.RegisterCanvasLayoutCategory", "P1" },
   { "Settings.RegisterAddOnCategory", "P1" }, { "InterfaceOptions_AddCategory", "P1", "old options API" },
   { "UpdateAddOnMemoryUsage", "P1" }, { "GetAddOnMemoryUsage", "P1" }, { "C_AddOns.GetAddOnMemoryUsage", "P1" },

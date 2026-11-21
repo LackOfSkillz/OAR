@@ -6,7 +6,7 @@
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
 ## SavedVariables: Outrider_DB, Outrider_Log, Outrider_Snapshots
 ## OptionalDeps: !BugGrabber, BugSack, LibStub, LibDataBroker-1.1, LibDBIcon-1.0, Questie, TomTom, Auctionator
-## X-License: TBD (see docs/DECISIONS.md)
+## X-License: GPL-3.0-only (data addons: see their own licence files)
 ## X-Category: Interface Enhancements
 
 # Core (order matters: Init first, Boot last)
@@ -77,6 +77,10 @@ Data\Money.lua
 Data\Dungeons.lua
 Data\Talents.lua
 Data\Rares.lua
+Data\Leveling.lua
+Data\Leveling_Places.lua
+Data\Leveling_Facts.lua
+Data\Leveling_DungeonQuests.lua
 
 # Feature modules (added phase by phase, see TASKS.md)
 Modules\SharedData.lua
@@ -90,6 +94,7 @@ Modules\FightPlan.lua
 Modules\MacroTree.lua
 Modules\BuffRow.lua
 Modules\HandyKeys.lua
+Modules\BagSwap.lua
 Modules\ComboKeys.lua
 Modules\HealPanel.lua
 Modules\Census.lua
@@ -130,6 +135,8 @@ Modules\SkillUp.lua
 Modules\GearScore.lua
 Modules\DungeonGuide.lua
 Modules\DungeonJournal.lua
+Modules\DungeonQuests.lua
+Modules\QuestChains.lua
 Modules\BossTimeline.lua
 Modules\QuestRewards.lua
 Modules\GearSets.lua
@@ -182,6 +189,7 @@ Modules\Waypoints.lua
 Modules\POICapture.lua
 Modules\Nearest.lua
 Modules\Trail.lua
+Modules\Path.lua
 Modules\MapPins.lua
 Modules\MapReveal.lua
 Modules\QuestObjectives.lua
