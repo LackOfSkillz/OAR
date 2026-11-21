@@ -54,7 +54,7 @@ Why not CurseForge's own automatic packager or the BigWigs packager: both build 
 
 **Main category:** Quests & Leveling. **More categories:** Map & Minimap, Professions, Auction & Economy, Hunter.
 
-**Description:**
+**Description:** the current one is [curseforge/description.md](curseforge/description.md) (story version, 2026-11-21). The first, list-style version:
 
 ```markdown
 # Outrider: one addon to rule them all
