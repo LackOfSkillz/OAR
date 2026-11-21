@@ -60,7 +60,7 @@ T.describe("profession extras", function()
     local game, ns, M = start()
     M:ReadTrainer()
     ns.Hub:Toggle()
-    ns.Hub:ShowTab("professions")
+    ns.Hub:ShowTab("profdetails") -- the old sections, now Professions, Trainers and tools
     T.eq(#ns.Errors.list, 0)
   end)
 end)

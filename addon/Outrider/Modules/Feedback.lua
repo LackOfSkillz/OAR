@@ -239,7 +239,9 @@ ns.Hub:AddTab("feedback", "Report or idea", function(p)
     UI.SetPrimary(self.idea, self.kind == "idea")
     local k = self.kind and K[self.kind]
     self.text.edit.hint:SetText(k and k.ask or "Pick one above first.")
-    self.make:SetEnabled(self.kind ~= nil)
+    -- the button always answers (Gary, 2026-11-21: a switched-off button
+    -- still looked gold and "nothing happened"): with no choice it says so
+    if self.kind and self.status:GetText() and self.status:GetText():find("Pick one", 1, true) then self.status:SetText("") end
   end
 end, 62.5)
 

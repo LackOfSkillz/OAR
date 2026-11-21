@@ -24,7 +24,7 @@ T.describe("rares tab", function()
     T.contains(p.list.rowFrames[1].text:GetText(), "ALIVE")
     T.contains(p.list.rowFrames[1].sub:GetText(), "Alive, seen just now")
     T.eq(p.stats.tiles[2].value:GetText(), "1", "alive now")
-    T.same(ns.Hub.frame.tabBar.order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "crafting", "fishing", "money", "chat", "sharing", "people", "advisor", "settings", "help" })
+    T.same(ns.Hub.frame.tabBar.order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "money", "chat", "sharing", "people", "advisor", "settings", "help" })
     T.eq(#ns.Errors.list, 0)
   end)
 

@@ -57,6 +57,22 @@ Get-ChildItem -Path (Split-Path -Parent $source) -Directory -Filter 'Outrider_Da
   Copy-Item -Recurse -Path $_.FullName -Destination $dest
   Write-Host "Deployed data addon $($_.Name)" -ForegroundColor Green
 }
+# The QuestieDB-derived packs built by tools/import_*.py into private/ (public
+# since D20/D21). Copied here, so every write into AddOns goes through this
+# script (hard rule 2), when missing or rebuilt since the last copy.
+$private = Join-Path (Get-RepoRoot) 'private'
+Get-ChildItem -Path $private -Directory -Filter 'Outrider_Data_*' -ErrorAction SilentlyContinue | ForEach-Object {
+  $dest = Join-Path $addonsDir $_.Name
+  $src = Join-Path $_.FullName 'Data.lua'
+  $old = Join-Path $dest 'Data.lua'
+  $isNew = -not (Test-Path $dest)
+  if ($isNew -or -not (Test-Path $old) -or ((Get-Item $src).LastWriteTime -gt (Get-Item $old).LastWriteTime)) {
+    if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+    Copy-Item -Recurse -Path $_.FullName -Destination $dest
+    Write-Host "Deployed data addon $($_.Name)" -ForegroundColor Green
+    if ($isNew) { $needsRestart = $true }
+  }
+}
 
 $state = [pscustomobject]@{ tocHash = $tocHash; fileList = $fileList; build = $stamp; at = (Get-Date).ToString('o') }
 Write-Utf8NoBom $stateFile ($state | ConvertTo-Json)

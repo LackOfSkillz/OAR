@@ -8,6 +8,7 @@
 local _, ns = ...
 
 local pages = {
+  profdetails = "Profession trainers, cooldowns, profit crafts, the one-press craft key and the training button.",
   questsnear = "The quests worth doing next from where you stand: XP and gold for the time, your level, gear upgrades. Click one to go.",
   feedback = "Tell us about a problem or an idea: Outrider makes the report, you copy the link and post it on GitHub.",
   home = "Your character at a glance: the next step, errands, your pet or class keys, and the journey you're on.",
@@ -228,6 +229,11 @@ local controls = {
   ["Class trainer"] = "Points the gold arrow at the nearest trainer for your class.",
   ["Options"] = "How your macro buttons behave: the missing-buffs row, tooltips and quiet presses.",
   ["Near me"] = "The quests worth doing next from where you stand, best first.",
+  ["Fishing"] = "Fishing: your key, where to fish for your skill, catches and the next book.",
+  ["Your professions"] = "What you can make now and where to get what you're missing.",
+  ["Shopping list"] = "Plan crafts and see what to buy: the crafting queue.",
+  ["Trainers and tools"] = "Trainers, cooldowns, profit crafts and the craft keys.",
+  ["Make the best one now"] = "Makes the recipe that gives the most skill from what's in your bags (opens the profession window on the first click).",
   ["Chains"] = "Quest chains: every step, done or not, and the arrow to the next one.",
   ["Quests and keys"] = "Every dungeon's quests for your side: who gives them, where, and what you've done.",
   ["Ready and gear"] = "Are you ready for a dungeon, and which ones have upgrades for you.",
@@ -379,6 +385,7 @@ local sections = {
 
 -- How to use a page in up to three short steps, shown under its title.
 local steps = {
+  professions = { "Pick a profession on the left", "Make what your bags can make", "Get what you're missing: click it for the way" },
   questsnear = { "Best quests for you are at the top", "Click one", "Follow the gold arrow" },
   feedback = { "Pick: something's broken, or an idea", "Tell us in your own words", "Make my report, copy the link, paste it in your browser" },
   class = { "See which new spells your trainer has for you", "Put your fight keys on your bar", "Pick your talents at level 10" },

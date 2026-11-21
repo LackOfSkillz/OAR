@@ -65,7 +65,7 @@ T.describe("feedback", function()
     local p = ns.Hub.byId.feedback.panel
     T.ok(p and p:IsShown(), "Report or idea page shown")
     p.make:Click()
-    T.contains(p.status:GetText(), "Pick one", "a report needs a choice first")
+    T.contains(p.status:GetText(), "Pick one", "the button answers even with no choice (Gary: nothing happened)")
     p.bug:Click()
     T.eq(p.kind, "bug")
     p.title.edit:SetText("Map pins missing")

@@ -1043,7 +1043,7 @@ local function profRows()
   return rows
 end
 
-ns.Hub:AddTab("professions", "Professions", function(p)
+ns.Hub:AddTab("profdetails", "Trainers and tools", function(p)
   UI:FormPage(p, profRows())
 end)
 
