@@ -30,50 +30,78 @@ local L = {
   noOthers = "no other characters saved yet: log in on another character once.",
 }
 
--- Where each page sits in the sidebar (Gary chose a grouped sidebar,
--- 2026-11-13). Pages not listed land under "More" in the order they ask for.
-Hub.GROUPS = { "", "Explore", "Character", "Town", "Social", "Outrider", "More" }
+-- Where each page sits in the sidebar. Redesigned 2026-11-20 (Gary: "a more
+-- logical grouping ... use all best practice ui/ux"): grouped by what you're
+-- doing, most-used first, Advisor / Settings / Help at the bottom. Twin pages
+-- became one sidebar entry with sub-tabs (Hub.SUBS); every old page id still
+-- opens (links, commands, the remembered page), on its host's sub-tab.
+Hub.GROUPS = { "", "World", "Character", "Professions", "Gold", "Social", "Outrider", "More" }
 local ICON = "Interface\\Icons\\"
 Hub.PLACE = {
   home        = { "", 1, "INV_Misc_Book_09" },
-  whatnow     = { "", 2, "INV_Misc_Map_01" },
-  help        = { "", 3, "INV_Misc_Book_07" },
-  journey     = { "Explore", 10, "INV_Misc_Map_01" },
-  map         = { "Explore", 11, "INV_Misc_Map02" },
-  waypoints   = { "Explore", 12, "Ability_Tracking" },
-  rares       = { "Explore", 13, "Ability_Hunter_SniperShot" },
-  rarealerts  = { "Explore", 14, "INV_Misc_Spyglass_02" },
-  dungeons    = { "Explore", 15, "INV_Misc_Key_14" },
-  quests      = { "Explore", 16, "INV_Misc_Note_01" },
-  journal     = { "Explore", 16.5, "INV_Misc_Book_09" },
+  journey     = { "", 2, "INV_Misc_Spyglass_03" },
+  feed        = { "", 3, "INV_Letter_15" },
+  waypoints   = { "World", 10, "INV_Misc_Map02" },
+  quests      = { "World", 11, "INV_Misc_Note_01" },
+  rares       = { "World", 12, "Ability_Hunter_SniperShot" },
+  dungeons    = { "World", 13, "INV_Misc_Key_14" },
   class       = { "Character", 20 }, -- icon and title follow the character's class
   gear        = { "Character", 21, "INV_Chest_Chain" },
-  gearsets    = { "Character", 22, "INV_Shoulder_02" },
-  professions = { "Character", 23, "Trade_Alchemy" },
-  fishing     = { "Character", 23.5, "Trade_Fishing" },
-  crafting    = { "Character", 24, "Trade_BlackSmithing" },
-  alts        = { "Character", 26, "INV_Misc_Head_Human_01" },
-  macros      = { "Character", 25, "INV_Misc_Note_01" },
-  money       = { "Town", 29, "INV_Misc_Coin_02" },
-  errands     = { "Town", 30, "INV_Misc_Bag_08" },
-  forecasts   = { "Town", 31, "INV_Misc_Coin_01" },
-  feed        = { "Town", 32, "INV_Letter_15" },
-  chat        = { "Social", 40, "INV_Misc_Note_02" },
-  sharing     = { "Social", 41, "INV_Letter_09" },
-  census      = { "Social", 42, "INV_Misc_GroupLooking" },
-  people      = { "Social", 43, "INV_Shirt_GuildTabard_01" },
-  settings    = { "Outrider", 50, "Trade_Engineering" },
-  modules     = { "Outrider", 51, "INV_Gizmo_01" },
-  characters  = { "Outrider", 52, "INV_Misc_Head_Human_01" },
-  advisor     = { "Outrider", 53, "INV_Misc_Book_11" },
-  overview    = { "Outrider", 54, "INV_Misc_QuestionMark" },
-  tools       = { "Outrider", 55, "INV_Misc_Wrench_01" },
-  commands    = { "Outrider", 56, "INV_Misc_Note_06" },
+  macros      = { "Character", 22, "INV_Misc_Note_06" },
+  alts        = { "Character", 23, "INV_Misc_Head_Human_01" },
+  professions = { "Professions", 30, "Trade_Alchemy" },
+  crafting    = { "Professions", 31, "Trade_BlackSmithing" },
+  fishing     = { "Professions", 32, "Trade_Fishing" },
+  money       = { "Gold", 40, "INV_Misc_Coin_02" },
+  chat        = { "Social", 50, "INV_Misc_Note_02" },
+  sharing     = { "Social", 51, "INV_Letter_09" },
+  people      = { "Social", 52, "INV_Shirt_GuildTabard_01" },
+  advisor     = { "Outrider", 60, "INV_Misc_Book_11" },
+  settings    = { "Outrider", 61, "Trade_Engineering" },
+  help        = { "Outrider", 62, "INV_Misc_Book_07" },
 }
+-- One sidebar entry, several pages: { host = { {page id, sub-tab label}, ... } }.
+-- The first page is the host itself.
+Hub.SUBS = {
+  home      = { { "home", "Overview" }, { "whatnow", "Next steps" }, { "errands", "Town errands" } },
+  waypoints = { { "waypoints", "Places and arrow" }, { "map", "Map pins" } },
+  quests    = { { "quests", "Quest log" }, { "journal", "Diary" } },
+  rares     = { { "rares", "Rares" }, { "rarealerts", "Watch and alerts" } },
+  gear      = { { "gear", "Wearing and upgrades" }, { "gearsets", "Sets and scoring" } },
+  alts      = { { "alts", "Characters" }, { "characters", "Copy settings" } },
+  money     = { { "money", "Earn" }, { "forecasts", "Forecasts" } },
+  people    = { { "people", "Players and guilds" }, { "census", "Census" } },
+  settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
+  help      = { { "help", "Help" }, { "commands", "All commands" } },
+}
+-- clearer names for some pages (sidebar and page title)
+Hub.TITLES = { journey = "Find", feed = "Alerts", waypoints = "Map and places", alts = "My characters" }
+-- page id -> the sidebar entry it lives under
+Hub.NAV = {}
+for host, subs in pairs(Hub.SUBS) do
+  for i, s in ipairs(subs) do
+    if s[1] ~= host then
+      Hub.NAV[s[1]] = host
+      local hp = Hub.PLACE[host]
+      Hub.PLACE[s[1]] = { hp[1], hp[2] + i / 100, hp[3] }
+    end
+  end
+end
+
+-- The sidebar entry for a page, and the sub-tab to open when that entry is clicked
+-- (the one you looked at last).
+function Hub.NavOf(id) return Hub.NAV[id] or id end
+function Hub.LastSub(host)
+  local hub = ns.db and ns.db.char and ns.db.char.hub
+  local last = hub and type(hub.sub) == "table" and hub.sub[host]
+  if last and Hub.NAV[last] == host and Hub.byId[last] then return last end
+  return host
+end
 
 function Hub:AddTab(id, title, build, order, opts)
   if self.byId[id] then return self.byId[id] end
   local place = self.PLACE[id]
+  title = self.TITLES[id] or title
   local t = { id = id, title = title, build = build, opts = opts,
     group = place and place[1] or (opts and opts.group) or "More",
     order = place and place[2] or order or (100 + #self.tabs),
@@ -142,7 +170,7 @@ local function Sidebar(parent, onSelect)
     b.label:SetPoint("LEFT", 28, 0)
     b.label:SetText(title)
     b.id = id
-    b:SetScript("OnClick", function() self:Select(id) end)
+    b:SetScript("OnClick", function() self:Select(Hub.LastSub(id)) end)
     self.buttons[id] = b
     self.order[#self.order + 1] = id
     return b
@@ -207,9 +235,10 @@ local function Sidebar(parent, onSelect)
     end
   end
   function bar:Select(id)
-    if not self.buttons[id] then id = self.order[1] end
+    -- a sub-tab page lights up its sidebar entry
+    if not (Hub.byId[id] and self.buttons[Hub.NavOf(id)]) then id = self.order[1] end
     if not id then return end
-    self:Highlight(id)
+    self:Highlight(Hub.NavOf(id))
     if onSelect then ns.Safe("tabs:select", onSelect, id) end
   end
   return bar
@@ -218,6 +247,7 @@ end
 function Hub:AddTabButton(t)
   local bar = self.frame.tabBar
   if not self:Visible(t) then return end
+  if self.NAV[t.id] then return end -- a sub-tab: no sidebar row of its own
   -- the page's custom picture when Gary's art is in (sidebar icons match the page header)
   local art = ns.Art and ns.Art:Path(t.id == "class" and ("class_" .. tostring(ns.PlayerClass and ns.PlayerClass() or "")):lower() or ("page_" .. t.id))
   local btn = bar:Add(t.id, t.title, art or t.icon)
@@ -387,7 +417,8 @@ function Hub:Panel(t)
     Hub.SetPagePicture(p.hubPic, t)
     p.hubTitle = UI.Display(p, "page", "text")
     p.hubTitle:SetPoint("TOPLEFT", p.hubTile, "TOPRIGHT", 14, 0)
-    p.hubTitle:SetText(t.title or "")
+    local host = self.byId[self.NavOf(t.id)]
+    p.hubTitle:SetText((host and host.title) or t.title or "")
     p.hubSub = UI.Text(p, "normal", "muted")
     p.hubSub:SetPoint("TOPLEFT", p.hubTitle, "BOTTOMLEFT", 0, -6)
     p.hubSub:SetPoint("RIGHT", p, "RIGHT", -60, 0)
@@ -427,8 +458,33 @@ function Hub:Panel(t)
     local r, g, b = Theme:Color("gold")
     p.hubRule:SetColorTexture(r, g, b, 0.5)
   end
+  self:SubTabs(p, t)
   if t.build then ns.Safe("hub:build:" .. t.id, t.build, p) end
   return p
+end
+
+-- The sub-tabs of a sidebar entry, at the right of the page header (on pages
+-- that draw their own heading: top right). The one on screen is gold.
+function Hub:SubTabs(p, t)
+  local nav = self.NavOf(t.id)
+  local subs = self.SUBS[nav]
+  if not subs then return end
+  p.subTabs = {}
+  local prev
+  for i = #subs, 1, -1 do
+    local id, label = subs[i][1], subs[i][2]
+    if self.byId[id] then
+      local c = UI:Chip(p, label, function() Hub.frame.tabBar:Select(id) end)
+      c.page = id
+      UI.Tip(c, label, ns.Tips and ns.Tips.pages[id] or label)
+      if prev then c:SetPoint("RIGHT", prev, "LEFT", -6, 0)
+      elseif self.OWN_HEADING[t.id] then c:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -6)
+      else c:SetPoint("BOTTOMRIGHT", p, "TOPRIGHT", -40, 18) end
+      c:SetOn(id == t.id)
+      table.insert(p.subTabs, 1, c)
+      prev = c
+    end
+  end
 end
 
 function Hub:ShowTab(id)
@@ -437,7 +493,14 @@ function Hub:ShowTab(id)
   for _, o in ipairs(self.tabs) do if o.panel and o ~= t then o.panel:Hide() end end
   local p = self:Panel(t)
   p:Show()
-  if self.frame and self.frame.tabBar and self.frame.tabBar.selected ~= t.id then self.frame.tabBar:Highlight(t.id) end
+  local nav = self.NavOf(t.id)
+  if self.frame and self.frame.tabBar and self.frame.tabBar.selected ~= nav then self.frame.tabBar:Highlight(nav) end
+  if self.SUBS[nav] then
+    local hub = ns.db.char.hub
+    hub.sub = type(hub.sub) == "table" and hub.sub or {}
+    hub.sub[nav] = t.id
+  end
+  if p.subTabs then for _, c in ipairs(p.subTabs) do c:SetOn(c.page == t.id) end end
   if p.Refresh then ns.Safe("hub:refresh:" .. t.id, p.Refresh, p) end
   self.current = t.id
   ns.db.char.hub.tab = t.id
