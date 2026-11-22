@@ -8,6 +8,9 @@
 local _, ns = ...
 
 local pages = {
+  profdetails = "Profession trainers, cooldowns, profit crafts, the one-press craft key and the training button.",
+  questsnear = "The quests worth doing next from where you stand: XP and gold for the time, your level, gear upgrades. Click one to go.",
+  feedback = "Tell us about a problem or an idea: Outrider makes the report, you copy the link and post it on GitHub.",
   home = "Your character at a glance: the next step, errands, your pet or class keys, and the journey you're on.",
   whatnow = "What to do next with this character, ranked: errands, quests, gear, dungeons, training and gold. Pick a goal to narrow it.",
   journal = "Your quest diary: every quest you took, finished or gave up, with when and where. Handy to find a quest you lost or see how far you've come.",
@@ -166,6 +169,9 @@ local controls = {
 
   -- rares
   ["Sound"] = "Play a sound when a rare alert pops.",
+  ["Different sound for rare elites"] = "A rare elite plays its own deeper alarm, so you know before you look. Off: elites play no sound.",
+  ["Try a rare alert"] = "Shows and plays the alert for a normal rare (blue), so you know it when you hear it.",
+  ["Try an elite alert"] = "Shows and plays the alert for a rare elite (red, its own alarm).",
   ["Pop-up"] = "Show a pop-up with a Target button when a rare is near.",
   ["Sound with rare alerts"] = "Play a sound when a rare alert pops.",
   ["Only rares on your watch list"] = "Alert only for rares you're watching, not every rare.",
@@ -222,6 +228,12 @@ local controls = {
   ["More"] = "Opens the page with the full list.",
   ["Class trainer"] = "Points the gold arrow at the nearest trainer for your class.",
   ["Options"] = "How your macro buttons behave: the missing-buffs row, tooltips and quiet presses.",
+  ["Near me"] = "The quests worth doing next from where you stand, best first.",
+  ["Fishing"] = "Fishing: your key, where to fish for your skill, catches and the next book.",
+  ["Your professions"] = "What you can make now and where to get what you're missing.",
+  ["Shopping list"] = "Plan crafts and see what to buy: the crafting queue.",
+  ["Trainers and tools"] = "Trainers, cooldowns, profit crafts and the craft keys.",
+  ["Make the best one now"] = "Makes the recipe that gives the most skill from what's in your bags (opens the profession window on the first click).",
   ["Chains"] = "Quest chains: every step, done or not, and the arrow to the next one.",
   ["Quests and keys"] = "Every dungeon's quests for your side: who gives them, where, and what you've done.",
   ["Ready and gear"] = "Are you ready for a dungeon, and which ones have upgrades for you.",
@@ -251,6 +263,14 @@ local controls = {
   ["Status"] = "Is Outrider healthy: errors, saved settings, build.",
   ["Help"] = "What every page does and how to use it.",
   ["All commands"] = "Every /ride command, with a Run button.",
+  ["Report or idea"] = "Tell us about a problem or an idea, in three steps.",
+  ["Check for lag (1 minute)"] = "Measures for one minute how much of your game's time Outrider uses, and which part. Play as usual meanwhile.",
+  ["Stop the check"] = "Stops the lag check now and shows what it measured so far.",
+  ["Outrider network test"] = "Tests whether Outrider can reach every Outrider user on your realm through a hidden channel. Off by default; it sends only a version number and a random tag.",
+  ["Something's broken"] = "Report a problem: something didn't work or looked wrong.",
+  ["I have an idea"] = "Suggest something Outrider should do.",
+  ["Make my report"] = "Builds your report and a link to post it on GitHub. Copy the link with Ctrl+C, paste it in your web browser.",
+  ["Add my character name"] = "Adds your character's name and realm to the report. Off: only class, level and zone.",
   ["Gave up"] = "Only quests you abandoned; each shows where to take it again.",
   ["Take it again"] = "Points the gold arrow at the quest giver, so you can pick it up again.",
   ["Go"] = "Shows the trip and puts the gold arrow up. Then just follow it.",
@@ -368,6 +388,9 @@ local sections = {
 
 -- How to use a page in up to three short steps, shown under its title.
 local steps = {
+  professions = { "Pick a profession on the left", "Make what your bags can make", "Get what you're missing: click it for the way" },
+  questsnear = { "Best quests for you are at the top", "Click one", "Follow the gold arrow" },
+  feedback = { "Pick: something's broken, or an idea", "Tell us in your own words", "Make my report, copy the link, paste it in your browser" },
   class = { "See which new spells your trainer has for you", "Put your fight keys on your bar", "Pick your talents at level 10" },
   waypoints = { "Press a place (Inn, Vendor...)", "Follow the gold arrow", "Clear arrow when you're there" },
   rares = { "Click a rare to see it", "Press Waypoint for an arrow", "Press Watch to get an alert when it's up" },
@@ -384,6 +407,7 @@ ns.Tips = {
   steps = steps,
   controls = controls,
   patterns = {
+    { "^Turn off ", "Switches that part of Outrider off (Settings, Modules turns it back on)." },
     { "^Open ", "Goes straight to that Outrider page." },
     { "^Sort:", "Click to change the order: nearest first, by level, or by name." },
     { "^Run /ride ", "Runs the command now, as if you typed it in chat." },

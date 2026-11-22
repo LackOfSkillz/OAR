@@ -18,11 +18,12 @@ The CurseForge API can upload files and read game versions; it has no documented
 1. **Author account.** Sign in at https://authors.curseforge.com (accepting the Mod Author Terms is part of signing up).
 2. **Create the project:** https://authors.curseforge.com/#/projects/create/choose-game, game **World of Warcraft**. Fill in from "Listing text" below:
    - Name, Summary, Main category plus up to 4 more, Allow comments on, **Experimental off**, editor Markdown, Description, Licence **GNU General Public License version 3 (GPLv3)**.
-   - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400, made by `python tools/logo.py` from the in-game emblem).
+   - Logo: upload [curseforge/logo.png](curseforge/logo.png) (400x400): the official logo, the hooded rider at sunrise (Gary picked option 2 of 10 from GPT, 2026-11-21; full size in [curseforge/logo-full.png](curseforge/logo-full.png)). `python tools/logo.py` rebuilds it.
 3. **Submit.** CurseForge's moderators review new projects and every file (8 AM to 3 PM CET, 7 days a week, first in first out). Notifications: https://www.curseforge.com/my-notifications
-4. **Project ID.** On the project page under "About This Project". Tell Claude the number: it goes into `Outrider.toc` as `## X-Curse-Project-ID: <number>`.
+4. **Project ID: 1821625** ("Outrider Forever"; "Outrider" was taken). It is in `Outrider.toc` as `## X-Curse-Project-ID: 1821625`. The upload form has no game version field: CurseForge reads `## Interface: 16001` from the TOC.
 5. **First file.** Either upload `dist\curseforge\Outrider-<version>.zip` on the project's Files tab (game version **1.60.1**, the Forever one; release type Release), or let the script do it (next section).
-6. **Screenshots** (Images tab, after the project exists): Home, Map with the way-there dots and rare pins, Quests with Chains, Dungeons quests and keys, Macros, the auction house window. `/ride tour` takes them one click at a time.
+6. **Banner** (Images tab): upload [curseforge/banner.png](curseforge/banner.png) ("The Golden Road", the rider with the name and the tagline). Copy its image link and put it in place of `banner` on the first line of the description (`![Outrider](...)`), then save.
+7. **Screenshots** (Images tab, after the project exists): Home, Map with the way-there dots and rare pins, Quests with Chains, Dungeons quests and keys, Macros, the auction house window. `/ride tour` takes them one click at a time.
 
 ## Every release after that (one command)
 
@@ -33,7 +34,7 @@ The CurseForge API can upload files and read game versions; it has no documented
    ```
 
    Open a new terminal afterwards.
-2. **Release:** bump `## Version:` in `Outrider.toc`, write the CHANGELOG section, then
+2. **Release:** bump `## Version:` in `Outrider.toc`, write the CHANGELOG section, refresh the shipped walked paths with `tools/export_trails.ps1` (game closed or not: it reads a copy), then
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File tools/curseforge.ps1 -Upload
@@ -47,16 +48,18 @@ Why not CurseForge's own automatic packager or the BigWigs packager: both build 
 
 ## Listing text (paste into the project form)
 
-**Name:** Outrider. Fallback if taken: Outrider (WoW Forever).
+**Name:** Outrider Forever (the project name "Outrider" was taken; in game it is still Outrider).
 
-**Summary:** One addon for WoW Forever: rare alerts, quest and dungeon guidance, the way to any place, hunter pet tools, macros, professions, auction shopping and gear advice, all for the character you're on.
+**Summary:** One addon to rule them all for WoW Forever: rare alerts, quest and dungeon guidance, the way to any place, hunter pet tools, macros, professions, auction shopping and gear advice, all for the character you're on.
 
 **Main category:** Quests & Leveling. **More categories:** Map & Minimap, Professions, Auction & Economy, Hunter.
 
-**Description:**
+**Description:** the current one is [curseforge/description.md](curseforge/description.md) (story version, 2026-11-21). The first, list-style version:
 
 ```markdown
-# Outrider: one addon for WoW Forever
+# Outrider: one addon to rule them all
+
+![Outrider](banner)  <!-- replace "banner" with the link of docs/curseforge/banner.png once uploaded on the Images tab -->
 
 Outrider replaces a stack of addons with one that knows which character you're on: class, race, level, talents, professions and gold. Every page shows what fits that character, in plain words, with one button to go there.
 

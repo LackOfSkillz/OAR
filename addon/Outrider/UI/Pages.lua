@@ -685,6 +685,9 @@ ns.Hub:AddTab("rarealerts", "Rare alerts", function(p)
     { "note", function() return ns.RareTimer and ns.RareTimer:Activity() or "" end, 36 },
     { "header", "How you're told" },
     { "check", "Sound", function() return set("RareAlerts").sound end, function(on) set("RareAlerts").sound = on end },
+    { "check", "Different sound for rare elites", function() return set("RareAlerts").eliteSound ~= false end, function(on) set("RareAlerts").eliteSound = on end },
+    { "note", "A rare flashes blue. A rare elite flashes red for longer, with its own alarm: it hits hard." },
+    { "buttons", { { "Try a rare alert", function() ns.RareAlerts:Preview(false) end }, { "Try an elite alert", function() ns.RareAlerts:Preview(true) end } } },
     { "check", "Pop-up", function() return set("RareAlerts").toast end, function(on) set("RareAlerts").toast = on end },
     { "check", "Only rares on your watch list", function() return set("RareAlerts").mode == "watch" end,
       function(on) set("RareAlerts").mode = on and "watch" or "all" end },
@@ -1040,7 +1043,7 @@ local function profRows()
   return rows
 end
 
-ns.Hub:AddTab("professions", "Professions", function(p)
+ns.Hub:AddTab("profdetails", "Trainers and tools", function(p)
   UI:FormPage(p, profRows())
 end)
 
@@ -1587,6 +1590,10 @@ ns.Hub:AddTab("sharing", "Sharing", function(p)
     { "check", "Rares: party", function() return set("RareShare").party end, function(on) ns.Slash:Run("share rares party " .. onoff(on)) end },
     { "check", "Herb and ore spots: guild", function() return set("GatherShare").guild end, function(on) ns.Slash:Run("share nodes " .. onoff(on)) end },
     { "check", "My location: party", function() return set("LocationShare").on end, function(on) ns.Slash:Run("share location " .. onoff(on)) end },
+    { "header", "Outrider network test" },
+    { "note", "A test: can Outrider reach every Outrider user on your realm, guild or no guild? When on, Outrider joins a hidden channel (nothing shows in chat) and says a tiny hello once a minute: a version number and a random tag, nothing about you. Two players with it on, anywhere on the realm, tell us if it works. Off by default." },
+    { "check", "Outrider network test", function() return set("NetTest").on end, function(on) if ns.NetTest then ns.NetTest:Set(on) end end },
+    { "note", function() return ns.NetTest and ns.NetTest:Activity() or "" end },
     { "header", "Gear for alts, family and other Outrider users" },
     { "note", "When something in your bags is an upgrade for someone, Outrider says so: your alts first, then family and friends, then other Outrider users in your guild or party. At a mailbox it fills in their name." },
     { "check", "Share my gear card and see others' (guild and party)", function() return set("KitShare").share end,

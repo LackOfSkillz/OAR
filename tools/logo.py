@@ -1,4 +1,8 @@
-"""tools/logo.py - the CurseForge project logo from Outrider's emblem art.
+"""tools/logo.py - the CurseForge project logo (and banner).
+
+Uses art/incoming/curseforge_logo.png (the official logo with the OUTRIDER
+wordmark, ART_REQUESTS batch 12) when it has been delivered, else the emblem.
+A delivered curseforge_banner.png is copied to docs/curseforge/banner.png.
 
 CurseForge asks for a square PNG of at least 400x400 that isn't the game's logo
 (Project Submission Guide, read 2026-11-21). Reads art/incoming/emblem.png (the
@@ -18,6 +22,9 @@ import art  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "art", "incoming", "emblem.png")
+# the official logo and banner (ART_REQUESTS batch 12) win once delivered
+OFFICIAL = os.path.join(ROOT, "art", "incoming", "curseforge_logo.png")
+BANNER = os.path.join(ROOT, "art", "incoming", "curseforge_banner.png")
 OUT = os.path.join(ROOT, "docs", "curseforge", "logo.png")
 SIZE = 400
 BACK = (20, 22, 28)  # the dark panel colour behind the emblem
@@ -41,7 +48,14 @@ def write_png(path, w, h, rows):
 
 
 def main():
-    w, h, rows = art.read_png(SRC)
+    if os.path.isfile(BANNER):
+        import shutil
+        os.makedirs(os.path.dirname(OUT), exist_ok=True)
+        shutil.copyfile(BANNER, os.path.join(os.path.dirname(OUT), "banner.png"))
+        print("copied the banner to docs/curseforge/banner.png")
+    src = OFFICIAL if os.path.isfile(OFFICIAL) else SRC
+    print("logo from", os.path.basename(src))
+    w, h, rows = art.read_png(src)
     w, h, rows = art.crop(w, h, rows, 1.0)
     rows = art.scale(w, h, rows, SIZE, SIZE)
     flat = []

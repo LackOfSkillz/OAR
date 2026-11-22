@@ -413,10 +413,27 @@ function M:Nearest(questID)
   local pack = self:Pack()
   if not pack then return nil end
   local here, px, py = C.PlayerPosition("player")
+  local W = ns.Waypoints
+  local cont, wx, wy
+  if W and W.PlayerWorldPos then cont, wx, wy = W.PlayerWorldPos() end
   local best, bestD
+  -- distance in yards: on your map from map spots, elsewhere from world
+  -- positions (Gary, 2026-11-21: by Undercity, "Go to nearest" sent him back
+  -- to Orgrimmar because every other map counted the same); another
+  -- continent counts as very far
   local function consider(mapID, x, y, label)
-    local d = (mapID == here and px) and ((x - px) ^ 2 + (y - py) ^ 2) or (10 + (best and 0 or 0))
-    if not bestD or d < bestD then best, bestD = { mapID = mapID, x = x, y = y, label = label }, d end
+    local d
+    if mapID == here and px and W and W.MapSize then
+      local mw, mh = W.MapSize(mapID)
+      d = math.sqrt(((x - px) * (mw or 1000)) ^ 2 + ((y - py) * (mh or 1000)) ^ 2)
+    elseif wx and W and W.WorldPos then
+      local c2, x2, y2 = W.WorldPos(mapID, x, y)
+      if x2 and (c2 == nil or cont == nil or c2 == cont) then d = math.sqrt((x2 - wx) ^ 2 + (y2 - wy) ^ 2)
+      else d = 1e7 end
+    else
+      d = 1e7
+    end
+    if not bestD or d < bestD then best, bestD = { mapID = mapID, x = x, y = y, label = label, yards = d < 1e7 and d or nil }, d end
   end
   local function each(src, label)
     for mapID, pts in pairs(src and src[2] or {}) do

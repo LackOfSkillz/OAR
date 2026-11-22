@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: Outrider Data: walked paths
+## Notes: Paths walked by Outrider's creator, so the way-there dots know roads and entrances you haven't walked yet.
+## LoadOnDemand: 1
+## X-Source: Outrider 2026-11-21
+
+Data.lua

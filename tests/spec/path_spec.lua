@@ -85,6 +85,51 @@ T.describe("the way there", function()
     T.eq(#P:Pins(100), 0)
   end)
 
+  T.it("follows a creature's patrol route (walked routes pack) where you never walked", function()
+    local game, ns, P = session()
+    -- a route that goes up and around, like a trail round a ridge
+    local line = {}
+    for i = 0, 6 do line[#line + 1] = 0.1 line[#line + 1] = 0.5 - i * 0.01 end
+    for i = 1, 20 do line[#line + 1] = 0.1 + i * 0.01 line[#line + 1] = 0.44 end
+    for i = 1, 6 do line[#line + 1] = 0.3 line[#line + 1] = 0.44 + i * 0.01 end
+    rawset(game.env, "Outrider_DataPaths", { source = "spec", maps = { [100] = { line } } })
+    P.routes = nil
+    ns.Waypoints:Set(100, 0.3, 0.5, "Cave")
+    local walked = 0
+    for _, p in ipairs(P:Pins(100)) do if p.walked then walked = walked + 1 end end
+    T.ok(walked > 10, "dots along the patrol route")
+  end)
+
+  T.it("uses the walked paths shipped with Outrider, without drawing them as yours", function()
+    local game, ns, P = session()
+    local flat = {}
+    for i = 0, 6 do flat[#flat + 1] = 0.1 flat[#flat + 1] = 0.5 - i * 0.01 end
+    for i = 1, 20 do flat[#flat + 1] = 0.1 + i * 0.01 flat[#flat + 1] = 0.44 end
+    for i = 1, 6 do flat[#flat + 1] = 0.3 flat[#flat + 1] = 0.44 + i * 0.01 end
+    rawset(game.env, "Outrider_DataTrails", { source = "spec", maps = { [100] = flat } })
+    P.shipped = nil
+    ns.Waypoints:Set(100, 0.3, 0.5, "Cave")
+    local walked = 0
+    for _, p in ipairs(P:Pins(100)) do if p.walked then walked = walked + 1 end end
+    T.ok(walked > 10, "dots along the shipped path")
+    for _, pin in ipairs(ns.Trail:Pins(100, {})) do T.ok(pin.kind ~= "trail", "not shown as your own trail") end
+  end)
+
+  T.it("any quest the game tracks gets dots: its own next waypoint first, else the quest data", function()
+    local game, ns, P = session()
+    game.trackedQuest = 77
+    game.env.C_QuestLog.GetNextWaypoint = function(id) if id == 77 then return 100, 0.25, 0.5 end end
+    game.env.C_QuestLog.GetNextWaypointText = function() return "Enter the cave" end
+    P:Replan("quest arrow")
+    local pins = P:Pins(100)
+    T.ok(#pins > 0)
+    T.contains(pins[1].name, "Enter the cave")
+    game.env.C_QuestLog.GetNextWaypoint = nil
+    ns.QuestObjectives.Nearest = function() return { mapID = 100, x = 0.2, y = 0.5, label = "Wolf Den" } end
+    P:Replan("quest arrow")
+    T.contains(P:Pins(100)[1].name, "Wolf Den")
+  end)
+
   T.it("a quest the game's arrow guides gets the dots too", function()
     local game, ns, P = session()
     local Q = ns.QuestObjectives

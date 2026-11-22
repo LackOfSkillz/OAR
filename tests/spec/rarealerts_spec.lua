@@ -32,6 +32,31 @@ T.describe("rare alerts", function()
     T.same(game.macrosRun, { "/targetexact Spec Rare" })
   end)
 
+  T.it("a rare elite looks and sounds different from a rare (Gary, 2026-11-21)", function()
+    local game, ns = session({ class = "PRIEST" })
+    game.units.mouseover = rare(80001, "Spec Rare")
+    game:fire("UPDATE_MOUSEOVER_UNIT")
+    local rareSound = game.sounds[#game.sounds]
+    T.eq(ns.RareAlerts.flash.pulses, 4)
+    game.units.mouseover = rare(80002, "Spec Brute", { classification = "rareelite" })
+    game:fire("UPDATE_MOUSEOVER_UNIT")
+    local f = ns.Toast.visible[#ns.Toast.visible]
+    T.eq(f.title:GetText(), "RARE ELITE: Spec Brute")
+    T.contains(f.text:GetText(), "hits hard")
+    local eliteSound = game.sounds[#game.sounds]
+    T.ok(eliteSound and eliteSound ~= rareSound, "its own sound: " .. tostring(rareSound) .. " vs " .. tostring(eliteSound))
+    T.eq(ns.RareAlerts.flash.pulses, 7, "a longer flash")
+    T.ok(ns.RareAlerts.flash.look.color == "bad", "red")
+    -- the elite sound can be switched off on its own
+    ns.RareAlerts:Settings().eliteSound = false
+    local n = #game.sounds
+    ns.RareAlerts:Preview(true)
+    T.eq(#game.sounds, n)
+    ns.RareAlerts:Preview(false)
+    T.eq(#game.sounds, n + 1, "the rare sound still plays")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("dead rares don't alert", function()
     local game, ns = session()
     game.units.target = rare(80001, "Spec Rare", { dead = true })

@@ -15,8 +15,8 @@ T.describe("hub", function()
     local f = ns.Hub.frame
     T.ok(f:IsShown())
     T.eq(ns.Hub.current, "home")
-    -- the 2026-11-20 layout: 21 entries, settings and help at the bottom
-    T.same(f.tabBar.order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "crafting", "fishing", "money", "chat", "sharing", "people", "advisor", "settings", "help" })
+    -- the 2026-11-21 layout: 19 entries (Crafting and Fishing are Professions tabs), settings and help at the bottom
+    T.same(f.tabBar.order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "money", "chat", "sharing", "people", "advisor", "settings", "help" })
     for _, id in ipairs(f.tabBar.order) do f.tabBar:Select(id) T.eq(ns.Hub.current, id) end
     -- every page still opens, under its sidebar entry, with its sub-tab lit
     for id in pairs(ns.Hub.byId) do
@@ -63,7 +63,7 @@ T.describe("hub", function()
     game:slash("")
     ns.Hub:AddTab("pet", "Pet", function(p) p.built = true end, 50)
     local order = ns.Hub.frame.tabBar.order
-    T.same(order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "crafting", "fishing", "money", "chat", "sharing", "people", "advisor", "settings", "help", "pet" })
+    T.same(order, { "home", "journey", "feed", "waypoints", "quests", "rares", "dungeons", "class", "gear", "macros", "alts", "professions", "money", "chat", "sharing", "people", "advisor", "settings", "help", "pet" })
     ns.Hub.frame.tabBar:Select("pet")
     T.ok(ns.Hub.byId.pet.panel.built)
   end)

@@ -69,7 +69,7 @@ Write-Utf8NoBom (Join-Path $staging 'Outrider\Core\Build.lua') "-- Core/Build.lu
 $folders = @('Outrider')
 Get-ChildItem -Path (Join-Path $root 'addon') -Directory -Filter 'Outrider_Data_*' | ForEach-Object {
   Copy-Item -Recurse -Path $_.FullName -Destination (Join-Path $staging $_.Name); $folders += $_.Name }
-$packs = 'Outrider_Data_NPC', 'Outrider_Data_Gear', 'Outrider_Data_Mobs', 'Outrider_Data_Nodes', 'Outrider_Data_Dungeons', 'Outrider_Data_Quests'
+$packs = 'Outrider_Data_NPC', 'Outrider_Data_Gear', 'Outrider_Data_Mobs', 'Outrider_Data_Nodes', 'Outrider_Data_Dungeons', 'Outrider_Data_Quests', 'Outrider_Data_Reagents', 'Outrider_Data_Paths'
 foreach ($p in $packs) {
   $src = Join-Path $root "private\$p"
   if (-not (Test-Path (Join-Path $src "$p.toc"))) { Write-Host "Missing data addon $p (run its tools/import_*.py). Not packaging." -ForegroundColor Red; exit 1 }
@@ -107,6 +107,8 @@ if (-not $Upload) { exit 0 }
 
 # ------------------------------------------------------------------ upload
 $token = $env:CF_API_KEY
+# saved after this terminal started (setx / SetEnvironmentVariable 'User'): read the stored value
+if (-not $token) { $token = [Environment]::GetEnvironmentVariable('CF_API_KEY', 'User') }
 if (-not $token) { Write-Host "Set the CF_API_KEY environment variable to your CurseForge API token first (docs/CURSEFORGE.md)." -ForegroundColor Red; exit 1 }
 if (-not $ProjectId) { $id = Get-TocField 'X-Curse-Project-ID'; if ($id -match '^\d+$') { $ProjectId = [int]$id } }
 if (-not $ProjectId) { Write-Host "No project ID: add '## X-Curse-Project-ID: <number>' to Outrider.toc or pass -ProjectId." -ForegroundColor Red; exit 1 }

@@ -45,3 +45,7 @@ From Rankedboost's WoW Forever class macro pages, gathered for the P4-08 macro p
 
 ## Talents (research 2026-11-16, not yet probed)
 warcraft.wiki.gg lists Forever 1.60.1 under the modern talent functions (C_ClassTalents, C_Traits), and not under the Classic ones (GetTalentInfo, GetNumTalentTabs). The Talents module tries the modern functions first and falls back to the Classic ones, logging which it used and the whole tree at login. Probe entries were added under P6.
+
+## Macros: `/castsequence ...,null` does not hold (measured 2026-11-21)
+The Classic trick `/castsequence reset=combat X,null` (cast X once, then the line does nothing until the reset) does **not** hold on Forever. Gul's paladin fight log: Seal of Righteousness was cast again on every press (25 tries in a 15 s fight, 7 casts), the sequence wrapped back to the Seal after its "null" step. Fixed for the paladin with a sequence of real spells (`Seal, Judgement, Judgement, Judgement`: it waits on Judgement's cooldown and seals again about every 30 s).
+**Open:** every other `,null` line (hunter marks and stings, priest Shadow Word: Pain, warrior Battle Shout and Rend, shaman totems and Flame Shock) probably wraps the same way. Not measured yet: check those classes' fight logs (HunterFight logs every cast per fight) before replacing them.

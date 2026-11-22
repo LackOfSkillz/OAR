@@ -30,6 +30,8 @@ PACKS = (
     "Outrider_Data_Nodes",
     "Outrider_Data_Dungeons",
     "Outrider_Data_Quests",
+    "Outrider_Data_Reagents",
+    "Outrider_Data_Paths",
 )
 ORIGIN = "https://github.com/Questie/QuestieDB"
 GPL_ORIGIN = "https://github.com/Questie/QuestieDB/blob/master/LICENSE.md"

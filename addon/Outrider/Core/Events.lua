@@ -25,7 +25,8 @@ local function dispatch(event, ...)
   for i = 1, #list do snapshot[i] = list[i] end
   Events.stats[event] = (Events.stats[event] or 0) + 1
   -- Per-handler timing only in debug mode (debugprofilestop has a cost).
-  local timed = ns.db and ns.db.global.debug and debugprofilestop
+  local lag = ns.LagCheck and ns.LagCheck.on
+  local timed = ((ns.db and ns.db.global.debug) or lag) and debugprofilestop
   for i = 1, #snapshot do
     local h = snapshot[i]
     if not h.removed then
@@ -33,7 +34,9 @@ local function dispatch(event, ...)
       if timed then
         local t0 = debugprofilestop()
         ns.Safe(where, h.fn, event, ...)
-        Events:NoteTiming(where, debugprofilestop() - t0)
+        local ms = debugprofilestop() - t0
+        Events:NoteTiming(where, ms)
+        if lag then ns.LagCheck:Note(where, ms) end
       else
         ns.Safe(where, h.fn, event, ...)
       end
@@ -59,7 +62,7 @@ function Events:On(event, owner, fn)
       if not ok and ns.Log then ns.Log:Info("events", "cannot register %s on this client (feature off)", event) end
     end
   end
-  local h = { owner = owner, ownerName = type(owner) == "table" and owner.name or tostring(owner), fn = fn }
+  local h = { owner = owner, ownerName = (type(owner) == "table" and type(owner.name) == "string") and owner.name or (type(owner) == "string" and owner) or "?", fn = fn }
   list[#list + 1] = h
   return h
 end
