@@ -57,8 +57,31 @@ end
 
 function M:Scan() return ns.Prices and ns.Prices.lastScan end
 
+-- Both lists walk every item of the price scan (thousands), so they are
+-- worked out once per scan and kept (Gary's lag check at the auction house,
+-- 2026-11-22: 2 FPS, the shopping window redrew them every second). While
+-- item details are still loading, they are worked out again at most every
+-- M.RECHECK seconds.
+M.RECHECK = 10
+function M:Cached(kind, fn)
+  local scan = self:Scan()
+  if not scan then return fn(self) end
+  self.cache = self.cache or {}
+  local c = self.cache[kind]
+  local now = time()
+  if c and c.scan == scan and not (c.loading and c.loading > 0 and now - c.at >= M.RECHECK) then
+    return c.out, c.loading
+  end
+  local out, loading = fn(self)
+  self.cache[kind] = { scan = scan, at = now, out = out, loading = loading }
+  return out, loading
+end
+
+function M:VendorFlips() return self:Cached("flips", M.ComputeFlips) end
+function M:Resale() return (self:Cached("resale", M.ComputeResale)) end
+
 -- { {itemID, name, qty, cost, unit, vendor, profit, commodity, maxUnit} } best profit first
-function M:VendorFlips()
+function M:ComputeFlips()
   local scan = self:Scan()
   local out, loading = {}, 0
   if not scan then return out, loading end
@@ -88,10 +111,10 @@ function M:VendorFlips()
 end
 
 -- Listings well under the usual price: profit after the cut and deposit if it sells at the usual price.
-function M:Resale()
+function M:ComputeResale()
   local scan = self:Scan()
-  local out = {}
-  if not scan or not ns.Prices then return out end
+  local out, loading = {}, 0
+  if not scan or not ns.Prices then return out, loading end
   local min = self:Settings().minProfit or 100
   local H = ns.AuctionHelper
   for itemID, list in pairs(scan.items or {}) do
@@ -99,6 +122,7 @@ function M:Resale()
     local l = list[1]
     if stats and stats.count >= M.MIN_DAYS and l and l[1] <= stats.median * M.RESALE_UNDER then
       local i = info(itemID)
+      if not i then loading = loading + 1 end
       if i then
         local qty = l[2]
         local deposit = H and H.Deposit and (H:Deposit(itemID, qty) or 0) or 0
@@ -115,7 +139,7 @@ function M:Resale()
   end
   table.sort(out, function(a, b) if a.profit ~= b.profit then return a.profit > b.profit end return a.itemID < b.itemID end)
   while #out > M.TOP do table.remove(out) end
-  return out
+  return out, loading
 end
 
 -- How long ago the scan was, in words.

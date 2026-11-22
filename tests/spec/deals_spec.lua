@@ -79,6 +79,23 @@ T.describe("auction deals", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("works the lists out once per price scan, not on every redraw (lag at the auction house)", function()
+    local _, ns = session()
+    local D = ns.Deals
+    local calls = 0
+    local real = D.ComputeFlips
+    D.ComputeFlips = function(self) calls = calls + 1 return real(self) end
+    D.cache = nil
+    local a = D:VendorFlips()
+    local b = D:VendorFlips()
+    T.eq(calls, 1, "the second call reuses the first")
+    T.eq(#a, #b)
+    ns.Prices.lastScan = { at = 1, items = ns.Prices.lastScan.items }
+    D:VendorFlips()
+    T.eq(calls, 2, "a new scan works it out again")
+    D.ComputeFlips = real
+  end)
+
   T.it("before any scan it says to press Scan all prices", function()
     local game = mock.new()
     local ns = game:loadAddon()
