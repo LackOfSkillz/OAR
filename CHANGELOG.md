@@ -15,6 +15,10 @@ First release on CurseForge.
 
 ## Unreleased
 
+- Heal keys rebuilt for the most healing per second (research in docs/HEAL_MACRO_RESEARCH_2026-11-22.md): druid Rejuvenation then Regrowth (the efficient heal on Forever), Swiftmend and Nature's Swiftness for resto, Innervate on Alt; priest Renew then Heal/Greater Heal, shield on Shift, Flash Heal on Ctrl, Penance for Discipline, Inner Focus on Alt; paladin Holy Light, Flash of Light on Ctrl, Divine Favor + Holy Shock on Shift; shaman Healing Wave, Lesser Healing Wave on Ctrl, Nature's Swiftness on Shift, Riptide loop and Chain Heal for resto.
+- Mana: the best mana potion in your bags on Alt + Heal (after the class mana spell) and Ctrl + Recover; a low mana cue once per fight under 30%.
+- Every class's fight keys without ",null" (it wraps on Forever); the wand on Shift; Lava Burst removed (gone on Forever).
+
 - Druid fight keys: Moonfire (and Insect Swarm) then Wrath while they tick, from 30 two Starfires, in one sequence of real spells (the old `,null` line recast Moonfire on every press on Forever). Bear: no caster Faerie Fire (it can't be cast in a form and stuck the line); Demoralizing Roar on Ctrl, Maul. Forms use your own stance bar numbers. Heal key: Healing Touch is back as the main heal (a clause with three [ ] groups was dropped as "not known"; this also restores the main heal on other classes' Heal keys), Shift Rejuvenation.
 
 - **Outrider network test (Gary, 2026-11-22: "communicate with other Outrider users without being in the same party or guild"):** Sharing has an Outrider network test switch, off by default. When on, Outrider joins a hidden channel (removed from every chat window) and says a tiny hello there once a minute (version and a random tag only); the log records whether the channel worked, its own echo, and every other Outrider user heard. Two players with it on tell us whether a realm-wide Outrider network is possible on Forever (decision D25).

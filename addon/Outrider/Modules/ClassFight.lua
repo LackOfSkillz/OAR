@@ -92,12 +92,17 @@ function F.FormIndex(...)
   end
 end
 
-local function seq(add, keep, cond, list, why)
-  local s = {}
-  for _, n in ipairs(list) do if n then s[#s + 1] = n end end
-  if #s == 0 then return end
-  add(keep, string.format("/castsequence %sreset=combat/target %s,null", cond or "", table.concat(s, ",")),
-    why or (table.concat(s, ", then ") .. ": once each per pull"))
+-- DoTs then the filler while they tick, as one sequence of real spells
+-- (",null" wraps on Forever and recast the first DoT every press). It never
+-- waits, so callers add it last.
+local function seq(add, keep, cond, list, pad, n)
+  local s, dots = {}, {}
+  for i = 1, 4 do if list[i] then s[#s + 1] = list[i] dots[#dots + 1] = list[i] end end
+  if #s == 0 or not pad then return false end
+  for _ = 1, n or 4 do s[#s + 1] = pad end
+  add(keep, string.format("/castsequence %sreset=combat/target %s", cond or "", table.concat(s, ",")),
+    table.concat(dots, ", ") .. ", then " .. pad .. " while they tick")
+  return true
 end
 
 local CASTER = F.CASTER
@@ -117,11 +122,12 @@ function CASTER.WARRIOR(kind, add)
     return
   end
   if known("Charge") then add(2, "/cast [nocombat] Charge", "opens the pull from range") end
-  if known("Battle Shout") then add(3, "/castsequence reset=combat Battle Shout,null", "once per fight") end
-  if known("Rend") then add(4, "/castsequence reset=combat/target Rend,null", "once per target") end
+  if known("Battle Shout") then add(5, "/cast [mod:alt] Battle Shout", "Alt: Battle Shout (3 minutes)") end
   local big = first("Mortal Strike", "Bloodthirst", "Shield Slam")
   if big then add(3, "/cast " .. big, "whenever it is off cooldown") end
-  if known("Heroic Strike") then add(2, "/cast Heroic Strike", "spare rage into the next swing") end
+  if known("Rend") and known("Heroic Strike") then
+    add(2, "/castsequence reset=combat/target Rend,Heroic Strike,Heroic Strike,Heroic Strike,Heroic Strike,Heroic Strike", "Rend, then Heroic Strike with spare rage; Rend again on a new target")
+  elseif known("Heroic Strike") then add(2, "/cast Heroic Strike", "spare rage into the next swing") end
 end
 
 -- Rogue. Key 1: Cheap Shot from Stealth, then a combo loop: builder, builder,
@@ -170,12 +176,10 @@ function CASTER.WARLOCK(kind, add)
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
   add(8, "/petattack [pet,harm]", "sends the demon in")
   buffLines("WARLOCK", add)
-  seq(add, 2, nil, { first("Bane of Agony", "Curse of Agony"), first("Corruption"), first("Immolate"), first("Siphon Life") })
-  local filler
-  if known("Drain Life") and level() >= 30 then filler = "Drain Life"
-  elseif known("Shoot") and wand() then filler = "!Shoot"
-  else filler = first("Shadow Bolt") end
-  if filler then add(3, "/cast " .. filler, "filler until it dies") end
+  if known("Shoot") and wand() then add(3, "/cast [mod:shift] !Shoot", "Shift: the wand (when mana runs low)") end
+  local filler = (known("Drain Life") and level() >= 30) and "Drain Life" or first("Shadow Bolt")
+  local dots = { first("Bane of Agony", "Curse of Agony"), first("Corruption"), first("Immolate"), first("Siphon Life") }
+  if not seq(add, 2, nil, dots, filler, 4) and filler then add(3, "/cast " .. filler, "filler until it dies") end
 end
 
 -- Druid. One key follows your form: caster Wrath then Moonfire once and Wrath;
@@ -259,7 +263,7 @@ function CASTER.PALADIN(kind, add)
   if seal and known("Judgement") then
     add(2, "/castsequence reset=combat " .. seal .. ",Judgement,Judgement,Judgement", "Seal, then Judgement on cooldown; Seal again after three Judgements")
   elseif seal then
-    add(2, "/castsequence reset=combat " .. seal .. ",null", "Seal once per fight (it stays up)")
+    add(2, "/cast [nocombat] " .. seal, "Seal before the pull (it lasts 30 s)")
   end
   for i, n in ipairs({ "Holy Strike", "Crusader Strike", "Consecration" }) do
     if known(n) then add(2 + i, "/cast " .. n, "whenever it is off cooldown") end
@@ -283,11 +287,13 @@ function CASTER.SHAMAN(kind, add)
   if imbue and not mainHandEnchanted() then add(6, "/cast [nocombat] " .. imbue, "before the pull, while the weapon has no imbue") end
   buffLines("SHAMAN", add)
   if known("Lightning Bolt") then add(5, "/cast [nocombat] Lightning Bolt", "pulls from range") end
-  if known("Searing Totem") then add(4, "/castsequence reset=combat Searing Totem,null", "once per fight") end
-  if known("Flame Shock") then add(3, "/castsequence reset=combat/target Flame Shock,null", "once per target") end
+  if known("Searing Totem") then add(4, "/cast [mod:ctrl] Searing Totem", "Ctrl: Searing Totem") end
   if known("Stormstrike") then add(2, "/cast Stormstrike", "whenever it is off cooldown") end
+  -- the shocks share a cooldown: Flame Shock, then the other shock, waiting on it
   local shock = first("Earth Shock", "Frost Shock")
-  if shock then add(2, "/cast " .. shock, "whenever it is off cooldown") end
+  if known("Flame Shock") and shock then add(2, "/castsequence reset=combat/target Flame Shock," .. shock, "Flame Shock, then " .. shock .. " on the shared shock cooldown")
+  elseif shock then add(2, "/cast " .. shock, "whenever it is off cooldown")
+  elseif known("Flame Shock") then add(3, "/cast Flame Shock", "whenever it is off cooldown") end
 end
 
 -- Mage and priest keep their builders in HunterFight.lua; add their buffs.

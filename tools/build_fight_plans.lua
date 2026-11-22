@@ -9,6 +9,10 @@
 local src = "docs/fight_macro_catalog_draft.lua"
 local out = "addon/Outrider/Data/FightPlans.lua"
 local catalog = assert(loadfile(src))()
+-- fixes found after the research (",null" wraps on Forever, Lava Burst gone,
+-- the Heal keys rebuilt): tools/fight_plan_fixes.lua
+local fixed = assert(loadfile("tools/fight_plan_fixes.lua"))()(catalog)
+print(("fight_plan_fixes: %d keys checked"):format(fixed))
 
 local NL = string.char(10)
 local function q(s)

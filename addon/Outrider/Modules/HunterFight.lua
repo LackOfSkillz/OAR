@@ -142,12 +142,13 @@ function CASTER.PRIEST(kind, add)
     return
   end
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
-  if known("Shadow Word: Pain") then
-    add(2, "/castsequence reset=combat/target Shadow Word: Pain,null", "once per pull (and per new target)")
-  end
+  -- ",null" wraps on Forever: the DoT goes in a sequence of real spells,
+  -- last, with the cooldown spells above it (they fall through while cooling)
   if known("Mind Blast") then add(3, "/cast Mind Blast", "whenever it is off cooldown") end
   if known("Holy Fire") then add(4, "/cast Holy Fire", "whenever it is off cooldown") end
-  if known("Smite") then add(2, "/cast Smite", "filler") end
+  if known("Shadow Word: Pain") and known("Smite") then
+    add(2, "/castsequence reset=combat/target Shadow Word: Pain,Smite,Smite,Smite,Smite,Smite", "Shadow Word: Pain, then Smite while it ticks")
+  elseif known("Smite") then add(2, "/cast Smite", "filler") end
 end
 
 function M:Lines(kind)
@@ -193,11 +194,12 @@ function M:Lines(kind)
     -- switches back to Hawk). Once per fight: a macro can't see buffs and
     -- "!" on an aspect that is already up still spends the press. Left out
     -- only when Monkey is already up and nothing (no Hawk) will replace it.
+    local monkey
     if known("Aspect of the Monkey") and not (M.MonkeyOn() and not known("Aspect of the Hawk")) then
-      add(3, "/castsequence reset=combat !Aspect of the Monkey,null", "first press in melee: Monkey on (once per fight)")
+      monkey = true
     end
     if s.wingclip and known("Wing Clip") then
-      add(5, "/castsequence reset=combat/target Wing Clip,null", "slows once per pull so you can step back and shoot")
+      add(5, "/cast [mod:shift] Wing Clip", "Shift: slows it so you can step back and shoot")
     end
     if known("Raptor Strike") then add(2, "/cast Raptor Strike", "whenever it is off cooldown") end
     -- Gary, 2026-11-17: Immolation Trap. On Forever traps can be set in
@@ -207,6 +209,8 @@ function M:Lines(kind)
     -- cooldown the press falls through to the next line.
     if known("Immolation Trap") then add(4, "/cast Immolation Trap", "at your feet while the mob is on you, every time it's ready") end
     if known("Mongoose Bite") then add(4, "/cast Mongoose Bite", "only after the target dodges") end
+    -- last: reached only while the strikes cool down (",null" wraps on Forever)
+    if monkey then add(3, "/cast [combat] !Aspect of the Monkey", "in melee: Monkey on while the strikes cool down") end
     return L
   end
   if self:Ranged() ~= "bow" then return L end
@@ -231,11 +235,24 @@ function M:Lines(kind)
   if s.concussive and known("Concussive Shot") then seq[#seq + 1] = "Concussive Shot" end
   if known("Auto Shot") then seq[#seq + 1] = "!Auto Shot" end
   if known("Serpent Sting") then seq[#seq + 1] = "Serpent Sting" end
-  if #seq > 0 then
-    add(2, "/castsequence reset=combat/target " .. table.concat(seq, ",") .. ",null",
-      (table.concat(seq, ", then "):gsub("!", "")) .. ": once each per pull (and per new target)")
+  -- ",null" wraps on Forever (2026-11-21): the sequence goes on into Arcane
+  -- Shot, whose cooldown holds it (the press falls through), and Sting comes
+  -- round again about every 15 s; Auto Shot is sent once per loop
+  if known("Arcane Shot") then
+    seq[#seq + 1] = "Arcane Shot"
+    if known("Serpent Sting") then
+      seq[#seq + 1] = "Arcane Shot"
+      seq[#seq + 1] = "Serpent Sting"
+      seq[#seq + 1] = "Arcane Shot"
+      seq[#seq + 1] = "Arcane Shot"
+    end
+  elseif known("Raptor Strike") then
+    seq[#seq + 1] = "Raptor Strike" -- out of range the line waits there: Auto Shot isn't sent again
   end
-  if known("Arcane Shot") then add(4, "/cast Arcane Shot", "whenever it is off cooldown") end
+  if #seq > 0 then
+    add(2, "/castsequence reset=combat/target " .. table.concat(seq, ","),
+      "Mark, Auto Shot, Sting, then Arcane Shot on cooldown, round and round")
+  end
   -- Back to Hawk after Strike put Monkey up (Gary, 2026-11-16). Last line,
   -- so it is only reached when Arcane Shot is cooling down: a press that
   -- would do nothing else. Hawk already up = that press does nothing.
@@ -252,7 +269,13 @@ function M:Body(kind)
   -- a macro can't see mana, so you press it when the low mana cue says so)
   local MC = ns.ManaCare
   local potion = kind == "heal" and #lines > 0 and MC and MC:Potion()
-  if potion then table.insert(lines, 1, { keep = 3, text = "/use [mod:alt] " .. potion, why = "Alt: drink " .. potion .. " (when the low mana cue shows)" }) end
+  if potion then
+    -- after the class's own Alt line (Innervate, Inner Focus): that one first,
+    -- the potion when it is cooling down
+    local at = 1
+    for i, l in ipairs(lines) do if l.text:find("mod:alt", 1, true) or l.text == "/cancelform" then at = i + 1 end end
+    table.insert(lines, at, { keep = 3, text = "/use [mod:alt] " .. potion, why = "Alt: drink " .. potion .. " (when the low mana cue shows)" })
+  end
   local dropped = {}
   local function build()
     local t = { "#showtooltip" }

@@ -93,9 +93,10 @@ function M:CueText(pct)
   local p = self:Potion()
   if not p then return nil end
   local key = M.HEALERS[ns.PlayerClass() or ""] and "Alt + Heal" or "Ctrl + Recover"
-  local s = string.format("Mana %d%%: %s drinks %s", math.floor(pct + 0.5), key, p)
-  if ns.Spellbook and ns.Spellbook:Known("Innervate") then s = s .. " (or Innervate)" end
-  return s
+  local first
+  for _, n in ipairs({ "Innervate", "Inner Focus" }) do if not first and ns.Spellbook and ns.Spellbook:Known(n) then first = n end end
+  if first and key == "Alt + Heal" then return string.format("Mana %d%%: %s (%s, then %s)", math.floor(pct + 0.5), key, first, p) end
+  return string.format("Mana %d%%: %s drinks %s", math.floor(pct + 0.5), key, p)
 end
 
 function M:Check()
