@@ -203,7 +203,8 @@ function CASTER.DRUID(kind, add)
   if #forms > 0 then add(1, "/startattack [form:" .. table.concat(forms, "/") .. "]", "swings in Bear or Cat") end
   if bear then
     local b = "[form:" .. bear .. "] "
-    seq(add, 3, b, { first("Faerie Fire (Feral)"), first("Demoralizing Roar") })
+    -- ",null" wraps on Forever (FOREVER_CONSTRAINTS): Roar on Ctrl instead
+    if known("Demoralizing Roar") then add(5, "/cast [form:" .. bear .. ",mod:ctrl] Demoralizing Roar", "Ctrl in Bear: Demoralizing Roar") end
     if known("Primal Bite") then add(4, "/cast " .. b .. "Primal Bite", "Bear: on cooldown") end
     if known("Maul") then add(2, "/cast " .. b .. "Maul", "Bear: rage into the next swing") end
   end
@@ -221,7 +222,15 @@ function CASTER.DRUID(kind, add)
     end
   end
   local nf = (#forms > 0) and "[noform] " or ""
-  seq(add, 3, nf, { first("Moonfire"), first("Insect Swarm") })
+  -- DoTs, then the filler while they tick, as one sequence of real spells
+  -- (",null" wraps on Forever and would recast Moonfire every press)
+  local dots = {}
+  for _, n in ipairs({ "Moonfire", "Insect Swarm" }) do if known(n) then dots[#dots + 1] = n end end
+  if #dots > 0 and known("Wrath") then
+    local fill = (known("Starfire") and level() >= 30) and { "Starfire", "Starfire" } or { "Wrath", "Wrath", "Wrath" }
+    for _, n in ipairs(fill) do dots[#dots + 1] = n end
+    add(2, "/castsequence " .. nf .. "reset=combat/target " .. table.concat(dots, ","), "no form: " .. table.concat(dots, ", ") .. ", round and round")
+  end
   if known("Wrath") then add(2, "/cast " .. nf .. "Wrath", "no form: the filler") end
 end
 

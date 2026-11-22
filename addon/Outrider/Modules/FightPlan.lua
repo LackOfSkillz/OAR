@@ -174,12 +174,27 @@ function M:Lines(kind, add)
     -- Strike key's Pick Pocket before level 4); a line with nothing left is skipped
     local text = not skip and M.KnownLine(sl.line)
     if not text then skip = true end
+    if text and ns.PlayerClass() == "DRUID" then text = M.DruidForms(text) end
     if not skip then
       add(sl.keep or 5, text, sl.why)
       if not text:find("^/targetenemy") and not text:find("^/startattack") and not text:find("^/petattack") then casts = casts + 1 end
     end
   end
   return casts > 0
+end
+
+-- The plans write druid forms the Classic way ([form:1] Bear, [form:3] Cat,
+-- Aquatic in between). The real numbers are the order of this character's
+-- stance bar, which changes with what has been learned (Cat before Aquatic,
+-- or Bear only): rewrite them from GetShapeshiftFormInfo. A form not learned
+-- yet gets 9, a number no form has, so its clause can't fire in another form.
+function M.DruidForms(text)
+  local map = { ["1"] = F.FormIndex("Bear Form", "Dire Bear Form") or 9, ["3"] = F.FormIndex("Cat Form") or 9 }
+  return (text:gsub("form:([%d/]+)", function(list)
+    local out = {}
+    for n in list:gmatch("%d+") do out[#out + 1] = tostring(map[n] or n) end
+    return "form:" .. table.concat(out, "/")
+  end))
 end
 
 -- ------------------------------------------------------------ extra keys
@@ -224,7 +239,11 @@ function M.KnownLine(l)
   local keep = {}
   for clause in (rest .. ";"):gmatch("([^;]*);") do
     local c = clause:match("^%s*(.-)%s*$")
-    local spell = c:gsub("^%[[^%]]*%]%s*", ""):gsub("^%[[^%]]*%]%s*", "")
+    -- every leading [..] group goes (heal clauses have three: mouseover,
+    -- target, player; two were stripped before 2026-11-22 and the druid's
+    -- main heal fell out of the Heal key as "not known")
+    local spell = c
+    repeat local before = spell spell = spell:gsub("^%[[^%]]*%]%s*", "") until spell == before
     if spell ~= "" and known(spell) then keep[#keep + 1] = c end
   end
   if #keep == 0 then return nil end

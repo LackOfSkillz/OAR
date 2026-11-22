@@ -237,3 +237,51 @@ T.describe("fight plans: rogue Stealth on the Fight key", function()
     end
   end)
 end)
+
+-- Druid (Gary, 2026-11-22: "make sure the druid combat macros work"). ",null"
+-- wraps on Forever (the paladin's Seal spam), so no druid line may use it; the
+-- forms are written with this character's own stance bar numbers.
+T.describe("fight plans: druid", function()
+  local DRUID22 = { "Wrath", "Healing Touch", "Mark of the Wild", "Moonfire", "Rejuvenation", "Thorns", "Bear Form", "Maul",
+    "Demoralizing Roar", "Swipe", "Cat Form", "Claw", "Rip", "Regrowth", "Entangling Roots", "Faerie Fire" }
+  local function druid(level, spells, forms)
+    local game = mock.new({ class = "DRUID", level = level, race = "NightElf" })
+    game.spells = sp(spells)
+    game.forms = forms
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    game:advance(3)
+    return game, ns, ns.HunterFight
+  end
+
+  T.it("caster: Moonfire, then Wrath while it ticks; no ,null anywhere", function()
+    local game, ns, F = druid(22, DRUID22, { 9007, 9011 }) -- Bear 1, Cat 2 (no Aquatic Form yet)
+    local fight, strike, heal = F:Body("ranged"), F:Body("melee"), F:Body("heal")
+    T.contains(fight, "/castsequence [noform] reset=combat/target Moonfire,Wrath,Wrath,Wrath")
+    for _, b in ipairs({ fight, strike, heal }) do
+      T.ok(not b:find(",null", 1, true), "no ,null: " .. b)
+      T.ok(#b <= 255)
+    end
+    -- Bear: no caster Faerie Fire (it can't be cast in a form and stuck the line); Roar on Ctrl, Maul
+    T.ok(not strike:find("Faerie Fire", 1, true), "no Faerie Fire in Bear")
+    T.contains(strike, "/cast [form:1,mod:ctrl] Demoralizing Roar")
+    T.contains(strike, "/cast [form:1] Maul")
+    -- Cat is the second form on this stance bar, not the Classic third
+    T.contains(strike, "/startattack [form:1/2]")
+    T.contains(strike, "[form:2] reset=combat/target Claw,Claw,Claw,Rip")
+    -- Healing Touch is the main heal, Shift Rejuvenation
+    T.contains(heal, "[noform,@player] Healing Touch", heal)
+    T.contains(heal, "mod:shift,@player] Rejuvenation")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a level 1 druid: Wrath and Mark of the Wild, Healing Touch on Heal", function()
+    local _, ns, F = druid(1, { "Wrath", "Healing Touch", "Mark of the Wild" })
+    local fight = F:Body("ranged")
+    T.contains(fight, "/cast [noform] Wrath")
+    T.contains(fight, "Mark of the Wild")
+    T.contains(F:Body("heal"), "Healing Touch")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
