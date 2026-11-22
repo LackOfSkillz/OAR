@@ -193,6 +193,7 @@ Modules\Trail.lua
 Modules\Path.lua
 Modules\Feedback.lua
 Modules\LagCheck.lua
+Modules\NetTest.lua
 Modules\QuestsNear.lua
 Modules\ProfessionHub.lua
 Modules\MapPins.lua

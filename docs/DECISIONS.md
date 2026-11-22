@@ -36,6 +36,8 @@
 
 | D24 | **Gary's walked paths ship with Outrider (2026-11-21):** the breadcrumbs of all Gary's characters go into `addon/Outrider_Data_Trails` (positions only: no times, no names, rounded to 0.1% of the map), made by `tools/export_trails.ps1` from a copy of his SavedVariables, and ship in every package. The way-there dots use them as walked ground; they never show as anyone's own trail. Original Outrider data, GPL-3.0-only | Gary: "Yes, ship them" (so players get roads and cave entrances in zones they never walked; Dun Morogh and Zephras Isle have no patrol data) | 2026-11-21 |
 
+| D25 | **Outrider network test over a hidden channel (2026-11-22):** to find out whether Outrider users can reach each other realm-wide without a group or guild, the NetTest module (off by default, a switch on the Sharing page) joins the hidden channel `OutriderNet`, removes it from every chat window, and sends `hi|build|random tag|count` once a minute as an addon message on CHANNEL; it logs the join, each send's result, its own echo and hellos from other users. A test only: hard rule 10 still limits real sharing to guild, party, raid and whisper until the result is in. If channels are blocked on Forever (C11), the fallback is a whisper web between Outrider users who have met | Gary: "let's test it, write the code" | 2026-11-22 |
+
 ## Open questions for Gary
 
 | # | Question | Options | Recommendation | Needed by |

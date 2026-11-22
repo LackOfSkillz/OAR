@@ -15,6 +15,7 @@ Probe.APIS = {
   { "C_AddOns.GetAddOnMetadata", "P1" }, { "C_AddOns.IsAddOnLoaded", "P1" }, { "C_AddOns.LoadAddOn", "P1" },
   { "C_QuestLog.GetNextWaypoint", "P3", "the game's own next step for a quest (cave entrances, flights)" },
   { "C_QuestLog.GetNextWaypointText", "P3" }, { "C_Map.GetUserWaypoint", "P3", "the game's own map pin" },
+  { "JoinTemporaryChannel", "P8", "hidden channel for the Outrider network test" }, { "GetChannelName", "P8" }, { "LeaveChannelByName", "P8" },
   { "C_Timer.After", "P1" }, { "GetLootRollItemLink", "P6" }, { "GetLootRollItemInfo", "P6" }, { "C_Timer.NewTicker", "P1" }, { "GetServerTime", "P1" }, { "CheckInteractDistance", "P3", "sure NPC spots from standing next to them" },
   { "issecretvalue", "P1", "secret values present" }, { "Settings.RegisterCanvasLayoutCategory", "P1" },
   { "Settings.RegisterAddOnCategory", "P1" }, { "InterfaceOptions_AddCategory", "P1", "old options API" },

@@ -266,6 +266,7 @@ local controls = {
   ["Report or idea"] = "Tell us about a problem or an idea, in three steps.",
   ["Check for lag (1 minute)"] = "Measures for one minute how much of your game's time Outrider uses, and which part. Play as usual meanwhile.",
   ["Stop the check"] = "Stops the lag check now and shows what it measured so far.",
+  ["Outrider network test"] = "Tests whether Outrider can reach every Outrider user on your realm through a hidden channel. Off by default; it sends only a version number and a random tag.",
   ["Something's broken"] = "Report a problem: something didn't work or looked wrong.",
   ["I have an idea"] = "Suggest something Outrider should do.",
   ["Make my report"] = "Builds your report and a link to post it on GitHub. Copy the link with Ctrl+C, paste it in your web browser.",
