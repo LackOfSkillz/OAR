@@ -240,6 +240,14 @@ end
 
 function M:Refresh()
   if not self.open then return end
+  -- the shopping window has all of this (Sell bags, My auctions): no
+  -- second box beside the auction house (Gary, 2026-11-22). This small
+  -- panel stays only for when the shopping window is switched off.
+  local G = ns.GearShop
+  if G and G.enabled ~= false then
+    if self.frame then self.frame:Hide() end
+    return
+  end
   local f = self:Build()
   local lines = { "|cff8fd1ffOutrider|r" }
   local id = sellItem()

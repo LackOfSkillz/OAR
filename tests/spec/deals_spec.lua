@@ -96,6 +96,21 @@ T.describe("auction deals", function()
     D.ComputeFlips = real
   end)
 
+  T.it("a bag's slot count is read from its tooltip once, not on every redraw", function()
+    local game = mock.new()
+    game.items = { [804] = { name = "Large Blue Sack" } }
+    local reads = 0
+    game.itemTips = setmetatable({}, { __index = function(_, id)
+      if id == 804 then reads = reads + 1 return { "Large Blue Sack", "10 Slot Bag" } end
+    end })
+    local ns = game:loadAddon()
+    game:login()
+    local G = ns.GearShop
+    T.eq(G.BagSlotsOf(804), 10)
+    T.eq(G.BagSlotsOf(804), 10)
+    T.eq(reads, 1)
+  end)
+
   T.it("before any scan it says to press Scan all prices", function()
     local game = mock.new()
     local ns = game:loadAddon()

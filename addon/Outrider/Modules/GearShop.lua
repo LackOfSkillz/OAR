@@ -152,13 +152,20 @@ function M.PlayerClass()
 end
 
 -- Slots a bag has, from its tooltip ("16 Slot Bag"); nil until the item is loaded.
+-- Kept per item: a bag's size never changes, and reading a tooltip for every
+-- bag on every redraw made the Bags view lag (Gary, 2026-11-22: 2 FPS).
+M.slotCache = {}
 function M.BagSlotsOf(itemID)
+  local c = M.slotCache[itemID]
+  if c ~= nil then return c or nil end
   local tip = C.Call("C_TooltipInfo.GetItemByID", itemID)
   for _, line in ipairs(type(tip) == "table" and tip.lines or {}) do
     local t = C.Readable(line.leftText)
     local n = type(t) == "string" and t:match("(%d+) Slot")
-    if n then return tonumber(n) end
+    if n then M.slotCache[itemID] = tonumber(n) return tonumber(n) end
   end
+  -- loaded and still no slot line: not a bag with slots; don't ask again
+  if C.ItemInfo(itemID) and type(tip) == "table" and tip.lines and #tip.lines > 0 then M.slotCache[itemID] = false end
 end
 
 -- The bags you carry: smallest general bag (0 for an empty bag slot) and the
@@ -769,7 +776,8 @@ end
 
 -- Cards for a gear view: { item, itemID, title, sub, pill, price, action }
 function M:GearCards()
-  local list = (self.found and not self.queue) and (self:Results()) or {}
+  local list, skipped = {}, 0
+  if self.found and not self.queue then list, skipped = self:Results() end
   local out = {}
   for i, b in ipairs(list) do
     local label = self.mode == "weapons" and (i .. ". ") or (b.mode == "bags" and (b.kind .. ": ")) or (ns.TitleCase(b.slotName) .. ": ")
@@ -782,7 +790,7 @@ function M:GearCards()
     out[#out + 1] = { item = b, itemID = b.itemID, title = label .. b.name, sub = sub, pill = M.Gain(b), price = b.price,
       action = { { name = b.name, itemKey = b.itemKey } } }
   end
-  return out
+  return out, skipped or 0
 end
 
 M.HEADINGS = { sell = "Sell from your bags", auctions = "My auctions", search = "Search the auction house", lists = "Shopping lists", flips = "Vendor flips", resale = "Resale", training = "Skill-ups", recipes = "Recipes for sale", list = "Shopping list", weapons = "Weapons", armor = "Armor", bags = "Bags" }
@@ -812,8 +820,7 @@ function M:Refresh()
     if T then cards, statusText, searching, pos, total = T:View(self.mode) end
     statusText = statusText or ""
   else
-    cards = self:GearCards()
-    skipped = select(2, self:Results())
+    cards, skipped = self:GearCards()
     if self.queue then
       searching, pos, total = true, self.pos, #self.queue
       local e = self.queue[self.pos]

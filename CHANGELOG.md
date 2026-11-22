@@ -25,6 +25,10 @@ Everything Auctionator does, inside Outrider's shopping window at the auction ho
   - The price of the whole stack under your mouse.
   - What disenchanting green and blue gear is likely worth (an estimate from the classic tables and auction prices).
 - **Price scan when the auction house opens:** `/ride ahsell autoscan on` (once every 15 minutes).
+- **Smoother auction house:**
+  - The shopping window no longer lags the game (it dropped to 2 FPS). Vendor flips and Resale are worked out once per price scan, and bag sizes are read once.
+  - The separate undercut box beside the auction house is gone: My auctions has it.
+- **No test popups at login:** the "Wave" button and sample alert no longer show on a new install.
 
 ## 0.3.3 (2026-11-22)
 
