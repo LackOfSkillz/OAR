@@ -252,6 +252,41 @@ function M:PinLines()
   return out
 end
 
+-- The game's waypoint marker on the minimap (the one Outrider sets with
+-- C_Map.SetUserWaypoint) only says "Map Pin" (Gary, 2026-11-22: "all it says
+-- is mini map pin"). The minimap draws it itself, so there is no pin frame to
+-- hook: when the tooltip opens over the minimap and its first line names a
+-- pin while Outrider has a waypoint, Outrider adds what it is and why.
+function M.MinimapTipLines(owner, firstLine)
+  local mm = rawget(_G, "Minimap")
+  if not (M.enabled and ns.Waypoints and ns.Waypoints.current) then return nil end
+  if not (owner and mm and (owner == mm or (owner.GetParent and owner:GetParent() == mm))) then return nil end
+  if type(firstLine) ~= "string" or not firstLine:lower():find("pin", 1, true) then return nil end
+  return M:PinLines()
+end
+
+function M:HookMinimapTip()
+  local tip = rawget(_G, "GameTooltip")
+  if M.minimapTipHooked or not (tip and tip.HookScript) then return end
+  M.minimapTipHooked = true
+  tip:HookScript("OnShow", function(t)
+    if t.outriderAdding then return end
+    local ok, owner = pcall(t.GetOwner, t)
+    local left = rawget(_G, "GameTooltipTextLeft1")
+    local first = left and left.GetText and C.Readable(left:GetText())
+    local lines = ok and M.MinimapTipLines(owner, first)
+    if not lines then return end
+    if not M.minimapTipLogged then M.minimapTipLogged = true M:Info("minimap waypoint tooltip: '%s' gets Outrider's lines", tostring(first)) end
+    t.outriderAdding = true
+    for _, l in ipairs(lines) do
+      local r, g, b = ns.Theme:Color(l[2])
+      t:AddLine(l[1], r, g, b, true)
+    end
+    t:Show()
+    t.outriderAdding = false
+  end)
+end
+
 function M:HookPins()
   local map = rawget(_G, "WorldMapFrame")
   if not (map and map.EnumeratePinsByTemplate) then return 0 end
@@ -280,7 +315,7 @@ end
 
 function M:OnEnable()
   -- the waypoint pin exists once a waypoint is set and the map is open
-  self:On("OTR_WAYPOINT_SET", function(mod) mod:HookPins() end)
+  self:On("OTR_WAYPOINT_SET", function(mod) mod:HookPins() mod:HookMinimapTip() end)
   local map = rawget(_G, "WorldMapFrame")
   if map and map.HookScript and not M.mapHooked then
     M.mapHooked = true

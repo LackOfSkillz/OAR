@@ -70,6 +70,24 @@ function M:OnDisable()
   self.used = {}
 end
 
+-- Why a pin is on the minimap, one plain line per kind.
+M.WHY = {
+  path = "Follow these dots: the way to where you're heading.",
+  quest_giver = "Has a quest you can take.",
+  objective = "Something your quest needs is here.",
+  turnin = "Hand in a finished quest here.",
+  qpath = "A quest creature walks this way.",
+  rare = "A rare creature spawns here: it drops better loot.",
+  herb = "An herb you can gather.", ore = "Ore you can mine.", fish = "A place to fish.", pool = "A fishing pool: better catches.",
+  dungeon = "A dungeon entrance.", flight_master = "Fly to places you've been from here.",
+  spirit_healer = "Where you come back after you die.", trail = "A road you walked before.", ride = "A ride you took before.",
+  transport = "A boat, zeppelin or portal to another place.", vendor = "Buys your junk and sells supplies.",
+  repair = "Fix your gear here.", trainer = "Learn new spells or skills here.", innkeeper = "Set your hearthstone here and rest.",
+  mailbox = "Send and get mail.", bank = "Your bank.", auction = "The auction house: buy and sell with other players.",
+  stable_master = "Keep extra pets here.", guild_master = "Make a guild here.", tabard = "Buy a guild tabard here.",
+  note = "A note you put on the map.", guildmate = "A guildmate is here.",
+}
+
 -- Each dot is a small button: hover shows name, kind and distance; click
 -- opens the same card as the world map pin (Gary asked, 2026-11-11).
 function M:Dot(i)
@@ -91,6 +109,9 @@ function M:Dot(i)
         local line, color = ns.LootLog:StateLine(p)
         if line then GameTooltip:AddLine(line, ns.Theme:Color(color)) end
       end
+      -- why it's on your minimap, in plain words (Gary, 2026-11-22)
+      if M.WHY[p.kind] then GameTooltip:AddLine(M.WHY[p.kind], ns.Theme:Color("text")) end
+      if p.kind ~= "path" then GameTooltip:AddLine("Click for details and the way there", ns.Theme:Color("muted")) end
       GameTooltip:Show()
     end)
     d:SetScript("OnLeave", function() GameTooltip:Hide() end)
