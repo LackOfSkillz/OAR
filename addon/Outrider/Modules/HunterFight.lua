@@ -248,6 +248,11 @@ end
 -- Body text; drops the lowest-priority lines until it fits. Returns body, dropped lines.
 function M:Body(kind)
   local lines = self:Lines(kind or "ranged")
+  -- Alt on the Heal key: the best mana potion in your bags (Modules/ManaCare.lua;
+  -- a macro can't see mana, so you press it when the low mana cue says so)
+  local MC = ns.ManaCare
+  local potion = kind == "heal" and #lines > 0 and MC and MC:Potion()
+  if potion then table.insert(lines, 1, { keep = 3, text = "/use [mod:alt] " .. potion, why = "Alt: drink " .. potion .. " (when the low mana cue shows)" }) end
   local dropped = {}
   local function build()
     local t = { "#showtooltip" }

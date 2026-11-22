@@ -74,6 +74,8 @@ function M:Body(name)
   if name == "Recover" then
     local lines = {}
     if have("BANDAGE") then lines[#lines + 1] = "/use [mod:shift,@player] {BANDAGE}" end
+    local mana = ns.ManaCare and ns.ManaCare:Potion()
+    if mana then lines[#lines + 1] = "/use [mod:ctrl] " .. mana end
     if have("HEALTHSTONE") and have("POTION") then lines[#lines + 1] = "/castsequence [combat,nomod] reset=combat {HEALTHSTONE}, {POTION}"
     elseif have("HEALTHSTONE") then lines[#lines + 1] = "/use [combat,nomod] {HEALTHSTONE}"
     elseif have("POTION") then lines[#lines + 1] = "/use [combat,nomod] {POTION}" end
@@ -95,7 +97,7 @@ end
 -- What each layer does, in words: "Press: Kick · Shift: Gouge · Ctrl: Kidney Shot"
 function M:Layers(name)
   local def = data()[ns.PlayerClass()] or {}
-  if name == "Recover" then return "Press: eat and drink (out of combat), healthstone then potion (in combat) · Shift: bandage yourself" end
+  if name == "Recover" then return "Press: eat and drink (out of combat), healthstone then potion (in combat) · Shift: bandage yourself" .. ((ns.ManaCare and ns.ManaCare:Potion()) and " · Ctrl: mana potion" or "") end
   if name == "Team" then return "Press: assist · Shift: set focus · Ctrl: clear focus" end
   local _, layers = M.CastLine(def, name)
   local out = {}
