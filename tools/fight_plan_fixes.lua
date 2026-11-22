@@ -325,6 +325,39 @@ local function compress(list)
   return list
 end
 
+-- 5. Gated spells (2026-11-22, Gary: "the hunter macro knows when the target
+-- dodged"): the game itself refuses Mongoose Bite, Overpower, Execute... until
+-- their moment, so they sit where a refusal costs nothing (last line). Added:
+--   * paladin Hammer of Wrath (44, target under 20%): last line of Fight;
+--   * warlock Shadowburn is NOT gated (it fires whenever it's ready and spends
+--     a Soul Shard), so it moves from a plain line to Alt: your finisher call.
+local function gated(cls, key, list)
+  if cls == "PALADIN" and key == "melee" then
+    -- on every bracket with no required spells: the builder leaves a /cast
+    -- line out until the spell is learned, so it simply appears at 44
+    for _, b in ipairs(list) do
+      b.slots[#b.slots + 1] = S("/cast Hammer of Wrath", {}, "reactive", 4,
+        "target under 20% health: the game only lets it fire then, so it sits last")
+    end
+  end
+  if cls == "WARLOCK" then
+    for _, b in ipairs(list) do
+      for _, sl in ipairs(b.slots) do
+        if sl.line == "/cast Shadowburn" then
+          local m = freeMod(b.slots, { "alt", "ctrl", "shift" })
+          if m then
+            sl.line, sl.kind, sl.why = "/cast [mod:" .. m .. "] Shadowburn", "utility",
+              (m == "alt" and "Alt" or m == "ctrl" and "Ctrl" or "Shift") .. ": Shadowburn to finish it (uses a Soul Shard)"
+          else sl.line = nil end
+        end
+      end
+      local keep = {}
+      for _, sl in ipairs(b.slots) do if sl.line then keep[#keep + 1] = sl end end
+      b.slots = keep
+    end
+  end
+end
+
 return function(catalog)
   local n = 0
   for cls, c in pairs(catalog) do
@@ -335,6 +368,7 @@ return function(catalog)
             local r = resolve(list)
             for _, b in ipairs(r) do fixBracket(cls, key, b) end
             if key == "heal" and HEAL[cls] then r = resolve(HEAL[cls]) end
+            gated(cls, key, r)
             mode.brackets[key] = compress(r)
             n = n + 1
           end

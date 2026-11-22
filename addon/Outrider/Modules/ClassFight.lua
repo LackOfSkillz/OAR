@@ -268,6 +268,8 @@ function CASTER.PALADIN(kind, add)
   for i, n in ipairs({ "Holy Strike", "Crusader Strike", "Consecration" }) do
     if known(n) then add(2 + i, "/cast " .. n, "whenever it is off cooldown") end
   end
+  -- the game only allows it under 20% health, so it waits last (like Mongoose Bite)
+  if known("Hammer of Wrath") then add(5, "/cast Hammer of Wrath", "target under 20% health") end
 end
 
 -- Shaman. Key 1: weapon imbue and Lightning Shield before the pull (while

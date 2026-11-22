@@ -288,3 +288,37 @@ T.describe("fight plans: druid", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+-- Gated spells (Gary, 2026-11-22): the game refuses them until their moment,
+-- so they wait last like Mongoose Bite; Shadowburn isn't gated, so it's on Alt.
+T.describe("fight plans: gated spells", function()
+  local function char(cls, level, spells)
+    local game = mock.new({ class = cls, level = level })
+    game.spells = sp(spells)
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    game:advance(3)
+    return game, ns, ns.HunterFight
+  end
+
+  T.it("paladin from 44: Hammer of Wrath is the last line of Fight", function()
+    local _, ns, F = char("PALADIN", 44, { "Seal of Righteousness", "Judgement", "Holy Strike", "Holy Light", "Hammer of Wrath" })
+    local fight = F:Body("ranged")
+    T.contains(fight, "/cast Hammer of Wrath")
+    T.ok(fight:find("/cast Hammer of Wrath$") ~= nil, "the last line: " .. fight)
+    T.ok(#fight <= 255)
+    local _, _, F40 = char("PALADIN", 40, { "Seal of Righteousness", "Judgement", "Holy Strike", "Holy Light" })
+    T.no(F40:Body("ranged"):find("Hammer of Wrath", 1, true), "not before it's learned")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("warlock: Shadowburn only on Alt (it spends a Soul Shard whenever it's ready)", function()
+    local _, ns, F = char("WARLOCK", 30, { "Shadow Bolt", "Immolate", "Corruption", "Bane of Agony", "Life Tap", "Fear", "Shadowburn" })
+    for _, kind in ipairs({ "ranged", "melee" }) do
+      local b = F:Body(kind)
+      T.no(b:find("\n/cast Shadowburn", 1, true), kind .. ": no plain Shadowburn line")
+    end
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

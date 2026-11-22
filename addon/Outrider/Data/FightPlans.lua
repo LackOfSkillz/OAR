@@ -4250,14 +4250,14 @@ C.specs["destruction"] = {
         "/targetenemy [noharm][dead]",
         "/cast [mod:shift,harm,nodead] Fear",
         "/cast [mod:ctrl] Life Tap",
-        { line = "/cast Shadowburn", spells = { "Shadowburn" }, kind = "cooldown", keep = 4, why = "Destruction: instant hit" },
+        { line = "/cast [mod:alt] Shadowburn", spells = { "Shadowburn" }, kind = "utility", keep = 4, why = "Alt: Shadowburn to finish it (uses a Soul Shard)" },
       } },
       { from = 40, slots = {
         "/targetenemy [noharm][dead]",
         "/cast [mod:shift,harm,nodead] Fear",
         "/cast [mod:ctrl] Life Tap",
         { line = "/cast Howl of Terror", spells = { "Howl of Terror" }, kind = "cooldown", keep = 4, why = "several on you: fear them all" },
-        "/cast Shadowburn",
+        "/cast [mod:alt] Shadowburn",
       } },
       { from = 42, slots = {
         "/targetenemy [noharm][dead]",
@@ -4265,7 +4265,7 @@ C.specs["destruction"] = {
         "/cast [mod:ctrl] Life Tap",
         { line = "/cast Death Coil", spells = { "Death Coil" }, kind = "cooldown", keep = 3, why = "horror and heal on cooldown" },
         "/cast Howl of Terror",
-        "/cast Shadowburn",
+        "/cast [mod:alt] Shadowburn",
       } },
     },
     ranged = {
@@ -4332,14 +4332,14 @@ C.specs["destruction"] = {
         "/targetenemy [noharm][dead]",
         "/cast [mod:shift,harm,nodead] Fear",
         "/cast [mod:ctrl] Life Tap",
-        { line = "/cast Shadowburn", spells = { "Shadowburn" }, kind = "cooldown", keep = 4, why = "Destruction: instant hit" },
+        { line = "/cast [mod:alt] Shadowburn", spells = { "Shadowburn" }, kind = "utility", keep = 4, why = "Alt: Shadowburn to finish it (uses a Soul Shard)" },
       } },
       { from = 40, slots = {
         "/targetenemy [noharm][dead]",
         "/cast [mod:shift,harm,nodead] Fear",
         "/cast [mod:ctrl] Life Tap",
         { line = "/cast Howl of Terror", spells = { "Howl of Terror" }, kind = "cooldown", keep = 4, why = "several on you: fear them all" },
-        "/cast Shadowburn",
+        "/cast [mod:alt] Shadowburn",
       } },
       { from = 42, slots = {
         "/targetenemy [noharm][dead]",
@@ -4347,7 +4347,7 @@ C.specs["destruction"] = {
         "/cast [mod:ctrl] Life Tap",
         { line = "/cast Death Coil", spells = { "Death Coil" }, kind = "cooldown", keep = 3, why = "horror and heal on cooldown" },
         "/cast Howl of Terror",
-        "/cast Shadowburn",
+        "/cast [mod:alt] Shadowburn",
       } },
     },
     ranged = {
@@ -5309,6 +5309,7 @@ C.specs["holy"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5316,6 +5317,7 @@ C.specs["holy"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5324,6 +5326,7 @@ C.specs["holy"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5332,6 +5335,7 @@ C.specs["holy"] = {
         { line = "/cast [nocombat] Retribution Aura", spells = { "Retribution Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5341,6 +5345,7 @@ C.specs["holy"] = {
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 4, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
       { from = 40, slots = {
         "/targetenemy [noharm][dead]",
@@ -5351,6 +5356,7 @@ C.specs["holy"] = {
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         "/cast Consecration",
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
@@ -5394,6 +5400,7 @@ C.specs["holy"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5401,6 +5408,7 @@ C.specs["holy"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5409,6 +5417,7 @@ C.specs["holy"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 8, slots = {
         "/targetenemy [noharm][dead]",
@@ -5418,6 +5427,7 @@ C.specs["holy"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5427,6 +5437,7 @@ C.specs["holy"] = {
         { line = "/cast [nocombat] Retribution Aura", spells = { "Retribution Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5437,6 +5448,7 @@ C.specs["holy"] = {
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 4, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
       { from = 40, slots = {
         "/targetenemy [noharm][dead]",
@@ -5448,6 +5460,7 @@ C.specs["holy"] = {
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         "/cast Consecration",
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
@@ -5493,6 +5506,7 @@ C.specs["levelling"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5500,6 +5514,7 @@ C.specs["levelling"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5508,6 +5523,7 @@ C.specs["levelling"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5516,6 +5532,7 @@ C.specs["levelling"] = {
         { line = "/cast [nocombat] Retribution Aura", spells = { "Retribution Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5525,6 +5542,7 @@ C.specs["levelling"] = {
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 4, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
@@ -5564,6 +5582,7 @@ C.specs["prot"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5571,6 +5590,7 @@ C.specs["prot"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5579,6 +5599,7 @@ C.specs["prot"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
@@ -5587,6 +5608,7 @@ C.specs["prot"] = {
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Fury,Judgement,Judgement,Judgement", spells = { "Seal of Fury", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5596,6 +5618,7 @@ C.specs["prot"] = {
         { line = "/cast [nocombat] Righteous Fury", spells = { "Righteous Fury" }, kind = "buff", keep = 6, why = "tank threat buff while missing" },
         "/castsequence reset=combat Seal of Fury,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5606,6 +5629,7 @@ C.specs["prot"] = {
         "/castsequence reset=combat Seal of Fury,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 4, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
       { from = 40, slots = {
         "/targetenemy [noharm][dead]",
@@ -5617,6 +5641,7 @@ C.specs["prot"] = {
         "/cast Holy Strike",
         { line = "/cast Holy Shield", spells = { "Holy Shield" }, kind = "cooldown", keep = 4, why = "on cooldown" },
         "/cast Consecration",
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
@@ -5658,6 +5683,7 @@ C.specs["prot"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5665,6 +5691,7 @@ C.specs["prot"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5673,6 +5700,7 @@ C.specs["prot"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 8, slots = {
         "/targetenemy [noharm][dead]",
@@ -5682,6 +5710,7 @@ C.specs["prot"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 10, slots = {
         "/targetenemy [noharm][dead]",
@@ -5691,6 +5720,7 @@ C.specs["prot"] = {
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Fury,Judgement,Judgement,Judgement", spells = { "Seal of Fury", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5701,6 +5731,7 @@ C.specs["prot"] = {
         { line = "/cast [nocombat] Righteous Fury", spells = { "Righteous Fury" }, kind = "buff", keep = 6, why = "tank threat buff while missing" },
         "/castsequence reset=combat Seal of Fury,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5712,6 +5743,7 @@ C.specs["prot"] = {
         "/castsequence reset=combat Seal of Fury,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 4, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
       { from = 40, slots = {
         "/targetenemy [noharm][dead]",
@@ -5724,6 +5756,7 @@ C.specs["prot"] = {
         "/cast Holy Strike",
         { line = "/cast Holy Shield", spells = { "Holy Shield" }, kind = "cooldown", keep = 4, why = "on cooldown" },
         "/cast Consecration",
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
@@ -5767,6 +5800,7 @@ C.specs["ret"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5774,6 +5808,7 @@ C.specs["ret"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5782,6 +5817,7 @@ C.specs["ret"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5790,6 +5826,7 @@ C.specs["ret"] = {
         { line = "/cast [nocombat] Retribution Aura", spells = { "Retribution Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5799,6 +5836,7 @@ C.specs["ret"] = {
         { line = "/castsequence reset=combat Seal of Command,Judgement,Judgement,Judgement", spells = { "Seal of Command", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 6, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
@@ -5840,6 +5878,7 @@ C.specs["ret"] = {
         { line = "/startattack", spells = {  }, kind = "control", keep = 1, why = "keeps swinging" },
         { line = "/cast [nocombat] Devotion Aura", spells = { "Devotion Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         { line = "/cast [nocombat] Seal of Righteousness", spells = { "Seal of Righteousness" }, kind = "buff", keep = 3, why = "Seal before the pull (it lasts 30 s)" },
+        { line = "/cast Hammer of Wrath", spells = {  }, kind = "reactive", keep = 4, why = "target under 20% health: the game only lets it fire then, so it sits last" },
       } },
       { from = 4, slots = {
         "/targetenemy [noharm][dead]",
@@ -5847,6 +5886,7 @@ C.specs["ret"] = {
         { line = "/cast [nocombat,@player] Blessing of Might", spells = { "Blessing of Might" }, kind = "buff", keep = 8, why = "before the pull while missing" },
         "/cast [nocombat] Devotion Aura",
         { line = "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement", spells = { "Seal of Righteousness", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
+        "/cast Hammer of Wrath",
       } },
       { from = 6, slots = {
         "/targetenemy [noharm][dead]",
@@ -5855,6 +5895,7 @@ C.specs["ret"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         { line = "/cast Holy Strike", spells = { "Holy Strike" }, kind = "cooldown", keep = 3, why = "on cooldown" },
+        "/cast Hammer of Wrath",
       } },
       { from = 8, slots = {
         "/targetenemy [noharm][dead]",
@@ -5864,6 +5905,7 @@ C.specs["ret"] = {
         "/cast [nocombat] Devotion Aura",
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 16, slots = {
         "/targetenemy [noharm][dead]",
@@ -5873,6 +5915,7 @@ C.specs["ret"] = {
         { line = "/cast [nocombat] Retribution Aura", spells = { "Retribution Aura" }, kind = "buff", keep = 8, why = "aura while missing" },
         "/castsequence reset=combat Seal of Righteousness,Judgement,Judgement,Judgement",
         "/cast Holy Strike",
+        "/cast Hammer of Wrath",
       } },
       { from = 20, slots = {
         "/targetenemy [noharm][dead]",
@@ -5883,6 +5926,7 @@ C.specs["ret"] = {
         { line = "/castsequence reset=combat Seal of Command,Judgement,Judgement,Judgement", spells = { "Seal of Command", "Judgement" }, kind = "once", keep = 2, why = "Seal, then Judgement on cooldown; Seal again after three Judgements (Forever: ,null does not hold)" },
         "/cast Holy Strike",
         { line = "/cast Consecration", spells = { "Consecration" }, kind = "cooldown", keep = 6, why = "on cooldown in melee" },
+        "/cast Hammer of Wrath",
       } },
     },
     ranged = {
