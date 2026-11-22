@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.1 (2026-11-22)
+
+First release on CurseForge.
+
+- **Home:** your next step, XP and rested, where to go, and cards for quests, upgrades, your next dungeon, rares and errands.
+- **The way there:** a gold arrow and a line of dots to any place or quest, along roads walked before; trips with flight masters, zeppelins and skyboats are planned for you.
+- **Quests:** opens on Near me, the quests worth doing next from where you stand; quest chains; objectives and turn-ins on the map.
+- **Dungeons:** which fit your level, their quests and keys, and who gives them.
+- **Rares:** alerts with sound and a screen flash, blue for rares and red for rare elites.
+- **Professions:** what you can make now, and where to get what you're missing: vendor, creature, herbs and ore, or the auction house.
+- **Your class:** spells your trainer has for you, fight keys and macros for all nine classes.
+- **Help:** Report or idea sends a problem or a wish to us, and a one-minute lag check.
+
 ## Unreleased
 
 - **Lag check (Gary, 2026-11-21: "it's causing some fps drops"):** Help, Report or idea has Check for lag (1 minute), also /ride lag. Play as usual for a minute: Outrider times every handler and timer it runs and samples your FPS, then says in plain words how much of the game's time it used (fine / small / heavy), its slowest moment (16 ms or more is a stutter), your FPS, and its heaviest parts with a Turn off button each. The result goes into your next report, so we see the numbers on GitHub. Timing runs only during a check.
