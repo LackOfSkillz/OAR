@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.2 (2026-11-22)
+
+- **Heal keys for every healer, built for the most healing per second:**
+  - **Druid:** Rejuvenation, then Regrowth (the efficient heal on Forever), then Healing Touch. Ctrl: a big Healing Touch. Resto: Swiftmend in the loop, and Shift for Nature's Swiftness then an instant Healing Touch.
+  - **Priest:** Renew, then Heal or Greater Heal. Shift: shield. Ctrl: Flash Heal. Penance for Discipline.
+  - **Paladin:** Holy Light. Ctrl: Flash of Light. Shift: Divine Favor, then Holy Shock.
+  - **Shaman:** Healing Wave. Ctrl: Lesser Healing Wave. Shift: Nature's Swiftness. Resto: a Riptide loop.
+- **Mana:** Alt + Heal drinks the best mana potion in your bags, after Innervate or Inner Focus. Classes without a Heal key use Ctrl + Recover. A blue cue tells you when mana drops under 30% in a fight.
+- **Fight keys fixed for every class:** a spell no longer gets recast on every press (the paladin Seal spam, the druid Moonfire). Damage-over-time spells run in a loop with your main spell, and cooldowns fire whenever they're ready. The wand is on Shift. Lava Burst is gone, because Forever removed it.
+- **Druid:** the Bear and Cat lines use your own stance bar, so they work whatever order you learned the forms in.
+- **Nameplates:** the quest count sits above the name ("5/7") instead of running across it.
+- **Outrider network test:** a switch on the Sharing page (off by default) to test whether Outrider users can find each other realm-wide.
+
 ## 0.3.1 (2026-11-22)
 
 First release on CurseForge.
