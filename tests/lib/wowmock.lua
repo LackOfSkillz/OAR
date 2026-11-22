@@ -486,7 +486,39 @@ function M.new(opts)
     ConfirmCommoditiesPurchase = function(id, qty) game.bought = game.bought or {} game.bought[#game.bought + 1] = { commodity = id, qty = qty } end,
     CancelCommoditiesPurchase = function() game.commodityStart = nil end,
     PlaceBid = function(id, price) game.bought = game.bought or {} game.bought[#game.bought + 1] = { id = id, price = price } end,
-    GetCommoditySearchResultInfo = function(id, i) local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
+    -- game.commodityList[itemID] = { {unitPrice, quantity, numOwnerItems, owners}, ... } (else game.commodity[itemID] = one price)
+    GetCommoditySearchResultInfo = function(id, i)
+      local list = game.commodityList and game.commodityList[id]
+      if list then local r = list[i] return r and { unitPrice = r[1], quantity = r[2] or 1, numOwnerItems = r[3] or 0, owners = r[4] } end
+      local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
+    GetNumCommoditySearchResults = function(id)
+      local list = game.commodityList and game.commodityList[id]
+      if list then return #list end
+      return game.commodity and game.commodity[id] and 1 or 0
+    end,
+    -- selling: game.posted = { {commodity|item, itemID, bag, slot, duration, qty, price} }
+    PostCommodity = function(loc, dur, qty, unit)
+      if game.combat then error("post in combat") end
+      game.posted = game.posted or {}
+      game.posted[#game.posted + 1] = { kind = "commodity", bag = loc.bag, slot = loc.slot, duration = dur, qty = qty, price = unit }
+    end,
+    PostItem = function(loc, dur, qty, bid, buyout)
+      game.posted = game.posted or {}
+      game.posted[#game.posted + 1] = { kind = "item", bag = loc.bag, slot = loc.slot, duration = dur, qty = qty, price = buyout, bid = bid }
+    end,
+    QueryOwnedAuctions = function() game.ownedQueries = (game.ownedQueries or 0) + 1 end,
+    CancelAuction = function(id) game.cancelled = game.cancelled or {} game.cancelled[#game.cancelled + 1] = id end,
+    GetItemKeyFromItem = function(loc)
+      local id = game.bags and game.bags[loc.bag] and game.bags[loc.bag][loc.slot]
+      return id and { itemID = id, itemLevel = 0, itemSuffix = 0, battlePetSpeciesID = 0 }
+    end,
+    -- game.commodities[itemID] = true marks stackable goods
+    GetItemKeyInfo = function(key) return key and { itemID = key.itemID, isCommodity = game.commodities and game.commodities[key.itemID] or false } end,
+    GetItemCommodityStatus = function(loc)
+      local id = type(loc) == "table" and game.bags and game.bags[loc.bag] and game.bags[loc.bag][loc.slot] or loc
+      if type(id) ~= "number" or not game.commodities then return nil end -- nil: callers fall back to the stack size
+      return game.commodities[id] and 2 or 1
+    end,
     GetOwnedAuctions = function() return game.owned or {} end,
     CalculateCommodityDeposit = function(id, dur, qty) return (game.deposit or 0) * (qty or 1) end,
   }
@@ -697,6 +729,7 @@ function M.new(opts)
     end
   end
   base.C_Item = base.C_Item or {}
+  base.ItemLocation = { CreateFromBagAndSlot = function(_, bag, slot) return { bag = bag, slot = slot } end }
   -- bags: game.bags[bag][slot] = itemID; game.items[itemID] = { name, reqLevel, spell }
   base.C_Container = {
     GetContainerItemLink = function(bag, slot)
@@ -788,7 +821,7 @@ function M.new(opts)
   base.C_Item.GetItemInfo = function(id)
     id = idOf(id)
     local it = game.items and game.items[id]
-    if it then return it.name, nil, it.quality or 1, 1, it.reqLevel or 0, it.itemType, it.itemSubType, 20, it.equipLoc, nil, it.sell or 0, nil, nil, it.bind end
+    if it then return it.name, nil, it.quality or 1, it.ilvl or 1, it.reqLevel or 0, it.itemType, it.itemSubType, 20, it.equipLoc, nil, it.sell or 0, nil, nil, it.bind end
   end
   base.C_Item.GetItemInfoInstant = function(id)
     id = idOf(id)

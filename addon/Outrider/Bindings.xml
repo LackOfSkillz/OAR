@@ -14,4 +14,10 @@
   <Binding name="OUTRIDER_WOWHEAD" header="OUTRIDER" category="ADDONS">
     if Outrider and Outrider.Tweaks then Outrider.Tweaks:ShowWowhead() end
   </Binding>
+  <Binding name="OUTRIDER_AHPOST" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.AuctionSell then Outrider.AuctionSell:PostNext() end
+  </Binding>
+  <Binding name="OUTRIDER_AHCANCEL" header="OUTRIDER" category="ADDONS">
+    if Outrider and Outrider.AuctionSell then Outrider.AuctionSell:CancelNext() end
+  </Binding>
 </Bindings>

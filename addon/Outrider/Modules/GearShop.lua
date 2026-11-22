@@ -325,7 +325,21 @@ M.NAV_ITEMS = {
   { head = "Profit" },
   { id = "flips", label = "Vendor flips", icon = "INV_Misc_Coin_01", tip = "Listings under what a vendor pays: buy them, sell them at any vendor. From Scan all prices." },
   { id = "resale", label = "Resale", icon = "INV_Misc_Coin_17", tip = "Listings well under their usual auction price, after the 5% cut and deposit. Not sure: it has to sell again." },
+  { head = "Sell" },
+  { id = "sell", label = "Sell bags", icon = "INV_Misc_Bag_07", tip = "What in your bags can go on the auction house, priced just under the lowest now. One click on Post puts it up." },
+  { id = "auctions", label = "My auctions", icon = "INV_Misc_Note_01", tip = "Your auctions and whether someone undercut them. One click on Cancel takes one down." },
+  { head = "Search" },
+  { id = "search", label = "Search", icon = "INV_Misc_Spyglass_02", tip = "Search for anything, with extras like lvl 10-20, under 5g or green+. Your recent searches are kept." },
+  { id = "lists", label = "Shopping lists", icon = "INV_Scroll_05", tip = "Your saved searches in named lists: search a whole list at once, import and export (Auctionator and TSM lists too)." },
 }
+-- views another module fills: cards, status, searching, pos, total from
+-- module:View(id); a toolbar row from module:Toolbar(frame, id)
+M.PROVIDERS = { sell = "AuctionSell", auctions = "AuctionSell", search = "AuctionSearch", lists = "AuctionSearch" }
+function M.Provider(id)
+  local name = M.PROVIDERS[id]
+  local mod = name and ns[name]
+  if mod and mod.enabled ~= false then return mod end
+end
 M.PROFIT_VIEWS = { flips = true, resale = true }
 M.TRAINING_VIEWS = { training = true, recipes = true, list = true }
 
@@ -393,9 +407,19 @@ function M.NewCard(parent, width)
     if not id then return end
     GameTooltip:SetOwner(c, "ANCHOR_RIGHT")
     GameTooltip:SetItemByID(id)
+    -- what this view knows about it: prices now, the usual price, your posts
+    for _, l in ipairs(c.tipLines or {}) do GameTooltip:AddLine(l, Theme:Color("accent")) end
     GameTooltip:Show()
   end)
-  card:SetScript("OnLeave", function(c) Theme:ApplyPanel(c, "raised", "border") GameTooltip:Hide() end)
+  card:SetScript("OnLeave", function(c)
+    Theme:ApplyPanel(c, c.selected and "goldSoft" or "raised", c.selected and "gold" or "border")
+    GameTooltip:Hide()
+  end)
+  -- right-click: the view's "hide" or "remove"; left-click: select it
+  card:SetScript("OnMouseUp", function(c, button)
+    if button == "RightButton" and c.onRight then ns.Safe("card:right", c.onRight)
+    elseif button == "LeftButton" and c.onSelect then ns.Safe("card:select", c.onSelect) end
+  end)
   card:Hide()
   return card
 end
@@ -412,6 +436,11 @@ end
 -- One click buys when the listing or quote is already in (AHBuy:BuyNow);
 -- a card with several things to buy (a skill-up's ingredients) goes to the cart.
 function M.CardClick(card)
+  if card.custom then
+    ns.Safe("card:" .. tostring(card.custom.label), card.custom.click, card)
+    if M.open then M:Refresh() end
+    return
+  end
   local A = ns.AHBuy
   if not (A and card.action) then return end
   local st = M.CartState(card.action)
@@ -430,7 +459,7 @@ function M:UpdateButtons()
   local f = self.frame
   if not f then return end
   for _, card in ipairs(f.rows or {}) do
-    if card:IsShown() and card.action then
+    if card:IsShown() and card.action and not card.custom then
       local st = M.CartState(card.action)
       local single = #card.action == 1
       card.buy.label:SetText(M.BUTTON[st or ""] or (single and "Buy" or "Add"))
@@ -473,6 +502,8 @@ end
 
 function M.FillCard(card, d)
   card.item, card.action = d.item, d.action
+  card.custom, card.onRight, card.onSelect, card.tipLines, card.selected = d.button, d.onRight, d.onSelect, d.tip, d.selected
+  ns.Theme:ApplyPanel(card, d.selected and "goldSoft" or "raised", d.selected and "gold" or "border")
   card.icon:SetTexture(d.icon or (d.itemID and M.Icon(d.itemID)) or "Interface\\Icons\\INV_Misc_QuestionMark")
   local q = d.quality or (d.itemID and M.Quality(d.itemID)) or M.QUALITY[1]
   card.frame:SetColorTexture(q[1], q[2], q[3], 0.9)
@@ -480,7 +511,11 @@ function M.FillCard(card, d)
   card.text:SetTextColor(q[1] * 0.9 + 0.1, q[2] * 0.9 + 0.1, q[3] * 0.9 + 0.1)
   card.pill:SetText(d.pill or "")
   card.price:SetText(d.price and ns.Prices.Coins(d.price) or (d.priceText or ""))
-  card.buy:SetShown(d.action ~= nil)
+  card.buy:SetShown(d.action ~= nil or d.button ~= nil)
+  if d.button then
+    card.buy.label:SetText(d.button.label or "OK")
+    UI.SetPrimary(card.buy, d.button.primary and true or false)
+  end
   card:SetAlpha(d.dim and 0.6 or 1)
   -- reagents: small icons with a count, after the line under the title
   local list = d.reagents or {}
@@ -609,6 +644,7 @@ function M:Build()
       y = y - 34
     end
   end
+  M.NAV_H = -y + 16
   -- the old names the tests and other modules use
   f.training, f.weapons, f.armor, f.bags = f.nav.training, f.nav.weapons, f.nav.armor, f.nav.bags
   -- content
@@ -680,6 +716,13 @@ end
 -- A menu click: training views share one search; gear views each search.
 function M:Pick(id)
   self.page = 1
+  local prov = M.Provider(id)
+  if prov then
+    self.mode = id
+    if prov.OnPick then prov:OnPick(id) end
+    self:Refresh()
+    return
+  end
   if M.PROFIT_VIEWS[id] then
     self.mode = id
   elseif M.TRAINING_VIEWS[id] then
@@ -742,7 +785,7 @@ function M:GearCards()
   return out
 end
 
-M.HEADINGS = { flips = "Vendor flips", resale = "Resale", training = "Skill-ups", recipes = "Recipes for sale", list = "Shopping list", weapons = "Weapons", armor = "Armor", bags = "Bags" }
+M.HEADINGS = { sell = "Sell from your bags", auctions = "My auctions", search = "Search the auction house", lists = "Shopping lists", flips = "Vendor flips", resale = "Resale", training = "Skill-ups", recipes = "Recipes for sale", list = "Shopping list", weapons = "Weapons", armor = "Armor", bags = "Bags" }
 
 function M:Refresh()
   if not self.open then return end
@@ -757,7 +800,12 @@ function M:Refresh()
   local gold = ns.Prices.Money(ns.AHBuy and ns.AHBuy.Money() or 0)
   local cards, searching, pos, total, statusText = {}, false, 0, 0, ""
   local _, skipped = 0, 0
-  if M.PROFIT_VIEWS[self.mode] then
+  local prov = M.Provider(self.mode)
+  if prov then
+    cards, statusText, searching, pos, total = prov:View(self.mode)
+    statusText = statusText or ""
+    searching, pos, total = searching or false, pos or 0, total or 0
+  elseif M.PROFIT_VIEWS[self.mode] then
     if ns.Deals and ns.Deals.enabled then cards, statusText = ns.Deals:View(self.mode) end
     statusText = statusText or "Deals are switched off (Modules tab in Settings)."
   elseif training then
@@ -798,6 +846,16 @@ function M:Refresh()
     t:SetPoint("TOPLEFT", f, "TOPLEFT", M.NAV + 16, y)
     y = y - 36
   end
+  -- a view's own row (search box, list chips, price box) above its cards
+  local bar = prov and prov.Toolbar and prov:Toolbar(f, self.mode)
+  if self.toolbar and self.toolbar ~= bar then self.toolbar:Hide() end
+  self.toolbar = bar
+  if bar then
+    bar:ClearAllPoints()
+    bar:SetPoint("TOPLEFT", f, "TOPLEFT", M.NAV + 16, y)
+    bar:Show()
+    y = y - 36
+  end
   -- page of cards
   local pages = math.max(1, math.ceil(#cards / M.PAGE))
   self.page = math.min(self.page or 1, pages)
@@ -833,7 +891,7 @@ function M:Refresh()
     f.empty:Hide()
   end
   -- footer: total and Buy all on training lists, pager when needed
-  local footer = (#actions > 1 and ((M.TRAINING_VIEWS[self.mode] and self.mode ~= "recipes") or self.mode == "flips"))
+  local footer = (#actions > 1 and ((M.TRAINING_VIEWS[self.mode] and self.mode ~= "recipes") or self.mode == "flips" or self.mode == "lists"))
   y = y - 6
   f.total:ClearAllPoints()
   f.total:SetPoint("TOPLEFT", f, "TOPLEFT", M.NAV + 16, y - 6)
@@ -857,12 +915,17 @@ function M:Refresh()
     f.nav.training.count:SetText(T.prices and tostring(math.min(n, T.SHOW)) or "")
     f.nav.recipes.count:SetText(T.prices and tostring(#(T:UsefulRecipes())) or "")
   end
+  local S = ns.AuctionSell
+  if S and S.enabled ~= false and f.nav.auctions then
+    local n = #S:Undercuts()
+    f.nav.auctions.count:SetText(n > 0 and ("|cffff6060" .. n .. "|r") or "")
+  end
   local D = ns.Deals
   if D and D.enabled and D:Scan() then
     f.nav.flips.count:SetText(tostring(#(D:VendorFlips())))
     f.nav.resale.count:SetText(tostring(#D:Resale()))
   end
-  f:SetHeight(math.max(560, -y + 14 + 50))
+  f:SetHeight(math.max(M.NAV_H or 560, -y + 14 + 50))
   -- look up the single items on screen now, so one click buys them
   local ahead = {}
   for _, card in ipairs(f.rows) do

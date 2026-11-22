@@ -258,7 +258,7 @@ function M:Refresh()
     end
   end
   local bags = self:SellableBags()
-  lines[#lines + 1] = string.format("Sellable bag stacks: %d (use /ride auctions bags)", #bags)
+  lines[#lines + 1] = string.format("Sellable bag stacks: %d (Sell bags in Outrider's shopping window)", #bags)
   if self.selectedAuction then lines[#lines + 1] = "Selected auction: #" .. self.selectedAuction end
   f.text:SetText(table.concat(lines, "\n"))
   f:SetShown(#lines > 1)

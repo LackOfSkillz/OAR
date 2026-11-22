@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.0 (2026-11-22)
+
+Everything Auctionator does, inside Outrider's shopping window at the auction house:
+
+- **Sell bags:**
+  - Everything in your bags that can be sold, one card per item, priced just under the lowest price someone else asks right now.
+  - One click on **Post** puts it up: stackable goods all at once (Ctrl-click: one stack), gear one at a time.
+  - A price under what a vendor pays, or under half the usual price, needs a second click.
+  - Click a card to type your own price; it's kept for that item.
+  - Right-click hides an item from the list.
+  - Chips for 12, 24 or 48 hours.
+- **My auctions:**
+  - Your auctions with the lowest price now; undercut ones are marked and sorted to the top.
+  - **Cancel** takes one down, one click each, and **Cancel next undercut** does the next one.
+- **Keys you can bind (Key Bindings, AddOns, Outrider):** post the top item, cancel the next undercut auction.
+- **Search:**
+  - Search for anything, with plain extras: "exact name" in quotes, lvl 10-20, under 5g (Buy never pays more), green+, usable, x20.
+  - Recent searches are kept.
+- **Shopping lists:**
+  - Save searches into named lists and search a whole list in one go.
+  - Import Auctionator lists, TSM item lists or plain names; export to share.
+- **Tooltips:**
+  - The price of the whole stack under your mouse.
+  - What disenchanting green and blue gear is likely worth (an estimate from the classic tables and auction prices).
+- **Price scan when the auction house opens:** `/ride ahsell autoscan on` (once every 15 minutes).
+
 ## 0.3.3 (2026-11-22)
 
 - **Forms and stances:**

@@ -43,6 +43,7 @@ function M:Next()
   if not e then self:Refresh() self:Pump() return end
   self.current = e
   self.fetching = nil -- a lookup ahead gives way: the next answer is this one
+  if ns.AuctionSell then ns.AuctionSell.looking = nil end -- a sell price lookup too
   e.askedMore = nil
   if e.commodity then
     pcall(C_AuctionHouse.StartCommoditiesPurchase, e.itemID, e.qty)
@@ -117,6 +118,8 @@ end
 
 function M:Pump()
   if self.fetching or self.current or self.pending or not self.open then return end
+  -- selling looks up prices with the same search results: one at a time
+  if ns.AuctionSell and ns.AuctionSell.looking then return end
   local e = table.remove(self.toFetch or {}, 1)
   if not e then return end
   self.fetching = e

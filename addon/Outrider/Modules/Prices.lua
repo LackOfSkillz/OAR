@@ -317,7 +317,19 @@ function M:OnEnable()
 end
 
 -- AH and vendor value through the shared ordered block (P7-05)
-ns.TooltipLines:Add("item", "value", M, function(_, data)
+-- How many are in the bag stack the mouse is over (bag buttons only), or nil.
+function M.StackCount(tip)
+  local owner = tip and tip.GetOwner and tip:GetOwner()
+  if not (owner and owner.GetBagID and owner.GetID) then return nil end
+  local okB, bag = pcall(owner.GetBagID, owner)
+  local okS, slot = pcall(owner.GetID, owner)
+  if not (okB and okS and bag and slot) then return nil end
+  local n = C.ItemCountAt(bag, slot)
+  n = tonumber(C.Readable(n))
+  return n and n > 1 and n or nil
+end
+
+ns.TooltipLines:Add("item", "value", M, function(tip, data)
   local id = data and C.Readable(data.id)
   if type(id) ~= "number" then return nil end
   -- Vendor and Auction on their own rows, the amount right-aligned with coin
@@ -327,6 +339,10 @@ ns.TooltipLines:Add("item", "value", M, function(_, data)
   local out = {}
   if vendor and vendor > 0 then out[#out + 1] = { "Vendor", "goldText", right = M.Coins(vendor) } end
   if ah then out[#out + 1] = { "Auction", "goldText", right = M.Coins(ah) } end
+  -- the whole stack under the mouse (Auctionator shows it too)
+  local n = M.StackCount(tip)
+  if n and ah then out[#out + 1] = { "Auction x" .. n, "goldText", right = M.Coins(ah * n) }
+  elseif n and vendor and vendor > 0 then out[#out + 1] = { "Vendor x" .. n, "goldText", right = M.Coins(vendor * n) } end
   if ah and vendor and vendor > 0 and ah < vendor then out[#out + 1] = { "Sells for more at a vendor", "warn" } end
   return out
 end)

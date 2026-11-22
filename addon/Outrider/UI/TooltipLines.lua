@@ -14,7 +14,7 @@ local C = ns.Compat
 local TL = { providers = { item = {}, unit = {} }, hooked = {} }
 ns.TooltipLines = TL
 
-TL.ORDER = { roll = 5, verdict = 10, value = 20, owned = 30, needed = 40, quest = 45, questuses = 46, beast = 50, player = 52, elite = 53, rarefight = 55, questleft = 58, target = 60, wishlist = 70 }
+TL.ORDER = { roll = 5, verdict = 10, value = 20, disenchant = 21, owned = 30, needed = 40, quest = 45, questuses = 46, beast = 50, player = 52, elite = 53, rarefight = 55, questleft = 58, target = 60, wishlist = 70 }
 local ENUM = { item = "Enum.TooltipDataType.Item", unit = "Enum.TooltipDataType.Unit" }
 
 -- Character-specific visibility options. Defaults retain existing behavior;
