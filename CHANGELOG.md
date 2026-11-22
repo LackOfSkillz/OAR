@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.3 (2026-11-22)
+
+- **Forms and stances:**
+  - **Druid:** the caster lines now also fire in Moonkin Form.
+  - **Druid:** Heal no longer drops Aquatic Form while you're swimming.
+  - **Warrior:** out of Battle Stance, the first Fight press switches to Battle Stance and the next one charges.
+- **Spells the game only allows at the right moment wait last, like Mongoose Bite:** Hammer of Wrath (paladin, under 20% health) is the last line of Fight.
+- **Warlock:** Shadowburn moved to Alt. It used to fire whenever it was ready and use up a Soul Shard each time.
+- **Minimap pins say what they are and why:**
+  - Outrider's waypoint pin shows where you're heading, how far it is and the next step.
+  - Every Outrider dot gets a plain reason line.
+- **Warrior:** the Rend loop has three Heroic Strikes, so Battle Shout fits on the key.
+
 ## 0.3.2 (2026-11-22)
 
 - **Heal keys for every healer, built for the most healing per second:**

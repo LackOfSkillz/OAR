@@ -322,3 +322,37 @@ T.describe("fight plans: gated spells", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+-- Forms and stances (Gary, 2026-11-22: "do our macros take into account their
+-- different forms").
+T.describe("fight plans: forms and stances", function()
+  local function char(cls, level, spells, forms)
+    local game = mock.new({ class = cls, level = level })
+    game.spells = sp(spells)
+    game.forms = forms
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    game:advance(3)
+    return game, ns, ns.HunterFight
+  end
+
+  T.it("druid: caster lines fire in Moonkin too; Heal keeps Aquatic Form under water", function()
+    local spells = { "Wrath", "Healing Touch", "Moonfire", "Rejuvenation", "Bear Form", "Maul", "Cat Form", "Claw", "Rip",
+      "Regrowth", "Moonkin Form" }
+    -- stance bar: Bear 1, Cat 2, Moonkin 3
+    local _, ns, F = char("DRUID", 40, spells, { 9005, 9007, 9011 })
+    local fight = F:Body("ranged")
+    T.contains(fight, "[noform][form:3]", fight)
+    T.no(fight:find("[noform] ", 1, true), "no caster line left without Moonkin")
+    T.contains(F:Body("heal"), "/cancelform [noswimming]")
+    T.ok(#fight <= 255)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("warrior: out of Battle Stance the first press goes to Battle Stance, the next one charges", function()
+    local _, ns, F = char("WARRIOR", 10, { "Heroic Strike", "Charge", "Rend", "Battle Shout", "Battle Stance" })
+    T.contains(F:Body("ranged"), "/cast [nocombat,stance:1] Charge;[nocombat] Battle Stance")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

@@ -121,12 +121,12 @@ function CASTER.WARRIOR(kind, add)
     if known("Cleave") then add(5, "/cast Cleave", "several mobs: rage dump") end
     return
   end
-  if known("Charge") then add(2, "/cast [nocombat] Charge", "opens the pull from range") end
+  if known("Charge") then add(2, "/cast [nocombat,stance:1] Charge;[nocombat] Battle Stance", "opens the pull from range; in another stance, Battle Stance first") end
   if known("Battle Shout") then add(5, "/cast [mod:alt] Battle Shout", "Alt: Battle Shout (3 minutes)") end
   local big = first("Mortal Strike", "Bloodthirst", "Shield Slam")
   if big then add(3, "/cast " .. big, "whenever it is off cooldown") end
   if known("Rend") and known("Heroic Strike") then
-    add(2, "/castsequence reset=combat/target Rend,Heroic Strike,Heroic Strike,Heroic Strike,Heroic Strike,Heroic Strike", "Rend, then Heroic Strike with spare rage; Rend again on a new target")
+    add(2, "/castsequence reset=combat/target Rend,Heroic Strike,Heroic Strike,Heroic Strike", "Rend, then Heroic Strike with spare rage; Rend again on a new target")
   elseif known("Heroic Strike") then add(2, "/cast Heroic Strike", "spare rage into the next swing") end
 end
 
@@ -225,7 +225,8 @@ function CASTER.DRUID(kind, add)
       add(2, "/castsequence [form:" .. cat .. "] reset=combat/target " .. table.concat(s, ","), "Cat: " .. table.concat(s, ", ") .. ", round and round")
     end
   end
-  local nf = (#forms > 0) and "[noform] " or ""
+  local moonkin = F.FormIndex("Moonkin Form")
+  local nf = moonkin and ("[noform][form:" .. moonkin .. "] ") or ((#forms > 0) and "[noform] " or "")
   -- DoTs, then the filler while they tick, as one sequence of real spells
   -- (",null" wraps on Forever and would recast Moonfire every press)
   local dots = {}

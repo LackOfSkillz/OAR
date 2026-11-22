@@ -190,11 +190,18 @@ end
 -- yet gets 9, a number no form has, so its clause can't fire in another form.
 function M.DruidForms(text)
   local map = { ["1"] = F.FormIndex("Bear Form", "Dire Bear Form") or 9, ["3"] = F.FormIndex("Cat Form") or 9 }
-  return (text:gsub("form:([%d/]+)", function(list)
+  text = text:gsub("form:([%d/]+)", function(list)
     local out = {}
     for n in list:gmatch("%d+") do out[#out + 1] = tostring(map[n] or n) end
     return "form:" .. table.concat(out, "/")
-  end))
+  end)
+  -- Moonkin casts like no form (Gary, 2026-11-22): a plain [noform] clause
+  -- also fires in Moonkin Form, by its stance bar number
+  local moonkin = F.FormIndex("Moonkin Form")
+  if moonkin then text = text:gsub("%[noform%]", "[noform][form:" .. moonkin .. "]") end
+  -- Heal leaves a form first, but never Aquatic Form under water
+  text = text:gsub("^/cancelform$", "/cancelform [noswimming]")
+  return text
 end
 
 -- ------------------------------------------------------------ extra keys

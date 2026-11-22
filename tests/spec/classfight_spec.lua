@@ -41,7 +41,7 @@ T.describe("fight macros for every class", function()
     local game, ns = session("WARRIOR", 30, sp("Charge", "Battle Shout", "Rend", "Mortal Strike", "Heroic Strike",
       "Overpower", "Execute", "Thunder Clap"))
     local f = macro(game, "Fight")
-    T.contains(f, "/cast [nocombat] Charge")
+    T.contains(f, "/cast [nocombat,stance:1] Charge;[nocombat] Battle Stance")
     T.contains(f, "/cast [mod:alt] Battle Shout")
     T.contains(f, "/castsequence reset=combat/target Rend,Heroic Strike,Heroic Strike")
     T.ok(not f:find(",null", 1, true), "no ,null (it wraps on Forever)")

@@ -429,6 +429,12 @@ end
 function M:OnUIError(_, _, message)
   local f = M.fight
   local msg = C.Readable(message)
+  -- probe (2026-11-22): what Forever says to a spell pressed in Ghost Wolf,
+  -- so the shaman keys can be made to fit (once per kind of message)
+  if type(msg) == "string" and ns.PlayerClass() == "SHAMAN" and M.AuraOn("Ghost Wolf") then
+    M.wolfSeen = M.wolfSeen or {}
+    if not M.wolfSeen[msg] then M.wolfSeen[msg] = true M:Info("ghost wolf probe: a press in Ghost Wolf got '%s'", msg) end
+  end
   if not f or type(msg) ~= "string" then return end
   f.errors[msg] = (f.errors[msg] or 0) + 1
 end

@@ -28,7 +28,7 @@
 -- Everything stays verified = false until the fight logs agree.
 
 local PAD = { Smite = 5, ["Shadow Bolt"] = 4, ["Mind Flay"] = 3, ["Drain Life"] = 4, ["Lightning Bolt"] = 4,
-  ["Heroic Strike"] = 5, Wrath = 3, Fireball = 3, Frostbolt = 3 }
+  ["Heroic Strike"] = 3, Wrath = 3, Fireball = 3, Frostbolt = 3 }
 local DEFAULT_PAD = { PRIEST = "Smite", WARLOCK = "Shadow Bolt", SHAMAN = "Lightning Bolt", WARRIOR = "Heroic Strike" }
 
 local function copy(t)
@@ -338,6 +338,19 @@ local function gated(cls, key, list)
     for _, b in ipairs(list) do
       b.slots[#b.slots + 1] = S("/cast Hammer of Wrath", {}, "reactive", 4,
         "target under 20% health: the game only lets it fire then, so it sits last")
+    end
+  end
+  -- Warrior: Charge only works in Battle Stance and a refusal ends the press,
+  -- so out of combat in another stance the press switches to Battle Stance
+  -- first and the next one charges (Gary, 2026-11-22)
+  if cls == "WARRIOR" then
+    for _, b in ipairs(list) do
+      for _, sl in ipairs(b.slots) do
+        if sl.line == "/cast [nocombat] Charge" then
+          sl.line = "/cast [nocombat,stance:1] Charge;[nocombat] Battle Stance"
+          sl.why = "opens the pull from range; in another stance the first press goes to Battle Stance, the next one charges"
+        end
+      end
     end
   end
   if cls == "WARLOCK" then
