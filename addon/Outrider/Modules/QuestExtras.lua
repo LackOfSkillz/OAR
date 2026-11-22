@@ -168,12 +168,27 @@ function M:Marker()
   m:SetSize(M.SIZE, M.SIZE)
   m:SetFrameStrata("HIGH")
   m.icon = m:CreateTexture(nil, "OVERLAY")
-  m.icon:SetAllPoints()
+  m.icon:SetSize(M.SIZE, M.SIZE)
+  m.icon:SetPoint("LEFT", m, "LEFT", 0, 0)
   m.icon:SetTexture(M.ICON)
   m.text = ns.UI.Text(m, "small", "text")
-  m.text:SetPoint("LEFT", m, "RIGHT", 2, 0)
+  m.text:SetPoint("LEFT", m.icon, "RIGHT", 2, 0)
   m.text:SetJustifyH("LEFT")
   return m
+end
+
+-- The words on the plate. The game already prints the creature's name, so
+-- "5/7 Mangy Nightsaber slain" on a Mangy Nightsaber is just "5/7" (Gary,
+-- 2026-11-22: "unjumble it"); an item to collect keeps a short name ("Pelt 3/8").
+function M.Short(text, name)
+  if type(text) ~= "string" then return "" end
+  text = text:match("^[^\n]+") or text
+  local count = text:match("(%d+/%d+)")
+  if not count then return text end
+  if type(name) == "string" and name ~= "" and text:lower():find(name:lower(), 1, true) then return count end
+  local words = text:gsub("%d+/%d+", ""):gsub("%s*[:%-]%s*", " "):gsub("%s+slain", ""):match("^%s*(.-)%s*$")
+  if #words > 14 then words = words:sub(1, 13) .. "…" end
+  return words ~= "" and (words .. " " .. count) or count
 end
 
 function M:Mark(unit)
@@ -183,9 +198,12 @@ function M:Mark(unit)
   if not plate then return end
   local m = self.active[unit] or self:Marker()
   local text = M.ObjectiveText(unit)
-  m.text:SetText(text and (text:match("^[^\n]+") or text) or "")
+  m.text:SetText(M.Short(text, readable(C.Call("UnitName", unit))))
+  -- above the plate, centred, so it never runs across the game's own name
+  local w = m.text.GetStringWidth and tonumber((m.text:GetStringWidth())) or 0
+  m:SetSize(M.SIZE + (w > 0 and (w + 2) or 0), M.SIZE)
   m:ClearAllPoints()
-  m:SetPoint("RIGHT", plate, "LEFT", -2, 0)
+  m:SetPoint("BOTTOM", plate, "TOP", 0, 2)
   m:Show()
   self.active[unit] = m
 end

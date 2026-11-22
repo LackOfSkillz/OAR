@@ -17,8 +17,15 @@ T.describe("quest extras", function()
       nameplate3 = { name = "Plainstrider", level = 5, objectives = { " - Plainstrider slain: 8/8" } },
     }
     for i = 1, 3 do game:fire("NAME_PLATE_UNIT_ADDED", "nameplate" .. i) end
-    T.ok(M.active.nameplate1)
-    T.contains(M.active.nameplate1.text:GetText(), "3/8")
+    T.ok(M.active.nameplate1, ns.Errors.list[1] and tostring(ns.Errors.list[1].msg or ns.Errors.list[1].message) or "no error")
+    -- Gary, 2026-11-22: the plate already shows the name, so just the count,
+    -- above the plate (not across the game's name)
+    T.eq(M.active.nameplate1.text:GetText(), "3/8")
+    local p = { M.active.nameplate1:GetPoint(1) }
+    T.eq(p[1], "BOTTOM")
+    T.eq(p[3], "TOP")
+    T.eq(M.Short("5/7 Mangy Nightsaber slain", "Mangy Nightsaber"), "5/7")
+    T.eq(M.Short("Wolf Pelt: 3/8", "Prairie Wolf"), "Wolf Pelt 3/8")
     T.eq(M.active.nameplate2, nil)
     T.eq(M.active.nameplate3, nil)
     game:fire("NAME_PLATE_UNIT_REMOVED", "nameplate1")
