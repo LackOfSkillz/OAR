@@ -44,8 +44,9 @@ function M:Mobs()
   if not rawget(_G, "Outrider_DataMobs") then C.LoadAddOn(self.MOBS_ADDON) end
   local data = rawget(_G, "Outrider_DataMobs")
   self.mobs = type(data) == "table" and type(data.maps) == "table" and data.maps or false
-  self:Info(self.mobs and "creature pack loaded from %s" or "no creature pack (%s): creatures you met only",
-    self.mobs and tostring(data.source) or self.MOBS_ADDON)
+  self:Info(self.mobs and "creature pack loaded from %s%s" or "no creature pack (%s: %s): creatures you met only",
+    self.mobs and tostring(data.source) or self.MOBS_ADDON,
+    self.mobs and (C.loadReasons[self.MOBS_ADDON] and (" (" .. C.loadReasons[self.MOBS_ADDON] .. ")") or "") or tostring(C.loadReasons[self.MOBS_ADDON]))
   return self.mobs
 end
 

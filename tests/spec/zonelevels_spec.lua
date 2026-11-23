@@ -87,6 +87,11 @@ T.describe("zone levels", function()
     Z:Refresh()
     T.eq(#Z.used, 3)
     T.ok(Z.used[1]:GetFrameLevel() >= 1000, "above the explored-area art and pins")
+    -- the range is drawn on its own line under the name (it vanished when both
+    -- were one string with word wrap off, 2026-11-23)
+    local f = Z.used[1]
+    T.ok(f.range:GetText() ~= nil and f.range:GetText():find("%d") ~= nil, "the levels show under the name: " .. tostring(f.range:GetText()))
+    T.ok(not f.text:GetText():find("%d+%-%d+"), "the name line is just the name")
     game:slash("zonelevels off")
     T.eq(#Z.used, 0)
     game:slash("zonelevels on")
@@ -109,5 +114,15 @@ T.describe("zone levels", function()
     T.eq(labels[1].name, "Isle")
     T.eq(#ns.Errors.list, 0)
   end)
-end)
 
+  T.it("Outrider's own data addon switched off for this character is switched back on and loaded", function()
+    local game, ns = session(15)
+    game.disabledAddons = { Outrider_Data_Mobs = true, SomeoneElse = true }
+    game.loadable = { Outrider_Data_Mobs = true, SomeoneElse = true }
+    T.ok(ns.Compat.LoadAddOn("Outrider_Data_Mobs"), "switched back on, then loaded")
+    T.contains(ns.Compat.loadReasons.Outrider_Data_Mobs, "switched back on")
+    local ok, why = ns.Compat.LoadAddOn("SomeoneElse")
+    T.no(ok, "another addon is never switched on")
+    T.eq(why, "DISABLED")
+  end)
+end)

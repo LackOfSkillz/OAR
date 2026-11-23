@@ -963,7 +963,13 @@ function M.new(opts)
   base.C_AddOns = {
     GetAddOnMetadata = function(addon, field) if addon == M.ADDON then return meta[field] end end,
     IsAddOnLoaded = function(addon) return game.loadedAddons[addon] == true end,
-    LoadAddOn = function(addon) return game.loadedAddons[addon] == true end,
+    -- game.disabledAddons[name] = true: LoadAddOn says DISABLED until EnableAddOn
+    LoadAddOn = function(addon)
+      if game.disabledAddons and game.disabledAddons[addon] then return false, "DISABLED" end
+      if game.loadable and game.loadable[addon] then game.loadedAddons[addon] = true end
+      return game.loadedAddons[addon] == true
+    end,
+    EnableAddOn = function(addon) if game.disabledAddons then game.disabledAddons[addon] = nil end game.enabledAddons = (game.enabledAddons or 0) + 1 end,
     UpdateAddOnMemoryUsage = function() game.memoryUpdated = true end,
     GetAddOnMemoryUsage = function(addon) if addon == M.ADDON then return opts.memoryKB or 420 end return 0 end,
   }

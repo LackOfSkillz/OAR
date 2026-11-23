@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Map level numbers are back:** a zone's level range is its own line under the name again (one string with the name, a line break and the range drew only the name), and Outrider's own data addons that the game had switched off for a character are switched back on, so the creature pack loads and each area gets its range. The map logs what it draws per map.
 - **Resale can't suggest a losing buy:** the price to sell again is now just under the cheapest seller left after you buy, not the old "usual" price. A market that dropped (Thorium Headed Arrows: 79c on earlier days, 35c today with 3,400 listed at 35c) is no longer a deal, and buying only part of a cheap listing never is, since the rest still sells at that price. The steps say why ("just under the cheapest other seller").
 - **Talents page totals:** each talent's rank is counted once (a Balance build said "+74% less Mana cost": Moonglow's 9% at 3/3 was multiplied by 3 again), and a number is only read from its own sentence. What each talent's text says is logged once a session so the totals can be checked against the game.
 

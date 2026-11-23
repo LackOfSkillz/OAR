@@ -226,10 +226,17 @@ local function label(self, canvas, i)
   if not f then
     f = CreateFrame("Frame", nil, canvas)
     f:SetSize(240, 34)   -- wide: long names ("Western Plaguelands") are never cut to "..."
+    -- two lines of their own (2026-11-23: one string holding the name, a line
+    -- break and the range, with word wrap off, drew only the name)
     f.text = f:CreateFontString(nil, "OVERLAY")
-    f.text:SetAllPoints()
+    f.text:SetPoint("TOP", f, "TOP", 0, 0)
+    f.text:SetWidth(240)
     if f.text.SetWordWrap then f.text:SetWordWrap(false) end
     if f.text.SetShadowOffset then f.text:SetShadowOffset(1, -1) end
+    f.range = f:CreateFontString(nil, "OVERLAY")
+    f.range:SetPoint("TOP", f.text, "BOTTOM", 0, -1)
+    if f.range.SetWordWrap then f.range:SetWordWrap(false) end
+    if f.range.SetShadowOffset then f.range:SetShadowOffset(1, -1) end
     f:EnableMouse(true)
     f:SetScript("OnEnter", function(fr)
       local l = fr.data
@@ -270,9 +277,15 @@ function M:Refresh()
     f.data = l
     -- a size up (Gary, 2026-11-16: "slightly bigger, easier to see")
     if f.text.SetFontObject then f.text:SetFontObject(l.area and "GameFontNormal" or "GameFontNormalLarge") end
+    if f.range.SetFontObject then f.range:SetFontObject("GameFontNormalLarge") end
     f:SetSize(l.area and 70 or 260, l.area and 20 or 40)
-    f.text:SetText(self:Text(l))
+    local range = l.lo == l.hi and tostring(l.lo) or string.format("%d-%d", l.lo, l.hi)
+    -- an area shows its range alone; a zone its name, then the range under it
+    f.text:SetText(l.area and range or tostring(l.name))
+    f.range:SetText(l.area and "" or range)
+    f.range:SetShown(not l.area)
     f.text:SetTextColor(ns.Theme:Color(l.color))
+    f.range:SetTextColor(ns.Theme:Color(l.color))
     f:SetScale(1 / scale)
     f:ClearAllPoints()
     f:SetPoint("CENTER", canvas, "TOPLEFT", l.x * w * scale, -l.y * h * scale)

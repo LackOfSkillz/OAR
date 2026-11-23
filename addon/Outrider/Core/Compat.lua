@@ -53,11 +53,30 @@ function C.IsAddOnLoaded(name)
   return false
 end
 
+-- Loads a load-on-demand addon. Outrider's own data addons (Outrider_Data_*)
+-- that the game has switched off for this character are switched back on for
+-- it first (2026-11-23: the creature pack wasn't loading on one character and
+-- the map lost its area levels); any other addon is only loaded, never enabled.
+-- Returns loaded, and the game's reason when it didn't load.
+C.loadReasons = {}
 function C.LoadAddOn(name)
   local f = (C_AddOns and C_AddOns.LoadAddOn) or _G.LoadAddOn
-  if not f then return false end
-  local ok, loaded = pcall(f, name)
-  return ok and loaded and true or false
+  if not f then return false, "no loader" end
+  local ok, loaded, reason = pcall(f, name)
+  if ok and loaded then return true end
+  if type(name) == "string" and name:find("^Outrider_Data_") and tostring(reason) == "DISABLED" then
+    local enable = (C_AddOns and C_AddOns.EnableAddOn) or _G.EnableAddOn
+    local who = UnitName and UnitName("player")
+    if enable and pcall(enable, name, who) then
+      ok, loaded, reason = pcall(f, name)
+      if ok and loaded then
+        C.loadReasons[name] = "was switched off for this character: switched back on"
+        return true
+      end
+    end
+  end
+  C.loadReasons[name] = tostring(ok and reason or loaded)
+  return false, C.loadReasons[name]
 end
 
 -- Position: returns mapID, x, y (0..1) or nil. Exact positions are only
