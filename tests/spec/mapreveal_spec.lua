@@ -53,6 +53,8 @@ T.describe("map reveal", function()
     if not (M.map and M.map.GetCanvas) then return end -- no world map in this mock
     M:Refresh()
     T.ok(#M.used > 0)
+    -- revealed areas are faintly tinted so they stand apart from explored land
+    T.ok(M.TINT > 0.7 and M.TINT < 1, "a faint tint, not the old dark shadow")
     M:Settings().on = false
     M:Refresh()
     T.eq(#M.used, 0)

@@ -24,6 +24,8 @@ local M = ns:NewModule("MapReveal", {
 })
 ns.MapReveal = M
 
+M.TINT = 0.82
+
 local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
 function M:OnInitialize()
@@ -265,7 +267,10 @@ function M:Refresh()
   -- coast and parchment into the overlay tiles, so the old 0.55 darkening drew
   -- a big shadow over the map and the sea. Drawn as Blizzard draws explored
   -- areas, revealed land looks like the rest of the map. Old saved 0.55 is dropped.
-  local tint = s.tint or 1
+  -- A faint cool tint (Gary, 2026-11-23: "yes, faint tint"): revealed areas
+  -- looked exactly like explored ones. 0.82 with a touch of blue marks them
+  -- without the old 0.55 shadow over coast and sea.
+  local tint = s.tint or M.TINT
   for _, e in ipairs(missing) do
     for _, t in ipairs(M.Tiles(e, tileW, tileH)) do
       local tex = table.remove(self.pool) or f:CreateTexture(nil, "ARTWORK")
