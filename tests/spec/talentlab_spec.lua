@@ -160,3 +160,34 @@ T.describe("talent cards data", function()
     T.ok(n >= 50, "the researched builds load: " .. n)
   end)
 end)
+
+T.describe("talent build totals", function()
+  T.it("adds up crit, stats and damage from the talents' own text, by level too", function()
+    local game, ns, L = session(60)
+    -- entry ids in the mock are node id x 10
+    game.traitDesc = {
+      [2010] = "Increases your critical strike chance by 1%.",          -- Ferocity (5 ranks)
+      [2030] = "Increases your Stamina by 2%.",                         -- Thick Hide
+      [1010] = "Increases the damage done by your Wrath by 2%.",        -- Starlight Wrath
+    }
+    game.stats = { [3] = 100 }
+    local S = ns.TalentStats
+    local model = L:Load()
+    local r = {}
+    for _ = 1, 5 do L.Add(model, r, model.byName["Ferocity"].node, 60) end
+    for _ = 1, 5 do L.Add(model, r, model.byName["Thick Hide"].node, 60) end
+    L.Add(model, r, model.byName["Feral Aggression"].node, 60)
+    local totals, skipped = S.Totals(model, r)
+    T.eq(totals.crit.value, 5)
+    T.eq(totals.stamina.value, 10)
+    T.contains(totals.crit.from[1], "Ferocity 5/5")
+    T.eq(skipped[1], "Feral Aggression", "no number in its text: listed, not guessed")
+    T.contains(S.Line(totals), "+10% Stamina")
+    local card = { id = "x", class = "DRUID", goal = "dps", points = { ["Ferocity"] = 5, ["Thick Hide"] = 5 } }
+    local bands = S.ByLevel(model, card)
+    T.eq(bands[1].level, 20)
+    T.contains(bands[1].line, "Critical strike", "level 20: the first points")
+    T.contains(bands[5].line, "+10% Stamina")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

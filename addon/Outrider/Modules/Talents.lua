@@ -100,7 +100,7 @@ function M:ReadTraits()
           local e = { name = name, tab = t, index = i, node = nodeID, tier = nil, column = nil,
             rank = tonumber(C.Readable(node.currentRank)) or 0, max = tonumber(node.maxRanks) or 1,
             open = node.canPurchaseRank == true or (node.isAvailable == true and node.meetsEdgeRequirements ~= false),
-            x = tonumber(node.posX), y = tonumber(node.posY), spell = spell, icon = icon, opens = opens,
+            x = tonumber(node.posX), y = tonumber(node.posY), spell = spell, icon = icon, opens = opens, entry = entryID,
             sub = node.subTreeID }
           tab.talents[#tab.talents + 1] = e
           tab.spent = tab.spent + e.rank

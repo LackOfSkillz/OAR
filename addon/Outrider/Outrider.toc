@@ -125,6 +125,7 @@ Modules\AuctionSearch.lua
 Modules\Disenchant.lua
 Modules\Talents.lua
 Modules\TalentLab.lua
+Modules\TalentStats.lua
 Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua

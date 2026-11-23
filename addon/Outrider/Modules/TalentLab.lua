@@ -115,7 +115,7 @@ function M.Model(state, class)
     local tree = { name = grp.name or names[g] or ("Tree " .. g), talents = {} }
     for _, e in ipairs(grp.talents) do
       local key = e.node or (g * 1000 + (e.index or 0))
-      local t = { node = key, name = e.name, tree = g, max = e.max or 1, icon = e.icon, spell = e.spell,
+      local t = { node = key, name = e.name, tree = g, max = e.max or 1, icon = e.icon, spell = e.spell, entry = e.entry,
         tier = e.tier or tier[e.y] or 1, column = e.column or col[e.x] or 1, rank = e.rank or 0, req = {},
         opens = e.opens, classicReq = e.req }
       tree.talents[#tree.talents + 1] = t
@@ -630,6 +630,19 @@ ns.Hub:AddTab("talentlab", "Talents", function(p)
       function(v) M:Settings().level = v if M.card then M:Use(M.card) end p:Refresh() end, "%d" },
     { "custom", function(host) return M:TreeView(host) end, M.TOP + 7 * (M.ICON + M.GAP_Y) + 10 },
     { "note", function() return (M.msg and ("|cffff7f7f" .. M.msg .. "|r\n") or "") .. M:DiffText() end, 40 },
+    { "header", "What this build gives", icon = "Spell_Holy_SurgeOfLight" },
+    { "bars", function()
+      local S, r, model = ns.TalentStats, M:Sandbox()
+      if not (S and model) then return {} end
+      local out = {}
+      for _, x in ipairs(S.Now(model, r)) do
+        local delta = x.with - x.now
+        out[#out + 1] = { label = x.label, fill = x.now > 0 and math.min(1, x.with / math.max(x.now, x.with)) or 0,
+          text = tostring(x.with) .. (delta ~= 0 and string.format(" (%s%s from now)", delta > 0 and "+" or "", tostring(delta)) or " (as now)") }
+      end
+      return out
+    end },
+    { "note", function() return ns.TalentStats and ns.TalentStats:Report() or "" end, 80 },
     { "buttons", {
       { "Start from my build", function()
         local model = M:Load()

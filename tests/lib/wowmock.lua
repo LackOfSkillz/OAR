@@ -894,6 +894,12 @@ function M.new(opts)
     end,
     GetEntryInfo = function(_, entryID) return { definitionID = entryID * 10 } end,
     GetDefinitionInfo = function(defID) local n = trNode(defID / 100) return n and { overrideName = n.name, spellID = n.spell, overrideIcon = n.icon } end,
+    -- game.traitDesc[entryID] = "text at rank 1" (rank N: the numbers times N)
+    GetTraitDescription = function(entryID, rank)
+      local d = game.traitDesc and game.traitDesc[entryID]
+      if not d then return nil end
+      return (d:gsub("(%d+)", function(n) return tostring(tonumber(n) * math.max(1, rank or 1)) end))
+    end,
     GetSubTreeInfo = function(_, sub) for _, tr in ipairs(game.traits or {}) do if tr.subNames and tr.subNames[sub] then return { name = tr.subNames[sub] } end end end,
   }
   -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
