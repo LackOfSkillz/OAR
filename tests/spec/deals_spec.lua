@@ -119,4 +119,40 @@ T.describe("auction deals", function()
     T.eq(#cards, 0)
     T.contains(status, "Scan all prices")
   end)
+  T.it("items still loading after the scan show up once their details arrive, and a reload keeps the deals", function()
+    local game = mock.new({ now = 1794700000 })
+    game.items = {
+      [10] = { name = "Cheap Junk", sell = 500, maxStack = 20 },
+      [12] = { name = "Rare Cloak", sell = 50, maxStack = 1 },
+    }
+    game.replicate = { { 10, 10, 2000 }, { 12, 1, 20000 } }
+    local ns = game:loadAddon()
+    game:login()
+    game:fire("AUCTION_HOUSE_SHOW")
+    for d = 1, 5 do ns.Prices.db[12] = ns.Prices.db[12] or {} table.insert(ns.Prices.db[12], { math.floor(game.env.time() / 86400) - 6 + d, 100000 }) end
+    -- Gary's case: right after the scan the game hasn't loaded these items yet
+    local real = ns.Compat.ItemInfo
+    ns.Compat.ItemInfo = function() return nil end
+    ns.Prices:FullScan()
+    game:fire("REPLICATE_ITEM_LIST_UPDATE")
+    game:advance(1)
+    T.eq(#ns.Deals:VendorFlips(), 0, "no vendor price known yet")
+    local resale = ns.Deals:Resale()
+    T.eq(#resale, 1, "a resale deal is a deal by price alone")
+    T.eq(resale[1].name, "item 12")
+    -- the details arrive
+    ns.Compat.ItemInfo = real
+    game.now = game.now + 12
+    game:fire("GET_ITEM_INFO_RECEIVED", 10, true)
+    game:advance(12)
+    local flips = ns.Deals:VendorFlips()
+    T.eq(#flips, 1, "the flip appears once the vendor price is known")
+    T.eq(ns.Deals:Resale()[1].name, "Rare Cloak")
+    -- a /reload loses the scan list, not the deals
+    ns.Prices.lastScan = nil
+    T.eq(#ns.Deals:VendorFlips(), 1)
+    T.eq(#ns.Deals:Resale(), 1)
+    T.ok(ns.Deals:Age(), "says how old the scan is")
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

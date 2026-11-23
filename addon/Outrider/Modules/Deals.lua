@@ -77,8 +77,37 @@ function M:Cached(kind, fn)
   return out, loading
 end
 
-function M:VendorFlips() return self:Cached("flips", M.ComputeFlips) end
-function M:Resale() return (self:Cached("resale", M.ComputeResale)) end
+-- The lists are kept in the saved data too (top M.TOP each), so a /reload
+-- or the next login still shows the last scan's deals instead of nothing
+-- (Gary, 2026-11-23: "those screens have been empty"); the price scan list
+-- itself is too big to save.
+M.KEEP_SAVED = 2 * 3600
+function M:Saved(kind)
+  local d = ns.db.global.dealsLast
+  if type(d) == "table" and d.at and time() - d.at < M.KEEP_SAVED and type(d[kind]) == "table" then return d[kind], d.at end
+end
+
+function M:Remember(kind, out)
+  local scan = self:Scan()
+  if not scan then return end
+  local d = ns.db.global.dealsLast
+  if type(d) ~= "table" or d.at ~= scan.at then d = { at = scan.at } ns.db.global.dealsLast = d end
+  d[kind] = out
+end
+
+function M:VendorFlips()
+  if not self:Scan() then return self:Saved("flips") or {}, 0 end
+  local out, loading = self:Cached("flips", M.ComputeFlips)
+  self:Remember("flips", out)
+  return out, loading
+end
+
+function M:Resale()
+  if not self:Scan() then return self:Saved("resale") or {}, 0 end
+  local out, loading = self:Cached("resale", M.ComputeResale)
+  self:Remember("resale", out)
+  return out, loading
+end
 
 -- { {itemID, name, qty, cost, unit, vendor, profit, commodity, maxUnit} } best profit first
 function M:ComputeFlips()
@@ -121,9 +150,10 @@ function M:ComputeResale()
     local stats = ns.Prices:Statistics(itemID)
     local l = list[1]
     if stats and stats.count >= M.MIN_DAYS and l and l[1] <= stats.median * M.RESALE_UNDER then
+      -- details not loaded yet: still a deal by price alone (named once they load)
       local i = info(itemID)
-      if not i then loading = loading + 1 end
-      if i then
+      if not i then loading = loading + 1 i = { name = "item " .. itemID } end
+      do
         local qty = l[2]
         local deposit = H and H.Deposit and (H:Deposit(itemID, qty) or 0) or 0
         local back = math.floor(stats.median * qty * (1 - M.CUT)) - deposit
@@ -145,8 +175,13 @@ end
 -- How long ago the scan was, in words.
 function M:Age()
   local scan = self:Scan()
-  if not scan then return nil end
-  local m = math.floor((time() - scan.at) / 60)
+  local at = scan and scan.at
+  if not at then
+    local d = ns.db.global.dealsLast
+    at = type(d) == "table" and d.at and time() - d.at < M.KEEP_SAVED and d.at or nil
+  end
+  if not at then return nil end
+  local m = math.floor((time() - at) / 60)
   return m < 1 and "just now" or (m == 1 and "1 minute ago") or string.format("%d minutes ago", m)
 end
 
@@ -170,22 +205,47 @@ function M:View(view)
     if loading > 0 then s = s .. string.format("  |cff8f96a6%d items still loading from the game.|r", loading) end
     return cards, s
   end
-  for _, d in ipairs(self:Resale()) do
+  local resale, loadingR = self:Resale()
+  for _, d in ipairs(resale) do
     cards[#cards + 1] = { itemID = d.itemID, item = { itemID = d.itemID }, title = d.name .. (d.qty > 1 and (" x" .. d.qty) or ""),
       sub = string.format("Usually %s (%d days seen), now %s: resell after the 5%% cut and deposit", money(d.usual), d.days, money(d.unit)),
       pill = "|cffffd100+" .. money(d.profit) .. "|r", price = d.cost, action = M.Action(d) }
   end
-  return cards, #cards > 0 and string.format("Not sure: the profit comes once it sells again at its usual price. From the price scan %s.", age)
+  local s = #cards > 0 and string.format("Not sure: the profit comes once it sells again at its usual price. From the price scan %s.", age)
     or string.format("Nothing listed well under its usual price right now (price scan %s; prices need %d days of history).", age, M.MIN_DAYS)
+  if (loadingR or 0) > 0 then s = s .. string.format("  |cff8f96a6%d names still loading from the game.|r", loadingR) end
+  return cards, s
+end
+
+-- Item details arrive in the thousands after a scan: work the lists out
+-- again at most every RECHECK seconds while any were missing, and redraw the
+-- deals view if it's open. Before, the lists were worked out once with most
+-- items not loaded and stayed empty.
+function M:OnItemInfo()
+  if not (self:Scan() and self.cache) then return end
+  local waiting = false
+  for _, c in pairs(self.cache) do if c.loading and c.loading > 0 then waiting = true end end
+  if not waiting then return end
+  ns.Throttle("deals:loaded", M.RECHECK + 1, function()
+    local flips, lf = M:VendorFlips()
+    local resale, lr = M:Resale()
+    if (lf or 0) == 0 and (lr or 0) == 0 then
+      M:Info("deals once item details loaded: %d vendor flips, %d resale", #flips, #resale)
+    end
+    local G = ns.GearShop
+    if G and G.open and G.frame and G.frame:IsShown() and G.PROFIT_VIEWS and G.PROFIT_VIEWS[G.mode] then G:Refresh() end
+  end)
 end
 
 function M:OnEnable()
   self:On("OTR_PRICES_SCAN", function(mod, _, what)
     if what == "done" then
-      local flips = mod:VendorFlips()
-      mod:Info("deals after the price scan: %d vendor flips, %d resale", #flips, #mod:Resale())
+      local flips, lf = mod:VendorFlips()
+      local resale, lr = mod:Resale()
+      mod:Info("deals after the price scan: %d vendor flips, %d resale (%d and %d items still loading)", #flips, #resale, lf or 0, lr or 0)
     end
   end)
+  self:On("GET_ITEM_INFO_RECEIVED", self.OnItemInfo)
 end
 
 function M:Activity()

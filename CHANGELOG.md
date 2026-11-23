@@ -17,6 +17,11 @@ Fishing, as good as OneCast or better:
 - **HUD:** fish per hour, lures left in your bags (red under 5), the lure timer turns orange in its last minute, the Speckled Tastyfish count while the Extravaganza is on, and "too hard here" names the lure in your bags that would help.
 - `/ride fishstats` prints the session.
 
+Auction deals:
+
+- **Vendor flips and Resale were empty after a price scan.** Right after a scan the game hadn't loaded most items yet, and Deals worked the lists out once and never again. Now Resale lists a deal by its price alone, and both lists fill in as the items load (every 10 seconds or so).
+- **A /reload keeps the deals:** the last scan's flips and resale stay for 2 hours, with how long ago the scan was.
+
 ## 0.4.0 (2026-11-22)
 
 Everything Auctionator does, inside Outrider's shopping window at the auction house:
