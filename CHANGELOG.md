@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.4 (2026-11-23)
 
 - **Unexplored map areas** show with a faint blue-grey tint, so you can tell them from land you've explored (they looked the same).
 - **Area level numbers** draw above the map's explored-area art, which hid them.
