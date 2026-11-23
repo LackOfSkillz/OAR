@@ -129,3 +129,51 @@ T.describe("fight macros for every class", function()
     T.ok(not macro(game, "Fight"):find("Fortitude", 1, true))
   end)
 end)
+
+-- Gary, 2026-11-23: a druid's Strike did the same as Fight before any form,
+-- there was no Pull, and after a pull he had to click the mob to start swinging.
+T.describe("pull key and auto attack", function()
+  local function druid(spells, forms)
+    local game = mock.new({ class = "DRUID", level = 9 })
+    game.spells = spells
+    game.forms = forms
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    game:advance(3)
+    game:slash("fight")
+    game:advance(3)
+    return game, ns
+  end
+  local function body(game, name) for _, m in ipairs(game.macros) do if m.name == name then return m.body end end end
+
+  T.it("a druid with no form yet gets Fight and Pull, not a second Fight called Strike", function()
+    local game, ns = druid(sp("Wrath", "Moonfire", "Healing Touch", "Rejuvenation"))
+    local kinds = table.concat(ns.HunterFight:Kinds(), ",")
+    T.ok(not kinds:find("melee", 1, true), "no Strike before Bear or Cat Form: " .. kinds)
+    T.contains(kinds, "pull")
+    local pull = body(game, "Pull")
+    T.ok(pull, "Pull written with Fight")
+    T.contains(pull, "/cast Moonfire")
+    T.contains(pull, "/startattack")
+    T.contains(body(game, "Fight"), "/startattack")
+    T.eq(body(game, "Strike"), nil)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a wand pulls with Shoot and doesn't start melee (it would stop the wand)", function()
+    local game = mock.new({ class = "PRIEST", level = 10 })
+    game.spells = sp("Smite", "Shadow Word: Pain", "Shoot", "Lesser Heal")
+    game.items = { [101] = { name = "Wand", equipLoc = "INVTYPE_RANGEDRIGHT", itemSubType = "Wands" } }
+    game.worn = { [18] = 101 }
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    game:advance(3)
+    local lines = ns.HunterFight:PullLines()
+    T.eq(lines[2].text, "/cast Shoot")
+    local b = ns.HunterFight:Body("pull")
+    T.ok(not b:find("/startattack", 1, true), "no melee with a wand shot")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

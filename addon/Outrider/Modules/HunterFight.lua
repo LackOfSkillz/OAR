@@ -40,7 +40,7 @@ local M = ns:NewModule("HunterFight", {
   order = 64,
   classes = { HUNTER = true, MAGE = true, PRIEST = true, WARRIOR = true, ROGUE = true, WARLOCK = true,
     DRUID = true, PALADIN = true, SHAMAN = true }, -- the six others: Modules/ClassFight.lua
-  defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", healName = "Heal",
+  defaults = { auto = true, name = "Fight", meleeName = "Strike", petName = "Pet", healName = "Heal", pullName = "Pull",
     concussive = false, wingclip = true, pet = true, shotHints = true }, -- Concussive off: guides keep it for when the pet loses aggro
 })
 ns.HunterFight = M
@@ -77,14 +77,69 @@ end
 function M.MonkeyOn() return M.AuraOn("Aspect of the Monkey") end
 
 function M:Kinds()
-  local base = M.CLASS_KINDS[ns.PlayerClass()] or {}
+  local cls = ns.PlayerClass()
+  local base = M.CLASS_KINDS[cls] or {}
   -- the plan adds keys (Pull, Reach, Strike for casters) and the class/race
   -- utility keys (Trap, Burst, Break, Recover); Modules/FightPlan.lua
   local FP = ns.FightPlan
-  if not (FP and FP.enabled) then return base end
-  local out = FP:Kinds(base)
-  for _, u in ipairs(FP:Utility()) do out[#out + 1] = u.kind end
+  local out
+  if FP and FP.enabled then
+    out = FP:Kinds(base)
+    for _, u in ipairs(FP:Utility()) do out[#out + 1] = u.kind end
+  else
+    out = {}
+    for _, k in ipairs(base) do out[#out + 1] = k end
+  end
+  -- Gary, 2026-11-23: a druid with no Bear or Cat Form yet had a Strike key
+  -- that did the same as Fight. Strike waits for a form; Pull takes its place.
+  if cls == "DRUID" and not (M.FormIndex and (M.FormIndex("Bear Form", "Dire Bear Form") or M.FormIndex("Cat Form"))) then
+    for i = #out, 1, -1 do if out[i] == "melee" then table.remove(out, i) end end
+  end
+  if M.PULL[cls] then
+    local has = false
+    for _, k in ipairs(out) do if k == "pull" then has = true end end
+    if not has and #self:PullLines() > 1 then table.insert(out, 2, "pull") end
+  end
   return out
+end
+
+-- ------------------------------------------------------------ Pull
+-- A Pull key for the classes without one (Gary, 2026-11-23: "pull with a
+-- weapon if it has one, pull with a spell if it doesn't have a ranged
+-- weapon"). Warriors and rogues have the plan's own Pull; hunters pull with
+-- Fight. The spell is the class's ranged opener, the first one known.
+M.PULL = {
+  DRUID = { "Moonfire", "Wrath" },
+  SHAMAN = { "Lightning Bolt", "Earth Shock" },
+  PRIEST = { "Shadow Word: Pain", "Smite" },
+  MAGE = { "Frostbolt", "Fireball" },
+  WARLOCK = { "Immolate", "Shadow Bolt" },
+}
+local function knows(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
+-- the ranged weapon's own shot, by the item's subclass
+M.SHOTS = { Bows = "Shoot Bow", Guns = "Shoot Gun", Crossbows = "Shoot Crossbow", Thrown = "Throw", Wands = "Shoot" }
+
+function M.WeaponShot()
+  local link = C.Call("GetInventoryItemLink", "player", 18)
+  local info = link and C.ItemInfo(link)
+  local shot = info and M.SHOTS[info.subclass or ""]
+  if shot and knows(shot) then return shot end
+end
+
+-- { {keep, text, why} } for the Pull key
+function M:PullLines()
+  local L = {}
+  local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
+  add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
+  local shot = M.WeaponShot()
+  if shot then
+    add(2, "/cast " .. shot, "pulls with your ranged weapon")
+    return L
+  end
+  for _, sp in ipairs(M.PULL[ns.PlayerClass()] or {}) do
+    if knows(sp) then add(2, "/cast " .. sp, "no ranged weapon: pulls with " .. sp) break end
+  end
+  return L
 end
 function M:Supported() return M.CLASS_KINDS[ns.PlayerClass()] ~= nil end
 
@@ -152,6 +207,7 @@ function CASTER.PRIEST(kind, add)
 end
 
 function M:Lines(kind)
+  if kind == "pull" and M.PULL[ns.PlayerClass()] then return self:PullLines() end
   local s = self:Settings()
   local L = {}
   local function add(keep, text, why) L[#L + 1] = { keep = keep, text = text, why = why } end
@@ -276,6 +332,19 @@ function M:Body(kind)
     for i, l in ipairs(lines) do if l.text:find("mod:alt", 1, true) or l.text == "/cancelform" then at = i + 1 end end
     table.insert(lines, at, { keep = 3, text = "/use [mod:alt] " .. potion, why = "Alt: drink " .. potion .. " (when the low mana cue shows)" })
   end
+  -- Every fight key swings too (Gary, 2026-11-23: after a pull the mob walked
+  -- up and he had to click it again to start auto attack). Not where a shot
+  -- repeats (Auto Shot, a wand's Shoot, Throw): starting melee would stop it.
+  local fighting, shoots, swings, at = false, false, false, nil
+  for i, l in ipairs(lines) do
+    if l.text:find("^/targetenemy") then fighting, at = true, at or i end
+    if l.text:find("^/startattack") then swings = true end
+    if l.text:find("Auto Shot", 1, true) or l.text:find("Shoot", 1, true) or l.text:find("Throw", 1, true) then shoots = true end
+  end
+  -- (warriors' and rogues' strikes start it themselves; hunters shoot)
+  if fighting and not shoots and not swings and M.PULL[ns.PlayerClass()] then
+    table.insert(lines, at + 1, { keep = 1, text = "/startattack", why = "starts your auto attack, so you swing when it reaches you" })
+  end
   local dropped = {}
   local function build()
     local t = { "#showtooltip" }
@@ -313,6 +382,11 @@ function M:Entry(kind)
   local s = self:Settings()
   local body = self:Body(kind)
   local cls = ns.PlayerClass()
+  if kind == "pull" and M.PULL[cls] then
+    return { id = cls:lower() .. "-pull", name = s.pullName or "Pull", class = cls, body = body, scope = "char",
+      tags = { "combat" }, dynamic = true, empty = M.Spells(self:PullLines()) == 0,
+      explain = "Pull key: press it once to start the fight from range: your ranged weapon if you have one, otherwise a spell. Then use Fight." }
+  end
   -- keys the plan added (Pull, Reach, Trap, Burst, Break, Recover...) carry its names
   local FP = ns.FightPlan
   if FP and FP.enabled and not (kind == "ranged" or kind == "heal" or kind == "pet" or (kind == "melee" and M.CLASS_KINDS[cls] and

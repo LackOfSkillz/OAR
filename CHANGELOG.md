@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Pull key** for druids, shamans, priests, mages and warlocks: your ranged weapon if you have one (a wand shoots), otherwise your class's opener (Moonfire, Lightning Bolt, Shadow Word: Pain, Frostbolt, Immolate). Warriors and rogues keep theirs.
+- **Fight keys swing too:** caster fight keys start your auto attack, so when the mob reaches you you hit it without clicking it again (not with a wand, which melee would stop).
+- **Druid Strike** waits for Bear or Cat Form; before that it was a copy of Fight.
+- **Macros that stopped updating:** a copy the game hands back with only Outrider's own lines (Sheer's Fight lost its Thorns line) is Outrider's again and gets updated and dragged; an edited macro still drags as you wrote it.
+
 ## 0.4.2 (2026-11-23)
 
 - **Deals in plain words:** each Vendor flip and Resale card says what you pay, what you get back and what you keep ("Pay 2s each here > a vendor gives you 5s each > you keep 30s"). Hover a card for the steps, 1-2-3.
