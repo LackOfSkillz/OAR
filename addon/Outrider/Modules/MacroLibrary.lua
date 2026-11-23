@@ -236,6 +236,18 @@ function M:Install(entry, force)
     table.insert(prev, 1, old.body)
     for i = M.KEEP_PREV + 1, #prev do prev[i] = nil end
   end
+  -- Remember what the game actually holds, not what we asked for (Gary,
+  -- 2026-11-23: he never edited his macros, yet the game's Fight differed from
+  -- Outrider's record and Outrider stopped updating it). If the game kept
+  -- something else, say so once in the log; the next update still treats a
+  -- text made of Outrider's own lines as ours.
+  local _, _, held = C.Call("GetMacroInfo", index)
+  held = C.Readable(held)
+  if type(held) == "string" and held ~= "" and not E.Same(held, body) then
+    self:Warn("macro %s: the game kept %d chars, Outrider wrote %d", entry.name, #held, #body)
+    table.insert(prev, 1, body)
+    body = held
+  end
   installed[entry.name] = { id = entry.id, body = body, t = time(), prev = prev, tree = old and old.tree or nil }
   self:Info("installed macro %s (%s, index %s, %d chars)", entry.name, entry.id, tostring(index), #body)
   return true, index
