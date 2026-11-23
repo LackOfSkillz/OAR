@@ -180,6 +180,7 @@ With the auction house open, Outrider's shopping window sits beside it: a menu o
 
 Only with Outrider users in your guild or party, only what you switch on.
 
+- **Discord.** Join the Outrider Discord to talk with other players, report bugs and hear about new versions: Sharing page, Copy Discord link (or /ride discord), then Ctrl+C and paste it in your web browser.
 - **Rare sightings.** /ride share rares guild|party on: your rare sightings go to them and theirs come to you.
 - **Gathering spots.** /ride share nodes on: herb, ore and fishing spots you find.
 - **Location.** /ride share location on: your map position to your guild every 30 seconds while you move.
@@ -226,6 +227,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride cozy` | cozy  the Cozy Sleeping Bag chain (level 14+) as a queue of waypoints |
 | `/ride deals` | show \| reserve <wholeGold>  review, never auto-purchase |
 | `/ride debug` | on\|off  verbose logging to the saved log |
+| `/ride discord` | the Outrider Discord invite, to copy |
 | `/ride discovered` | [n]  last n NPCs Outrider recorded (default 10) |
 | `/ride dqwrong` | dqwrong <quest name> [what's wrong]  note a wrong dungeon quest step |
 | `/ride dungeonquests` | dungeonquests <dungeon name> \| link <questID> <dungeon name> |

@@ -1,5 +1,7 @@
 ![Outrider: one addon to rule them all](https://raw.githubusercontent.com/LackOfSkillz/outrider-releases/main/docs/banner.png)
 
+**[Join us on Discord](https://discord.gg/NqsBsDPqy):** talk with other Outrider players, report bugs, ask for features and hear about new versions first.
+
 # Imagine your next login.
 
 You've got an hour. You sit down, log in, and before you've even cleared the loading screen, you already know what to do.

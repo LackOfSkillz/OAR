@@ -1580,8 +1580,17 @@ ns.Hub:AddTab("chat", "Chat", function(p)
 end)
 
 -- -------------------------------------------------------------- Sharing
+-- The Outrider Discord (Gary, 2026-11-23). The game can't open web links, so
+-- the button shows the address in a box to copy (Ctrl+C) into a browser.
+ns.DISCORD = "https://discord.gg/NqsBsDPqy"
+function ns.ShowDiscord() UI:TextDialog("Join us on Discord", ns.DISCORD, "copy") end
+ns.AddCommand("discord", "the Outrider Discord invite, to copy", function() ns.ShowDiscord() end)
+
 ns.Hub:AddTab("sharing", "Sharing", function(p)
   UI:FormPage(p, {
+    { "header", "Join us on Discord", icon = "INV_Letter_15" },
+    { "note", "Talk with other Outrider players, report bugs, ask for features and hear about new versions first. Press the button, copy the link (Ctrl+C) and paste it in your web browser." },
+    { "buttons", { { "Copy Discord link", function() ns.ShowDiscord() end, 170 } } },
     { "header", "Share with your guild or party" },
     { "note", "|cfff1d58eNothing is shared until you turn it on.|r  Only other Outrider users see these messages, over guild, party or whisper. Nothing leaves the game." },
     { "check", "Say hello to other Outrider users", function() return set("Comm").hello end,

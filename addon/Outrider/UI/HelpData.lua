@@ -157,6 +157,7 @@ ns.HelpData = {
   } },
 
   { icon = "INV_Letter_09", "Sharing (all off by default)", "Only with Outrider users in your guild or party, only what you switch on.", {
+    { "Discord", "Join the Outrider Discord to talk with other players, report bugs and hear about new versions: Sharing page, Copy Discord link (or /ride discord), then Ctrl+C and paste it in your web browser.", page = "sharing", cmd = "discord" },
     { "Rare sightings", "/ride share rares guild|party on: your rare sightings go to them and theirs come to you.", page = "sharing" },
     { "Gathering spots", "/ride share nodes on: herb, ore and fishing spots you find.", page = "sharing" },
     { "Location", "/ride share location on: your map position to your guild every 30 seconds while you move.", page = "sharing" },

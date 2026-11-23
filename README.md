@@ -8,6 +8,8 @@ Created by **Gary Mix** and developed with AI-assisted coding tools. Tested by G
 
 **What it does:** see the [user guide](docs/USER_GUIDE.md) (also in game: `/ride`, then **Help**).
 
+**[Join us on Discord](https://discord.gg/NqsBsDPqy):** talk with other Outrider players, report bugs, ask for features and hear about new versions first.
+
 ## Install (players)
 
 Pick one. Each puts the same addon folders into `World of Warcraft\_forever_\Interface\AddOns`.
