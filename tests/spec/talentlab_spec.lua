@@ -276,3 +276,31 @@ T.describe("follow a build card", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("Forever's one wide tree", function()
+  T.it("splits the class's three trees by position and lines their rows up (druid tree 1089)", function()
+    local game = mock.new({ class = "DRUID", level = 20 })
+    -- positions as the client gave them on 2026-11-23: a 600-unit grid, Restoration at x 9080-10880
+    game.traits = { { treeID = 1089, unspent = 0, nodes = {
+      { id = 1, name = "Improved Wrath", x = 1280, y = 2730, max = 5, rank = 0, open = true },
+      { id = 2, name = "Nature's Grasp", x = 1880, y = 2730, max = 1, rank = 0, open = true },
+      { id = 3, name = "Ferocity", x = 5180, y = 2730, max = 5, rank = 0, open = true },
+      { id = 4, name = "Thick Hide", x = 5780, y = 3330, max = 5, rank = 0, open = true },
+      { id = 5, name = "Naturalist", x = 9080, y = 2730, max = 5, rank = 0, open = true },
+      { id = 6, name = "Subtlety", x = 9680, y = 3330, max = 3, rank = 0, open = true },
+      { id = 7, name = "Wild Growth", x = 9680, y = 5730, max = 1, rank = 0, open = true },
+    } } }
+    local ns = game:loadAddon()
+    game:login()
+    local model = ns.TalentLab:Load()
+    T.eq(#model.trees, 3)
+    T.eq(model.trees[1].name, "Balance")
+    T.eq(model.trees[3].name, "Restoration")
+    T.eq(model.byName["Naturalist"].tree, 3)
+    T.eq(model.byName["Naturalist"].column, 1)
+    T.eq(model.byName["Subtlety"].column, 2)
+    T.eq(model.byName["Subtlety"].tier, 2)
+    T.eq(model.byName["Wild Growth"].tier, 6, "an empty row still counts")
+    T.eq(model.byName["Thick Hide"].tree, 2)
+  end)
+end)

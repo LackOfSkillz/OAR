@@ -65,6 +65,7 @@ function UI:Form(parent, rows)
     if e.table then e.table:SetItems(e.table.raw) end
   end
   local function measure(e)
+    if e.f and e.f.LayoutHeight and not e.dynamic then return e.f:LayoutHeight() end
     if e.dynamic then return e.dynamic:LayoutHeight() + (e.dynamic:LayoutHeight() > 0 and 6 or 0) end
     if e.text then
       local txt = e.text.GetText and e.text:GetText()
@@ -352,6 +353,9 @@ function UI:Form(parent, rows)
     elseif kind == "custom" then
       local f = r[2](host)
       place(f, r[3] or 30)
+      -- { "custom", build, height, stretch = true }: the frame takes the page's
+      -- width, and its own LayoutHeight() (if any) sets the row height
+      if r.stretch then entries[#entries].stretch = true end
       if f.Refresh then scroll.items[#scroll.items + 1] = f end
     end
   end

@@ -100,6 +100,25 @@ function M.Model(state, class)
       end
     end
   end
+  -- one tree with the class's three trees side by side (Forever, 2026-11-23:
+  -- 52 druid talents in tree 1089, a grid of 600 units): split where the
+  -- columns jump, left to right
+  if #groups == 0 and #tabs == 1 and tabs[1].talents[1] and tabs[1].talents[1].x then
+    local xs, seen = {}, {}
+    for _, e in ipairs(tabs[1].talents) do if e.x and not seen[e.x] then seen[e.x] = true xs[#xs + 1] = e.x end end
+    table.sort(xs)
+    local step
+    for i = 2, #xs do local d = xs[i] - xs[i - 1] if d > 0 and (not step or d < step) then step = d end end
+    if step then
+      local cut, clusters = {}, 1
+      for i = 2, #xs do if xs[i] - xs[i - 1] > step * 1.5 then clusters = clusters + 1 end cut[xs[i]] = clusters end
+      cut[xs[1]] = 1
+      if clusters > 1 then
+        for k = 1, clusters do groups[k] = { talents = {} } end
+        for _, e in ipairs(tabs[1].talents) do table.insert(groups[cut[e.x] or 1].talents, e) end
+      end
+    end
+  end
   if #groups == 0 then
     for _, tab in ipairs(tabs) do
       local name = tab.name
@@ -110,8 +129,29 @@ function M.Model(state, class)
   local model = { class = class, trees = {}, byNode = {}, byName = {} }
   local names = M.TREES[class or ""] or {}
   local keys = {}
+  -- rows and columns from the grid: the smallest step between positions, and
+  -- the top row across all trees (a row with no talent still counts)
+  local function grid(list, field)
+    local vals, seen = {}, {}
+    for _, grp in ipairs(list) do
+      for _, e in ipairs(grp.talents) do local v = e[field] if v and not seen[v] then seen[v] = true vals[#vals + 1] = v end end
+    end
+    table.sort(vals)
+    local step
+    for i = 2, #vals do local d = vals[i] - vals[i - 1] if d > 0 and (not step or d < step) then step = d end end
+    return vals[1], step
+  end
+  local minY, stepY = grid(groups, "y")
   for g, grp in ipairs(groups) do
     local tier, col = ranks(grp.talents, "y"), ranks(grp.talents, "x")
+    if stepY then
+      local minX, stepX = grid({ grp }, "x")
+      tier, col = {}, {}
+      for _, e in ipairs(grp.talents) do
+        if e.y then tier[e.y] = math.floor((e.y - minY) / stepY + 0.5) + 1 end
+        if e.x and stepX then col[e.x] = math.floor((e.x - minX) / stepX + 0.5) + 1 elseif e.x then col[e.x] = 1 end
+      end
+    end
     local tree = { name = grp.name or names[g] or ("Tree " .. g), talents = {} }
     for _, e in ipairs(grp.talents) do
       local key = e.node or (g * 1000 + (e.index or 0))
@@ -458,140 +498,7 @@ end
 M.GOAL_ICON = { pvp = "Ability_DualWield", hps = "Spell_Holy_FlashHeal", tank = "Ability_Defend",
   leveling = "Spell_Holy_SurgeOfLight", dungeon = "INV_Misc_Key_03", dps = "Ability_Marksmanship" }
 
--- Build cards for the chosen goal, for the page.
-function M:CardItems()
-  local model = self.model or self:Load()
-  local cls = ns.PlayerClass()
-  local goal = self:Goal()
-  local level = self:ViewLevel()
-  local mine = model and M.Mine(model) or {}
-  local out = {}
-  -- best first by Outrider's estimate for you (TalentSim), else the list order
-  local ranked, est = {}, {}
-  if ns.TalentSim and model then
-    for _, x in ipairs(ns.TalentSim:Rank(goal, level)) do ranked[#ranked + 1] = x.card est[x.card.id] = x.est end
-  else
-    for _, card in ipairs(M.Cards(cls)) do if card.goal == goal then ranked[#ranked + 1] = card end end
-  end
-  for i, card in ipairs(ranked) do
-    do
-      local r, missing = {}, {}
-      if model then r, missing = M.RanksFor(model, card, level) end
-      local shared = M.Shared(mine, r)
-      local tags = { { model and M.Split(model, r) or (card.split or ""), "gold" }, { M.Host(card.source), "plain" } }
-      local words = est[card.id] and ns.TalentSim.Words(est[card.id], goal)
-      if words then table.insert(tags, 1, { words, i == 1 and #ranked > 1 and "good" or "plain" }) end
-      if i == 1 and #ranked > 1 and words then table.insert(tags, 1, { "Outrider's pick for you", "good" }) end
-      if card.verified ~= true then tags[#tags + 1] = { "not checked in game yet", "plain" } end
-      if #missing > 0 then tags[#tags + 1] = { #missing .. " talents not found", "bad" } end
-      out[#out + 1] = { pic = "Interface\\Icons\\" .. (M.GOAL_ICON[goal] or "Ability_Marksmanship"),
-        title = card.name, tags = tags,
-        line = (card.why or "") .. (M.Total(mine) > 0 and string.format("  You share %d of its points.", shared) or ""),
-        actions = { { "Try it", function()
-          M:Use(card)
-          M.msg = "Loaded " .. card.name .. ". Change any point below."
-          M:RefreshPage()
-        end, "Puts this build in the trees below so you can see it and change it." },
-        { ns.Talents and ns.Talents:Settings().card == card.id and "Following" or "Follow", function()
-          local T = ns.Talents
-          if not T then return end
-          T:Settings().card = T:Settings().card ~= card.id and card.id or nil
-          M.msg = T:Settings().card and ("Following " .. card.name .. ": the game's talent window rings your next points.") or "Stopped following that build."
-          if T.Check then ns.Safe("talents:follow", T.Check, T) end
-          M:RefreshPage()
-        end, "The game's talent window rings your next points for this build, and Outrider tells you when a point is ready." } } }
-    end
-  end
-  return out
-end
-
 function M:RefreshPage() if self.page and self.page.Refresh then self.page:Refresh() end end
-
--- One talent button.
-local function talentButton(parent)
-  local b = CreateFrame("Button", nil, parent, ns.Theme:BackdropTemplate())
-  b:SetSize(M.ICON, M.ICON)
-  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-  b.icon = b:CreateTexture(nil, "ARTWORK")
-  b.icon:SetPoint("TOPLEFT", 2, -2)
-  b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
-  b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-  b.rank = ns.UI.Text(b, "small", "text")
-  b.rank:SetPoint("BOTTOMRIGHT", 4, -4)
-  b:SetScript("OnClick", function(self, button)
-    local r, model = M:Sandbox()
-    if not (r and self.t) then return end
-    local ok, why
-    if button == "RightButton" then ok, why = M.Remove(model, r, self.t.node, M:ViewLevel())
-    else ok, why = M.Add(model, r, self.t.node, M:ViewLevel()) end
-    M.msg = not ok and why or nil
-    M:RefreshPage()
-  end)
-  b:SetScript("OnEnter", function(self)
-    local t = self.t
-    if not t then return end
-    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    if t.spell and GameTooltip.SetSpellByID then pcall(GameTooltip.SetSpellByID, GameTooltip, t.spell)
-    else GameTooltip:AddLine(t.name) end
-    local r = M:Sandbox() or {}
-    GameTooltip:AddLine(string.format("In this build: %d/%d   Yours now: %d/%d", r[t.node] or 0, t.max, t.rank or 0, t.max), 1, 0.82, 0.2)
-    GameTooltip:AddLine("Click: add a point. Right-click: take one off.", 0.6, 0.6, 0.6)
-    GameTooltip:Show()
-  end)
-  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  return b
-end
-
--- The three trees, side by side.
-function M:TreeView(host)
-  local f = CreateFrame("Frame", nil, host)
-  f:SetSize(600, M.TOP + 7 * (M.ICON + M.GAP_Y) + 6)
-  f.buttons, f.titles = {}, {}
-  function f:Refresh()
-    for _, b in ipairs(self.buttons) do b:Hide() b.t = nil end
-    for _, t in pairs(self.titles) do t:Hide() end
-    local r, model = M:Sandbox()
-    if not model then
-      self.titles.none = self.titles.none or ns.UI.Text(self, "normal", "body")
-      self.titles.none:SetPoint("TOPLEFT", 0, 0)
-      self.titles.none:SetText("Your talent trees aren't readable yet: log in, or open the game's talent window once.")
-      self.titles.none:Show()
-      return
-    end
-    local n, mine, level = 0, M.Mine(model), M:ViewLevel()
-    for g, tree in ipairs(model.trees) do
-      local x0 = (g - 1) * M.TREE_W
-      local title = self.titles[g] or ns.UI.Text(self, "normal", "accent")
-      self.titles[g] = title
-      title:ClearAllPoints()
-      title:SetPoint("TOPLEFT", x0, 0)
-      title:SetText(string.format("%s  %d", tree.name, M.TreeSpent(model, r, g)))
-      title:Show()
-      for _, t in ipairs(tree.talents) do
-        n = n + 1
-        local b = self.buttons[n] or talentButton(self)
-        self.buttons[n] = b
-        b.t = t
-        b:ClearAllPoints()
-        b:SetPoint("TOPLEFT", x0 + (math.min(t.column, 4) - 1) * (M.ICON + M.GAP_X), -M.TOP - (math.min(t.tier, 7) - 1) * (M.ICON + M.GAP_Y))
-        b.icon:SetTexture(t.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-        local have, own = r[t.node] or 0, mine[t.node] or 0
-        local canAdd = M.CanAdd(model, r, t.node, level)
-        if b.icon.SetDesaturated then b.icon:SetDesaturated(have == 0 and not canAdd) end
-        b.icon:SetAlpha((have > 0 or canAdd) and 1 or 0.45)
-        -- green: as you have it; gold: more than you have (to learn); red: less (a respec)
-        local color = have == own and "|cff7fff7f" or (have > own and "|cffffd100" or "|cffff6060")
-        local txt = have .. "/" .. t.max
-        if have > 0 or own > 0 then txt = color .. txt .. "|r" end
-        b.rank:SetText(txt)
-        ns.Theme:ApplyPanel(b, "bg", have >= t.max and "gold" or (have > 0 and "strong" or "border"))
-        b:Show()
-      end
-    end
-  end
-  f:Refresh()
-  return f
-end
 
 -- "To get there, learn: Ferocity 3, Feral Instinct 2. Take off (...): Thorns."
 function M:DiffText()
@@ -615,65 +522,527 @@ function M:DiffText()
   return text
 end
 
-ns.Hub:AddTab("talentlab", "Talents", function(p)
-  local UI = ns.UI
-  M.page = p
-  local goals = M.Goals(ns.PlayerClass())
-  local goalButtons = {}
-  for i, g in ipairs(goals) do
-    goalButtons[i] = { g.label, function() M:Settings().goal = g.id p:Refresh() end, 100 }
+
+-- ------------------------------------------------------------ the studio (page)
+-- One screen, three columns (Gary, 2026-11-23: "make columns so you don't
+-- have to scroll so much ... a world class ui/ux"):
+--   top    goal chips, level slider, points / split / change from yours
+--   left   the builds for the goal, best for you first (Try, Follow)
+--   middle the three trees like the game's window, with their links
+--   right  what to change, what it gives, your stats, how it does, codes
+-- Narrower windows put the right column under the trees, then stack.
+M.UIL = { LEFT = 286, RIGHT = 300, GAP = 18, ICON = 36, CELL = 46, PAD = 10, HEAD = 34, TOP = 64 }
+
+-- The builds for the goal with what the page shows: best for you first.
+function M:CardList()
+  local model = self.model or self:Load()
+  local cls = ns.PlayerClass()
+  local goal = self:Goal()
+  local level = self:ViewLevel()
+  local mine = model and M.Mine(model) or {}
+  local list = {}
+  if ns.TalentSim and model then
+    for _, x in ipairs(ns.TalentSim:Rank(goal, level)) do list[#list + 1] = { card = x.card, est = x.est } end
+  else
+    for _, card in ipairs(M.Cards(cls)) do if card.goal == goal then list[#list + 1] = { card = card } end end
   end
-  UI:FormPage(p, {
-    { "header", "Talent builds", icon = "Ability_Marksmanship" },
-    { "note", "Pick what you want to be good at and see the best builds for it. Try one, change any point, slide the level to see it as you grow. You still spend your points yourself in the game's talent window." },
-    { "buttons", goalButtons, active = function(i) return goals[i] ~= nil and goals[i].id == M:Goal() end },
-    { "cards", function() return M:CardItems() end },
-    { "note", function()
-      return #M:CardItems() == 0 and "No build for this goal yet for your class. Try your own points below." or ""
-    end },
-    { "header", "Try a build", icon = "INV_Misc_Book_09" },
-    { "stats", function()
-      local r, model = M:Sandbox()
-      if not model then return { { cap = "Talents", value = "not readable yet" } } end
-      local level = M:ViewLevel()
-      local mine = M.Mine(model)
-      local off = M.Total(mine) - M.Shared(mine, r)
-      return {
-        { cap = "Points", value = string.format("%d / %d", M.Total(r), M.Points(level)), color = "gold", note = "at level " .. level },
-        { cap = "Split", value = M.Split(model, r) },
-        { cap = "From your build", value = off == 0 and "same" or (off .. " to change"), note = "yours: " .. M.Split(model, mine) },
-      }
-    end },
-    { "slider", "Level", M.FIRST, M.MAX_LEVEL, 1, function() return M:ViewLevel() end,
-      function(v) M:Settings().level = v if M.card then M:Use(M.card) end p:Refresh() end, "%d" },
-    { "custom", function(host) return M:TreeView(host) end, M.TOP + 7 * (M.ICON + M.GAP_Y) + 10 },
-    { "note", function() return (M.msg and ("|cffff7f7f" .. M.msg .. "|r\n") or "") .. M:DiffText() end, 40 },
-    { "header", "What this build gives", icon = "Spell_Holy_SurgeOfLight" },
-    { "bars", function()
-      local S, r, model = ns.TalentStats, M:Sandbox()
-      if not (S and model) then return {} end
-      local out = {}
-      for _, x in ipairs(S.Now(model, r)) do
-        local delta = x.with - x.now
-        out[#out + 1] = { label = x.label, fill = x.now > 0 and math.min(1, x.with / math.max(x.now, x.with)) or 0,
-          text = tostring(x.with) .. (delta ~= 0 and string.format(" (%s%s from now)", delta > 0 and "+" or "", tostring(delta)) or " (as now)") }
+  for i, e in ipairs(list) do
+    local r, missing = {}, {}
+    if model then r, missing = M.RanksFor(model, e.card, level) end
+    e.split = model and M.Split(model, r) or (e.card.split or "")
+    e.shared = M.Shared(mine, r)
+    e.missing = #missing
+    e.words = e.est and ns.TalentSim.Words(e.est, goal) or nil
+    e.pick = i == 1 and #list > 1 and e.words ~= nil
+    e.following = ns.Talents and ns.Talents:Settings().card == e.card.id or false
+    e.selected = self.card and self.card.id == e.card.id or false
+  end
+  return list
+end
+
+-- Cards for a plain list (kept for other pages and the tests).
+function M:CardItems()
+  local out = {}
+  local goal = self:Goal()
+  for _, e in ipairs(self:CardList()) do
+    local card = e.card
+    local tags = { { e.split, "gold" }, { M.Host(card.source), "plain" } }
+    if e.words then table.insert(tags, 1, { e.words, e.pick and "good" or "plain" }) end
+    if e.pick then table.insert(tags, 1, { "Outrider's pick for you", "good" }) end
+    if card.verified ~= true then tags[#tags + 1] = { "not checked in game yet", "plain" } end
+    if e.missing > 0 then tags[#tags + 1] = { e.missing .. " talents not found", "bad" } end
+    out[#out + 1] = { pic = "Interface\\Icons\\" .. (M.GOAL_ICON[goal] or "Ability_Marksmanship"), title = card.name, tags = tags,
+      line = (card.why or "") .. (e.shared > 0 and string.format("  You share %d of its points.", e.shared) or "") }
+  end
+  return out
+end
+
+function M:Try(card)
+  self:Use(card)
+  self.msg = nil
+  self:RefreshPage()
+end
+
+function M:Follow(card)
+  local T = ns.Talents
+  if not T then return end
+  T:Settings().card = T:Settings().card ~= card.id and card.id or nil
+  if T.Check then ns.Safe("talents:follow", T.Check, T) end
+  self.msg = T:Settings().card and ("Following " .. card.name .. ": the game's talent window rings your next points.") or nil
+  self:RefreshPage()
+end
+
+local function text(parent, size, color, w)
+  local t = ns.UI.Text(parent, size or "normal", color or "text")
+  t:SetJustifyH("LEFT")
+  if t.SetJustifyV then t:SetJustifyV("TOP") end
+  if w then t:SetWidth(w) end
+  if t.SetWordWrap then t:SetWordWrap(true) end
+  return t
+end
+
+local function height(t) local h = t.GetStringHeight and t:GetStringHeight() return type(h) == "number" and h or 14 end
+
+-- ---------------------------------------------------------------- talent button
+local function talentButton(parent)
+  local U = M.UIL
+  local b = CreateFrame("Button", nil, parent, ns.Theme:BackdropTemplate())
+  b:SetSize(U.ICON, U.ICON)
+  b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  b.icon = b:CreateTexture(nil, "ARTWORK")
+  b.icon:SetPoint("TOPLEFT", 2, -2)
+  b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
+  b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  b.badge = CreateFrame("Frame", nil, b, ns.Theme:BackdropTemplate())
+  b.badge:SetSize(28, 14)
+  b.badge:SetPoint("BOTTOMRIGHT", 6, -5)
+  ns.Theme:ApplyPanel(b.badge, "bg", "border")
+  b.rank = ns.UI.Text(b.badge, "small", "text")
+  b.rank:SetPoint("CENTER", 0, 0)
+  b:SetScript("OnClick", function(self, button)
+    local r, model = M:Sandbox()
+    if not (r and self.t) then return end
+    local ok, why
+    if button == "RightButton" then ok, why = M.Remove(model, r, self.t.node, M:ViewLevel())
+    else ok, why = M.Add(model, r, self.t.node, M:ViewLevel()) end
+    M.msg = not ok and why or nil
+    M:RefreshPage()
+  end)
+  b:SetScript("OnEnter", function(self)
+    local t = self.t
+    if not t then return end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    if t.spell and GameTooltip.SetSpellByID then pcall(GameTooltip.SetSpellByID, GameTooltip, t.spell)
+    else GameTooltip:AddLine(t.name) end
+    local r = M:Sandbox() or {}
+    GameTooltip:AddLine(string.format("In this build: %d/%d    Yours now: %d/%d", r[t.node] or 0, t.max, t.rank or 0, t.max), 1, 0.82, 0.2)
+    local ok, why = M.CanAdd(M.model, r, t.node, M:ViewLevel())
+    if not ok and (r[t.node] or 0) < t.max then GameTooltip:AddLine("Can't add: " .. tostring(why), 1, 0.5, 0.5, true) end
+    GameTooltip:AddLine("Click: add a point.  Right-click: take one off.", 0.6, 0.6, 0.6)
+    GameTooltip:Show()
+  end)
+  b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  return b
+end
+
+-- ---------------------------------------------------------------- build tile
+local function cardTile(parent)
+  local U = M.UIL
+  local c = CreateFrame("Button", nil, parent, ns.Theme:BackdropTemplate())
+  c:SetSize(U.LEFT, 96)
+  c.icon = c:CreateTexture(nil, "ARTWORK")
+  c.icon:SetSize(30, 30)
+  c.icon:SetPoint("TOPLEFT", 8, -8)
+  c.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+  c.title = text(c, "normal", "accent", U.LEFT - 54)
+  c.title:SetPoint("TOPLEFT", 46, -8)
+  c.meta = text(c, "small", "text", U.LEFT - 54)
+  c.meta:SetPoint("TOPLEFT", c.title, "BOTTOMLEFT", 0, -3)
+  c.src = text(c, "small", "body", U.LEFT - 54)
+  c.src:SetPoint("TOPLEFT", c.meta, "BOTTOMLEFT", 0, -2)
+  c.try = ns.UI:Button(c, "Try it", 74, function() if c.e then M:Try(c.e.card) end end)
+  c.try:SetHeight(20)
+  c.try:SetPoint("BOTTOMLEFT", 46, 7)
+  ns.UI.SetPrimary(c.try, true)
+  c.follow = ns.UI:Button(c, "Follow", 84, function() if c.e then M:Follow(c.e.card) end end)
+  c.follow:SetHeight(20)
+  c.follow:SetPoint("LEFT", c.try, "RIGHT", 6, 0)
+  c:SetScript("OnClick", function() if c.e then M:Try(c.e.card) end end)
+  c:SetScript("OnEnter", function(self)
+    if not self.e then return end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine(self.e.card.name, 1, 0.82, 0.2)
+    if self.e.card.why then GameTooltip:AddLine(self.e.card.why, 1, 1, 1, true) end
+    GameTooltip:AddLine("From " .. tostring(self.e.card.source), 0.6, 0.6, 0.6, true)
+    if self.e.shared > 0 then GameTooltip:AddLine(string.format("You already have %d of its points.", self.e.shared), 0.5, 0.9, 0.5) end
+    if self.e.missing > 0 then GameTooltip:AddLine(self.e.missing .. " of its talents weren't found in your trees.", 1, 0.5, 0.5) end
+    GameTooltip:AddLine("Click to try it in the trees.", 0.6, 0.6, 0.6)
+    GameTooltip:Show()
+  end)
+  c:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  function c:Fill(e, goal)
+    self.e = e
+    self.icon:SetTexture("Interface\\Icons\\" .. (M.GOAL_ICON[goal] or "Ability_Marksmanship"))
+    self.title:SetText(e.card.name)
+    local parts = {}
+    if e.pick then parts[#parts + 1] = "|cff7fff7fOutrider's pick|r" end
+    if e.words then parts[#parts + 1] = e.words end
+    parts[#parts + 1] = "|cffffd100" .. e.split .. "|r"
+    self.meta:SetText(table.concat(parts, "  ·  "))
+    self.src:SetText(M.Host(e.card.source) .. (e.card.verified ~= true and "  ·  not checked in game" or "")
+      .. (e.missing > 0 and ("  ·  |cffff7f7f" .. e.missing .. " not found|r") or ""))
+    self.follow.label:SetText(e.following and "Following" or "Follow")
+    ns.UI.SetPrimary(self.follow, e.following)
+    ns.Theme:ApplyPanel(self, e.selected and "goldSoft" or "raised", e.selected and "gold" or (e.pick and "accent" or "border"))
+    local h = 8 + height(self.title) + 3 + height(self.meta) + 2 + height(self.src) + 6 + 20 + 7
+    self:SetHeight(math.max(84, h))
+  end
+  return c
+end
+
+-- ---------------------------------------------------------------- info block
+local function block(parent, title, w)
+  local f = CreateFrame("Frame", nil, parent)
+  f:SetSize(w, 40)
+  f.head = text(f, "small", "accent", w)
+  f.head:SetPoint("TOPLEFT", 0, 0)
+  f.head:SetText(title:upper())
+  f.rule = f:CreateTexture(nil, "ARTWORK")
+  f.rule:SetHeight(1)
+  f.rule:SetPoint("TOPLEFT", 0, -15)
+  f.rule:SetPoint("TOPRIGHT", 0, -15)
+  f.rule:SetColorTexture(ns.Theme:Color("gold"))
+  if f.rule.SetAlpha then f.rule:SetAlpha(0.35) end
+  f.body = text(f, "normal", "body", w)
+  f.body:SetPoint("TOPLEFT", 0, -21)
+  function f:Set(body, width)
+    self:SetWidth(width)
+    self.head:SetWidth(width)
+    self.body:SetWidth(width)
+    self.body:SetText(body or "")
+    local h = (body and body ~= "") and (21 + height(self.body) + 12) or 0
+    self:SetHeight(math.max(1, h))
+    self:SetShown(h > 0)
+    return h
+  end
+  return f
+end
+
+-- ---------------------------------------------------------------- the studio
+function M:Studio(host)
+  local U = M.UIL
+  local f = CreateFrame("Frame", nil, host)
+  f:SetSize(1000, 600)
+  f.h = 600
+  M.studio = f
+
+  -- top bar: goals, level, numbers
+  f.top = CreateFrame("Frame", nil, f)
+  f.top:SetHeight(U.TOP)
+  f.top:SetPoint("TOPLEFT", 0, 0)
+  f.top:SetPoint("TOPRIGHT", 0, 0)
+  f.chips = {}
+  f.level = ns.UI:Slider(f.top, "Level", M.FIRST, M.MAX_LEVEL, 1, function() return M:ViewLevel() end,
+    function(v) M:Settings().level = v if M.card then M:Use(M.card) end M:RefreshPage() end, "%d")
+  f.level:SetWidth(220)
+  f.nums = text(f.top, "normal", "text")
+  f.purpose = text(f.top, "small", "body")
+
+  f.left = CreateFrame("Frame", nil, f)
+  f.leftHead = text(f.left, "small", "accent")
+  f.tiles = {}
+  f.leftEmpty = text(f.left, "normal", "body", U.LEFT)
+
+  f.mid = CreateFrame("Frame", nil, f)
+  f.trees = {}
+  f.midMsg = text(f.mid, "normal", "body")
+  f.legend = text(f.mid, "small", "body")
+
+  f.right = CreateFrame("Frame", nil, f)
+  f.blocks = {
+    msg = block(f.right, "Note", U.RIGHT),
+    diff = block(f.right, "To get there from your build", U.RIGHT),
+    gives = block(f.right, "What this build gives", U.RIGHT),
+    stats = block(f.right, "Your stats with it", U.RIGHT),
+    does = block(f.right, "How it does", U.RIGHT),
+  }
+  f.btns = {
+    ns.UI:Button(f.right, "Start from my build", 146, function()
+      local model = M:Load()
+      if model then M.sandbox, M.sandboxFor, M.card, M.msg = M.Mine(model), model.checksum, nil, nil end
+      M:RefreshPage()
+    end),
+    ns.UI:Button(f.right, "Clear points", 146, function() M.sandbox, M.card, M.msg = {}, nil, nil M:RefreshPage() end),
+    ns.UI:Button(f.right, "Copy code", 146, function() ns.Slash:Run("talentcode") end),
+    ns.UI:Button(f.right, "Load a code", 146, function()
+      ns.UI:TextDialog("Paste a talent code", "", "paste", function(t) ns.Slash:Run("talentcode " .. tostring(t)) M:RefreshPage() end)
+    end),
+  }
+
+  function f:LayoutHeight() return self.h or 600 end
+
+  -- one tree panel
+  local function treePanel(i)
+    local t = f.trees[i]
+    if t then return t end
+    t = CreateFrame("Frame", nil, f.mid, ns.Theme:BackdropTemplate())
+    ns.Theme:ApplyPanel(t, "bg", "border")
+    t.name = text(t, "normal", "accent")
+    t.name:SetPoint("TOPLEFT", U.PAD, -9)
+    t.count = text(t, "normal", "gold")
+    t.count:SetPoint("TOPRIGHT", -U.PAD, -9)
+    if t.count.SetJustifyH then t.count:SetJustifyH("RIGHT") end
+    t.buttons, t.lines = {}, {}
+    f.trees[i] = t
+    return t
+  end
+
+  function f:Draw()
+    local W = math.floor(self:GetWidth() or 1000)
+    if W < 300 then W = 1000 end
+    local model = M.model or M:Load()
+    local r = (M:Sandbox()) or {}
+    local level = M:ViewLevel()
+    local goal = M:Goal()
+    local cls = ns.PlayerClass()
+
+    -- ---- top
+    local goals = M.Goals(cls)
+    local x = 0
+    for i, g in ipairs(goals) do
+      local b = self.chips[i]
+      if not b then
+        b = ns.UI:Button(self.top, g.label, 104, nil)
+        b:SetHeight(26)
+        self.chips[i] = b
       end
-      return out
-    end },
-    { "note", function() return ns.TalentStats and ns.TalentStats:Report() or "" end, 80 },
-    { "header", "How it does", icon = "INV_Misc_PocketWatch_01" },
-    { "note", function() return ns.TalentSim and ns.TalentSim:Report() or "" end, 80 },
-    { "buttons", {
-      { "Start from my build", function()
-        local model = M:Load()
-        if model then M.sandbox, M.sandboxFor, M.card, M.msg = M.Mine(model), model.checksum, nil, nil end
-        p:Refresh()
-      end, 150 },
-      { "Clear points", function() M.sandbox, M.card, M.msg = {}, nil, nil p:Refresh() end, 110 },
-      { "Copy code", function() ns.Slash:Run("talentcode") end, 100 },
-      { "Load a code", function()
-        UI:TextDialog("Paste a talent code", "", "paste", function(text) ns.Slash:Run("talentcode " .. tostring(text)) p:Refresh() end)
-      end, 110 },
-    }, plain = true },
+      b.label:SetText(g.label)
+      b:SetScript("OnClick", function() M:Settings().goal = g.id M.card = nil M:RefreshPage() end)
+      ns.UI.SetPrimary(b, g.id == goal)
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", self.top, "TOPLEFT", x, 0)
+      b:Show()
+      x = x + 108
+    end
+    for i = #goals + 1, #self.chips do self.chips[i]:Hide() end
+    self.level:ClearAllPoints()
+    self.level:SetPoint("TOPLEFT", self.top, "TOPLEFT", x + 14, 0)
+    local mine = model and M.Mine(model) or {}
+    if model then
+      local off = M.Total(mine) - M.Shared(mine, r)
+      self.nums:SetText(string.format("Points |cffffd100%d / %d|r    Split |cffffd100%s|r    From yours |cffffd100%s|r",
+        M.Total(r), M.Points(level), M.Split(model, r), off == 0 and "same" or (off .. " to change")))
+    else
+      self.nums:SetText("")
+    end
+    self.nums:ClearAllPoints()
+    self.nums:SetPoint("TOPLEFT", self.top, "TOPLEFT", x + 14 + 240, -4)
+    self.purpose:ClearAllPoints()
+    self.purpose:SetPoint("TOPLEFT", self.top, "TOPLEFT", 0, -36)
+    self.purpose:SetWidth(W)
+    self.purpose:SetText("Pick a goal, then a build on the left: Try puts it in the trees, Follow makes the game's talent window ring your next points. Click a talent to add a point, right-click to take one off. You spend points yourself in the game's window.")
+
+    -- ---- the three trees (middle)
+    local maxCol, maxTier = 4, 7
+    if model then
+      for _, tr in ipairs(model.trees) do
+        for _, t in ipairs(tr.talents) do
+          if t.column > maxCol then maxCol = t.column end
+          if t.tier > maxTier then maxTier = t.tier end
+        end
+      end
+    end
+    local treeW = maxCol * U.CELL + 2 * U.PAD - (U.CELL - U.ICON)
+    local nTrees = model and #model.trees or 3
+    local midW = nTrees * treeW + (nTrees - 1) * 10
+    local treeH = U.HEAD + maxTier * U.CELL + U.PAD - (U.CELL - U.ICON) + 6
+    for i, tp in ipairs(self.trees) do if not (model and model.trees[i]) then tp:Hide() end end
+    if model then
+      self.midMsg:Hide()
+      for g, tree in ipairs(model.trees) do
+        local tp = treePanel(g)
+        tp:SetSize(treeW, treeH)
+        tp:ClearAllPoints()
+        tp:SetPoint("TOPLEFT", self.mid, "TOPLEFT", (g - 1) * (treeW + 10), 0)
+        tp.name:SetText(tree.name)
+        tp.count:SetText(tostring(M.TreeSpent(model, r, g)))
+        tp:Show()
+        local pos = {}
+        for i, t in ipairs(tree.talents) do
+          local b = tp.buttons[i] or talentButton(tp)
+          tp.buttons[i] = b
+          b.t = t
+          local bx, by = U.PAD + (t.column - 1) * U.CELL, -(U.HEAD + (t.tier - 1) * U.CELL)
+          pos[t.node] = { bx + U.ICON / 2, by - U.ICON / 2 }
+          b:ClearAllPoints()
+          b:SetPoint("TOPLEFT", tp, "TOPLEFT", bx, by)
+          b.icon:SetTexture(t.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+          local have, own = r[t.node] or 0, mine[t.node] or 0
+          local canAdd = M.CanAdd(model, r, t.node, level)
+          if b.icon.SetDesaturated then b.icon:SetDesaturated(have == 0 and not canAdd) end
+          b.icon:SetAlpha((have > 0 or canAdd) and 1 or 0.4)
+          -- green: as you have it; gold: to learn; red: a respec takes it off
+          local color = (have == own) and (have > 0 and "|cff7fff7f" or "|cffa0a0a0") or (have > own and "|cffffd100" or "|cffff6060")
+          b.rank:SetText(color .. have .. "/" .. t.max .. "|r")
+          ns.Theme:ApplyPanel(b, "bg", have >= t.max and "gold" or (have > 0 and "accent" or (canAdd and "strong" or "border")))
+          b:Show()
+        end
+        for i = #tree.talents + 1, #tp.buttons do tp.buttons[i]:Hide() end
+        -- links between talents (the arrows in the game's window)
+        local n = 0
+        if tp.CreateLine then
+          for _, t in ipairs(tree.talents) do
+            for _, q in ipairs(t.req) do
+              local a, b = pos[q], pos[t.node]
+              local ln = a and b and (tp.lines[n + 1] or tp:CreateLine(nil, "BACKGROUND"))
+              if ln and ln.SetStartPoint then
+                n = n + 1
+                tp.lines[n] = ln
+                ln:SetThickness(3)
+                ln:SetStartPoint("TOPLEFT", tp, a[1], a[2])
+                ln:SetEndPoint("TOPLEFT", tp, b[1], b[2])
+                local src = model.byNode[q]
+                local lit = src and (r[q] or 0) >= src.max
+                ln:SetColorTexture(lit and 1 or 0.45, lit and 0.82 or 0.45, lit and 0.2 or 0.45, lit and 0.9 or 0.6)
+                ln:Show()
+              end
+            end
+          end
+        end
+        for i = n + 1, #tp.lines do tp.lines[i]:Hide() end
+      end
+      self.legend:SetText("|cff7fff7f3/5|r as you have it   |cffffd1003/5|r to learn   |cffff60603/5|r a respec takes it off")
+      self.legend:ClearAllPoints()
+      self.legend:SetPoint("TOPLEFT", self.mid, "TOPLEFT", 0, -(treeH + 6))
+      self.legend:Show()
+    else
+      self.legend:Hide()
+      self.midMsg:SetWidth(midW)
+      self.midMsg:SetText("Your talent trees aren't readable yet: log in, or open the game's talent window once.")
+      self.midMsg:ClearAllPoints()
+      self.midMsg:SetPoint("TOPLEFT", self.mid, "TOPLEFT", 0, 0)
+      self.midMsg:Show()
+    end
+    local midH = treeH + 26
+
+    -- ---- builds (left)
+    local list = M:CardList()
+    local goalLabel = goal
+    for _, g in ipairs(goals) do if g.id == goal then goalLabel = g.label end end
+    self.leftHead:SetText(("Builds: " .. goalLabel):upper())
+    self.leftHead:ClearAllPoints()
+    self.leftHead:SetPoint("TOPLEFT", self.left, "TOPLEFT", 0, 0)
+    local ly = 20
+    for i, e in ipairs(list) do
+      local c = self.tiles[i] or cardTile(self.left)
+      self.tiles[i] = c
+      c:Fill(e, goal)
+      c:ClearAllPoints()
+      c:SetPoint("TOPLEFT", self.left, "TOPLEFT", 0, -ly)
+      c:Show()
+      ly = ly + c:GetHeight() + 8
+    end
+    for i = #list + 1, #self.tiles do self.tiles[i]:Hide() end
+    if #list == 0 then
+      self.leftEmpty:SetText("No build for this goal yet for your class. Try your own points in the trees.")
+      self.leftEmpty:ClearAllPoints()
+      self.leftEmpty:SetPoint("TOPLEFT", self.left, "TOPLEFT", 0, -ly)
+      self.leftEmpty:Show()
+      ly = ly + height(self.leftEmpty) + 8
+    else
+      self.leftEmpty:Hide()
+    end
+    local leftH = ly
+
+    -- ---- info (right)
+    local S, Sim = ns.TalentStats, ns.TalentSim
+    local stats = ""
+    if S and model then
+      local lines = {}
+      for _, s in ipairs(S.Now(model, r)) do
+        local d = s.with - s.now
+        lines[#lines + 1] = string.format("%s  %s%s", s.label, tostring(s.with),
+          d ~= 0 and string.format("  |cff%s(%s%s)|r", d > 0 and "7fff7f" or "ff7f7f", d > 0 and "+" or "", tostring(d)) or "")
+      end
+      stats = table.concat(lines, "\n")
+    end
+    local function place(w)
+      local ry = 0
+      local function put(key, body)
+        local b = self.blocks[key]
+        local h = b:Set(body, w)
+        b:ClearAllPoints()
+        b:SetPoint("TOPLEFT", self.right, "TOPLEFT", 0, -ry)
+        ry = ry + h
+      end
+      put("msg", M.msg and ("|cffff9f7f" .. M.msg .. "|r") or nil)
+      put("diff", model and M:DiffText() or nil)
+      put("gives", S and S:Report() or nil)
+      put("stats", stats)
+      put("does", Sim and Sim:Report() or nil)
+      local bw = math.floor((w - 8) / 2)
+      for i, b in ipairs(self.btns) do
+        b:SetWidth(bw)
+        b:ClearAllPoints()
+        b:SetPoint("TOPLEFT", self.right, "TOPLEFT", ((i - 1) % 2) * (bw + 8), -(ry + math.floor((i - 1) / 2) * 30))
+      end
+      return ry + 60
+    end
+
+    -- ---- arrange the columns for the width there is
+    local top = U.TOP
+    local rightW = U.RIGHT
+    self.left:ClearAllPoints()
+    self.mid:ClearAllPoints()
+    self.right:ClearAllPoints()
+    local total
+    if W >= U.LEFT + U.GAP + midW + U.GAP + U.RIGHT then
+      -- three columns; the right one takes what's left
+      rightW = W - U.LEFT - midW - 2 * U.GAP
+      self.left:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -top)
+      self.mid:SetPoint("TOPLEFT", self, "TOPLEFT", U.LEFT + U.GAP, -top)
+      self.right:SetPoint("TOPLEFT", self, "TOPLEFT", U.LEFT + U.GAP + midW + U.GAP, -top)
+      local rightH = place(rightW)
+      total = top + math.max(leftH, midH, rightH)
+    elseif W >= U.LEFT + U.GAP + midW then
+      -- builds beside the trees, the rest under the trees
+      self.left:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -top)
+      self.mid:SetPoint("TOPLEFT", self, "TOPLEFT", U.LEFT + U.GAP, -top)
+      rightW = W - U.LEFT - U.GAP
+      self.right:SetPoint("TOPLEFT", self, "TOPLEFT", U.LEFT + U.GAP, -(top + midH + 8))
+      local rightH = place(rightW)
+      total = top + math.max(leftH, midH + 8 + rightH)
+    else
+      -- stacked: builds, trees, the rest
+      self.left:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -top)
+      self.mid:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -(top + leftH + 8))
+      rightW = math.max(U.RIGHT, math.min(W, midW))
+      self.right:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -(top + leftH + 8 + midH + 8))
+      local rightH = place(rightW)
+      total = top + leftH + 8 + midH + 8 + rightH
+    end
+    self.left:SetSize(U.LEFT, leftH)
+    self.mid:SetSize(midW, midH)
+    self.right:SetSize(rightW, 10)
+    self.h = math.ceil(total + 10)
+    self:SetHeight(self.h)
+  end
+
+  function f:Refresh() self:Draw() end
+  f:SetScript("OnSizeChanged", function(self, w)
+    if math.abs((self.lastW or 0) - (w or 0)) >= 2 then
+      self.lastW = w
+      ns.Safe("talentlab:draw", self.Draw, self)
+      if M.page and M.page.form and M.page.form.Layout then M.page.form:Layout() end
+    end
+  end)
+  f:Draw()
+  return f
+end
+
+ns.Hub:AddTab("talentlab", "Talents", function(p)
+  M.page = p
+  ns.UI:FormPage(p, {
+    { "custom", function(host) return M:Studio(host) end, 600, stretch = true },
   })
 end)
