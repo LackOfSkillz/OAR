@@ -153,7 +153,7 @@ function M:ObserveTrainer()
     if ok and type(name) == "string" and name ~= "" and reqLevel and reqLevel >= 1 and reqLevel <= 80 then
       local key = name:lower() .. ":" .. (rank or ("level " .. reqLevel))
       saved[key] = { name = name, rank = rank, level = reqLevel, status = status, cost = copper, icon = icon,
-        observedAt = time(), source = "your class trainer" }
+        observedAt = time(), source = "your class trainer", charKey = ns.db.key }
       n = n + 1
     end
   end
@@ -167,14 +167,34 @@ end
 -- The class page's lists from what the trainer showed: ready now (your level
 -- or lower, not learned), coming next (the next two levels with spells), the
 -- next level, and whether anything was observed at all.
+-- Has this character learned a trainer row? The list is kept for the class
+-- (every druid sees the same trainer), but what one character learned isn't
+-- another's (Gary, 2026-11-23: Sheer had learned everything to 10 and the
+-- page said 20 spells to learn, from a visit before she learned them). The
+-- spellbook decides: a spell you know counts as learned, unless the book
+-- shows a lower rank than the row.
+function M:Learned(r)
+  local k = self:Known(r.name)
+  if not k then return r.status == "used" and r.charKey == ns.db.key end
+  local want = rankOf(r.rank)
+  if want and k.rank and k.rank < want then return false end
+  return true
+end
+
 function M:TrainerLists(level)
   level = tonumber(level) or tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
   local now, later = {}, {}
   local any = false
+  -- the same spell saved with and without its rank (two client readings): keep the ranked one
+  local ranked = {}
   for _, r in pairs(self:TrainingStore()) do
-    if type(r) == "table" and r.name and r.level and not M.STATUS[tostring(r.rank or "")] then
+    if type(r) == "table" and r.name and r.level and r.rank then ranked[r.name:lower() .. ":" .. r.level] = true end
+  end
+  for _, r in pairs(self:TrainingStore()) do
+    if type(r) == "table" and r.name and r.level and not M.STATUS[tostring(r.rank or "")]
+      and not (not r.rank and ranked[r.name:lower() .. ":" .. r.level]) then
       any = true
-      local learned = r.status == "used"
+      local learned = self:Learned(r)
       local label = r.rank and (r.name .. " (" .. r.rank .. ")") or r.name
       local e = { name = label, level = r.level, icon = r.icon, cost = r.cost }
       if not learned and r.level <= level then now[#now + 1] = e
@@ -196,7 +216,7 @@ function M:TrainingAt(level)
   level = tonumber(level) or tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
   local rows = {}
   for _, r in pairs(self:TrainingStore()) do
-    if r.level == level and not self:Known(r.name) then rows[#rows + 1] = r end
+    if r.level == level and not self:Learned(r) then rows[#rows + 1] = r end
   end
   table.sort(rows, function(a, b) return a.name < b.name end)
   return rows

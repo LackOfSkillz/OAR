@@ -101,6 +101,16 @@ local function itemIcon(id)
   return id and (C.Call("C_Item.GetItemIconByID", id) or C.Call("GetItemIcon", id)) or nil
 end
 
+-- Unspent talent points: the talent reader first (Forever's C_Traits; the old
+-- UnitCharacterPoints said 0 while the game said "unspent talent points").
+local function classTalentPoints()
+  local T = ns.Talents
+  local ok, state = pcall(function() return T and T.Read and T:Read() end)
+  local n = ok and type(state) == "table" and tonumber(state.unspent)
+  if n then return n end
+  return tonumber(C.Readable(C.Call("UnitCharacterPoints", "player"))) or 0
+end
+
 ns.Hub:AddTab("home", "Home", function(p)
   local cls = ns.PlayerClass and ns.PlayerClass() or ""
   -- ---------------------------------------------------------------- hero
@@ -444,7 +454,7 @@ ns.Hub:AddTab("home", "Home", function(p)
     local free, total = 0, 0
     if IB and IB.Bags then free, total = IB.Bags() end
     local dura = IB and IB.Durability and select(2, IB.Durability())
-    local pts = tonumber(C.Readable(C.Call("UnitCharacterPoints", "player"))) or 0
+    local pts = classTalentPoints()
     local G = {
       { "Bag space", string.format("%d free", free or 0), (free or 0) < 4 and "bad" or "text", total and total > 0 and ("of " .. total) or "" },
       { "Gear repair", dura and (math.floor(dura + 0.5) .. "%") or "-", dura and dura < 30 and "bad" or "text", dura and dura < 30 and "repair soon" or "lowest piece" },
@@ -775,15 +785,40 @@ local function classRows(cls, page)
   r({ "stats", function()
     local now, _, nextLevel = trainerSpells(cls)
     local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
-    local pts = tonumber(C.Readable(C.Call("UnitCharacterPoints", "player"))) or 0
+    local pts = classTalentPoints()
     return {
       { cap = "Level", value = tostring(level), color = "text" },
       { cap = "Spells to learn now", value = tostring(#now), color = #now > 0 and "good" or "text",
         note = #now > 0 and "visit your class trainer" or "you're up to date" },
       { cap = "Next new spell", value = nextLevel and ("level " .. nextLevel) or "none", color = "gold" },
       { cap = "Talent points", value = level < 10 and "at 10" or tostring(pts), color = pts > 0 and "good" or "text",
-        note = pts > 0 and "press N to spend them" or nil },
+        note = pts > 0 and "spend them in the talent window (N)" or nil },
     }
+  end })
+  -- what to do now, in order, in plain words (Gary, 2026-11-23: "not 8th grade ready")
+  r({ "header", "Do this now" })
+  r({ "cards", function()
+    local now = trainerSpells(cls)
+    local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+    local pts = level >= 10 and classTalentPoints() or 0
+    local out = {}
+    local function step(t) t.title = string.format("%d. %s", #out + 1, t.title) out[#out + 1] = t end
+    if #now > 0 then
+      step({ title = string.format("Learn %d new spell%s", #now, #now == 1 and "" or "s"), highlight = true,
+        pic = "Interface\\Icons\\INV_Misc_Book_09", line = "Go to your class trainer in a town and buy them.",
+        actions = { { "Arrow to trainer", function() ns.Slash:Run("near class") end, "Points the gold arrow at your nearest class trainer." } } })
+    end
+    if pts > 0 then
+      step({ title = string.format("Spend %d talent point%s", pts, pts == 1 and "" or "s"), highlight = #out == 0,
+        pic = "Interface\\Icons\\Ability_Marksmanship", line = "The Talents page shows the best builds for you and where your next point goes.",
+        actions = { { "Open Talents", function() ns.Hub:ShowTab("talentlab") end, "Opens the Talents page." } } })
+    end
+    if ns.HunterFight and ns.HunterFight:Supported() then
+      step({ title = "Fight with your keys", pic = "Interface\\Icons\\Ability_DualWield",
+        line = "Your Fight, Pull and Heal keys are on the Macros page: drag them to your action bar once. Outrider keeps them up to date.",
+        actions = { { "Open Macros", function() ns.Hub.frame.tabBar:Select("macros") end, "Opens the Macros page." } } })
+    end
+    return out
   end })
   r({ "header", "Spells from your trainer" })
   r({ "cards", function()
@@ -846,48 +881,29 @@ local function classRows(cls, page)
       r({ "check", "Keep my own bar when players are assigned", function() return set("HealPanel").withSelf end,
         function(on) ns.Slash:Run("heal self " .. onoff(on)) end })
       r({ "note", "Assigned to you: click a name (out of combat). With anyone assigned, only they get bars." })
-      r({ "list", 6, function(row, name)
+      r({ "list", 3, function(row, name)
         row.text:SetText((HP:IsAssigned(name) and "|cffffd100[assigned]|r " or "[ ] ") .. name)
       end, function(name)
         HP:Assign(name, not HP:IsAssigned(name))
         if page and page.Refresh then page:Refresh() end
-      end, function() return HP:Members() end })
+      end, function() return HP:Members() end, empty = "Join a group and the players show here." })
     end
   end
-  -- talent advisor (Modules/Talents.lua)
-  local Tal = ns.Talents
-  if Tal and #Tal.Builds(cls) == 0 then
-    -- no sourced build for this class yet: one honest line, no empty plan box
-    -- and no switches for rings that never show (tour 2026-11-19, Rogue page)
-    r({ "header", "Talents" })
-    r({ "note", "From level 10 you get a talent point each level: press N to open the talent window and spend it. Outrider has no tested levelling build for your class yet, so it doesn't suggest one (it never makes builds up)." })
-  elseif Tal then
-    r({ "header", "Talents" })
-    r({ "note", function()
-      local b = Tal:Build()
-      if not b then return "No levelling build for your class yet." end
-      return string.format("%s. %s\n|cff888888%s, from %s; not yet checked in game.|r", Tal:Summary(), b.note or "", b.name, b.source)
-    end })
-    r({ "note", "The plan, from your next point: gold = spend now, grey = later. In the talent window the gold rings show where." })
-    r({ "list", 8, function(row, st)
-      local tag = st.next and "|cffffd100now|r" or (st.locked and "|cffff6060row not open|r") or (st.missing and "|cffff6060not on this client|r") or ("level " .. st.level)
-      row.text:SetText(string.format("%d. %s  %s", st.level, Tal.StepText(st), tag))
-    end, nil, function()
-      local out = {}
-      for _, st in ipairs((Tal:Current()).steps) do if not st.done then out[#out + 1] = st end end
-      return out
-    end })
-    local builds = Tal.Builds(cls)
-    if #builds > 1 then
-      local btns = {}
-      for _, bd in ipairs(builds) do btns[#btns + 1] = { bd.name, function() ns.Slash:Run("talents build " .. bd.id) end } end
-      r({ "buttons", btns })
-    end
-    r({ "check", "Gold rings in the talent window", function() return set("Talents").highlight end,
-      function(on) ns.Slash:Run("talents " .. onoff(on)) end })
-    r({ "check", "Tell me in chat when a point is ready", function() return set("Talents").notify end,
-      function(on) set("Talents").notify = on end })
-  end
+  -- talents: the Talents page has the builds (Modules/TalentLab.lua, 2026-11-23)
+  r({ "header", "Talents" })
+  r({ "note", function()
+    local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
+    if level < 10 then return "Your first talent point comes at level 10." end
+    local pts = classTalentPoints()
+    local T = ns.Talents
+    local b = T and T:Build()
+    local head = pts > 0 and string.format("You have %d talent point%s to spend.", pts, pts == 1 and "" or "s") or "No talent point to spend right now."
+    if b and T then return head .. " " .. T:Summary() .. "\n|cff888888Following " .. tostring(b.name) .. " (not checked in game yet).|r" end
+    return head .. " Pick a build on the Talents page and press Follow: the game's talent window then rings your next points."
+  end })
+  r({ "buttons", { { "Open Talents", function() ns.Hub:ShowTab("talentlab") end } } })
+  r({ "check", "Gold rings in the talent window", function() return set("Talents").highlight end,
+    function(on) ns.Slash:Run("talents " .. onoff(on)) end })
   r({ "header", "More keys for your class" })
   r({ "note", "The Macros page has every ready-made key for your class, by level: Stop, Save, Burst, Recover and Team, and one-spell keys. Drag them to your bar." })
   r({ "buttons", { { "Open Macros", function() ns.Hub.frame.tabBar:Select("macros") end } } })

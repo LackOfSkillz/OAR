@@ -65,7 +65,10 @@ function UI:Form(parent, rows)
     if e.table then e.table:SetItems(e.table.raw) end
   end
   local function measure(e)
-    if e.f and e.f.LayoutHeight and not e.dynamic then return e.f:LayoutHeight() end
+    if e.f and e.f.LayoutHeight and not e.dynamic then
+      local h = e.f:LayoutHeight()
+      if type(h) == "number" then return h end
+    end
     if e.dynamic then return e.dynamic:LayoutHeight() + (e.dynamic:LayoutHeight() > 0 and 6 or 0) end
     if e.text then
       local txt = e.text.GetText and e.text:GetText()

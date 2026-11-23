@@ -33,4 +33,22 @@ T.describe("spellbook", function()
     game:slash("spells arcane")
     T.contains(game:chatText(), "Arcane Shot rank 3 (14282)")
   end)
+
+  T.it("spells to learn come from this character's spellbook, not another visit, and aren't counted twice", function()
+    local game, ns = session({ level = 10 })
+    local store = ns.Spellbook:TrainingStore()
+    -- Gary, 2026-11-23: a visit before Sheer learned them, saved both with and without the rank
+    store["arcane shot:Rank 1"] = { name = "Arcane Shot", rank = "Rank 1", level = 6, status = "available" }
+    store["arcane shot:level 6"] = { name = "Arcane Shot", level = 6, status = "available" }
+    store["multi-shot:Rank 1"] = { name = "Multi-Shot", rank = "Rank 1", level = 10, status = "available" }
+    store["serpent sting:Rank 9"] = { name = "Serpent Sting", rank = "Rank 9", level = 10, status = "available" }
+    local now = ns.Spellbook:TrainerLists(10)
+    local names = {}
+    for _, e in ipairs(now) do names[#names + 1] = e.name end
+    local text = table.concat(names, ", ")
+    T.ok(not text:find("Arcane Shot", 1, true), "known: learned, whatever an old visit said: " .. text)
+    T.contains(text, "Multi-Shot (Rank 1)")
+    T.contains(text, "Serpent Sting (Rank 9)", "a higher rank than your book has is still to learn")
+    T.eq(#now, 2, text)
+  end)
 end)

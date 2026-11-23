@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Talents page, one screen:** builds on the left, your three trees in the middle with the links between talents, what the build gives on the right. Forever's single wide talent tree is split into its three trees, so all three show.
+- **Class page, every class:** "Spells to learn" checks this character's spellbook (it showed 20 spells Sheer had already learned, each twice); talent points are read from the game's talent system (it said 0); a "Do this now" list at the top; the Talents section points to the Talents page; heal bars take less room.
 - **Talents page** (Class, Talents): your three trees read from the game, 57 researched builds for every class (levelling, max damage, max healing, tank, PvP) with where each came from, a sandbox with the game's rules and a level slider, what to learn or take off from your build, and share codes.
   - What a build gives, added up from the talents' own text (crit, hit, stats, damage, healing), at levels 20 to 60, and your stats with it.
   - An estimate of damage or healing per second for each build from your spells' tooltips (toughness for tanks); the cards are ranked and the best is marked "Outrider's pick for you".
