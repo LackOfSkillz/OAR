@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (after 0.4.1)
+## 0.4.2 (2026-11-23)
 
 - **Deals in plain words:** each Vendor flip and Resale card says what you pay, what you get back and what you keep ("Pay 2s each here > a vendor gives you 5s each > you keep 30s"). Hover a card for the steps, 1-2-3.
 - **Deals fit your gold:** what you can afford comes first, sized to what you can pay for (6 of a stack of 10, say), and Buy takes that amount. What you can't afford yet is at the bottom, grayed out, with how much more you need.
