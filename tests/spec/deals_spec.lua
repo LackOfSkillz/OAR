@@ -195,4 +195,35 @@ T.describe("auction deals", function()
     T.ok(not cards[1].dim)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("a market that dropped isn't a resale deal, and part of a cheap listing never is (Thorium arrows, 2026-11-23)", function()
+    local function arrows(replicate, money)
+      local game = mock.new({ now = 1794700000 })
+      game.money = money
+      game.items = { [18042] = { name = "Thorium Headed Arrow", sell = 10, maxStack = 200 } }
+      game.commodities = { [18042] = true }
+      game.replicate = replicate
+      local ns = game:loadAddon()
+      game:login()
+      game:fire("AUCTION_HOUSE_SHOW")
+      local today = math.floor(game.env.time() / 86400)
+      ns.Prices.db[18042] = { { today - 2, 80 }, { today - 1, 79 } }
+      ns.Prices:FullScan()
+      game:fire("REPLICATE_ITEM_LIST_UPDATE")
+      game:advance(1)
+      return game, ns
+    end
+    -- the whole market at 35c: two sellers at 35c each
+    local _, ns = arrows({ { 18042, 3400, 119000 }, { 18042, 1600, 56000 } }, 1000000)
+    T.eq(#ns.Deals:Resale(), 0, "the next seller asks 35c too: nothing to sell again for more")
+    -- one cheap listing, the next seller at 79c: a real deal when you buy it all...
+    local _, ns2 = arrows({ { 18042, 200, 7000 }, { 18042, 500, 39500 } }, 1000000)
+    local list = ns2.Deals:Resale()
+    T.eq(#list, 1)
+    T.eq(list[1].sellUnit, 78, "just under the next seller")
+    -- ...but not when your gold only covers part of it: the rest still sells at 35c
+    local _, ns3 = arrows({ { 18042, 200, 7000 }, { 18042, 500, 39500 } }, 3185)
+    local cards = ns3.Deals:View("resale")
+    T.eq(#cards, 0, "91 of 200 at 35c would have to compete with the other 109")
+  end)
 end)

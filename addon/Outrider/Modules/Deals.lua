@@ -157,14 +157,22 @@ function M:ComputeResale()
       do
         local qty = l[2]
         local deposit = H and H.Deposit and (H:Deposit(itemID, qty) or 0) or 0
-        local back = math.floor(stats.median * qty * (1 - M.CUT)) - deposit
+        -- What it really sells for again: no more than just under the cheapest
+        -- seller left once you've bought this listing (Gary, 2026-11-23:
+        -- Thorium Headed Arrows "usually" 79c were 35c today with 3,400 listed
+        -- at 35c; the market had dropped, and a partial buy could only lose).
+        local nextPrice = list[2] and list[2][1] or nil
+        local sellUnit = stats.median
+        if nextPrice and nextPrice - 1 < sellUnit then sellUnit = nextPrice - 1 end
+        local back = math.floor(sellUnit * qty * (1 - M.CUT)) - deposit
         local cost = l[1] * qty
         local profit = back - cost
         -- a vendor flip already covers what sells to a vendor for more
         if profit >= min and not (type(i.sellPrice) == "number" and i.sellPrice > l[1]) then
           out[#out + 1] = { itemID = itemID, name = i.name, qty = qty, cost = cost, unit = l[1], usual = math.floor(stats.median),
             days = stats.count, profit = profit, vendor = type(i.sellPrice) == "number" and i.sellPrice or nil,
-          sellFor = math.floor(stats.median * qty), cut = math.floor(stats.median * qty * M.CUT), deposit = deposit, commodity = M.IsCommodity(itemID), maxUnit = l[1], kind = "resale" }
+          sellFor = math.floor(sellUnit * qty), sellUnit = sellUnit, nextPrice = nextPrice,
+          cut = math.floor(sellUnit * qty * M.CUT), deposit = deposit, commodity = M.IsCommodity(itemID), maxUnit = l[1], kind = "resale" }
         end
       end
     end
@@ -215,7 +223,9 @@ function M.ResaleSteps(d)
   local out = {
     "How this makes money (not a sure thing):",
     string.format("1. Buy it here for %s.", money(d.cost)),
-    string.format("2. Post it on the auction house again for about %s. That's its usual price (seen on %d days).", money(d.sellFor or d.usual * d.qty), d.days),
+    (d.sellUnit and d.usual and d.sellUnit < d.usual)
+      and string.format("2. Post it on the auction house again for about %s: just under the cheapest other seller (%s each). Its usual price is %s.", money(d.sellFor), money(d.nextPrice or d.sellUnit), money(d.usual))
+      or string.format("2. Post it on the auction house again for about %s. That's its usual price (seen on %d days).", money(d.sellFor or d.usual * d.qty), d.days),
     string.format("3. When someone buys it, the auction house keeps %s (5%%)%s.", money(d.cut or 0),
       (d.deposit and d.deposit > 0) and (" and the posting fee of " .. money(d.deposit)) or ""),
     string.format("4. You keep about %s.", money(d.profit)),
@@ -255,6 +265,13 @@ function M.Fit(d, gold)
     local share = qty / d.qty
     f.deposit = math.floor((d.deposit or 0) * share)
     f.sellFor = math.floor((d.sellFor or d.usual * d.qty) * share)
+    -- part of a listing: the rest stays for sale at this price, so yours
+    -- can't sell for more (usually a loss: it drops out of the list)
+    if qty < d.qty then
+      f.sellUnit = d.unit - 1
+      f.sellFor = f.sellUnit * qty
+      f.nextPrice = d.unit
+    end
     f.cut = math.floor(f.sellFor * M.CUT)
     f.profit = f.sellFor - f.cut - f.deposit - cost
   end
