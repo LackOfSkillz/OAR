@@ -403,7 +403,47 @@ function M:Check()
 end
 
 -- The whole tree, once per session, so build names can be checked against it.
+-- What the client's talent functions hand back, step by step, once per
+-- session (2026-11-23: no talent tree was ever logged on Forever, though the
+-- probe found C_ClassTalents and C_Traits). Read only.
+function M:Diagnose()
+  if self.diagnosed then return end
+  self.diagnosed = true
+  local function show(v)
+    if type(v) ~= "table" then return tostring(C.Readable(v)) end
+    local parts, n = {}, 0
+    for k, x in pairs(v) do
+      n = n + 1
+      if n > 14 then parts[#parts + 1] = "..." break end
+      parts[#parts + 1] = tostring(k) .. "=" .. (type(x) == "table" and ("{" .. (#x > 0 and (#x .. " items") or "table") .. "}") or tostring(C.Readable(x)))
+    end
+    table.sort(parts)
+    return "{" .. table.concat(parts, " ") .. "}"
+  end
+  local config = C.Call("C_ClassTalents.GetActiveConfigID")
+  self:Info("talent probe: active config %s", show(config))
+  local cinfo = type(config) == "number" and C.Call("C_Traits.GetConfigInfo", config)
+  self:Info("talent probe: config info %s", show(cinfo))
+  local trees = type(cinfo) == "table" and cinfo.treeIDs or {}
+  for t, treeID in ipairs(trees) do
+    local nodes = C.Call("C_Traits.GetTreeNodes", treeID) or {}
+    self:Info("talent probe: tree %s has %d nodes; currency %s", tostring(treeID), #nodes, show(C.Call("C_Traits.GetTreeCurrencyInfo", config, treeID, false)))
+    for i = 1, math.min(3, #nodes) do
+      local node = C.Call("C_Traits.GetNodeInfo", config, nodes[i])
+      self:Info("talent probe: node %s %s", tostring(nodes[i]), show(node))
+      local entryID = type(node) == "table" and ((node.activeEntry and node.activeEntry.entryID) or (node.entryIDs and node.entryIDs[1]))
+      local entry = entryID and C.Call("C_Traits.GetEntryInfo", config, entryID)
+      self:Info("talent probe: entry %s %s", tostring(entryID), show(entry))
+      local def = type(entry) == "table" and entry.definitionID and C.Call("C_Traits.GetDefinitionInfo", entry.definitionID)
+      self:Info("talent probe: definition %s", show(def))
+    end
+    if t >= 4 then break end
+  end
+  self:Info("talent probe: classic tabs %s, specs %s", show(C.Call("GetNumTalentTabs")), show(C.Call("GetNumSpecializations")))
+end
+
 function M:LogTree()
+  if not self.treeLogged then ns.Safe("talents:diagnose", M.Diagnose, M) end
   local state = self:Read()
   if not state or self.treeLogged then return end
   self.treeLogged = true
