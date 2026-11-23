@@ -162,7 +162,7 @@ function M:ComputeResale()
         -- a vendor flip already covers what sells to a vendor for more
         if profit >= min and not (type(i.sellPrice) == "number" and i.sellPrice > l[1]) then
           out[#out + 1] = { itemID = itemID, name = i.name, qty = qty, cost = cost, unit = l[1], usual = math.floor(stats.median),
-            days = stats.count, profit = profit, commodity = M.IsCommodity(itemID), maxUnit = l[1], kind = "resale" }
+            days = stats.count, profit = profit, vendor = type(i.sellPrice) == "number" and i.sellPrice or nil, commodity = M.IsCommodity(itemID), maxUnit = l[1], kind = "resale" }
         end
       end
     end
@@ -208,10 +208,12 @@ function M:View(view)
   local resale, loadingR = self:Resale()
   for _, d in ipairs(resale) do
     cards[#cards + 1] = { itemID = d.itemID, item = { itemID = d.itemID }, title = d.name .. (d.qty > 1 and (" x" .. d.qty) or ""),
-      sub = string.format("Usually %s (%d days seen), now %s: resell after the 5%% cut and deposit", money(d.usual), d.days, money(d.unit)),
+      -- "resell" read as "sell to a vendor" (Gary, 2026-11-23): say it's re-listed here
+      sub = string.format("Buy at %s, sell again here at the usual %s (%d days)%s", money(d.unit), money(d.usual), d.days,
+        (d.vendor and d.vendor > 0) and (": a vendor pays only " .. money(d.vendor)) or ""),
       pill = "|cffffd100+" .. money(d.profit) .. "|r", price = d.cost, action = M.Action(d) }
   end
-  local s = #cards > 0 and string.format("Not sure: the profit comes once it sells again at its usual price. From the price scan %s.", age)
+  local s = #cards > 0 and string.format("Buy cheap here, then post it here again at its usual price (not for a vendor). Not sure: the profit comes once it sells. Price scan %s.", age)
     or string.format("Nothing listed well under its usual price right now (price scan %s; prices need %d days of history).", age, M.MIN_DAYS)
   if (loadingR or 0) > 0 then s = s .. string.format("  |cff8f96a6%d names still loading from the game.|r", loadingR) end
   return cards, s
