@@ -67,6 +67,7 @@ Hub.SUBS = {
   waypoints = { { "waypoints", "Places and arrow" }, { "map", "Map pins" } },
   quests    = { { "quests", "Quest log" }, { "questsnear", "Near me" }, { "questchains", "Chains" }, { "journal", "Diary" } },
   rares     = { { "rares", "Rares" }, { "rarealerts", "Watch and alerts" } },
+  class     = { { "class", "Your class" }, { "talentlab", "Talents" } },
   gear      = { { "gear", "Wearing and upgrades" }, { "gearsets", "Sets and scoring" } },
   alts      = { { "alts", "Characters" }, { "characters", "Copy settings" } },
   money     = { { "money", "Earn" }, { "forecasts", "Forecasts" } },

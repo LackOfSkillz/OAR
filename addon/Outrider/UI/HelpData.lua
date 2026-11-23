@@ -157,6 +157,7 @@ ns.HelpData = {
   } },
 
   { icon = "INV_Letter_09", "Sharing (all off by default)", "Only with Outrider users in your guild or party, only what you switch on.", {
+    { "Talent builds", "Class, Talents tab. Pick a goal (Levelling, Max damage, Max healing, Tank, PvP) to see the best builds for your class from Forever guides, each with its split and where it came from. Try it puts one in the three trees below; click a talent to add a point, right-click to take one off (the game's rules apply: 5 points a row, links maxed first, points for your level). Slide the level to see the build as you grow. Under the trees, what to learn and what a respec would take off from your build. Copy code and Load a code share builds (/ride talentcode). You still spend points yourself in the game's talent window. Builds are not checked in game yet.", page = "talentlab", cmd = "talentcode" },
     { "Discord", "Join the Outrider Discord to talk with other players, report bugs and hear about new versions: Sharing page, Copy Discord link (or /ride discord), then Ctrl+C and paste it in your web browser.", page = "sharing", cmd = "discord" },
     { "Rare sightings", "/ride share rares guild|party on: your rare sightings go to them and theirs come to you.", page = "sharing" },
     { "Gathering spots", "/ride share nodes on: herb, ore and fishing spots you find.", page = "sharing" },

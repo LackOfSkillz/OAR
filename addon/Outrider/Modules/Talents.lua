@@ -91,10 +91,17 @@ function M:ReadTraits()
         local name = type(def) == "table" and C.Readable(def.overrideName)
         if (type(name) ~= "string" or name == "") and spell then name = C.SpellName(spell) end
         if type(name) == "string" and name ~= "" then
+          -- links to the talents this one opens (the arrows in the window)
+          local opens = {}
+          for _, edge in ipairs(type(node.visibleEdges) == "table" and node.visibleEdges or {}) do
+            if type(edge) == "table" and edge.targetNode then opens[#opens + 1] = edge.targetNode end
+          end
+          local icon = type(def) == "table" and (def.overrideIcon or (spell and C.Call("C_Spell.GetSpellTexture", spell)))
           local e = { name = name, tab = t, index = i, node = nodeID, tier = nil, column = nil,
             rank = tonumber(C.Readable(node.currentRank)) or 0, max = tonumber(node.maxRanks) or 1,
             open = node.canPurchaseRank == true or (node.isAvailable == true and node.meetsEdgeRequirements ~= false),
-            x = node.posX, y = node.posY }
+            x = tonumber(node.posX), y = tonumber(node.posY), spell = spell, icon = icon, opens = opens,
+            sub = node.subTreeID }
           tab.talents[#tab.talents + 1] = e
           tab.spent = tab.spent + e.rank
           state.byName[name] = e

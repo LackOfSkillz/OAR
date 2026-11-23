@@ -27,6 +27,8 @@ Data.SCHEMAS = {
   dungeon = { name = "string", min = "number", max = "number", source = "string", verified = "boolean" },
   money  = { id = "string", title = "string", minLevel = "number", maxLevel = "number", source = "string", verified = "boolean" },
   talentbuild = { id = "string", class = "string", name = "string", source = "string", verified = "boolean", order = "table" },
+  -- talent build cards per goal (Data/TalentCards.lua; Modules/TalentLab.lua)
+  talentcard = { id = "string", class = "string", goal = "string", name = "string", points = "table", source = "string", verified = "boolean" },
   -- leveling knowledge base (Data/Leveling.lua): zone ranges and guide places
   zoneguide = { name = "string", source = "string", verified = "boolean" },
   place  = { id = "string", kind = "string", zone = "string", x = "number", y = "number", source = "string", verified = "boolean" },
@@ -34,7 +36,7 @@ Data.SCHEMAS = {
 
 Data.CONFIDENCE = { verified = true, community = true, inferred = true, unknown = true }
 
-Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id", dungeon = "name", talentbuild = "id", zoneguide = "name", place = "id" }
+Data.KEY = { rare = "npcID", poi = "id", macro = "id", beast = "family", gear = "itemID", recipe = "spellID", herb = "name", link = "id", money = "id", dungeon = "name", talentbuild = "id", talentcard = "id", zoneguide = "name", place = "id" }
 
 function Data:Validate(kind, entry)
   local schema = self.SCHEMAS[kind]

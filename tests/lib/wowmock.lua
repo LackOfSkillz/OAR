@@ -884,11 +884,17 @@ function M.new(opts)
     end,
     GetNodeInfo = function(_, id)
       local n = trNode(id)
-      if n then return { ID = id, currentRank = n.rank or 0, maxRanks = n.max, entryIDs = { id * 10 }, isVisible = true,
-        canPurchaseRank = n.open, isAvailable = n.open, posX = 0, posY = 0 } end
+      if n then
+        local edges = {}
+        for _, t in ipairs(n.opens or {}) do edges[#edges + 1] = { targetNode = t } end
+        return { ID = id, currentRank = n.rank or 0, maxRanks = n.max, entryIDs = { id * 10 }, isVisible = true,
+          canPurchaseRank = n.open, isAvailable = n.open, posX = n.x or 0, posY = n.y or 0, visibleEdges = edges,
+          subTreeID = n.sub }
+      end
     end,
     GetEntryInfo = function(_, entryID) return { definitionID = entryID * 10 } end,
-    GetDefinitionInfo = function(defID) local n = trNode(defID / 100) return n and { overrideName = n.name } end,
+    GetDefinitionInfo = function(defID) local n = trNode(defID / 100) return n and { overrideName = n.name, spellID = n.spell, overrideIcon = n.icon } end,
+    GetSubTreeInfo = function(_, sub) for _, tr in ipairs(game.traits or {}) do if tr.subNames and tr.subNames[sub] then return { name = tr.subNames[sub] } end end end,
   }
   -- pet: game.units.pet = { name, guid, level, family, hp, hpMax, focus, focusMax, auras = { {name, spellId} } }
   local function u(unit) return game.units and game.units[unit] end

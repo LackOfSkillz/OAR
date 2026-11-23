@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Talents page** (Class, Talents): your three trees read from the game, 57 researched builds for every class (levelling, max damage, max healing, tank, PvP) with where each came from, a sandbox with the game's rules and a level slider, what to learn or take off from your build, and share codes.
 - **Pull key** for druids, shamans, priests, mages and warlocks: your ranged weapon if you have one (a wand shoots), otherwise your class's opener (Moonfire, Lightning Bolt, Shadow Word: Pain, Frostbolt, Immolate). Warriors and rogues keep theirs.
 - **Fight keys swing too:** caster fight keys start your auto attack, so when the mob reaches you you hit it without clicking it again (not with a wand, which melee would stop).
 - **Druid Strike** waits for Bear or Cat Form; before that it was a copy of Fight.
