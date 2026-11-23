@@ -375,6 +375,14 @@ function M.Diff(model, from, to, order)
   return adds, removes
 end
 
+-- Points that differ between two sets (to learn plus to take off).
+function M.Changes(a, b)
+  local n = 0
+  for node, v in pairs(a) do n = n + math.abs(v - (b[node] or 0)) end
+  for node, v in pairs(b) do if a[node] == nil then n = n + v end end
+  return n
+end
+
 -- Points two sets share.
 function M.Shared(a, b)
   local n = 0
@@ -438,8 +446,8 @@ function M:Sandbox()
 end
 
 function M:ViewLevel()
-  local s = self:Settings()
-  return tonumber(s.level) or math.max(self:Level(), M.FIRST)
+  -- this session only: the page opens at your own level
+  return tonumber(self.viewLevel) or math.max(self:Level(), M.FIRST)
 end
 
 function M:Use(card)
@@ -592,8 +600,17 @@ function M:Follow(card)
   self:RefreshPage()
 end
 
+-- this page's text is a size bigger than the rest (Gary, 2026-11-23: "make
+-- the font just a wee bit bigger")
+M.BUMP = 2
+local function bigger(t, size)
+  local F = ns.Theme.font
+  if t and t.SetFont then t:SetFont(F.path, (F[size or "normal"] or F.normal) + M.BUMP, "") end
+  return t
+end
+
 local function text(parent, size, color, w)
-  local t = ns.UI.Text(parent, size or "normal", color or "text")
+  local t = bigger(ns.UI.Text(parent, size or "normal", color or "text"), size)
   t:SetJustifyH("LEFT")
   if t.SetJustifyV then t:SetJustifyV("TOP") end
   if w then t:SetWidth(w) end
@@ -614,10 +631,10 @@ local function talentButton(parent)
   b.icon:SetPoint("BOTTOMRIGHT", -2, 2)
   b.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
   b.badge = CreateFrame("Frame", nil, b, ns.Theme:BackdropTemplate())
-  b.badge:SetSize(28, 14)
+  b.badge:SetSize(32, 16)
   b.badge:SetPoint("BOTTOMRIGHT", 6, -5)
   ns.Theme:ApplyPanel(b.badge, "bg", "border")
-  b.rank = ns.UI.Text(b.badge, "small", "text")
+  b.rank = bigger(ns.UI.Text(b.badge, "small", "text"), "small")
   b.rank:SetPoint("CENTER", 0, 0)
   b:SetScript("OnClick", function(self, button)
     local r, model = M:Sandbox()
@@ -743,7 +760,7 @@ function M:Studio(host)
   f.top:SetPoint("TOPRIGHT", 0, 0)
   f.chips = {}
   f.level = ns.UI:Slider(f.top, "Level", M.FIRST, M.MAX_LEVEL, 1, function() return M:ViewLevel() end,
-    function(v) M:Settings().level = v if M.card then M:Use(M.card) end M:RefreshPage() end, "%d")
+    function(v) M.viewLevel = v if M.card then M:Use(M.card) end M:RefreshPage() end, "%d")
   f.level:SetWidth(220)
   f.nums = text(f.top, "normal", "text")
   f.purpose = text(f.top, "small", "body")
@@ -829,7 +846,7 @@ function M:Studio(host)
     self.level:SetPoint("TOPLEFT", self.top, "TOPLEFT", x + 14, 0)
     local mine = model and M.Mine(model) or {}
     if model then
-      local off = M.Total(mine) - M.Shared(mine, r)
+      local off = M.Changes(mine, r)
       self.nums:SetText(string.format("Points |cffffd100%d / %d|r    Split |cffffd100%s|r    From yours |cffffd100%s|r",
         M.Total(r), M.Points(level), M.Split(model, r), off == 0 and "same" or (off .. " to change")))
     else
