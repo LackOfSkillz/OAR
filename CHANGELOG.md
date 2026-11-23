@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 (2026-11-23)
 
 Fishing, as good as OneCast or better:
 
