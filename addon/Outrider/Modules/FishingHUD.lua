@@ -204,7 +204,12 @@ function M:TooHard(mapID)
   if not s then return nil end
   local casts, esc = s.casts[mapID] or 0, s.escapes[mapID] or 0
   if casts < M.HARD_CASTS or esc / casts < M.HARD_SHARE then return nil end
-  return string.format("%d of %d got away: your skill is too low for this water", esc, casts)
+  local text = string.format("%d of %d got away: your skill is too low for this water", esc, casts)
+  -- name the lure that would help, when one is in the bags and none is on
+  local F = ns.Fishing
+  local lure = F and F.LureInBags and not F:LureActive() and F:LureInBags()
+  if lure then text = text .. " (put on your " .. lure .. ")" end
+  return text
 end
 
 function M:Summary()
@@ -223,7 +228,10 @@ function M:Lines()
   local lure = self:LureLeft()
   local l1 = string.format("Fishing %s/%s%s   %s", tostring(skill or "?"), tostring(max or "?"),
     (type(mod) == "number" and mod > 0) and string.format(" (+%d)", mod) or "",
-    lure and string.format("Lure %d:%02d", math.floor(lure / 60), lure % 60) or "|cffff5050No lure|r")
+    lure and string.format("%sLure %d:%02d|r", lure < 60 and "|cffff8040" or "|cffffffff", math.floor(lure / 60), lure % 60) or "|cffff5050No lure|r")
+  -- lures left in the bags, red under 5 (OneCast's tackle-box nudge)
+  local stock = ns.FishingLog and ns.FishingLog.Lures and ns.FishingLog:Lures()
+  if stock then l1 = l1 .. string.format(stock.low and " |cffff5050(%d left)|r" or " (%d left)", stock.count) end
   local mapID = C.PlayerPosition("player")
   local here = self:Here(mapID)
   local parts = {}
@@ -236,11 +244,15 @@ function M:Lines()
   local l3
   if s and s.catches > 0 then
     local rate = s.secs >= 300 and math.floor(s.value / s.secs * 3600) or nil
-    l3 = string.format("%d fish · %s%s", s.catches, ns.Prices.Money(s.value), rate and (" (" .. ns.Prices.Money(rate) .. "/h)") or "")
+    local fishHr = s.secs >= 300 and math.floor(s.catches / s.secs * 3600 + 0.5) or nil
+    l3 = string.format("%d fish%s · %s%s", s.catches, fishHr and string.format(" (%d/h)", fishHr) or "",
+      ns.Prices.Money(s.value), rate and (" (" .. ns.Prices.Money(rate) .. "/h)") or "")
   else
     l3 = "No catches yet this session"
   end
-  return { l1, l2, l3, self:Goal() }
+  local tasty, need = ns.FishingLog and ns.FishingLog.Tastyfish and ns.FishingLog:Tastyfish()
+  local goal = tasty and string.format("Goal: Speckled Tastyfish %d/%d (Riggle Bassbait, Booty Bay)", tasty, need) or self:Goal()
+  return { l1, l2, l3, goal }
 end
 
 function M:Build()

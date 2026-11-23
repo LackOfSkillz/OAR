@@ -127,6 +127,7 @@ Modules\Ledger.lua
 Modules\Merchant.lua
 Modules\Fishing.lua
 Modules\FishingHUD.lua
+Modules\FishingLog.lua
 Modules\FishingGuide.lua
 Modules\LootLog.lua
 Modules\HerbHelper.lua

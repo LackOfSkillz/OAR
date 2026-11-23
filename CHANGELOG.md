@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+Fishing, as good as OneCast or better:
+
+- **This session, in full** (Fishing page):
+  - Fish, vendor gold and auction gold per hour.
+  - Caught of casts, how many got away, skill gained and per hour.
+  - Catches and time to your next point and to the cap.
+  - Fish per hour with a lure and without.
+  - The session survives a /reload and short breaks; **New session** saves it to your records.
+- **Caught this session:** every fish with its count, share, price and the spot where it bites best.
+- **Spots:** each part of the zone you fished, fish and gold per hour there, best first, with an arrow back.
+- **Wanted list:** "20 Stonescale Eel", counted from your bags, with an alert when you catch one (Want 20 on a catch, or `/ride fishwant`).
+- **Records:** best fish and gold per hour, most fish in one session, notable catches (green or better, and the first of each fish), past sessions.
+- **HUD:** fish per hour, lures left in your bags (red under 5), the lure timer turns orange in its last minute, the Speckled Tastyfish count while the Extravaganza is on, and "too hard here" names the lure in your bags that would help.
+- `/ride fishstats` prints the session.
+
 ## 0.4.0 (2026-11-22)
 
 Everything Auctionator does, inside Outrider's shopping window at the auction house:

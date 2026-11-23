@@ -93,6 +93,7 @@ local controls = {
   ["Alert when I mouse over a quest object"] = "A pop-up when your mouse passes over an object one of your quests needs (like Glinting Mud), and the spot is saved on your map.",
   ["Fishing gear on"] = "Puts on your best fishing pole and any gear with a Fishing bonus from your bags (out of combat).",
   ["Usual gear back"] = "Puts back what you wore before Fishing gear on.",
+  ["New session"] = "Saves this fishing session to your records and starts a fresh one.",
   ["Show the way"] = "Sets the arrow to this NPC.",
   ["Show the info bar"] = "A thin strip at the top of the screen: gold, bag space, durability, ammo, XP, clock and latency. Shift-drag it to move it.",
   ["Bar: gold"] = "Your gold on the info bar; hover for every character's gold.",

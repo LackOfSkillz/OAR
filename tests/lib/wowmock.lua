@@ -581,6 +581,8 @@ function M.new(opts)
   base.GetLootSlotLink = function(i) local l = game.loot[i] return l and ("|Hitem:" .. l.id .. "::|h[" .. l.name .. "]|h") end
   base.GetLootSlotInfo = function(i) local l = game.loot[i] return nil, l.name, l.count or 1 end
   base.IsFishingLoot = function() return game.fishingLoot or false end
+  base.GetSubZoneText = function() return game.subzone or "" end
+  base.GetZoneText = function() return game.zoneText or "" end
   -- inbox: game.inbox = { {money, cod, items = {itemID,...}} }
   base.GetInboxNumItems = function() return game.inbox and #game.inbox or 0 end
   base.GetInboxHeaderInfo = function(i)

@@ -377,6 +377,96 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       function(on) if ns.FishingHUD then ns.FishingHUD:Settings().show = on ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" },
     { "check", "Sound for rare catches", function() return ns.FishingHUD and ns.FishingHUD:Settings().rareSound end,
       function(on) if ns.FishingHUD then ns.FishingHUD:Settings().rareSound = on end end },
+    -- the session in full, spots, records and the wanted list (FishingLog;
+    -- Gary, 2026-11-23: as good as OneCast or better)
+    { "header", "This session", icon = "INV_Misc_PocketWatch_01" },
+    { "stats", function()
+      local L = ns.FishingLog
+      local st = L and L.Stats(L:Current())
+      local function hr(v, money) if not v then return "—" end return money and L.Money(v) or tostring(math.floor(v + 0.5)) end
+      return {
+        { cap = "fish/hr", value = hr(st and st.fishHr), color = "gold" },
+        { cap = "vendor/hr", value = hr(st and st.vendorHr, true) },
+        { cap = "auction/hr", value = hr(st and st.auctionHr, true), color = "good" },
+      }
+    end },
+    { "note", function()
+      local L = ns.FishingLog
+      if not L then return "" end
+      local lines = L:Report()
+      local stock = L:Lures()
+      if stock and stock.low then lines[#lines + 1] = string.format("|cffff7f7fOnly %d %s left: restock at a fishing supplies vendor.|r", stock.count, stock.name) end
+      local tasty, need = L:Tastyfish()
+      if tasty then lines[#lines + 1] = string.format("Speckled Tastyfish %d/%d for Riggle Bassbait in Booty Bay.", tasty, need) end
+      return table.concat(lines, "\n")
+    end },
+    { "buttons", { { "New session", function() if ns.FishingLog then ns.FishingLog:Reset() end p:Refresh() end, 130 } } },
+    { "header", "Caught this session", icon = "INV_Misc_Fish_02" },
+    { "cards", function()
+      local L = ns.FishingLog
+      local st = L and L.Stats(L:Current())
+      local out = {}
+      for i, f in ipairs(st and st.fish or {}) do
+        if i > 12 then break end
+        local where = L:WhereBites(f.id)[1]
+        out[#out + 1] = { pic = (C.ItemInfo(f.id) or {}).icon or "Interface\\Icons\\INV_Misc_Fish_02", title = f.name,
+          tags = { { "x" .. f.n, "gold" }, { math.floor(f.share * 100 + 0.5) .. "%", "plain" }, { L.Money(f.auction) .. " each", "plain" } },
+          line = where and ("Bites best at " .. where.name .. string.format(" (%d%% of catches there)", math.floor(where.share * 100 + 0.5))) or "",
+          actions = { { "Want 20", function() L:Want(f.id, 20, f.name) p:Refresh() end, "Adds 20 " .. f.name .. " to your wanted list (counted from your bags)." } } }
+      end
+      return out
+    end },
+    { "header", "Spots in this zone", icon = "INV_Misc_Map_01" },
+    { "cards", function()
+      local L = ns.FishingLog
+      local out = {}
+      for i, e in ipairs(L and L:SpotsHere() or {}) do
+        if i > 8 then break end
+        out[#out + 1] = { pic = "Interface\\Icons\\INV_Misc_Fish_14", title = e.name,
+          tags = { { e.fishHr and (math.floor(e.fishHr + 0.5) .. " fish/hr") or "new", e.ranked and "gold" or "plain" },
+            { e.goldHr and (L.Money(e.goldHr) .. "/hr") or "", "plain" }, { e.catches .. " of " .. e.casts .. " casts", "plain" } },
+          line = e.ranked and "" or "A few more casts here before it's ranked.",
+          actions = { { "Show the way", function() if not L:GoSpot(e.spot) then ns.Print("no position saved for %s", e.name) end end, "Sets the arrow to where you fished at " .. e.name .. "." } } }
+      end
+      return out
+    end },
+    { "header", "Wanted list", icon = "INV_Scroll_03" },
+    { "cards", function()
+      local L = ns.FishingLog
+      local out = {}
+      for _, w in ipairs(L and L:Wanted() or {}) do
+        out[#out + 1] = { pic = (C.ItemInfo(w.id) or {}).icon or "Interface\\Icons\\INV_Misc_Fish_02", title = w.name,
+          tags = { { math.min(w.have, w.want) .. "/" .. w.want, w.done and "good" or "gold" } },
+          line = w.done and "Done." or "Counted from your bags; an alert pops when you catch one.",
+          actions = { { "Remove", function() L:Unwant(w.id) p:Refresh() end, "Takes it off the wanted list." } } }
+      end
+      return out
+    end },
+    { "note", function()
+      local L = ns.FishingLog
+      return (L and #L:Wanted() > 0) and "" or "Click Want 20 on a catch above, or type /ride fishwant Stonescale Eel 20."
+    end },
+    { "header", "Records", icon = "INV_Misc_Trophy_03" },
+    { "note", function()
+      local L = ns.FishingLog
+      if not L then return "" end
+      local b, lines = L.data.best, {}
+      if b.fishHr then lines[#lines + 1] = string.format("Best fish/hr: %d", math.floor(b.fishHr.v + 0.5)) end
+      if b.goldHr then lines[#lines + 1] = "Best gold/hr: " .. L.Money(b.goldHr.v) end
+      if b.catches then lines[#lines + 1] = string.format("Most fish in one session: %d", b.catches.v) end
+      local notable = {}
+      for i, n in ipairs(L.data.notable) do
+        if i > 8 then break end
+        notable[#notable + 1] = string.format("%s%s", tostring(n.name or "?"), n.why == "new" and " (new)" or "")
+      end
+      if #notable > 0 then lines[#lines + 1] = "Notable catches: " .. table.concat(notable, ", ") end
+      for i, x in ipairs(L.data.sessions) do
+        if i > 5 then break end
+        lines[#lines + 1] = string.format("%s: %d fish in %s, %s%s", date("%b %d", x.start or 0), x.catches, L.Clock(x.secs),
+          L.Money(x.auction), x.gained and x.gained > 0 and string.format(", +%d skill", x.gained) or "")
+      end
+      return #lines > 0 and table.concat(lines, "\n") or "Records fill in as you fish: best fish and gold per hour, notable catches and past sessions."
+    end },
     { "header", "Your fishing", icon = "Trade_Fishing" },
     { "tiles", function()
       local skill, max = M:Skill()
