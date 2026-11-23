@@ -120,17 +120,18 @@ function M:ComputeFlips()
     if not i then loading = loading + 1
     elseif type(i.sellPrice) == "number" and i.sellPrice > 0 and list[1] and list[1][1] < i.sellPrice then
       local commodity = M.IsCommodity(itemID)
-      local qty, cost, top = 0, 0, 0
+      local qty, cost, top, tiers = 0, 0, 0, {}
       for _, l in ipairs(list) do
         if l[1] < i.sellPrice then
           qty, cost, top = qty + l[2], cost + l[1] * l[2], l[1]
+          tiers[#tiers + 1] = { l[1], l[2] }
           if not commodity then break end -- one listing per click for single items
         end
       end
       local profit = i.sellPrice * qty - cost
       if profit >= min then
         out[#out + 1] = { itemID = itemID, name = i.name, qty = qty, cost = cost, unit = math.floor(cost / qty),
-          vendor = i.sellPrice, profit = profit, commodity = commodity, maxUnit = top, kind = "flip" }
+          vendor = i.sellPrice, profit = profit, commodity = commodity, maxUnit = top, kind = "flip", tiers = tiers }
       end
     end
   end
@@ -162,7 +163,8 @@ function M:ComputeResale()
         -- a vendor flip already covers what sells to a vendor for more
         if profit >= min and not (type(i.sellPrice) == "number" and i.sellPrice > l[1]) then
           out[#out + 1] = { itemID = itemID, name = i.name, qty = qty, cost = cost, unit = l[1], usual = math.floor(stats.median),
-            days = stats.count, profit = profit, vendor = type(i.sellPrice) == "number" and i.sellPrice or nil, commodity = M.IsCommodity(itemID), maxUnit = l[1], kind = "resale" }
+            days = stats.count, profit = profit, vendor = type(i.sellPrice) == "number" and i.sellPrice or nil,
+          sellFor = math.floor(stats.median * qty), cut = math.floor(stats.median * qty * M.CUT), deposit = deposit, commodity = M.IsCommodity(itemID), maxUnit = l[1], kind = "resale" }
         end
       end
     end
@@ -185,38 +187,142 @@ function M:Age()
   return m < 1 and "just now" or (m == 1 and "1 minute ago") or string.format("%d minutes ago", m)
 end
 
+-- Plain words for each deal (Gary, 2026-11-23: "more informative, in an
+-- average 8th grader kind of way"; "resell" had read as "sell to a vendor").
+-- The card line: pay -> get back -> keep. The hover: the same as numbered steps.
+local function money(c) return ns.Prices.Money(math.floor(c or 0)) end
+
+function M.FlipLine(d)
+  local each = d.qty > 1 and " each" or ""
+  return string.format("Pay %s%s here  >  a vendor gives you %s%s  >  you keep %s", money(d.unit), each, money(d.vendor), each, money(d.profit))
+end
+
+function M.FlipSteps(d)
+  local n = d.qty
+  return {
+    "How this makes money (a sure thing):",
+    string.format("1. Buy %s here for %s%s.", n > 1 and (n .. " of them") or "it", money(d.cost), n > 1 and (" (" .. money(d.unit) .. " each)") or ""),
+    string.format("2. Sell %s to any vendor for %s%s.", n > 1 and "them" or "it", money(d.vendor * n), n > 1 and (" (" .. money(d.vendor) .. " each)") or ""),
+    string.format("3. You keep %s.", money(d.profit)),
+  }
+end
+
+function M.ResaleLine(d)
+  return string.format("Pay %s  >  sell it here again for %s  >  you keep about %s after fees", money(d.cost), money(d.sellFor or d.usual * d.qty), money(d.profit))
+end
+
+function M.ResaleSteps(d)
+  local out = {
+    "How this makes money (not a sure thing):",
+    string.format("1. Buy it here for %s.", money(d.cost)),
+    string.format("2. Post it on the auction house again for about %s. That's its usual price (seen on %d days).", money(d.sellFor or d.usual * d.qty), d.days),
+    string.format("3. When someone buys it, the auction house keeps %s (5%%)%s.", money(d.cut or 0),
+      (d.deposit and d.deposit > 0) and (" and the posting fee of " .. money(d.deposit)) or ""),
+    string.format("4. You keep about %s.", money(d.profit)),
+  }
+  if d.vendor and d.vendor > 0 then out[#out + 1] = string.format("Don't sell it to a vendor: they pay only %s.", money(d.vendor)) end
+  out[#out + 1] = "It may take days to sell, and prices can drop."
+  return out
+end
+
+-- A deal cut to what you can pay for (Gary, 2026-11-23: "list what the
+-- player can afford in a quantity they can afford"). Stackable goods are
+-- bought by quantity, cheapest first, so part of a deal is still a deal; a
+-- single item is all or nothing. Returns a copy with qty, cost and profit for
+-- that amount, `partial` when it's less than the whole deal, and `short`
+-- (copper missing) when you can't buy even one.
+function M.Fit(d, gold)
+  local f = {}
+  for k, v in pairs(d) do f[k] = v end
+  f.fullQty = d.qty
+  if d.cost <= gold then return f end
+  if not d.commodity then f.short = d.cost - gold return f end
+  local qty, cost, top = 0, 0, 0
+  if d.kind == "flip" then
+    local left = gold
+    for _, t in ipairs(d.tiers or { { d.unit, d.qty } }) do
+      local n = math.min(t[2], math.floor(left / t[1]))
+      if n > 0 then qty, cost, top, left = qty + n, cost + n * t[1], t[1], left - n * t[1] end
+      if n < t[2] then break end
+    end
+    if qty == 0 then f.short = (d.tiers and d.tiers[1] and d.tiers[1][1] or d.unit) - gold return f end
+    f.profit = d.vendor * qty - cost
+    f.maxUnit = top
+  else
+    qty = math.min(d.qty, math.floor(gold / d.unit))
+    if qty == 0 then f.short = d.unit - gold return f end
+    cost = qty * d.unit
+    local share = qty / d.qty
+    f.deposit = math.floor((d.deposit or 0) * share)
+    f.sellFor = math.floor((d.sellFor or d.usual * d.qty) * share)
+    f.cut = math.floor(f.sellFor * M.CUT)
+    f.profit = f.sellFor - f.cut - f.deposit - cost
+  end
+  f.qty, f.cost, f.unit, f.partial = qty, cost, math.floor(cost / qty), true
+  return f
+end
+
+-- Deals you can afford first (best profit first), then the rest, grayed.
+function M.Afford(list, gold)
+  local yes, no = {}, {}
+  for _, d in ipairs(list) do
+    local f = M.Fit(d, gold)
+    if f.short then no[#no + 1] = f elseif f.profit > 0 then yes[#yes + 1] = f end
+  end
+  table.sort(yes, function(a, b) if a.profit ~= b.profit then return a.profit > b.profit end return a.itemID < b.itemID end)
+  for _, f in ipairs(no) do yes[#yes + 1] = f end
+  return yes
+end
+
+local function shortLine(d)
+  return string.format("You can't afford this yet: it costs %s, you need %s more", money(d.cost), money(d.short))
+end
+
+local function partNote(d)
+  return d.partial and string.format("You can afford %d of the %d listed, so this is for %d.", d.qty, d.fullQty, d.qty) or nil
+end
+
+function M.GoldNote(cards, gold, s)
+  for _, c in ipairs(cards) do
+    if c.dim then return s .. string.format("  You have %s: deals you can't afford yet are at the bottom, grayed out.", money(gold)) end
+  end
+  return s
+end
+
 -- Shopping window cards: cards, status for "flips" | "resale"
 function M:View(view)
-  local money = ns.Prices.Money
   local age = self:Age()
+  local gold = ns.AHBuy and ns.AHBuy.Money and ns.AHBuy.Money() or 0
   if not age then
     return {}, "Press Scan all prices (top right): Outrider reads every listing once, then shows what sells to a vendor for more, and what's listed well under its usual price."
   end
   local cards = {}
   if view == "flips" then
     local list, loading = self:VendorFlips()
-    for _, d in ipairs(list) do
-      cards[#cards + 1] = { itemID = d.itemID, item = { itemID = d.itemID }, title = d.name,
-        sub = string.format("Buy %d at %s, a vendor pays %s each", d.qty, money(d.unit), money(d.vendor)),
-        pill = "|cff7fff7f+" .. money(d.profit) .. "|r", price = d.cost, action = M.Action(d) }
+    for _, d in ipairs(M.Afford(list, gold)) do
+      local tip = M.FlipSteps(d)
+      if partNote(d) then table.insert(tip, 2, partNote(d)) end
+      cards[#cards + 1] = { itemID = d.itemID, item = { itemID = d.itemID }, title = d.name .. (d.qty > 1 and (" x" .. d.qty) or ""),
+        sub = d.short and shortLine(d) or M.FlipLine(d), tip = tip, dim = d.short and true or nil,
+        pill = (d.short and "|cff8f96a6+" or "|cff7fff7f+") .. money(d.profit) .. "|r", price = d.cost, action = not d.short and M.Action(d) or nil }
     end
-    local s = #cards > 0 and string.format("Sure profit: sell them at any vendor. From the price scan %s; listings sell fast, so a Buy skips any that cost more now.", age)
+    local s = #cards > 0 and string.format("Buy these here, then sell them to any vendor for more. Hover a card for the steps. Price scan %s; a Buy skips any listing that costs more now.", age)
       or string.format("Nothing on the auction house sells to a vendor for more right now (price scan %s).", age)
     if loading > 0 then s = s .. string.format("  |cff8f96a6%d items still loading from the game.|r", loading) end
-    return cards, s
+    return cards, M.GoldNote(cards, gold, s)
   end
   local resale, loadingR = self:Resale()
-  for _, d in ipairs(resale) do
+  for _, d in ipairs(M.Afford(resale, gold)) do
+    local tip = M.ResaleSteps(d)
+    if partNote(d) then table.insert(tip, 2, partNote(d)) end
     cards[#cards + 1] = { itemID = d.itemID, item = { itemID = d.itemID }, title = d.name .. (d.qty > 1 and (" x" .. d.qty) or ""),
-      -- "resell" read as "sell to a vendor" (Gary, 2026-11-23): say it's re-listed here
-      sub = string.format("Buy at %s, sell again here at the usual %s (%d days)%s", money(d.unit), money(d.usual), d.days,
-        (d.vendor and d.vendor > 0) and (": a vendor pays only " .. money(d.vendor)) or ""),
-      pill = "|cffffd100+" .. money(d.profit) .. "|r", price = d.cost, action = M.Action(d) }
+      sub = d.short and shortLine(d) or M.ResaleLine(d), tip = tip, dim = d.short and true or nil,
+      pill = (d.short and "|cff8f96a6+" or "|cffffd100+") .. money(d.profit) .. "|r", price = d.cost, action = not d.short and M.Action(d) or nil }
   end
-  local s = #cards > 0 and string.format("Buy cheap here, then post it here again at its usual price (not for a vendor). Not sure: the profit comes once it sells. Price scan %s.", age)
+  local s = #cards > 0 and string.format("Buy cheap here, then post it on the auction house again at its usual price (not to a vendor). You only make money once it sells. Hover a card for the steps. Price scan %s.", age)
     or string.format("Nothing listed well under its usual price right now (price scan %s; prices need %d days of history).", age, M.MIN_DAYS)
   if (loadingR or 0) > 0 then s = s .. string.format("  |cff8f96a6%d names still loading from the game.|r", loadingR) end
-  return cards, s
+  return cards, M.GoldNote(cards, gold, s)
 end
 
 -- Item details arrive in the thousands after a scan: work the lists out
