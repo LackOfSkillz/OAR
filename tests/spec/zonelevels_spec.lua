@@ -87,6 +87,13 @@ T.describe("zone levels", function()
     Z:Refresh()
     T.eq(#Z.used, 3)
     T.ok(Z.used[1]:GetFrameLevel() >= 1000, "above the explored-area art and pins")
+    -- the map's own art can sit higher still (Forever): the labels go above it
+    local canvas = game.env.WorldMapFrame:GetCanvas()
+    local art = { GetFrameLevel = function() return 4200 end }
+    canvas.GetChildren = function() return art end
+    Z:Refresh()
+    T.ok(Z.used[1]:GetFrameLevel() > 4200, "above the explored-area art: " .. tostring(Z.used[1]:GetFrameLevel()))
+    canvas.GetChildren = nil
     -- the range is drawn on its own line under the name (it vanished when both
     -- were one string with word wrap off, 2026-11-23)
     local f = Z.used[1]

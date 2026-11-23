@@ -272,8 +272,24 @@ function M:Refresh()
   local w, h = canvas:GetWidth(), canvas:GetHeight()
   local scale = canvas.GetScale and canvas:GetScale() or 1
   if scale <= 0 then scale = 1 end
+  -- above everything on the map: on Forever the explored-area art sits higher
+  -- than canvas + 1000, and every area range on explored land was hidden under
+  -- it (2026-11-23, Teldrassil: 8 labels drawn, none seen)
+  local top = (canvas.GetFrameLevel and canvas:GetFrameLevel() or 1) + M.LEVEL
+  local mine = {}
+  for _, f in ipairs(self.labels) do mine[f] = true end
+  if canvas.GetChildren then
+    for _, child in ipairs({ canvas:GetChildren() }) do
+      if not mine[child] and child.GetFrameLevel then
+        local lv = child:GetFrameLevel()
+        if type(lv) == "number" and lv >= top and lv < 60000 then top = lv + 1 end
+      end
+    end
+  end
+  self.top = top
   for i, l in ipairs(self:Labels(mapID)) do
     local f = label(self, canvas, i)
+    f:SetFrameLevel(top)
     f.data = l
     -- a size up (Gary, 2026-11-16: "slightly bigger, easier to see")
     if f.text.SetFontObject then f.text:SetFontObject(l.area and "GameFontNormal" or "GameFontNormalLarge") end
@@ -305,8 +321,8 @@ function M:Refresh()
       where[#where + 1] = string.format("%s %.2f,%.2f%s", (self:Text(l):gsub("\n", " ")), l.x, l.y, f:IsShown() and "" or " hidden")
     end
     local mobs = ns.Finder and ns.Finder:Mobs()
-    self:Info("zone levels on map %d (type %s): %d labels, canvas %.0fx%.0f scale %.2f, creature pack %s (%d rows here): %s",
-      mapID, tostring(type(info) == "table" and info.mapType), #self.used, w or 0, h or 0, scale or 0,
+    self:Info("zone levels on map %d (type %s): %d labels at frame level %d, canvas %.0fx%.0f scale %.2f, creature pack %s (%d rows here): %s",
+      mapID, tostring(type(info) == "table" and info.mapType), #self.used, self.top or 0, w or 0, h or 0, scale or 0,
       mobs and "loaded" or "missing", mobs and mobs[mapID] and #mobs[mapID] or 0, table.concat(where, "; "))
   end
 end
