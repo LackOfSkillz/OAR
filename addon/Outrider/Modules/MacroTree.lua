@@ -458,6 +458,12 @@ function T:PickUp(it)
   local st = lib:State(entry)
   if st ~= "installed" then
     local ok, why = lib:Install(entry)
+    -- your own edits stay, but the drag still works: pick up the macro as it is
+    local have = C.Call("GetMacroIndexByName", entry.name) or 0
+    if not ok and st == "changed" and have > 0 then
+      C.Call("PickupMacro", have)
+      return true, "On your cursor as you edited it (Outrider leaves your changes alone): click an action bar slot."
+    end
     if not ok then return false, why end
   end
   -- remember which build it belongs to, for "macros from your old build" after a respec
@@ -879,7 +885,10 @@ ns.Hub:AddTab("macros", "Macros", function(p)
       if C.InCombat() then ok, why = false, "not in combat"
       else
         local lib = ns.MacroLibrary
-        if lib:State(it.key.entry) ~= "installed" then ok, why = lib:Install(it.key.entry) else ok = true end
+        local st = lib:State(it.key.entry)
+        if st ~= "installed" then ok, why = lib:Install(it.key.entry) else ok = true end
+        -- your own edits stay, but the drag still works with the macro as it is
+        if not ok and st == "changed" then ok, why = true, nil end
         if ok then
           local index = C.Call("GetMacroIndexByName", it.key.entry.name) or 0
           if index > 0 then C.Call("PickupMacro", index) else ok, why = false, "the macro wasn't found" end
@@ -888,7 +897,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
     else
       ok, why = T:PickUp(it)
     end
-    d.msg:SetText(ok and "On your cursor: click an action bar slot to drop it." or tostring(why))
+    d.msg:SetText(ok and (why or "On your cursor: click an action bar slot to drop it.") or tostring(why))
     self:Refresh(true)
   end
 

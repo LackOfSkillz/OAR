@@ -368,7 +368,12 @@ function M:Update(why)
             select(2, entry.body:gsub("\n", "")))
           self:Debug("%s macro text: %s", entry.name, (entry.body:gsub("\n", " | ")))
         else
-          self:Warn("%s macro not written: %s", entry.name, tostring(msg))
+          -- once per macro per session (it repeated after every fight)
+          self.warned = self.warned or {}
+          if not self.warned[entry.name] then
+            self.warned[entry.name] = true
+            self:Warn("%s macro not written: %s", entry.name, tostring(msg))
+          end
         end
       end
     end

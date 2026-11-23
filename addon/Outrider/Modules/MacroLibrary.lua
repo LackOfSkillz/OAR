@@ -170,6 +170,28 @@ function M:State(entry)
   return self:Missing(entry) or "ready"
 end
 
+-- Did Outrider write this text? The last text it wrote, an earlier one, or
+-- nothing but lines from those (and from the text it's about to write).
+M.KEEP_PREV = 8
+function M.Wrote(rec, text, new)
+  if type(rec) ~= "table" or type(text) ~= "string" then return false end
+  if E.Same(text, rec.body) then return true end
+  for _, b in ipairs(rec.prev or {}) do if E.Same(text, b) then return true end end
+  local ours = {}
+  local function add(b) for line in tostring(b or ""):gmatch("[^\r\n]+") do ours[(line:gsub("%s+$", ""))] = true end end
+  add(rec.body) add(new)
+  for _, b in ipairs(rec.prev or {}) do add(b) end
+  local any = false
+  for line in text:gmatch("[^\r\n]+") do
+    line = line:gsub("%s+$", "")
+    if line ~= "" then
+      if not ours[line] then return false end
+      any = true
+    end
+  end
+  return any
+end
+
 function M:Install(entry, force)
   if not entry or type(entry.name) ~= "string" or type(entry.body) ~= "string" then return false, "invalid library entry" end
   if C.InCombat() then return false, "not in combat" end
@@ -187,7 +209,13 @@ function M:Install(entry, force)
   if index > 0 then
     local rec = installed[entry.name]
     local _, _, current = C.Call("GetMacroInfo", index)
-    if not rec or not E.Same(C.Readable(current), rec.body) then
+    current = C.Readable(current)
+    -- Ours if it's text Outrider wrote (now or before), or only lines
+    -- Outrider wrote (Gary, 2026-11-23: Sheer's Fight macro came back from
+    -- the game without its Thorns line; Outrider then refused to update it
+    -- and the Macros page couldn't drag it). A line Gary typed himself still
+    -- blocks it, force or not.
+    if not rec or not M.Wrote(rec, current, body) then
       return false, "macro text was changed outside Outrider; review it manually before updating"
     end
     local ok, result = pcall(EditMacro, index, entry.name, nil, body)
@@ -202,7 +230,13 @@ function M:Install(entry, force)
     if not ok or not newIndex then return false, "CreateMacro failed" end
     index = newIndex
   end
-  installed[entry.name] = { id = entry.id, body = body, t = time() }
+  local old = installed[entry.name]
+  local prev = old and old.prev or {}
+  if old and old.body and not E.Same(old.body, body) then
+    table.insert(prev, 1, old.body)
+    for i = M.KEEP_PREV + 1, #prev do prev[i] = nil end
+  end
+  installed[entry.name] = { id = entry.id, body = body, t = time(), prev = prev, tree = old and old.tree or nil }
   self:Info("installed macro %s (%s, index %s, %d chars)", entry.name, entry.id, tostring(index), #body)
   return true, index
 end

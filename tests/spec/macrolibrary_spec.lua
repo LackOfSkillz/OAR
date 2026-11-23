@@ -56,6 +56,25 @@ T.describe("macro library", function()
     T.eq(game.macros[1].body, "/say personal edit")
     T.ok(L:Settings().installed[e.name], "keep tracking the macro without touching it")
   end)
+  T.it("a copy the game hands back with one of Outrider's lines missing is still Outrider's and gets updated", function()
+    local game, ns, L = session()
+    local e = { id = "test-fight", name = "Fight", body = "#showtooltip\n/cast [nocombat] Thorns\n/cast Wrath", scope = "char" }
+    T.ok(L:Install(e))
+    -- Gary, 2026-11-23: Sheer's Fight came back without its Thorns line
+    game.macros[1].body = "#showtooltip\n/cast Wrath"
+    T.eq(L:State(e), "changed")
+    T.ok(L:Install(e), "only Outrider's own lines: rewritten")
+    T.eq(game.macros[1].body, L:Settings().installed.Fight.body)
+    -- an older text Outrider wrote counts too
+    local newer = { id = "test-fight", name = "Fight", body = "#showtooltip\n/cast Moonfire", scope = "char" }
+    T.ok(L:Install(newer))
+    game.macros[1].body = L:Settings().installed.Fight.prev[1]
+    T.ok(L:Install(newer), "an earlier Outrider text")
+    -- a line Gary typed still blocks it
+    game.macros[1].body = "#showtooltip\n/say charge!\n/cast Moonfire"
+    T.no(L:Install(newer))
+    T.eq(game.macros[1].body, "#showtooltip\n/say charge!\n/cast Moonfire")
+  end)
   T.it("force cannot claim someone else's same-named macro", function()
     local game, ns, L = session({ macros = { { name = "AutoShot", icon = 1, body = "/say mine", perChar = true } } })
     local e = entry(ns, "hunter-autoshot")
