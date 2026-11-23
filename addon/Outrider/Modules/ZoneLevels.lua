@@ -285,7 +285,16 @@ function M:Refresh()
   if not self.loggedMaps[mapID] then
     self.loggedMaps[mapID] = true
     local info = C.Call("C_Map.GetMapInfo", mapID)
-    self:Info("zone levels on map %d (type %s): %d labels", mapID, tostring(type(info) == "table" and info.mapType), #self.used)
+    local where = {}
+    for i, f in ipairs(self.used) do
+      if i > 8 then break end
+      local l = f.data
+      where[#where + 1] = string.format("%s %.2f,%.2f%s", (self:Text(l):gsub("\n", " ")), l.x, l.y, f:IsShown() and "" or " hidden")
+    end
+    local mobs = ns.Finder and ns.Finder:Mobs()
+    self:Info("zone levels on map %d (type %s): %d labels, canvas %.0fx%.0f scale %.2f, creature pack %s (%d rows here): %s",
+      mapID, tostring(type(info) == "table" and info.mapType), #self.used, w or 0, h or 0, scale or 0,
+      mobs and "loaded" or "missing", mobs and mobs[mapID] and #mobs[mapID] or 0, table.concat(where, "; "))
   end
 end
 

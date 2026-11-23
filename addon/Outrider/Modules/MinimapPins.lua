@@ -208,8 +208,11 @@ function M:Update()
       tostring(nearest.name), nearest.dist, nearest.dN, nearest.dW, nearest.x, nearest.y, mx or -1, my or -1,
       uy or -1, ux or -1, tostring(facing and string.format("%.2f", facing)), tostring(rotate), radius or -1, half, mapW, mapH)
   end
-  if n ~= self.lastCount then
-    self.lastCount = n
+  -- at most every 30 s: while moving it changed every second and pushed
+  -- everything else out of the saved log (2026-11-23, the map check)
+  local now = GetTime and GetTime() or 0
+  if n ~= self.lastCount and now - (self.lastCountLog or -999) >= 30 then
+    self.lastCount, self.lastCountLog = n, now
     self:Debug("minimap pins: %d (radius %s)", n, tostring(radius))
   end
 end

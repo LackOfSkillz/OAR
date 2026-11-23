@@ -243,9 +243,16 @@ function M:Refresh()
   if not mapID then return end
   self:Record(mapID)
   local missing = self:Missing(mapID)
-  if #missing == 0 then return end
   local layers = C.Call("C_Map.GetMapArtLayers", mapID)
   local art = type(layers) == "table" and layers[1]
+  -- one line per map per session: what was known, explored and drawn (2026-11-23)
+  self.loggedMaps = self.loggedMaps or {}
+  if not self.loggedMaps[mapID] then
+    self.loggedMaps[mapID] = true
+    self:Info("map reveal on map %d: %d areas known, %d explored by you, %d to draw, art %s",
+      mapID, #M.Known(mapID), #(M.Explored(mapID) or {}), #missing, art and "ok" or "missing")
+  end
+  if #missing == 0 then return end
   if not art then return end
   local tileW, tileH = readable(art.tileWidth) or 256, readable(art.tileHeight) or 256
   local layerW, layerH = readable(art.layerWidth), readable(art.layerHeight)
