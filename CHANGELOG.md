@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Talents page totals:** each talent's rank is counted once (a Balance build said "+74% less Mana cost": Moonglow's 9% at 3/3 was multiplied by 3 again), and a number is only read from its own sentence. What each talent's text says is logged once a session so the totals can be checked against the game.
+
 ## 0.4.3 (2026-11-23)
 
 - **Talents page** (Class, Talents), on one screen: the builds on the left, your three trees in the middle with the links between talents, what the build gives on the right.

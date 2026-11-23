@@ -27,11 +27,11 @@ ns.TalentStats = M
 
 -- { key, label, unit, patterns }: the first number after the phrase, per rank
 M.KINDS = {
-  { key = "crit", label = "Critical strike", unit = "%", find = { "critical strike chance[^%d]-by (%d+%.?%d*)%%", "chance to critically[^%d]-by (%d+%.?%d*)%%", "critical strike chance[^%d]-(%d+%.?%d*)%%" } },
-  { key = "hit", label = "Chance to hit", unit = "%", find = { "chance to hit[^%d]-by (%d+%.?%d*)%%", "hit chance[^%d]-by (%d+%.?%d*)%%" } },
-  { key = "damage", label = "Damage", unit = "%", find = { "damage done[^%d]-by (%d+%.?%d*)%%", "increases[^%.]-damage[^%d%.]-by (%d+%.?%d*)%%" } },
-  { key = "healing", label = "Healing", unit = "%", find = { "healing done[^%d]-by (%d+%.?%d*)%%", "increases[^%.]-healing[^%d%.]-by (%d+%.?%d*)%%" } },
-  { key = "manacost", label = "Mana cost", unit = "% less", find = { "mana cost[^%d]-by (%d+%.?%d*)%%", "reduces the mana cost[^%d]-(%d+%.?%d*)%%" } },
+  { key = "crit", label = "Critical strike", unit = "%", find = { "critical strike chance[^%d%.]-by (%d+%.?%d*)%%", "chance to critically[^%d%.]-by (%d+%.?%d*)%%", "critical strike chance[^%d%.]-(%d+%.?%d*)%%" } },
+  { key = "hit", label = "Chance to hit", unit = "%", find = { "chance to hit[^%d%.]-by (%d+%.?%d*)%%", "hit chance[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "damage", label = "Damage", unit = "%", find = { "damage done[^%d%.]-by (%d+%.?%d*)%%", "increases[^%.]-damage[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "healing", label = "Healing", unit = "%", find = { "healing done[^%d%.]-by (%d+%.?%d*)%%", "increases[^%.]-healing[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "manacost", label = "Mana cost", unit = "% less", find = { "mana cost[^%d%.]-by (%d+%.?%d*)%%", "reduces the mana cost[^%d%.]-(%d+%.?%d*)%%" } },
   { key = "stamina", label = "Stamina", unit = "%", find = { "stamina by (%d+%.?%d*)%%" } },
   { key = "intellect", label = "Intellect", unit = "%", find = { "intellect by (%d+%.?%d*)%%" } },
   { key = "spirit", label = "Spirit", unit = "%", find = { "spirit by (%d+%.?%d*)%%" } },
@@ -39,11 +39,11 @@ M.KINDS = {
   { key = "agility", label = "Agility", unit = "%", find = { "agility by (%d+%.?%d*)%%" } },
   { key = "health", label = "Health", unit = "%", find = { "maximum health by (%d+%.?%d*)%%", "health by (%d+%.?%d*)%%" } },
   { key = "mana", label = "Mana", unit = "%", find = { "maximum mana by (%d+%.?%d*)%%" } },
-  { key = "armor", label = "Armor", unit = "%", find = { "armor[^%d]-by (%d+%.?%d*)%%" } },
-  { key = "dodge", label = "Dodge", unit = "%", find = { "dodge[^%d]-by (%d+%.?%d*)%%" } },
-  { key = "parry", label = "Parry", unit = "%", find = { "parry[^%d]-by (%d+%.?%d*)%%" } },
-  { key = "speed", label = "Attack or cast speed", unit = "%", find = { "attack speed[^%d]-by (%d+%.?%d*)%%", "casting time[^%d]-by (%d+%.?%d*)%%" } },
-  { key = "threat", label = "Threat", unit = "%", find = { "threat[^%d]-by (%d+%.?%d*)%%" } },
+  { key = "armor", label = "Armor", unit = "%", find = { "armor[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "dodge", label = "Dodge", unit = "%", find = { "dodge[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "parry", label = "Parry", unit = "%", find = { "parry[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "speed", label = "Attack or cast speed", unit = "%", find = { "attack speed[^%d%.]-by (%d+%.?%d*)%%", "casting time[^%d%.]-by (%d+%.?%d*)%%" } },
+  { key = "threat", label = "Threat", unit = "%", find = { "threat[^%d%.]-by (%d+%.?%d*)%%" } },
 }
 
 -- The talent's text at a rank (nil when the client gives none).
@@ -58,25 +58,60 @@ function M.Text(t, rank)
   return nil
 end
 
+-- The numbers a text gives: { [key] = value } (first match per kind).
+function M.Parse(text)
+  if type(text) ~= "string" then return nil end
+  local low, out = text:lower(), nil
+  for _, k in ipairs(M.KINDS) do
+    for _, pat in ipairs(k.find) do
+      local v = tonumber(low:match(pat))
+      if v then out = out or {} out[k.key] = v break end
+    end
+  end
+  return out
+end
+
 -- What one rank of a talent gives: { [key] = value }; nil when nothing matched.
+-- Gary, 2026-11-23: a Balance build said "+74% less Mana cost". A text that
+-- already shows a talent at its rank (Moonglow 3/3: "by 9%") was multiplied
+-- by the rank again. Now: the client's rank 1 and rank 2 texts are compared
+-- when it has them (rank 1's number is one rank); a single text is read as
+-- your current rank's (divided by it), or rank 1's when you have none.
 M.cache = {}
+M.logged = 0
 function M.PerRank(t)
   local hit = M.cache[t.node]
   if hit ~= nil then return hit or nil end
-  local text, rank = M.Text(t, 1)
+  local function trait(rank)
+    local x = t.entry and C.Readable(C.Call("C_Traits.GetTraitDescription", t.entry, rank))
+    return type(x) == "string" and x ~= "" and x or nil
+  end
+  local one = trait(1)
+  local two = (t.max or 1) > 1 and trait(2) or nil
+  local text = one
+  if not text then
+    local d = t.spell and C.Readable(C.Call("C_Spell.GetSpellDescription", t.spell))
+    text = type(d) == "string" and d ~= "" and d or nil
+  end
+  local v1 = M.Parse(text)
+  local v2 = M.Parse(two)
   local out
-  if text then
-    local low = text:lower()
-    for _, k in ipairs(M.KINDS) do
-      for _, pat in ipairs(k.find) do
-        local v = tonumber(low:match(pat))
-        if v then
-          out = out or {}
-          out[k.key] = v / (rank or 1)
-          break
-        end
-      end
-    end
+  if v1 then
+    out = {}
+    local differs = false
+    if v2 then for k, v in pairs(v1) do if v2[k] and v2[k] ~= v then differs = true end end end
+    local div = 1
+    if not differs and (t.rank or 0) > 1 then div = t.rank end
+    for k, v in pairs(v1) do out[k] = v / div end
+  end
+  -- what was read, once a session per talent (to check against the game)
+  if M.logged < 80 and text then
+    M.logged = M.logged + 1
+    local parts = {}
+    for k, v in pairs(out or {}) do parts[#parts + 1] = k .. "=" .. tostring(v) end
+    table.sort(parts)
+    ns.Log:Info("TalentStats", "talent text %s (%d/%d)%s: %s -> %s", tostring(t.name), t.rank or 0, t.max or 1,
+      two and " [rank 2 text]" or "", (text:gsub("\n", " ")):sub(1, 160), #parts > 0 and table.concat(parts, " ") or "nothing counted")
   end
   M.cache[t.node] = out or false
   return out

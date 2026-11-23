@@ -316,3 +316,28 @@ T.describe("talent page numbers", function()
     T.eq(L:ViewLevel(), 26)
   end)
 end)
+
+T.describe("talent totals count each rank once", function()
+  T.it("a text that already shows your rank isn't multiplied again, and numbers stay in their sentence", function()
+    local game = mock.new({ class = "DRUID", level = 60 })
+    game.traits = traits({ ["Moonglow"] = 3, ["Starlight Wrath"] = 5 })
+    -- no per-rank text from the client: only the spell's own description,
+    -- which shows the talent at the rank you have (Moonglow 3/3: 9%)
+    game.spells = {
+      { name = "Moonglow", id = 5104, desc = "Reduces the Mana cost of your Moonfire, Starfire and Wrath spells by 9%." },
+      { name = "Starlight Wrath", id = 5101, desc = "Reduces the cast time of your Wrath spell by 0.5 sec. Increases damage done by 10%." },
+    }
+    local ns = game:loadAddon()
+    game:login()
+    local L, S = ns.TalentLab, ns.TalentStats
+    local model = L:Load()
+    local mine = L.Mine(model)
+    local totals = S.Totals(model, mine)
+    T.eq(totals.manacost.value, 9, "Moonglow 3/3 is 9% less mana, not 27%")
+    T.eq(totals.damage.value, 10, "the damage sentence, not the cast-time number")
+    T.eq(#ns.Errors.list, 0)
+    local log = ""
+    for _, l in ipairs(ns.Log:Tail(40)) do log = log .. ns.Log:FormatLine(l) .. "\n" end
+    T.contains(log, "talent text Moonglow (3/3)")
+  end)
+end)
