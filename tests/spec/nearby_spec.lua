@@ -31,10 +31,52 @@ T.describe("nearby", function()
   T.it("lists zone, faction and level appropriate upgrades; vendor before quest at equal gain", function()
     local _, _, N = session()
     local list = N:Candidates()
-    T.eq(#list, 2)
+    T.eq(#list, 3)
     T.eq(list[1].name, "Vendor Cloak")
     T.eq(list[2].name, "Quest Cloak")
     T.contains(N.Describe(list[2]), "quest Help the Grimtotem (level 22)")
+    T.eq(list[3].name, "Far Cloak", "few here: another zone's best cloak comes after this zone's, though it scores higher")
+    T.ok(list[3].away)
+  end)
+
+  T.it("with plenty here, other zones stay out", function()
+    local _, _, N = session()
+    N.FEW = 2
+    local list = N:Candidates()
+    T.eq(#list, 2)
+    N.FEW = 6
+  end)
+
+  T.it("other zones: one per slot, your continent first, never a toast", function()
+    local game = mock.new({ mapID = 1450, x = 0.5, y = 0.5, level = 12 })
+    game.env.Outrider_DataGear = { source = "test", items = {
+      [601] = { "Kalimdor Cloak", 10, 14, { { "vendor", 1438, 0.5, 0.5, "Near Vendor", nil, nil } } },
+      [602] = { "Better Kalimdor Cloak", 10, 14, { { "drop", 1438, 0.5, 0.5, "Wolf", nil, nil } } },
+      [603] = { "Azeroth Cloak", 10, 14, { { "vendor", 1429, 0.5, 0.5, "Far Vendor", nil, nil } } },
+      [604] = { "Azeroth Boots", 10, 14, { { "vendor", 1429, 0.5, 0.5, "Far Vendor", nil, nil } } },
+    } }
+    game.items = { [400] = { name = "Old Cloak", equipLoc = "INVTYPE_CLOAK" }, [401] = { name = "Old Boots", equipLoc = "INVTYPE_FEET" },
+      [601] = { name = "Kalimdor Cloak", equipLoc = "INVTYPE_CLOAK" }, [602] = { name = "Better Kalimdor Cloak", equipLoc = "INVTYPE_CLOAK" },
+      [603] = { name = "Azeroth Cloak", equipLoc = "INVTYPE_CLOAK" }, [604] = { name = "Azeroth Boots", equipLoc = "INVTYPE_FEET" } }
+    game.itemStats = { [400] = { ITEM_MOD_AGILITY_SHORT = 2 }, [401] = { ITEM_MOD_AGILITY_SHORT = 2 },
+      [601] = { ITEM_MOD_AGILITY_SHORT = 5 }, [602] = { ITEM_MOD_AGILITY_SHORT = 7 },
+      [603] = { ITEM_MOD_AGILITY_SHORT = 12 }, [604] = { ITEM_MOD_AGILITY_SHORT = 6 } }
+    game.worn = { [15] = 400, [8] = 401 }
+    game.maps = { [1450] = { mapID = 1450, name = "Moonglade", mapType = 3, parent = 1414 },
+      [1438] = { mapID = 1438, name = "Teldrassil", mapType = 3, parent = 1414 },
+      [1429] = { mapID = 1429, name = "Elwynn Forest", mapType = 3, parent = 1415 },
+      [1414] = { mapID = 1414, name = "Kalimdor", mapType = 2, parent = 947 },
+      [1415] = { mapID = 1415, name = "Eastern Kingdoms", mapType = 2, parent = 947 } }
+    local ns = game:loadAddon()
+    game:login()
+    local N = ns.Nearby
+    local list = N:Candidates()
+    local names = {}
+    for _, c in ipairs(list) do names[#names + 1] = c.name end
+    T.same(names, { "Better Kalimdor Cloak", "Azeroth Boots" }, "best cloak on Kalimdor beats the bigger one across the sea")
+    T.contains(N.Describe(list[1]), "Teldrassil")
+    N:Scan("test")
+    T.eq(ns.Toast:Count(), 0, "no 'upgrade nearby' toast for other zones")
   end)
 
   T.it("one toast per item, never repeated; click sets a waypoint", function()

@@ -90,6 +90,80 @@ function M.LevelFits(it, level)
   return req <= level + 3 and req >= level - 6
 end
 
+-- The continent a map is on (nil when the client can't say).
+M.contCache = {}
+function M.Continent(mapID)
+  if not mapID then return nil end
+  local hit = M.contCache[mapID]
+  if hit ~= nil then return hit or nil end
+  local id, out = mapID, false
+  for _ = 1, 8 do
+    local info = C.Call("C_Map.GetMapInfo", id)
+    if type(info) ~= "table" then break end
+    if info.mapType == 2 then out = info.mapID or id break end
+    if not info.parentMapID or info.parentMapID == 0 then break end
+    id = info.parentMapID
+  end
+  M.contCache[mapID] = out
+  return out or nil
+end
+
+function M.ZoneName(mapID)
+  local info = mapID and C.Call("C_Map.GetMapInfo", mapID)
+  return type(info) == "table" and info.name or nil
+end
+
+-- Best upgrade per slot from the rest of the pack (sources not on this map):
+-- your continent before others, then the bigger gain. Cached 20 s (the Gear
+-- page asks several times per refresh); gear or level changes clear it.
+M.FEW, M.ELSEWHERE_MAX = 6, 10
+function M:Elsewhere(level, faction, mapID)
+  local key = tostring(level) .. ":" .. tostring(mapID)
+  local now = C.Call("GetTime") or 0
+  local ec = self.elsewhereCache
+  if ec and ec.key == key and now - ec.at < ((ec.missing or 0) > 0 and 4 or 20) then return ec.list end
+  local here = M.Continent(mapID)
+  local best, missing = {}, 0
+  for id, it in pairs(self.pack or {}) do
+    if M.LevelFits(it, level) then
+      for _, s in ipairs(it[4] or {}) do
+        if s[2] ~= mapID and (s[7] == nil or s[7] == faction) then
+          local ok, note = M.QuestOpen(s, level)
+          if ok then
+            if not stats(id) then
+              missing = missing + 1
+              C.Call("C_Item.RequestLoadItemDataByID", id)
+            else
+              local r = ns.GearScore:Compare("item:" .. id)
+              if r and not r.why and r.pct >= 1 then
+                local near = here ~= nil and M.Continent(s[2]) == here
+                local slot = r.slot or ("x" .. id)
+                local cur = best[slot]
+                if not cur or (near and not cur.near) or (near == cur.near and r.pct > cur.pct) then
+                  best[slot] = { itemID = id, name = it[1], pct = r.pct, kind = s[1], reqLevel = it[2] or 0, near = near, away = true,
+                    zone = M.ZoneName(s[2]),
+                    where = { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note, qid = s[1] == "quest" and s[8] or nil } }
+                end
+              end
+            end
+            break
+          end
+        end
+      end
+    end
+  end
+  local list = {}
+  for _, c in pairs(best) do list[#list + 1] = c end
+  table.sort(list, function(a, b)
+    if a.near ~= b.near then return a.near end
+    if a.pct ~= b.pct then return a.pct > b.pct end
+    return a.itemID < b.itemID
+  end)
+  while #list > M.ELSEWHERE_MAX do table.remove(list) end
+  self.elsewhereCache = { key = key, at = now, list = list, missing = missing }
+  return list
+end
+
 -- { {itemID, name, pct, kind, where = {mapID, x, y, who, qlevel, note}, reqLevel} } best first;
 -- quests you cannot take yet come after the ones you can
 function M:Candidates(opts)
@@ -146,6 +220,18 @@ function M:Candidates(opts)
       end
     end
   end
+  -- Few upgrades on this map (Gary, 2026-11-23: GearQuest off and the Gear
+  -- page was empty in Moonglade): the best one per slot from other zones,
+  -- your continent first.
+  if not world and self.pack and #out < M.FEW then
+    for _, c in ipairs(self:Elsewhere(level, faction, mapID)) do
+      if not seen[c.itemID] then
+        seen[c.itemID] = true
+        out[#out + 1] = c
+      end
+    end
+    missing = missing + (self.elsewhereCache and self.elsewhereCache.missing or 0)
+  end
   -- GearQuest's own best pick per slot (P6-07), scored with Outrider weights
   if ns.GearQuestBridge and ns.GearQuestBridge.enabled and not world then
     for _, g in ipairs(ns.GearQuestBridge:Picks()) do
@@ -170,6 +256,9 @@ function M:Candidates(opts)
     end
   end
   table.sort(out, function(a, b)
+    -- this map before other zones
+    local za, zb = a.away and 1 or 0, b.away and 1 or 0
+    if za ~= zb then return za < zb end
     local la, lb = (a.where and a.where.note) and 1 or 0, (b.where and b.where.note) and 1 or 0
     if la ~= lb then return la < lb end
     local pa, pb = math.floor(a.pct + 0.5), math.floor(b.pct + 0.5)
@@ -204,6 +293,7 @@ function M.Source(c)
     src = (tostring(c.via or "upgrade"):gsub("^%l", string.upper)) .. (who and (" " .. who) or "") .. (c.zone and (", " .. c.zone) or "")
   end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end
+  if c.away and c.zone then src = src .. ", " .. c.zone end
   if w.note then src = src .. ", " .. w.note end
   return src
 end
@@ -219,7 +309,7 @@ function M:Scan(why)
   -- GearQuest shows its own upgrade toasts: step aside (one owner, hard rule 8)
   local quiet = ns.GearQuestBridge and ns.GearQuestBridge:GQ() ~= nil
   for _, c in ipairs(quiet and {} or list) do
-    if c.pct >= s.threshold and not s.told[c.itemID] and c.kind ~= "alt" then
+    if c.pct >= s.threshold and not s.told[c.itemID] and c.kind ~= "alt" and not c.away then
       s.told[c.itemID] = time()
       ns.Toast:Show({ title = "Upgrade nearby: " .. tostring(c.name), text = M.Describe(c):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""),
         color = "good", duration = 12 })
@@ -234,6 +324,7 @@ end
 
 function M:OnEnable()
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) ns.Throttle("nearby:scan", 5, function() mod:Scan("zone") end) end)
+  self:On("PLAYER_EQUIPMENT_CHANGED", function(mod) mod.elsewhereCache = nil end)
   self:On("PLAYER_LEVEL_UP", function(mod) ns.Throttle("nearby:scan", 5, function() mod:Scan("level") end) end)
   self:On("GET_ITEM_INFO_RECEIVED", function(mod)
     if (mod.missing or 0) > 0 then ns.Throttle("nearby:scan", 3, function() mod:Scan() end) end
@@ -376,10 +467,10 @@ ns.Hub:AddTab("gear", "Gear", function(p)
     { "header", "What you wear", icon = "INV_Chest_Chain" },
     { "custom", function(host) return M:Doll(host) end, 92 },
     { "note", "Green arrow: an upgrade is waiting. Click a slot to see only its upgrades." },
-    { "header", "Upgrades near you", icon = "INV_Chest_Chain" },
+    { "header", "Upgrades for you", icon = "INV_Chest_Chain" },
     { "note", function()
       if M.slotFilter then return "Upgrades for your " .. tostring(ns.GearScore.SLOT_NAMES[M.slotFilter] or "slot") .. " (click the slot again for all)." end
-      return M.filter and M.filter ~= "" and ("Upgrades matching '" .. M.filter .. "'.") or "Best first. Hover the picture for the item; sources are unverified community data."
+      return M.filter and M.filter ~= "" and ("Upgrades matching '" .. M.filter .. "'.") or "This zone first, then the best one per slot in other zones (your continent first). Hover the picture for the item."
     end },
     { "cards", function() return M:CardItems() end },
     { "note", function() return #M:Candidates() == 0 and "No upgrades found here yet (item data may still be loading)." or "" end },
