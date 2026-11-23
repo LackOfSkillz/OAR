@@ -866,6 +866,7 @@ function M.new(opts)
     if e and e.req then return e.req[1], e.req[2], true end
   end
   base.UnitCharacterPoints = function() return game.unspent end
+  base.GetSpellBaseCooldown = function(id) for _, s in ipairs(game.spells or {}) do if s.id == id then return s.cd or 0 end end return 0 end
   -- modern talents: game.traits = { { treeID, unspent, nodes = { { id, name, rank, max, open } } } }
   local function trNode(id)
     for _, tr in ipairs(game.traits or {}) do for _, n in ipairs(tr.nodes) do if n.id == id then return n end end end
@@ -1016,7 +1017,8 @@ function M.new(opts)
   -- action bars: game.actions[slot] = spellID; spell info from game.spells
   local function spellByID(id) for _, s in ipairs(game.spells) do if s.id == id then return s end end end
   base.GetActionInfo = function(slot) local id = game.actions and game.actions[slot] if id then return "spell", id end end
-  base.C_Spell = { GetSpellInfo = function(id) local s = spellByID(id) return s and { name = s.name } end,
+  base.C_Spell = { GetSpellInfo = function(id) local s = spellByID(id) return s and { name = s.name, castTime = s.cast } end,
+    GetSpellDescription = function(id) local s = spellByID(id) return s and s.desc end,
     GetSpellSubtext = function(id) local s = spellByID(id) return s and s.rank and ("Rank " .. s.rank) or "" end,
     PickupSpell = function(id) game.cursorSpell = id end }
   base.PlaceAction = function(slot)

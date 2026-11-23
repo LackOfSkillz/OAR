@@ -466,12 +466,22 @@ function M:CardItems()
   local level = self:ViewLevel()
   local mine = model and M.Mine(model) or {}
   local out = {}
-  for _, card in ipairs(M.Cards(cls)) do
-    if card.goal == goal then
+  -- best first by Outrider's estimate for you (TalentSim), else the list order
+  local ranked, est = {}, {}
+  if ns.TalentSim and model then
+    for _, x in ipairs(ns.TalentSim:Rank(goal, level)) do ranked[#ranked + 1] = x.card est[x.card.id] = x.est end
+  else
+    for _, card in ipairs(M.Cards(cls)) do if card.goal == goal then ranked[#ranked + 1] = card end end
+  end
+  for i, card in ipairs(ranked) do
+    do
       local r, missing = {}, {}
       if model then r, missing = M.RanksFor(model, card, level) end
       local shared = M.Shared(mine, r)
       local tags = { { model and M.Split(model, r) or (card.split or ""), "gold" }, { M.Host(card.source), "plain" } }
+      local words = est[card.id] and ns.TalentSim.Words(est[card.id], goal)
+      if words then table.insert(tags, 1, { words, i == 1 and #ranked > 1 and "good" or "plain" }) end
+      if i == 1 and #ranked > 1 and words then table.insert(tags, 1, { "Outrider's pick for you", "good" }) end
       if card.verified ~= true then tags[#tags + 1] = { "not checked in game yet", "plain" } end
       if #missing > 0 then tags[#tags + 1] = { #missing .. " talents not found", "bad" } end
       out[#out + 1] = { pic = "Interface\\Icons\\" .. (M.GOAL_ICON[goal] or "Ability_Marksmanship"),
@@ -481,7 +491,15 @@ function M:CardItems()
           M:Use(card)
           M.msg = "Loaded " .. card.name .. ". Change any point below."
           M:RefreshPage()
-        end, "Puts this build in the trees below so you can see it and change it." } } }
+        end, "Puts this build in the trees below so you can see it and change it." },
+        { ns.Talents and ns.Talents:Settings().card == card.id and "Following" or "Follow", function()
+          local T = ns.Talents
+          if not T then return end
+          T:Settings().card = T:Settings().card ~= card.id and card.id or nil
+          M.msg = T:Settings().card and ("Following " .. card.name .. ": the game's talent window rings your next points.") or "Stopped following that build."
+          if T.Check then ns.Safe("talents:follow", T.Check, T) end
+          M:RefreshPage()
+        end, "The game's talent window rings your next points for this build, and Outrider tells you when a point is ready." } } }
     end
   end
   return out
@@ -643,6 +661,8 @@ ns.Hub:AddTab("talentlab", "Talents", function(p)
       return out
     end },
     { "note", function() return ns.TalentStats and ns.TalentStats:Report() or "" end, 80 },
+    { "header", "How it does", icon = "INV_Misc_PocketWatch_01" },
+    { "note", function() return ns.TalentSim and ns.TalentSim:Report() or "" end, 80 },
     { "buttons", {
       { "Start from my build", function()
         local model = M:Load()

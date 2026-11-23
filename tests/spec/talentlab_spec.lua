@@ -132,7 +132,9 @@ T.describe("talent lab", function()
     for _, it in ipairs(L:CardItems()) do if it.title == "Test bear" then item = it end end
     for _, c in ipairs(L.Cards("DRUID")) do if c.id == "druid-test" then card = c end end
     T.ok(item, "the card shows for Levelling")
-    T.eq(item.tags[2][1], "example.org")
+    local hosts = {}
+    for _, tg in ipairs(item.tags) do hosts[#hosts + 1] = tg[1] end
+    T.contains(table.concat(hosts, " | "), "example.org")
     L:Use(card)
     T.contains(L:DiffText(), "learn: Ferocity 3")
     game:slash("talentcode")
@@ -188,6 +190,89 @@ T.describe("talent build totals", function()
     T.eq(bands[1].level, 20)
     T.contains(bands[1].line, "Critical strike", "level 20: the first points")
     T.contains(bands[5].line, "+10% Stamina")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
+T.describe("talent build numbers", function()
+  local function caster()
+    local game = mock.new({ class = "DRUID", level = 60 })
+    game.traits = traits()
+    game.spells = {
+      { name = "Moonfire", id = 8921, desc = "Burns the enemy for 40 to 50 Arcane damage and then 120 Arcane damage over 12 sec.", cd = 0 },
+      { name = "Wrath", id = 5176, desc = "Causes 100 to 120 Nature damage to the target.", cast = 2000 },
+    }
+    game.traitDesc = { [1010] = "Increases the damage done by your Wrath by 2%.", [2010] = "Increases your critical strike chance by 1%." }
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    return game, ns, ns.TalentLab, ns.TalentSim
+  end
+
+  T.it("one minute of Moonfire then Wrath from the tooltips, and the build's damage changes it", function()
+    local game, ns, L, Sim = caster()
+    local spells = { Sim.Spell("Moonfire"), Sim.Spell("Wrath") }
+    T.eq(spells[2].avg, 110)
+    T.eq(spells[2].cast, 2)
+    T.eq(spells[1].dot, 12)
+    local total, casts = Sim.Rotation(spells, 60)
+    T.ok(casts["Moonfire"] >= 4 and casts["Wrath"] >= 20, "Moonfire every 12 s, Wrath between")
+    T.ok(total > 0)
+    local model = L:Load()
+    local none = Sim.Estimate(model, {}, "ranged")
+    local r = {}
+    for _ = 1, 5 do L.Add(model, r, model.byName["Starlight Wrath"].node, 60) end
+    local more = Sim.Estimate(model, r, "ranged")
+    T.ok((more.dps or 0) > (none.dps or 0), "+10% damage from the build: " .. tostring(more.dps) .. " vs " .. tostring(none.dps))
+  end)
+
+  T.it("cards for a goal are ranked by the estimate and the best is Outrider's pick", function()
+    local game, ns, L, Sim = caster()
+    ns.Data:Register("talentcard", "test", {
+      { id = "t-low", class = "DRUID", goal = "dps", name = "Bear stuff", source = "https://example.org/a", verified = false, points = { ["Thick Hide"] = 5 } },
+      { id = "t-high", class = "DRUID", goal = "dps", name = "Wrath stuff", source = "https://example.org/b", verified = false, points = { ["Starlight Wrath"] = 5 } },
+    })
+    ns.HunterFight.KeySpells = nil
+    Sim.KeySpells = function() return { "Moonfire", "Wrath" } end
+    local list = Sim:Rank("dps", 60)
+    local pos = {}
+    for i, x in ipairs(list) do pos[x.card.id] = i end
+    T.ok(pos["t-high"] < pos["t-low"], "the damage build ranks above the bear build")
+    L:Settings().goal = "dps"
+    local items = L:CardItems()
+    T.eq(items[1].tags[1][1], "Outrider's pick for you")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("a training dummy fight is kept for your build and shown as measured", function()
+    local game, ns, L, Sim = caster()
+    ns.db.char.fights = { { id = 77, name = "Training Dummy", duration = 20, player = 2000, total = 2000 },
+      { id = 78, name = "Kobold Miner", duration = 20, player = 500, total = 500 } }
+    Sim:OnFightEnd()
+    local dps, fights = Sim:Measured()
+    T.eq(dps, 100)
+    T.eq(fights, 1, "only the dummy counts")
+    T.contains(Sim:Report(), "Measured on a training dummy with your build: 100")
+    Sim:OnFightEnd()
+    T.eq(select(2, Sim:Measured()), 1, "the same fight isn't counted twice")
+  end)
+end)
+
+T.describe("follow a build card", function()
+  T.it("following a card makes it the plan the talent window rings", function()
+    local game, ns, L = session(20)
+    ns.Data:Register("talentcard", "test", {
+      { id = "druid-follow", class = "DRUID", goal = "dps", name = "Follow me", source = "https://example.org/f", verified = false,
+        points = { ["Ferocity"] = 5, ["Thick Hide"] = 2 } },
+    })
+    L:Load()
+    ns.Talents:Settings().card = "druid-follow"
+    local b = ns.Talents:Build()
+    T.eq(b.id, "druid-follow")
+    T.eq(b.order[1][1], "Ferocity")
+    T.eq(#b.order, 7)
+    ns.Talents:Settings().card = nil
+    T.ok(ns.Talents:Build() == nil or ns.Talents:Build().id ~= "druid-follow")
     T.eq(#ns.Errors.list, 0)
   end)
 end)

@@ -154,7 +154,23 @@ local function fits(b, level) return (b.fromLevel or 0) <= level and level <= (b
 
 -- The chosen build, else the first one for this level (the mage's Arcane
 -- build ends at 39 and its Frost build starts at 40).
+-- A Talents page card chosen to follow (TalentLab): as a build with an order.
+function M:FollowedCard()
+  local id = self:Settings().card
+  local TL = ns.TalentLab
+  if not (id and TL) then return nil end
+  local card = ns.Data:Get("talentcard", id)
+  if not card then return nil end
+  local model = TL.model or TL:Load()
+  if not model then return nil end
+  local order = {}
+  for _, name in ipairs(TL.Order(model, card)) do order[#order + 1] = { name, 1 } end
+  return { id = card.id, class = card.class, name = card.name, source = card.source, verified = card.verified, order = order }
+end
+
 function M:Build()
+  local followed = self:FollowedCard()
+  if followed then return followed end
   local cls = ns.PlayerClass and ns.PlayerClass()
   local builds = M.Builds(cls)
   local level = tonumber(C.Call("UnitLevel", "player")) or 1

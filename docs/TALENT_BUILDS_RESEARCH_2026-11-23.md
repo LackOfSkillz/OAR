@@ -67,3 +67,17 @@ and the plan. Sources were read 2026-11-23; many pages were second-hand
    it with the sim (calibrates phase 3). An interactive practice dummy inside
    the addon like Class Lab's is possible but large; the real dummy is the
    honest version.
+
+## Status (2026-11-23)
+| Phase | Code | Tests | In game |
+|---|---|---|---|
+| 1 Builds page | Modules/TalentLab.lua, Data/TalentCards.lua (57 builds: wowhandbook.com, rankedboost.com), Talents.lua reads positions, links, icons | talentlab_spec (rules, cards, diff, codes, page, data) | TESTS GREEN / NEEDS GAME: the C_Traits shape on Forever (one tree with sub-trees, or three) is read by Talents:Diagnose at login |
+| 2 Totals and stats by level | Modules/TalentStats.lua (talent text: C_Traits.GetTraitDescription, else the spell's) | talentlab_spec totals | NEEDS GAME: which phrases Forever's talent text uses |
+| 3 Numbers and ranking | Modules/TalentSim.lua (your key's spells from their tooltips, one-minute priority run, build totals, auto attack, toughness) | talentlab_spec numbers and ranking | NEEDS GAME |
+| 4 Training dummy | TalentSim:OnFightEnd from FightMeter (C_DamageMeter) | talentlab_spec dummy | NEEDS GAME |
+| Follow a card | Talents:FollowedCard (rings in the talent window) | talentlab_spec follow | NEEDS GAME |
+
+Not done, by design or for later: an interactive practice dummy inside the
+addon (Class Lab style; the real dummy test covers measuring), hunter pet
+talents, Primary/Secondary planned together, Wowhead link import (its codes
+are not documented for Forever), dungeon builds (no source had them).
