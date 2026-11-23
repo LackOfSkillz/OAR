@@ -28,6 +28,12 @@ You press it. A gold arrow turns toward the horizon. On your map, a trail of glo
 
 **You open the auction house** with a crafting plan. Outrider finds the cheapest listing for every reagent, adds up the total, and never spends more gold than you have.
 
+**You hit level 10 and get your first talent point.** Outrider lays your three trees out on one screen, shows the best builds for levelling, damage, healing, tanking and PvP, estimates how each one does with *your* spells, and marks its pick for you. Press Follow and the game's own talent window lights up where your next point goes.
+
+**You sell at the auction house.** Your bags are priced just under the cheapest seller, posting is one click per item, undercut auctions are flagged, and the deals screen says in plain words what you pay, what you get back and what you keep, sized to the gold you have.
+
+**You fish for an hour.** You see fish and gold per hour, catches to your next skill point, the spots that bite best, and a wanted list that pings when you land the fish you need.
+
 ![Find](https://raw.githubusercontent.com/LackOfSkillz/outrider-releases/main/docs/screenshots/find.png)
 
 ## Now imagine it on every character you play.
@@ -40,7 +46,7 @@ And it gets sharper the more you play. Stand next to an NPC and Outrider fixes i
 
 ## Imagine one addon folder instead of fourteen.
 
-Quest pins and quest chains. Dungeon quests and keys. Rare alerts and spawn timers. Macros for all nine classes, explained line by line. Hunter pet care. Profession skill-ups, a crafting planner and one-key fishing. An auction shopping window. Gear advice weighted for your build. Every character on one page.
+Quest pins and quest chains. Dungeon quests and keys. Rare alerts and spawn timers. Fight, Pull and Heal keys for all nine classes, explained line by line and rewritten as you learn spells. A talent planner with researched builds for every class. Hunter pet care. Profession skill-ups, a crafting planner and one-key fishing with full session stats. An auction house that posts, cancels, searches, keeps shopping lists and finds deals. Gear advice weighted for your build. Every character on one page.
 
 One window. One look. One set of buttons. Everything talking to each other instead of fighting over your screen.
 

@@ -1,14 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.4.3 (2026-11-23)
 
-- **Talents page, one screen:** builds on the left, your three trees in the middle with the links between talents, what the build gives on the right. Forever's single wide talent tree is split into its three trees, so all three show.
-- **Class page, every class:** "Spells to learn" checks this character's spellbook (it showed 20 spells Sheer had already learned, each twice); talent points are read from the game's talent system (it said 0); a "Do this now" list at the top; the Talents section points to the Talents page; heal bars take less room.
-- **Talents page** (Class, Talents): your three trees read from the game, 57 researched builds for every class (levelling, max damage, max healing, tank, PvP) with where each came from, a sandbox with the game's rules and a level slider, what to learn or take off from your build, and share codes.
+- **Talents page** (Class, Talents), on one screen: the builds on the left, your three trees in the middle with the links between talents, what the build gives on the right.
+  - 57 researched builds for every class (levelling, max damage, max healing, tank, PvP), each with its split and where it came from.
+  - Try a build, change any point with the game's rules (5 points a row, links, points for your level), slide the level to see it as you grow, and see what to learn or take off from your build.
   - What a build gives, added up from the talents' own text (crit, hit, stats, damage, healing), at levels 20 to 60, and your stats with it.
-  - An estimate of damage or healing per second for each build from your spells' tooltips (toughness for tanks); the cards are ranked and the best is marked "Outrider's pick for you".
+  - An estimate of damage or healing per second for each build from your spells' tooltips (toughness for tanks); the best is marked "Outrider's pick for you".
   - Training dummy: hit one for 10 seconds or more and your real damage per second for your build is recorded from Blizzard's meter.
-  - Follow a card: the game's talent window rings your next points for it.
+  - Follow a build: the game's talent window rings your next points. Share builds with codes.
+- **Class page, every class:** "Spells to learn" checks this character's spellbook (it showed spells already learned, each twice); talent points are read from the game's talent system (it said 0); a "Do this now" list at the top; heal bars take less room.
 - **Pull key** for druids, shamans, priests, mages and warlocks: your ranged weapon if you have one (a wand shoots), otherwise your class's opener (Moonfire, Lightning Bolt, Shadow Word: Pain, Frostbolt, Immolate). Warriors and rogues keep theirs.
 - **Fight keys swing too:** caster fight keys start your auto attack, so when the mob reaches you you hit it without clicking it again (not with a wand, which melee would stop).
 - **Druid Strike** waits for Bear or Cat Form; before that it was a copy of Fight.
