@@ -47,6 +47,13 @@ for _, sc in ipairs(bench.SCENARIOS) do
   if not r.nexusOk then allOk = false end
   if r.whatnowTop ~= r.nexusTop then diffs[#diffs + 1] = string.format("- %s: WhatNow picks %s, Nexus %s. %s", sc.name, tostring(r.whatnowTop), tostring(r.nexusTop), sc.why or "") end
 end
+local real = bench.RealProducers(ns, game)
+lines[#lines + 1] = ""
+lines[#lines + 1] = "## The addon's own producers (mock client)"
+lines[#lines + 1] = ""
+lines[#lines + 1] = string.format("Planner on, real WhatNow producers, LevelRoutes, DealDesk and Handoffs on the mock client: %d opportunities, %d unavailable producers, %s.",
+  real.opportunities or 0, real.unavailable or 0, real.ok and (real.steps > 0 and (real.steps .. " planned steps, each citing evidence that resolves, none twice") or ("no plan, reason " .. tostring(real.why))) or ("**failed: " .. tostring(real.why) .. "**"))
+if not real.ok then allOk = false end
 lines[#lines + 1] = ""
 lines[#lines + 1] = "## Where the two differ"
 lines[#lines + 1] = ""

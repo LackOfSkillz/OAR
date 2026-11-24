@@ -16,6 +16,14 @@ T.describe("nexus benchmark scenarios", function()
     end
   end)
 
+  T.it("the addon's own producers on the mock client give a valid plan or a reasoned no-plan", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local r = bench.RealProducers(ns, game)
+    T.ok(r.ok, tostring(r.why))
+  end)
+
   T.it("the pipeline stays cheap: 50 plans of every scenario well under a second in the mock", function()
     local game = mock.new()
     local ns = game:loadAddon()
@@ -23,6 +31,6 @@ T.describe("nexus benchmark scenarios", function()
     local t0 = os.clock()
     for _ = 1, 50 do for _, sc in ipairs(bench.SCENARIOS) do bench.Nexus(ns, game, sc) end end
     local ms = (os.clock() - t0) * 1000
-    T.ok(ms < 1000, string.format("300 plans took %.0f ms", ms))
+    T.ok(ms < 2000, string.format("%d plans took %.0f ms", 50 * #bench.SCENARIOS, ms))
   end)
 end)

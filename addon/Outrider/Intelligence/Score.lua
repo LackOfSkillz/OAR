@@ -5,7 +5,7 @@
 -- goalFit: each active goal's weight for the opportunity's kind (WhatNow's
 --   table, so both agree), averaged by goal priority (priority 1 counts most).
 -- timeCost = seconds / (seconds + 900), in [0, 1); unknown time is not zero:
---   it adds to uncertainty instead.
+--   it counts as UNKNOWN_SECONDS (the planner's figure) and adds uncertainty.
 -- goldCost = copper / spendable gold, capped at 1.
 -- riskCost = the record's risk (1 - producer confidence), unknown counts 0.5.
 -- uncertaintyCost: by confidence label, plus unknown time, travel or gold cost.
@@ -20,6 +20,7 @@ ns.NexusScore = S
 S.WEIGHTS = { time = 0.3, gold = 0.3, risk = 0.2, uncertainty = 0.2 }
 S.LABEL_UNCERTAINTY = { verified = 0, observed = 0.05, community = 0.15, inferred = 0.3, unknown = 0.5 }
 S.PRIORITY_WEIGHT = { 1, 0.8, 0.6, 0.4, 0.2 }
+S.UNKNOWN_SECONDS = 900 -- same as Planner.UNKNOWN_SECONDS
 S.UNKNOWN_COST = 0.15 -- an unknown gold cost is uncertainty, never zero (OI02-R03)
 
 local function kindWeights(objective)
@@ -51,7 +52,11 @@ function S.One(node, goals, ctx)
   local W = S.WEIGHTS
   local fit = S.GoalFit(o.kind, goals)
   local benefit = node.countedBenefit ~= nil and node.countedBenefit or o.benefit
-  local timeCost = o.costSeconds and (o.costSeconds / (o.costSeconds + 900)) or 0
+  -- unknown time is not free: it counts as UNKNOWN_SECONDS and adds uncertainty
+  -- (the benchmark's "unavailable metadata" case ranked a step with no time
+  -- above a known ten-minute one before this)
+  local secs = o.costSeconds or S.UNKNOWN_SECONDS
+  local timeCost = secs / (secs + 900)
   local goldCost = (o.costCopper and o.costCopper > 0) and math.min(1, o.costCopper / math.max(1, spendable)) or 0
   local riskCost = o.risk or 0.5
   local unc = S.LABEL_UNCERTAINTY[o.confidence] or 0.5
