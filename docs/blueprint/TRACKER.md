@@ -66,8 +66,31 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-14 Cross-language contract tests | MOCK_GREEN | fc14801 (+ CRLF fixes) | [OI02-14](../reviews/phase2/OI02-14.md) | OTR1 both directions, fuzz, no actions via records |
 | OI02-15 Planner benchmark | MOCK_GREEN (live LIVE_PENDING) | 252d775 (+ widened in resubmission) | [OI02-15](../reviews/phase2/OI02-15.md) | 12/12 scenarios plus the real producers; WhatNow 6/12; ~0.1 ms mock; live p95/memory pending |
 | OI02-R01..R09 Review corrections | MOCK_GREEN | 6fd4864 (+ benchmark commit) | [packet, Resubmission 1](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES on 2f6e376; 9 findings corrected, 20 regression tests |
-| OI02-R10..R14 Resubmission 1 findings | MOCK_GREEN | see commit | [packet, Resubmission 2](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (limited scope) on 420a9a8; 5 findings corrected, 21 regression tests; R14 cycle debt closed by R15 |
-| OI02-R15..R17 Resubmission 2 findings | MOCK_GREEN | see commit | [packet, Resubmission 3](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (narrow scope) on d023478; guarded prerequisite walk (old code overflowed the stack), expiry-aware caches, 10 more invalidation events; 19 regression tests |
-| OI02-GATE Phase 2 review gate | RESUBMITTED (3) | see commit | [packet](../reviews/phase2/OI02-GATE.md) | STOPPED: waiting for ChatGPT's re-review and Gary's approval |
+| OI02-R10..R14 Resubmission 1 findings | MOCK_GREEN | d023478 | [packet, Resubmission 2](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (limited scope) on 420a9a8; 5 findings corrected, 21 regression tests; R14 cycle debt closed by R15 |
+| OI02-R15..R17 Resubmission 2 findings | MOCK_GREEN | f25a5ba | [packet, Resubmission 3](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (narrow scope) on d023478; guarded prerequisite walk (old code overflowed the stack), expiry-aware caches, 10 more invalidation events; 19 regression tests |
+| OI02-GATE Phase 2 review gate | REVIEW_ACCEPTED (automated scope) | f25a5ba | [packet](../reviews/phase2/OI02-GATE.md) | ChatGPT 2026-11-24, CI 45480417779; all 17 findings accepted; owner forwarded the acceptance (authorizes Phase 3); live and release approval pending |
 
-Phases 3-8 (OI03-OI08): NOT_STARTED.
+### Phase 2 items still open (do not block Phase 3; must close before the applicable release approval)
+
+1. In-game p95 frame cost and memory with the planner on.
+2. Route finder live performance (carried from Phase 1, item 5).
+3. The Phase 1 live data-preservation checks and backup restoration (Phase 1 items 2 and 3).
+4. Real client event compatibility: the State.lua events added for R17 (quest, talent, specialization, trait and auction events) fire as expected on Forever.
+5. Worst-case cumulative prerequisite traversal cost: DEP_WORK limits each check, not a whole frame. Measure a full re-plan with the real quest pack in game.
+6. Dependent steps are reconsidered when their prerequisites expire or become unavailable (live check).
+
+## Phase 3: AfterAction (personal learning)
+
+Owner authorization: Gary forwarded ChatGPT's Phase 2 final acceptance (2026-11-24), which says "Upon owner approval, proceed with Phase 3", in the same way he authorized Phase 2. Phase 3 base: the commit that records this.
+
+ChatGPT's conditions for Phase 3:
+- Reuse XP60, session history, evidence, the archive and Nexus; no duplicate history stores.
+- Observed outcomes are kept apart from inferred ones, and correlation is never shown as proof that a recommendation caused an outcome.
+- Learning is bounded, explainable, reversible and needs enough evidence.
+- No fabricated observations, and derived estimates never overwrite original history.
+- The data preservation override applies throughout.
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+
+Phases 4-8 (OI04-OI08): NOT_STARTED.

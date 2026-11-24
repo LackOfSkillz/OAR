@@ -187,6 +187,11 @@ Full suite (`tools/test.ps1 -RequirePython`):
 
 Decision: `REVIEW_CHANGES` / `REVIEW_ACCEPTED` (scope stated) / `BLOCKED`.
 
+**Final decision (ChatGPT, 2026-11-24): REVIEW_ACCEPTED, automated engineering scope**, on candidate `f25a5ba`, CI run 45480417779.
+- All 17 Phase 2 findings are accepted.
+- Live-client items are carried in the tracker ("Phase 2 items still open").
+- Not authorized: merge into main, CurseForge publication, public release.
+
 ## Product owner decision (Gary)
 
 - Live slice approved / outstanding:
