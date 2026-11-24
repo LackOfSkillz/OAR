@@ -10,6 +10,8 @@ it is never live or review acceptance.
 - Phase 1 base SHA: `22c76ca4dee229306dc98c82b4543230f4cb4a55`.
 - Owner decision 2026-11-24: tasks that need no live client continue while live-evidence tasks
   (OI01-04) wait; the wait stays visible here and blocks the Phase 1 gate.
+- **Owner directive 2026-11-24: [data preservation override](OWNER_DIRECTIVE_DATA_PRESERVATION.md)** overrides every
+  data-provenance instruction (OI01-05, OI03-15, OI06-02, OI08-13, sections 4.3 and 4.4). No data is ever deleted, moved or redacted.
 - Evidence per task: `docs/reviews/phase1/<taskId>.md`.
 - Old IDs (TASKS.md P0-P9, I2-xx, XP60-xx) are cross-referenced, never ticked by this tracker.
 
@@ -21,7 +23,7 @@ it is never live or review acceptance.
 | OI01-02 Rules and policy register | MOCK_GREEN | 442d720 | [OI01-02](../reviews/phase1/OI01-02.md) | 2 owner decisions queued for the gate (D25 hidden channel, XP60 watcher) |
 | OI01-03 Branch and reproducible baseline | MOCK_GREEN | dbb5e19 | [OI01-03](../reviews/phase1/OI01-03.md) | 1010 Lua + companion green; no CI until the branch is pushed |
 | OI01-04 Runtime and UX baseline | LIVE_PENDING | 167a435 | [OI01-04](../reviews/phase1/OI01-04.md) | capture built and deployed; needs Gary's play session and logout |
-| OI01-05 Source and license inventory | MOCK_GREEN | e013761 | [OI01-05](../reviews/phase1/OI01-05.md) | manifest docs/PROVENANCE.md; ATT MIT text now shipped; owner items W, M, Q, name |
+| OI01-05 Source and license inventory | MOCK_GREEN | e013761 | [OI01-05](../reviews/phase1/OI01-05.md) | record only (owner directive); nothing removed; ATT licence text added to the zip (additive) |
 | OI01-06 Code health toolchain | MOCK_GREEN | see commit | [OI01-06](../reviews/phase1/OI01-06.md) | quality gate + 90.7% measured Lua line coverage; Luacheck/Ruff wait on Gary's OK to download |
 | OI01-07 Technical comments cleanup | NOT_STARTED | | | |
 | OI01-08 UI Pages decomposition | NOT_STARTED | | | |
