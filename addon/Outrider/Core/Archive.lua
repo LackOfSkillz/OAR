@@ -27,7 +27,7 @@
 -- Outrider_DB.global.archiveDamaged with the path it was found at.
 
 local _, ns = ...
-local Archive = { V = 2, warned = {}, MAX_DAMAGED = 500 }
+local Archive = { V = 2, warned = {} }
 ns.Archive = Archive
 
 local function g() return ns.db and ns.db.global end
@@ -35,20 +35,19 @@ local function g() return ns.db and ns.db.global end
 -- keep a damaged value, unchanged, with where it was found
 function Archive:KeepDamaged(path, value)
   local root = g()
-  if not root then return false end
+  if not root then
+    -- saved data not ready: wait in the pending list (flushed after DB init)
+    ns.damagedPending[#ns.damagedPending + 1] = { path = path, value = value }
+    return true
+  end
   -- the same damaged value seen again this session is already kept
   local sig = tostring(path) .. "|" .. type(value) .. "|" .. tostring(value)
   Archive.keptThisSession = Archive.keptThisSession or {}
   if type(value) ~= "table" and Archive.keptThisSession[sig] then return true end
   Archive.keptThisSession[sig] = true
-  -- bounded: past MAX_DAMAGED entries further damaged values are only counted
-  -- (nothing already kept is removed); only saved data reaches this, not
-  -- incoming messages, packs or pasted codes (review OI01-R10)
-  local list = root.archiveDamaged
-  if type(list) == "table" and #list >= Archive.MAX_DAMAGED then
-    root.archiveDamagedOverflow = (tonumber(root.archiveDamagedOverflow) or 0) + 1
-    return false
-  end
+  -- no cap: only values that were already saved reach this (incoming messages,
+  -- packs, pasted codes and API results are rejected by their callers, review
+  -- OI01-R10), and a saved value is always kept (review OI01-R12)
   local d = root.archiveDamaged
   if d ~= nil and type(d) ~= "table" then
     d = { { path = "archiveDamaged", value = d, at = time() } }

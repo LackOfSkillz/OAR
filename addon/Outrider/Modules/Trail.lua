@@ -58,6 +58,7 @@ function M:Sample()
     end
   end
   list[#list + 1] = { x = math.floor(x * 10000 + 0.5) / 10000, y = math.floor(y * 10000 + 0.5) / 10000, t = time() }
+  ns.trailRev = (ns.trailRev or 0) + 1 -- Path re-plans on a new revision (review OI01-R13)
   while #list > M.MAX and ns.Archive:Shift("trail", list, { path = "global.trails[mapID]", keys = { mapID = mapID } }) do end
   self.last = { mapID = mapID, x = x, y = y }
   self.added = (self.added or 0) + 1
@@ -117,6 +118,7 @@ function M:Clear(mapID)
     end
   end
   self.last = nil
+  ns.trailRev = (ns.trailRev or 0) + 1
   if ns.MapPins then ns.MapPins:Invalidate() end
 end
 

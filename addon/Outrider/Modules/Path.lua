@@ -128,8 +128,8 @@ end
 local worldCache = {}
 local function worldDots(mapID, list)
   local c = worldCache[mapID]
-  if c and c.n == #list then return c end
-  c = { n = #list }
+  if c and c.n == #list and c.first == list[1] and c.last == list[#list] then return c end
+  c = { n = #list, first = list[1], last = list[#list] }
   for i, d in ipairs(list) do
     local cont, wx, wy = W.WorldPos(mapID, d.x, d.y)
     if wx then c[#c + 1] = { cont = cont, wx = wx, wy = wy, mapID = mapID } c.cont = cont end
@@ -277,9 +277,26 @@ end
 -- M.Plan(a, b, nodes) does both at once (tests and small trips).
 local function gridKey(p) return math.floor(p.wx / M.LINK) * 1048576 + math.floor(p.wy / M.LINK) end
 
-function M.Graph(b, nodes, budgetMs)
+-- heap from an array of { cost, i } in O(n) (Floyd), cheaper than n pushes
+local function heapify(h)
+  local n = #h
+  for start = math.floor(n / 2), 1, -1 do
+    local i = start
+    while true do
+      local l, r, s = 2 * i, 2 * i + 1, i
+      if l <= n and h[l][1] < h[s][1] then s = l end
+      if r <= n and h[r][1] < h[s][1] then s = r end
+      if s == i then break end
+      h[s], h[i] = h[i], h[s]
+      i = s
+    end
+  end
+  return h
+end
+
+local function initSearch(g, nodes)
   local n = #nodes
-  local g = { b = b, pts = nodes, n = n, cost = {}, nxt = {}, walked = {}, done = false, budget = budgetMs }
+  g.pts, g.n, g.cost, g.nxt, g.walked = nodes, n, {}, {}, {}
   local grid = {}
   for i = 1, n do
     local k = gridKey(nodes[i])
@@ -288,14 +305,53 @@ function M.Graph(b, nodes, budgetMs)
     cellList[#cellList + 1] = i
   end
   g.grid = grid
-  local heap = {}
+  local heap, b = {}, g.b
   for i = 1, n do
     local c = dist(nodes[i], b) * M.OFF
     g.cost[i] = c
-    push(heap, c, i)
+    heap[i] = { c, i }
   end
-  g.heap, g.settled = heap, {}
+  g.heap, g.settled, g.phase = heapify(heap), {}, "search"
   return g
+end
+
+function M.Graph(b, nodes, budgetMs)
+  return initSearch({ b = b, done = false, budget = budgetMs }, nodes)
+end
+
+-- A search whose nodes are gathered in slices too (review OI01-R14): phase
+-- "gather" walks the breadcrumb, shipped and patrol sources inside the box a
+-- slice at a time; then the search is set up and runs in slices as before.
+function M:Builder(cont, lo, hi, b, budgetMs)
+  local sources = {}
+  for mapID, list in pairs(ns.db.global.trails or {}) do
+    if type(list) == "table" and #list > 0 then sources[#sources + 1] = { worldDots, mapID, list } end
+  end
+  for mapID, flat in pairs(self:Shipped() or {}) do sources[#sources + 1] = { shippedDots, mapID, flat } end
+  for mapID, lines in pairs(self:Routes() or {}) do sources[#sources + 1] = { routeDots, mapID, lines } end
+  return { b = b, done = false, budget = budgetMs, phase = "gather", sources = sources, si = 1, pi = 1, out = {},
+    gcont = cont, lo = lo, hi = hi }
+end
+
+local function gather(g, clock, t0)
+  local out, lo, hi = g.out, g.lo, g.hi
+  while g.si <= #g.sources do
+    local src = g.sources[g.si]
+    local c = src[1](src[2], src[3])
+    if c.cont == nil or c.cont == g.gcont then
+      for k = g.pi, #c do
+        local p = c[k]
+        if p.wx >= lo.wx and p.wx <= hi.wx and p.wy >= lo.wy and p.wy <= hi.wy then
+          out[#out + 1] = p
+          if #out >= M.MAX_NODES then g.si = #g.sources + 1 return true end
+        end
+        if t0 and k % 256 == 0 and clock() - t0 > g.budget then g.pi = k + 1 return false end
+      end
+    end
+    g.si, g.pi = g.si + 1, 1
+    if t0 and clock() - t0 > g.budget then return false end
+  end
+  return true
 end
 
 -- Advance the search; true once finished. Stops early when budgetMs runs out.
@@ -303,6 +359,12 @@ function M.Step(g)
   if g.done then return true end
   local clock = rawget(_G, "debugprofilestop")
   local t0 = clock and g.budget and clock()
+  if g.phase == "gather" then
+    if not gather(g, clock, t0) then return false end
+    initSearch(g, g.out)
+    g.out, g.sources = nil, nil
+    if t0 and clock() - t0 > g.budget then return false end
+  end
   local pts, cost, nxt, walked, settled, heap, grid = g.pts, g.cost, g.nxt, g.walked, g.settled, g.heap, g.grid
   local pops = 0
   while #heap > 0 do
@@ -333,7 +395,7 @@ function M.Step(g)
       end
     end
     pops = pops + 1
-    if t0 and pops % 64 == 0 and clock() - t0 > g.budget then return false end
+    if t0 and pops % 16 == 0 and clock() - t0 > g.budget then return false end
   end
   g.done = true
   return true
@@ -398,34 +460,42 @@ function M:Replan(why)
   -- breadcrumbs grow as you walk: while moving the search is re-used and
   -- refreshed with new crumbs at most every REFRESH seconds; any other reason
   -- (new destination, new zone, switched on) searches again
-  local sig = 0
-  for _, list in pairs(ns.db.global.trails or {}) do if type(list) == "table" then sig = sig + #list end end
+  -- a revision of the trail data (OI01-R13): the trail module's counter plus each
+  -- map's size and newest dot, so a change at the per-map cap (count unchanged,
+  -- oldest dot archived, newest added) or data replaced by an import is seen
+  local parts = { tostring(ns.trailRev or 0) }
+  for mapID, list in pairs(ns.db.global.trails or {}) do
+    if type(list) == "table" then parts[#parts + 1] = mapID .. ":" .. #list .. ":" .. tostring(list[#list]) .. tostring(list[1]) end
+  end
+  table.sort(parts)
+  local sig = table.concat(parts, "|")
   local fresh = g and g.cont == cont and g.b.wx == b.wx and g.b.wy == b.wy and box
     and px >= box[1] and px <= box[2] and py >= box[3] and py <= box[4]
     and (g.sig == sig or (why == "moving" and time() - (g.made or 0) < M.REFRESH))
     and (why == "moving" or g.sig == sig)
   if not fresh then
+    -- dots for another destination are never shown while the new one is worked out
+    if not (g and g.b.wx == b.wx and g.b.wy == b.wy) and self.dots then self.dots, self.route = nil, nil self:Redraw() end
     -- a wider box than the trip so walking around inside it re-uses the search
     local pad = M.MARGIN
     local lo = { wx = math.min(px, tx) - pad, wy = math.min(py, ty) - pad }
     local hi = { wx = math.max(px, tx) + pad, wy = math.max(py, ty) + pad }
-    local nodes = self:Nodes(cont, lo, hi)
-    g = M.Graph(b, nodes, M.SLICE_MS)
-    g.cont, g.box, g.nodes, g.sig, g.made = cont, { lo.wx, hi.wx, lo.wy, hi.wy }, #nodes, sig, time()
+    g = self:Builder(cont, lo, hi, b, M.SLICE_MS)
+    g.cont, g.box, g.sig, g.made = cont, { lo.wx, hi.wx, lo.wy, hi.wy }, sig, time()
     self.graph = g
   end
   if not M.Step(g) then
-    -- not finished in this frame's slice: carry on next frame, keep the old dots meanwhile
+    -- not finished in this frame's slice: carry on next frame (same destination keeps its dots)
     if not self.stepping then
       self.stepping = true
-      local function again()
-        M.stepping = nil
-        if M.graph == g and M.enabled then M:Replan(why) end
-      end
-      ns.Timer.After(0, again, "path:step")
+      self:After(0, function(mod)
+        mod.stepping = nil
+        if mod.graph == g and mod.enabled then mod:Replan(why) end
+      end, "path:step")
     end
     return
   end
+  g.nodes = g.n
   local nodes = g.pts
   local route = M.RouteFrom(g, a)
   self.route, self.dots, self.cont = route, M.Dots(route), cont
@@ -502,6 +572,7 @@ function M:OnEnable()
 end
 
 function M:OnDisable()
+  self.stepping, self.graph = nil, nil -- the pending slice timer is module-owned and cancelled with it
   if self.ticker then self.ticker:Cancel() self.ticker = nil end
   self.dots, self.route = nil, nil
 end

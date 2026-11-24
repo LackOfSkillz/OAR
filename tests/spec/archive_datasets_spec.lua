@@ -248,15 +248,18 @@ T.describe("clears and resets keep what they clear (OI01-R07)", function()
     T.eq(e.row.tags[1], "a")
   end)
 
-  T.it("damaged values are bounded: past the cap they are counted, nothing kept is removed (OI01-R10)", function()
+  T.it("previously saved damaged values are always kept, however many there are (OI01-R12)", function()
     local _, ns = session()
-    local cap = ns.Archive.MAX_DAMAGED
-    ns.Archive.MAX_DAMAGED = 2
-    ns.Archive:KeepDamaged("p1", 1)
-    ns.Archive:KeepDamaged("p2", 2)
-    ns.Archive:KeepDamaged("p3", 3)
-    ns.Archive.MAX_DAMAGED = cap
-    T.eq(#ns.db.global.archiveDamaged, 2)
-    T.eq(ns.db.global.archiveDamagedOverflow, 1)
+    for i = 1, 600 do ns.Archive:KeepDamaged("saved:p" .. i, i) end
+    T.eq(#ns.db.global.archiveDamaged, 600, "no cap on saved values")
+    T.eq(ns.db.global.archiveDamagedOverflow, nil)
+    -- a saved store holding a wrong-type value after that: still kept before the fresh table
+    ns.db.global.trails = "broken trails"
+    local Tr = ns.Modules:Get("Trail")
+    Tr:OnInitialize()
+    local found
+    for _, d in ipairs(ns.db.global.archiveDamaged) do if d.value == "broken trails" then found = d end end
+    T.ok(found, "the 601st damaged saved value is kept too")
   end)
+
 end)

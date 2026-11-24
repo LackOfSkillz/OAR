@@ -200,5 +200,66 @@ T.describe("the way there", function()
     T.eq(#sliced, #whole)
     for k = 1, #whole do T.eq(sliced[k].wx, whole[k].wx) T.eq(sliced[k].wy, whole[k].wy) end
   end)
+
+  T.it("a trail change at the per-map cap, or a clear, makes a new search (OI01-R13)", function()
+    local game, ns, P = session()
+    road(ns, 100, 0.1, 0.3)
+    ns.Waypoints:Set(100, 0.3, 0.5, "Tower")
+    local g = P.graph
+    local Tr = ns.Modules:Get("Trail")
+    local max = Tr.MAX
+    Tr.MAX = #ns.db.global.trails[100] -- at the cap: a new dot archives the oldest, the count stays the same
+    local n = #ns.db.global.trails[100]
+    game.opts.x, game.opts.y = 0.2, 0.6
+    Tr.last = nil
+    Tr:Sample()
+    Tr.MAX = max
+    T.eq(#ns.db.global.trails[100], n, "count unchanged")
+    P:Replan("map pin")
+    T.ok(P.graph ~= g, "the changed trail is searched again")
+    local g2 = P.graph
+    Tr:Clear(100)
+    P:Replan("map pin")
+    T.ok(P.graph ~= g2, "a cleared trail is searched again")
+  end)
+
+  T.it("changing destination never shows the old way while the new search runs (OI01-R14)", function()
+    local game, ns, P = session()
+    road(ns, 100, 0.1, 0.5)
+    ns.Waypoints:Set(100, 0.5, 0.5, "Far")
+    T.ok(#P:Pins(100) > 0)
+    local env = getfenv and getfenv(ns.Path.Step) or _G
+    local old, t = env.debugprofilestop, 0
+    env.debugprofilestop = function() t = t + 5 return t end -- every clock read is 5 ms: each slice stops early
+    ns.Waypoints:Set(100, 0.3, 0.5, "Near")
+    T.ok(not P.graph.done, "the new search is still running")
+    T.eq(#P:Pins(100), 0, "the old way is gone at once")
+    for _ = 1, 400 do if P.graph.done then break end game:advance(0.02) end
+    env.debugprofilestop = old
+    T.ok(P.graph.done, "finished over later frames")
+    T.ok(#P:Pins(100) > 0, "dots for the new destination")
+  end)
+
+  T.it("gathering the network is sliced too, and disabling cancels the pending slice", function()
+    local game, ns, P = session()
+    local dots = {}
+    for i = 0, 300 do dots[#dots + 1] = { x = 0.1 + (i % 30) * 0.01, y = 0.3 + math.floor(i / 30) * 0.01, t = 1 } end
+    ns.db.global.trails[100] = dots
+    local env = getfenv and getfenv(ns.Path.Step) or _G
+    local old, t = env.debugprofilestop, 0
+    env.debugprofilestop = function() t = t + 5 return t end
+    local g = P:Builder(1, { wx = -1e6, wy = -1e6 }, { wx = 1e6, wy = 1e6 }, { wx = 300, wy = 500 }, 4)
+    T.eq(ns.Path.Step(g), false)
+    T.eq(g.phase, "gather", "paused while still gathering")
+    ns.Waypoints:Set(100, 0.3, 0.5, "Tower")
+    local pending = ns.Timer.Pending()
+    T.ok(P.stepping, "a slice is waiting for the next frame")
+    ns.Modules:Disable(P)
+    env.debugprofilestop = old
+    T.ok(ns.Timer.Pending() < pending, "its timer is cancelled with the module")
+    T.eq(P.graph, nil)
+    game:advance(1)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
 

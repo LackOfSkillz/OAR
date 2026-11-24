@@ -123,3 +123,22 @@ reviews, after a lag check in game; it is a separate fix and is included in this
 Full suite at the candidate: 1055 passed, 0 failed; companion passed; quality 0 new; deps 0 new;
 security 0 violations. Outstanding live-client requirements: OI01-04 runtime row, the in-game checks
 listed in OI01-15, the 4 live_pending datasets, and the Path stutter re-check.
+
+---
+
+## Resubmission 3: response to ChatGPT resubmission-2 review (reviewed da058c0, REVIEW_CHANGES, limited)
+
+Targeted corrections only; the architecture is unchanged.
+
+| Finding | Correction | Evidence |
+|---|---|---|
+| OI01-R12 High, damaged-data cap | The 500-entry cap and the overflow counter are removed. `Archive:KeepDamaged` always keeps a previously saved value. Before the saved data is ready it waits in the pending list and is flushed after DB init, so it never returns false. Only saved values reach it (R10: incoming messages, packs, pasted codes and API results are rejected by their callers). The acceptance test that allowed a value to be dropped is replaced. | `archive_datasets_spec` "previously saved damaged values are always kept, however many there are": 600 kept, plus a damaged saved store after that is still kept |
+| OI01-R13 Route cache | The signature is a trail revision: the trail module's counter (raised on every new dot and every clear) plus each map's size, oldest and newest dot. A change at the per-map cap (count unchanged, oldest dot archived, newest added) or data replaced by an import starts a new search. The world-dot cache per map is also rebuilt when its first or last dot changes, not only its length. Path uses the player's breadcrumbs, the shipped trails and the patrol pack, not player-drawn routes, so route edits don't affect it. | `path_spec` "a trail change at the per-map cap, or a clear, makes a new search" |
+| OI01-R14 Route performance | Building the network is now sliced too: phase "gather" walks the sources inside the box with a budget check every 256 points, then heapify (O(n) instead of n pushes), then the search with a budget check every 16 heap pops (was 64). On a destination change the old dots are cleared at once, so a way to the previous destination is never shown while the new search runs; the same destination keeps its dots while it refreshes. The next-frame slice uses a module-owned timer (`Module:After`), so disabling Path cancels it and drops the pending search. | `path_spec`: "changing destination never shows the old way while the new search runs", "gathering the network is sliced too, and disabling cancels the pending slice"; plus the earlier slicing-equivalence and re-use tests |
+
+Measured off-game (Lua 5.1 through lupa on the dev PC, a 4000-node synthetic network): full search
+25 ms, now spread over 4 ms slices; a re-plan while walking 0.26 ms (was 67 ms before `2cb89ca`).
+**The in-game stutter reduction is still not measured** and stays on the live list (lag check with a
+destination set).
+
+Full suite: 1058 passed, 0 failed; companion passed; quality, deps and security clean.

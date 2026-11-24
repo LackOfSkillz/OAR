@@ -3,7 +3,7 @@
  "generated": "2026-11-24",
  "directive": "docs/blueprint/OWNER_DIRECTIVE_DATA_PRESERVATION.md",
  "unauthorized_data_loss": 0,
- "keep_bad_policy": "ns.KeepBad/KeepTable only guard values already saved in SavedVariables (138 sites). Incoming messages, pasted codes, imports, shipped data packs and game API results are validated and rejected without being kept (review OI01-R10). archiveDamaged holds at most 500 entries; beyond that values are only counted (archiveDamagedOverflow).",
+ "keep_bad_policy": "ns.KeepBad/KeepTable only guard values already saved in SavedVariables (138 sites). Incoming messages, pasted codes, imports, shipped data packs and game API results are validated and rejected without being kept (review OI01-R10). archiveDamaged has no cap: a previously saved value is always kept (review OI01-R12).",
  "resets": "/ride reset char|all resets declared settings only (plain values and filled-in tables), archives the old settings first (settingsReset), and keeps all collected data and the archive. No in-game wipe of collected data exists (review OI01-R07).",
  "archive": "Core/Archive.lua v2: copy, confirm, then remove; entry {id, path, keys, scope, char, at, row}; damaged values to global.archiveDamaged",
  "datasets": [
