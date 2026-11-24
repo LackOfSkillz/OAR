@@ -68,11 +68,11 @@ S.EVENTS = {
   TRADE_SKILL_LIST_UPDATE = { "professions" },
 }
 
+-- any event that can change a field moves the revision on, read or not
+-- (a plan built before the change is stale even if it never read that field)
 function S:Invalidate(field)
-  if self.cache[field] then
-    self.cache[field] = nil
-    self.revision = self.revision + 1
-  end
+  self.cache[field] = nil
+  self.revision = self.revision + 1
 end
 
 function S:Revision() return self.revision end
