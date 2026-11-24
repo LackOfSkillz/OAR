@@ -29,7 +29,7 @@ local _, ns = ...
 local C = ns.Compat
 local M = ns:NewModule("Outcomes", {
   title = "Outcome recorder (private, opt-in)", phase = "P9", order = 99,
-  defaultEnabled = false, defaults = {},
+  defaultEnabled = false, defaults = { chronicleHide = {} },
 })
 ns.Outcomes = M
 
@@ -125,6 +125,7 @@ function M:Record(kind, f)
   if not ok then store.serial = store.serial - 1 return nil, "invalid " .. tostring(bad) end
   store.events[#store.events + 1] = rec
   while #store.events > M.MAX and ns.Archive:Shift("outcomeEvents", store.events, { path = "char.outcomes.events", scope = "char" }) do end
+  ns.Events:Fire("OTR_OUTCOME", rec)
   return rec
 end
 
@@ -160,6 +161,8 @@ function M:OnEnable()
   if ns.TravelTimes then ns.TravelTimes:Wire(self) end
   -- confirmed sales, transfers, deposits (OI03-06)
   if ns.EconomyOutcomes then ns.EconomyOutcomes:Wire(self) end
+  -- milestones and your choices, in order (OI03-08)
+  if ns.Chronicle then ns.Chronicle:Wire(self) end
   -- the player's Go on a plan step (NexusCore:Act), kept in memory only
   self:On("OTR_NEXUS_ACTED", function(mod, _, info)
     if type(info) ~= "table" then return end

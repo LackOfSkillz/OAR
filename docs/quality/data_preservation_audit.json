@@ -626,6 +626,30 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "chronicleEntries",
+   "saved_path": "char.outcomes.chronicle",
+   "retention_mechanism": "MAX (300), oldest archived",
+   "archive_destination": "global.archive.sets.chronicleEntries",
+   "tests": [
+    "tests/spec/chronicle_spec.lua :: the 301st entry archives the oldest",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "chronicleCleared",
+   "saved_path": "char.outcomes.chronicle",
+   "retention_mechanism": "player's chronicle clear (selected kinds or dates)",
+   "archive_destination": "global.archive.sets.chronicleCleared",
+   "tests": [
+    "tests/spec/chronicle_spec.lua :: clearing selected entries archives them first; export is plain text",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

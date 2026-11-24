@@ -186,7 +186,8 @@ function M:Act(id)
   -- tell listeners what the player chose (Intelligence/Outcomes.lua uses it
   -- for attribution); runtime only, never saved
   local res = self.current.result
-  ns.Events:Fire("OTR_NEXUS_ACTED", { planId = res.plan.planId, stepId = id, at = time(),
+  local node = self.current.graph and self.current.graph.nodes[id]
+  ns.Events:Fire("OTR_NEXUS_ACTED", { planId = res.plan.planId, stepId = id, at = time(), title = node and node.opp.title,
     questID = tonumber(cand.questID), itemID = tonumber(cand.itemID), mapID = tonumber(cand.mapID) })
   if intent == "waypoint" then
     local fine, err = pcall(cand.go)

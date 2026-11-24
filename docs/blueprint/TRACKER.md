@@ -98,6 +98,7 @@ ChatGPT's conditions for Phase 3:
 | OI03-04 Quest time observations | MOCK_GREEN | b375fdf | [OI03-04](../reviews/phase3/OI03-04.md) | derived from the existing quest diary (adds session, group, build to new rows); complete / multi / abandoned / open / censored; strata; Journey 300 s comparison only with enough samples |
 | OI03-05 Travel time observations | MOCK_GREEN | b9a9515 | [OI03-05](../reviews/phase3/OI03-05.md) | planned trip (estimate) to arrival (actual); modes interrupted / unknown_map / teleport / flight / transport / ground; only clean ground trips are walking samples |
 | OI03-06 Economy outcome capture | MOCK_GREEN | 0614edb | [OI03-06](../reviews/phase3/OI03-06.md) | money changes categorized (confirmed sale, transfer, deposit, purchase, vendor...); invoices kept with fee or feeUnknown; disappeared auctions unverified; estimates apart. Also fixed Compat.Call 5-value cap (4 modules) |
-| OI03-07 Performance and survival | MOCK_GREEN | see commit | [OI03-07](../reviews/phase3/OI03-07.md) | FightMeter rows gain context (level, talents, build, group, session) and exclusion reasons; derived DPS strata, build-matched comparison, survival stats |
+| OI03-07 Performance and survival | MOCK_GREEN | 9f75e3f | [OI03-07](../reviews/phase3/OI03-07.md) | FightMeter rows gain context (level, talents, build, group, session) and exclusion reasons; derived DPS strata, build-matched comparison, survival stats |
+| OI03-08 Chronicle timeline | MOCK_GREEN | see commit | [OI03-08](../reviews/phase3/OI03-08.md) | milestones and decisions only, keyed (no duplicates on replay or reload), in time order; hide, clear (archived first) and export as text |
 
 Phases 4-8 (OI04-OI08): NOT_STARTED.
