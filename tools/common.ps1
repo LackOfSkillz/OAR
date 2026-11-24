@@ -184,5 +184,12 @@ Outrider_Data_Words has its own licence file inside it.
       }
     }
   }
+  # OI01-05: the MIT licence asks for its full notice with the data, not only a
+  # credit line; ship AllTheThings' own LICENSE next to the Crafting data.
+  if ($Folders -contains 'Outrider_Data_Crafting') {
+    $att = Join-Path $Root 'private\att-source\LICENSE'
+    if (-not (Test-Path $att)) { Write-Host "AllTheThings LICENSE not found in private\att-source: not packaging." -ForegroundColor Red; return $false }
+    Write-Utf8NoBom (Join-Path $Staging 'Outrider_Data_Crafting\LICENSE-AllTheThings.txt') (Get-Content -Raw $att)
+  }
   return $true
 }

@@ -20,8 +20,8 @@ it is never live or review acceptance.
 | OI01-01 Baseline inventory | MOCK_GREEN | 698fa7f | [OI01-01](../reviews/phase1/OI01-01.md) | |
 | OI01-02 Rules and policy register | MOCK_GREEN | 442d720 | [OI01-02](../reviews/phase1/OI01-02.md) | 2 owner decisions queued for the gate (D25 hidden channel, XP60 watcher) |
 | OI01-03 Branch and reproducible baseline | MOCK_GREEN | dbb5e19 | [OI01-03](../reviews/phase1/OI01-03.md) | 1010 Lua + companion green; no CI until the branch is pushed |
-| OI01-04 Runtime and UX baseline | LIVE_PENDING | see commit | [OI01-04](../reviews/phase1/OI01-04.md) | capture built and deployed; needs Gary's play session and logout |
-| OI01-05 Source and license inventory | NOT_STARTED | | | |
+| OI01-04 Runtime and UX baseline | LIVE_PENDING | 167a435 | [OI01-04](../reviews/phase1/OI01-04.md) | capture built and deployed; needs Gary's play session and logout |
+| OI01-05 Source and license inventory | MOCK_GREEN | see commit | [OI01-05](../reviews/phase1/OI01-05.md) | manifest docs/PROVENANCE.md; ATT MIT text now shipped; owner items W, M, Q, name |
 | OI01-06 Code health toolchain | NOT_STARTED | | | |
 | OI01-07 Technical comments cleanup | NOT_STARTED | | | |
 | OI01-08 UI Pages decomposition | NOT_STARTED | | | |
