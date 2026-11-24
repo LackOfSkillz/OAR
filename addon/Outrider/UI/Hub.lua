@@ -77,7 +77,7 @@ Hub.SUBS = {
   dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" }, { "dungeonmap", "Dungeon maps" } },
   -- one Professions page (Gary, 2026-11-21: "combine the professions"):
   -- what to make and where to get it first, then the planner, fishing, tools
-  professions = { { "professions", "Your professions" }, { "crafting", "Shopping list" }, { "fishing", "Fishing" }, { "profdetails", "Trainers and tools" } },
+  professions = { { "professions", "Your professions" }, { "crafting", "Shopping list" }, { "fishing", "Fishing" }, { "fishbook", "Fish collection" }, { "profdetails", "Trainers and tools" } },
 }
 -- the sub-tab a sidebar entry opens the first time (else the host itself)
 Hub.DEFAULT_SUB = { dungeons = "dungeonquests", quests = "questsnear" }

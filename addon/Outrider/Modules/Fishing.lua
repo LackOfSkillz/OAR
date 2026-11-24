@@ -62,6 +62,9 @@ function M:LureInBags()
       if it and it.name then have[it.name] = true end
     end
   end
+  -- your usual lure first (picked on the fishing ring), then the best
+  local usual = ns.FishingRing and ns.FishingRing.enabled and ns.FishingRing:Settings().lure
+  if usual and have[usual] and not self.badLure[usual] then return usual end
   for _, name in ipairs(M.LURES) do
     if have[name] and not self.badLure[name] then return name end
   end

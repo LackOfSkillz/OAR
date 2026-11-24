@@ -364,6 +364,8 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
           note = not skill and "any fishing trainer, free" or nxt and nxt.how or nil },
       }
     end },
+    -- your real skill added up (FishFry idea, 2026-11-24)
+    { "note", function() return ns.FishingRing and ns.FishingRing:BreakdownLine() or "" end },
     -- gear swap first: it's what you reach for every time (Gary, 2026-11-20)
     { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
     { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
@@ -375,6 +377,13 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
     { "note", "Press 1 casts (or puts a lure on when yours has run out), press 2 hooks and loots. Click the box, then press the key you want; right-click clears it." },
     { "check", "Fishing HUD while a pole is equipped", function() return ns.FishingHUD and ns.FishingHUD:Settings().show end,
       function(on) if ns.FishingHUD then ns.FishingHUD:Settings().show = on ns.FishingHUD:Update() end end, "skill, lure, what bites here, gold, goal" },
+    { "check", "Ring of fishing buttons while a pole is equipped", function() return ns.FishingRing and ns.FishingRing:Settings().show end,
+      function(on) if ns.FishingRing then ns.FishingRing:Settings().show = on ns.FishingRing:Update() end end, "cast, lures, Find Fish, campfire, cooking, weapons back" },
+    { "buttons", { { "Ring: circle", function() if ns.FishingRing then ns.FishingRing:Settings().shape = "circle" ns.FishingRing:Update() end end, 120 },
+      { "Ring: bar", function() if ns.FishingRing then ns.FishingRing:Settings().shape = "bar" ns.FishingRing:Update() end end, 120 },
+      { "Ring bigger", function() if ns.FishingRing then local s = ns.FishingRing:Settings() s.scale = math.min(2, (s.scale or 1) + 0.1) ns.FishingRing:Update() end end, 110 },
+      { "Ring smaller", function() if ns.FishingRing then local s = ns.FishingRing:Settings() s.scale = math.max(0.5, (s.scale or 1) - 0.1) ns.FishingRing:Update() end end, 110 } } },
+    { "note", "Drag the ring's middle button with the right mouse button to move it. Hover the lure button to pick another lure." },
     { "check", "Sound for rare catches", function() return ns.FishingHUD and ns.FishingHUD:Settings().rareSound end,
       function(on) if ns.FishingHUD then ns.FishingHUD:Settings().rareSound = on end end },
     -- the session in full, spots, records and the wanted list (FishingLog;
@@ -416,6 +425,22 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
       end
       return out
     end },
+    { "header", "Cook your fish", icon = "INV_Misc_Food_15" },
+    { "cards", function()
+      local B = ns.FishBook
+      local out = {}
+      for i, r in ipairs(B and B:Rows() or {}) do
+        if i > 8 then break end
+        local miss = {}
+        for _, m in ipairs(r.missing) do miss[#miss + 1] = string.format("%s %d/%d", m.name, m.have, m.have + m.need) end
+        out[#out + 1] = { pic = (C.ItemInfo(r.fishID) or {}).icon or "Interface\\Icons\\INV_Misc_Fish_02", title = r.fishName .. "  >  " .. r.recipe,
+          tags = { { "x" .. r.fishHave .. " in bags", "plain" }, r.n > 0 and { "can make " .. r.n, "good" } or { "need more", "warn" } },
+          line = #miss > 0 and ("Missing: " .. table.concat(miss, ", ")) or "",
+          actions = r.n > 0 and { { "Cook", function() B:Cook(r) end, "Opens Cooking and makes it (out of combat; the first click may only open the window)." } } or nil }
+      end
+      return out
+    end },
+    { "note", function() local B = ns.FishBook return (B and #B:Rows() > 0) and "" or "No raw fish in your bags with a Cooking recipe you know. Open Cooking once so Outrider reads your recipes." end },
     { "header", "Spots in this zone", icon = "INV_Misc_Map_01" },
     { "cards", function()
       local L = ns.FishingLog

@@ -134,6 +134,8 @@ Modules\Merchant.lua
 Modules\Fishing.lua
 Modules\FishingHUD.lua
 Modules\FishingLog.lua
+Modules\FishingRing.lua
+Modules\FishBook.lua
 Modules\FishingGuide.lua
 Modules\LootLog.lua
 Modules\HerbHelper.lua
