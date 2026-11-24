@@ -45,14 +45,48 @@ def version(d):
     return "ForeverDB %s (%s)" % (m.get("build", "?"), m.get("hash", "?"))
 
 
+_maps = None
+
+
+def world_to_map(d, cont, wx, wy):
+    """World position on a continent -> (uiMap, x, y), with the client's map bounds."""
+    global _maps
+    if _maps is None:
+        import import_travel
+        _maps = import_travel.Maps(d)
+    return _maps.to_map(cont, wx, wy)
+
+
 def place(d, key):
-    """First Forever map spot of 'c123' (creature) or 'o45' (object): (uiMap, x, y) 0..1, or None."""
-    spots = d["spm"].get(key)
-    if not spots:
-        return None
-    for ui, pts in spots.items():
-        if pts and len(pts) >= 2:
-            return int(ui), pts[0] / 1000.0, pts[1] / 1000.0
+    """First Forever map spot of 'c123' (creature) or 'o45' (object): (uiMap, x, y) 0..1, or None.
+    Hand-fixed spots (spm) first, then every map spot (spz), then a world spot (spw) turned into a map spot."""
+    for table in ("spm", "spz"):
+        for ui, pts in (d[table].get(key) or {}).items():
+            if pts and len(pts) >= 2:
+                return int(ui), pts[0] / 1000.0, pts[1] / 1000.0
+    for w in d["spw"].get(key) or []:
+        if len(w) >= 3:
+            p = world_to_map(d, w[0], w[1], w[2])
+            if p:
+                return p
+    return None
+
+
+_inst = None
+
+
+def entrance(d, key):
+    """For a creature that lives inside a dungeon: (dungeon name, uiMap, x, y) of its entrance, or None."""
+    global _inst
+    if _inst is None:
+        _inst = {}
+        for area, row in d["dng"].items():
+            a = d["area"].get(area)
+            if a and row[2]:
+                _inst.setdefault(a[1], (row[0], row[2][0], row[2][1] / 1000.0, row[2][2] / 1000.0))
+    for w in d["spw"].get(key) or []:
+        if w and w[0] in _inst:
+            return _inst[w[0]]
     return None
 
 

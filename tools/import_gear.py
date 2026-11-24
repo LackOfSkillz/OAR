@@ -111,14 +111,22 @@ def augment_foreverdb(out, counts):
                 break
             n = fdb.npc(d, nid)
             at = fdb.place(d, "c%d" % nid)
+            chance_txt = (", %s" % fdb.pct(chance)) if chance else ""
             if n and at:
                 kind = "rare" if n[3] in RARE_RANKS else "drop"
                 who = n[0] + (" (%s)" % fdb.pct(chance) if chance else "")
                 add((kind, at[0], at[1], at[2], who, None, fdb.faction(d, nid), None))
                 kept += 1
+            elif n:
+                # lives inside a dungeon: the waypoint is the entrance
+                ent = fdb.entrance(d, "c%d" % nid)
+                if ent:
+                    add(("dungeon", ent[1], ent[2], ent[3], "%s (%s%s)" % (n[0], ent[0], chance_txt), None, None, None))
+                    kept += 1
         if key in d["world"] and kept == 0:
             add(("world", 0, 0.0, 0.0, "creatures level %d and up" % d["world"][key], None, None, None))
-        for oid, chance in (d["odrop"].get(key) or [])[:FDB_KEEP]:
+        # world drops also sit in random-loot chests: "world drop" says it better
+        for oid, chance in ([] if key in d["world"] else (d["odrop"].get(key) or []))[:FDB_KEEP]:
             o = d["obj"].get(str(oid))
             at = fdb.place(d, "o%d" % oid)
             if o and at and o[0]:
@@ -138,6 +146,10 @@ def augment_foreverdb(out, counts):
             if n and at:
                 add(("vendor", at[0], at[1], at[2], n[0], None, fdb.faction(d, nid), None))
                 vk += 1
+            elif n and vk == 0 and not any(x[0] == "vendor" for x in srcs):
+                # a vendor with no spot on a map (PvP halls): named, no waypoint
+                add(("vendor", 0, 0.0, 0.0, n[0], None, fdb.faction(d, nid), None))
+                vk += 1
         for qid in (d["rew"].get(key) or [])[:FDB_KEEP]:
             qt = d["quest"].get(str(qid))
             givers = d["qg"].get(str(qid)) or []
@@ -152,7 +164,9 @@ def augment_foreverdb(out, counts):
                         o = d["obj"].get(g[1:])
                         gname = o[0] if o else None
                     break
-            if qt and at and not any(x[0] == "quest" and x[7] and x[7][0] == qid for x in srcs):
+            if qt and not any(x[0] == "quest" and x[7] and x[7][0] == qid for x in srcs):
+                # no known giver spot: the quest by name, no waypoint
+                at = at or (0, 0.0, 0.0)
                 srcs.append(("quest", at[0], at[1], at[2], qt[0], qt[1] or None, gfac, (qid, qt[2] or 1, [], [])))
                 note("quest")
         if srcs:
