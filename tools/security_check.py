@@ -62,7 +62,10 @@ SECRET = re.compile(r"\b(sk-[A-Za-z0-9_-]{24,}|sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-
 
 
 def rel(p):
-    return os.path.relpath(p, ROOT).replace("\\", "/")
+    try:
+        return os.path.relpath(p, ROOT).replace("\\", "/")
+    except ValueError:  # another drive (CI checks out on D:, temp files live on C:)
+        return p.replace("\\", "/")
 
 
 def lua_violations(paths):

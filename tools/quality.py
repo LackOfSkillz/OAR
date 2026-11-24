@@ -37,7 +37,10 @@ SKIP_LUA_SIZE = ("addon/Outrider/Data/", "addon/Outrider_Data_")  # generated da
 
 
 def rel(p):
-    return os.path.relpath(p, ROOT).replace("\\", "/")
+    try:
+        return os.path.relpath(p, ROOT).replace("\\", "/")
+    except ValueError:  # another drive (CI checks out on D:, temp files live on C:)
+        return p.replace("\\", "/")
 
 
 def walk(dirs, ext):
