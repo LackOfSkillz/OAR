@@ -58,7 +58,7 @@ SENSITIVE = re.compile(
 def git(where: Path, *args: str) -> str:
     result = subprocess.run(["git", "-C", str(where), *args],
                             capture_output=True, text=True, check=True)
-    return result.stdout.strip()
+    return result.stdout.rstrip()  # keep the leading space of "git status --porcelain" lines
 
 
 def sha(data: bytes) -> str:
