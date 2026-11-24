@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.7 (2026-11-23)
 
 - **Player names in chat are clickable again:** with class-coloured names on, some lines showed raw link text ("|Hplayer:Mia Starleaf:407:CHANNEL:1[Mia Starleaf]"). Outrider coloured the sender's name itself, and the game builds the clickable name from it, so the colour broke the link. Now the name is left alone and the game's own "colour names by class" chat option is switched on instead.
 
