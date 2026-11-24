@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.6 (2026-11-23)
 
 - **Gear sources: 11,164 items** (was 8,909). Dungeon bosses now point to the dungeon's entrance ("Lady Anacondra (Wailing Caverns, 37%)"), rares and quest givers use every Forever map spot ForeverDB has, quest rewards are named even when the giver's spot isn't known, and PvP vendors are named. GearQuest now knows 1,104 items we don't, and 704 of those have no source there either.
 
