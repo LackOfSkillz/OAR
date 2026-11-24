@@ -33,7 +33,7 @@ it is never live or review acceptance.
 | OI01-12 Dependency and duplication audit | MOCK_GREEN | ad8b16b | [OI01-12](../reviews/phase1/OI01-12.md) | deps map + gate; 32 pairs, 48 private reads baselined; nothing removed |
 | OI01-13 Security checks upgrade | MOCK_GREEN | dc6f373 | [OI01-13](../reviews/phase1/OI01-13.md) | token/AST/secret gate; fixed FishBook chat bypass; PartyQuests auto party lines noted for owner |
 | OI01-14 Migration and recovery foundation | MOCK_GREEN | 81d14ac | [OI01-14](../reviews/phase1/OI01-14.md) | Core/Archive: 27 collected-data drops now archive; log caps kept; SV backup taken |
-| OI01-15 Release regression baseline | MOCK_GREEN | see commit | [OI01-15](../reviews/phase1/OI01-15.md) | journeys green in mock; live list for Gary; fishing ring now yields to fishing addons |
-| OI01-GATE Phase 1 review gate | NOT_STARTED | | | stops for ChatGPT review and Gary's approval |
+| OI01-15 Release regression baseline | MOCK_GREEN | 8de1ffa | [OI01-15](../reviews/phase1/OI01-15.md) | journeys green in mock; live list for Gary; fishing ring now yields to fishing addons |
+| OI01-GATE Phase 1 review gate | IN_PROGRESS | see commit | [packet](../reviews/phase1/OI01-GATE.md) | STOPPED: waiting for push OK, ChatGPT review, OI01-04 live data and Gary's decisions |
 
 Phases 2-8 (OI02-OI08): NOT_STARTED; they start only after the previous gate is accepted.
