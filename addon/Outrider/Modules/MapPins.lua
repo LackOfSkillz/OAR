@@ -44,7 +44,7 @@ local GROUP = {
   innkeeper = "service", bank = "service", auction = "service", flight_master = "service", stable_master = "service",
   mailbox = "service", guild_master = "service", tabard = "service", spirit_healer = "service",
   rare = "rare", note = "service", quest_giver = "quest", herb = "gather", ore = "gather", fish = "gather", pool = "gather", guildmate = "guild",
-  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
+  trail = "trail", ride = "ride", transport = "ride", dungeon = "dungeon", boss = "dungeon", objective = "quest", turnin = "quest", qpath = "quest",
   path = "path",
 }
 M.RARE_STATE = { alive = { 1, 0.25, 0.25 }, open = { 1, 0.78, 0.3 }, dead = { 0.5, 0.5, 0.55 }, waiting = { 0.5, 0.5, 0.55 } }
@@ -65,6 +65,7 @@ local ICON = {
   objective = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8",
   turnin = "Interface\\GossipFrame\\ActiveQuestIcon",
   dungeon = "Interface\\Icons\\INV_Misc_Key_14",
+  boss = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull",
   quest_giver = "Interface\\GossipFrame\\AvailableQuestIcon",
   -- these fell back to the game's "no icon" circle (a dark "..." on the map)
   qpath = "Interface\\COMMON\\Indicator-Yellow", note = "Interface\\Icons\\INV_Misc_Note_01",
@@ -321,6 +322,10 @@ function M:BuildPins(mapID)
     end
   end
   if ns.MapTab then for _, note in ipairs(ns.MapTab:NotesFor(mapID)) do out[#out + 1] = note end end
+  -- bosses and their loot on dungeon maps (DungeonJournal, travel pack)
+  if ns.DungeonJournal and not hidden.boss then
+    for _, b in ipairs(ns.DungeonJournal:BossPins(mapID)) do out[#out + 1] = b end
+  end
   -- Guildmates sharing their location (P8-04), class colored
   if ns.LocationShare and ns.LocationShare.enabled and not hidden.guildmate then
     local colors = rawget(_G, "RAID_CLASS_COLORS") or {}
@@ -471,7 +476,7 @@ M.MENU = {
   { "Trainers", { "trainer" } },
   { "Services", { "innkeeper", "bank", "auction", "flight_master", "stable_master", "mailbox", "guild_master", "tabard", "spirit_healer" } },
   { "Herbs, ore and fish", { "herb", "ore", "fish", "pool" } },
-  { "Travel and dungeons", { "transport", "ride", "dungeon" } },
+  { "Travel and dungeons", { "transport", "ride", "dungeon", "boss" } },
   { "Your trail", { "trail" } },
   { "Guildmates", { "guildmate" } },
   { "Your notes", { "note" } },

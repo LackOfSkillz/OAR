@@ -125,6 +125,43 @@ def main():
             count("lifts")
     lines.append("},")
 
+    # Bosses inside dungeons (Gary, 2026-11-23, ideas from FojjiCore): creatures
+    # that live in an instance and drop gear (blue or better at 3%+), with
+    # their spot in the instance's own world coordinates; the game turns that
+    # into a spot on the dungeon map. {npcID, name, rank, x, y, {itemID, chance, ...}}
+    inst_ids = set()
+    for area in d["dng"]:
+        a = d["area"].get(area)
+        if a:
+            inst_ids.add(a[1])
+    # continents and battlegrounds are not dungeons
+    inst_ids -= {row[1] for row in d["umaa"].values()}
+    loot = {}
+    for iid, rows in d["drop"].items():
+        info = fdb.item(d, int(iid))
+        if not info or info[4] not in (2, 4) or (info[1] or 0) < 3:
+            continue
+        for nid, chance in rows:
+            if (chance or 0) >= 300:
+                loot.setdefault(nid, []).append((int(iid), chance))
+    bosses = {}
+    for nid, items in loot.items():
+        n = fdb.npc(d, nid)
+        spots = d["spw"].get("c%d" % nid) or []
+        if not n or not spots or spots[0][0] not in inst_ids or len(spots[0]) < 3:
+            continue
+        items.sort(key=lambda x: -x[1])
+        bosses.setdefault(spots[0][0], []).append((nid, n[0], n[3], spots[0][1], spots[0][2], items[:8]))
+    lines.append("-- bosses inside dungeons: [instanceID] = { {npcID, name, rank, worldX, worldY, {itemID, chancePer10000, ...}}, ... }")
+    lines.append("bosses = {")
+    for inst in sorted(bosses):
+        lines.append("[%d]={" % inst)
+        for nid, name, rank, x, y, items in sorted(bosses[inst]):
+            lines.append("{%d,%s,%d,%.1f,%.1f,{%s}}," % (nid, lua_str(name), rank, x, y, ",".join("%d,%d" % it for it in items)))
+            count("dungeon bosses")
+        lines.append("},")
+    lines.append("},")
+
     os.makedirs(OUT, exist_ok=True)
     version = fdb.version(d)
     with open(os.path.join(OUT, "Outrider_Data_Travel.toc"), "w", encoding="utf-8", newline="\n") as f:

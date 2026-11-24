@@ -1016,6 +1016,13 @@ function M.new(opts)
   base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end
   -- world yards: 1 map unit = 1000 yards on every test map
   -- game.mapWorld[mapID] = { continent, offsetX, offsetY } puts maps side by side or on other continents
+  -- the inverse, onto a given map: (continent, world vector, uiMapID) -> uiMapID, map position
+  base.C_Map.GetMapPosFromWorldPos = function(cont, v, mapID)
+    local w = game.mapWorld and game.mapWorld[mapID]
+    if not w or w[1] ~= cont then return nil end
+    local x, y = (v.x - w[2]) / 1000, (v.y - w[3]) / 1000
+    return mapID, { GetXY = function() return x, y end }
+  end
   base.C_Map.GetWorldPosFromMapPos = function(mapID, v)
     local w = game.mapWorld and game.mapWorld[mapID]
     return w and w[1] or 1, { GetXY = function() return v.x * 1000 + (w and w[2] or 0), v.y * 1000 + (w and w[3] or 0) end }

@@ -253,3 +253,60 @@ function Toast:SelfTest()
   })
   ns.Log:Info("selftest", "toast shown")
 end
+
+-- ------------------------------------------------------------ unlock mode
+-- (FojjiCore idea, 2026-11-23) /ride unlock shows every Outrider piece that
+-- can be moved, hidden or not, with a gold "drag me" outline: the pop-up
+-- spot (a sample pop-up), the fishing panel, the info bar, the quest tracker
+-- and the heal bars. Drag them where you want; /ride lock puts back what was
+-- hidden. Out of combat only (the heal bars and fishing button are secure).
+ns.Unlock = { FRAMES = { "Outrider_FishingHUD", "Outrider_InfoBar", "Outrider_QuestTracker", "Outrider_HealPanel" }, on = false, was = {} }
+local U = ns.Unlock
+
+local function mark(f, label, on)
+  if not f.otrUnlock then
+    local o = f:CreateTexture(nil, "OVERLAY")
+    o:SetAllPoints()
+    o:SetColorTexture(1, 0.82, 0.25, 0.22)
+    local t = f:CreateFontString(nil, "OVERLAY")
+    t:SetFont(ns.Theme.font.path, 12, "OUTLINE")
+    t:SetPoint("CENTER")
+    t:SetTextColor(1, 0.85, 0.3)
+    f.otrUnlock = { o, t }
+  end
+  f.otrUnlock[2]:SetText(label .. ": drag me")
+  for _, r in ipairs(f.otrUnlock) do r:SetShown(on) end
+end
+
+function U:Set(on)
+  if ns.Compat.InCombat() then ns.Print("unlock: not in combat") return false end
+  if on == self.on then return true end
+  self.on = on
+  local n = 0
+  for _, name in ipairs(self.FRAMES) do
+    local f = rawget(_G, name)
+    if f then
+      if on then
+        self.was[name] = f:IsShown()
+        f:Show()
+        if f.SetMovable then f:SetMovable(true) end
+        mark(f, (name:gsub("^Outrider_", "")), true)
+        n = n + 1
+      else
+        mark(f, "", false)
+        if self.was[name] == false then f:Hide() end
+      end
+    end
+  end
+  if on then
+    self.sample = Toast:Show({ title = "Outrider pop-ups show here", text = "Drag this pop-up to move them all. /ride lock when done.", duration = 600 })
+  elseif self.sample then
+    Toast:Fade(self.sample)
+    self.sample = nil
+  end
+  ns.Print(on and "unlocked: %d pieces and the pop-up spot show; drag them, then /ride lock" or "locked", n)
+  return true
+end
+
+ns.AddCommand("unlock", "show every Outrider piece you can move, to drag it", function() U:Set(true) end)
+ns.AddCommand("lock", "hide the move outlines again", function() U:Set(false) end)

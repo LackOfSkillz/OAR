@@ -168,3 +168,173 @@ ns.AddCommand("journal", "journal [dungeon name]  browse bosses, loot, quests an
   end
   M:Toggle()
 end)
+
+-- ------------------------------------------------------------ bosses on dungeon maps
+-- (Gary, 2026-11-23: ideas from FojjiCore.) The travel pack lists the
+-- creatures inside each instance that drop blue or better gear, at their
+-- spot in the instance's own world coordinates. On a dungeon map the game
+-- turns that spot into a map position (C_Map.GetMapPosFromWorldPos), so the
+-- pins come from the client's own map, not from coordinates typed in.
+-- Which order the game wants (x, y) or (y, x) is found once from the first
+-- boss that lands on the map, and logged. verified = false until seen.
+M.bossCache = {}
+local function toMap(inst, wx, wy, mapID, order)
+  local get, vec = C.Resolve("C_Map.GetMapPosFromWorldPos"), rawget(_G, "CreateVector2D")
+  if type(get) ~= "function" or type(vec) ~= "function" then return nil end
+  local a, b = wx, wy
+  if order == "yx" then a, b = wy, wx end
+  local ok, ui, pos = pcall(get, inst, vec(a, b), mapID)
+  if not ok or not pos then return nil end
+  local okXY, x, y = pcall(pos.GetXY, pos)
+  if okXY and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 then return x, y end
+  return nil
+end
+
+function M:BossPins(mapID)
+  if not mapID then return {} end
+  local hit = self.bossCache[mapID]
+  if hit then return hit end
+  local out = {}
+  self.bossCache[mapID] = out
+  local info = C.Call("C_Map.GetMapInfo", mapID)
+  local mtype = type(info) == "table" and info.mapType
+  if mtype ~= 4 and mtype ~= 5 then return out end   -- dungeon or micro-dungeon maps only
+  local inst = ns.Waypoints and ns.Waypoints.WorldPos(mapID, 0.5, 0.5)
+  local pack = ns.Travel and ns.Travel:Pack()
+  local list = inst and pack and pack.bosses and pack.bosses[inst]
+  if not list then return out end
+  for _, b in ipairs(list) do
+    local x, y = toMap(inst, b[4], b[5], mapID, M.order)
+    if not x and not M.order then
+      for _, o in ipairs({ "xy", "yx" }) do
+        x, y = toMap(inst, b[4], b[5], mapID, o)
+        if x then M.order = o self:Info("dungeon map %d: boss spots use (%s) order", mapID, o) break end
+      end
+    end
+    if x then
+      local lines = {}
+      for i = 1, #(b[6] or {}) - 1, 2 do
+        local it = C.ItemInfo(b[6][i])
+        local wish = ns.BagExtras and ns.BagExtras:Wishlist()[b[6][i]] and "  |cff66d980(wish list)|r" or ""
+        lines[#lines + 1] = string.format("%s  %.0f%%%s", it and it.name or ("item " .. b[6][i]), b[6][i + 1] / 100, wish)
+      end
+      out[#out + 1] = { id = "boss-" .. b[1], kind = "boss", mapID = mapID, x = x, y = y, name = b[2], npcID = b[1],
+        poi = { kind = "boss", name = b[2], title = "drops", note = table.concat(lines, "\n"), source = "ForeverDB, unchecked" } }
+    end
+  end
+  self:Debug("dungeon map %d (instance %s): %d of %d bosses placed", mapID, tostring(inst), #out, #list)
+  return out
+end
+
+-- ------------------------------------------------------------ wish list drops
+-- (FojjiCore idea, 2026-11-23) An item on your wish list is up for a roll,
+-- in a loot window, or someone got it: one toast per item per minute. The
+-- wish list itself lives in BagExtras (/ride wish, the journal's [WISHLIST]).
+M.told = {}
+local function itemID(link) return type(link) == "string" and tonumber(link:match("item:(%d+)")) or nil end
+
+function M:WishSeen(id, how, link)
+  local wish = ns.BagExtras and ns.BagExtras:Wishlist()
+  if not (id and wish and wish[id]) then return false end
+  local now = time()
+  if self.told[id] and now - self.told[id] < 60 then return false end
+  self.told[id] = now
+  local name = (C.ItemInfo(id) or {}).name or wish[id].name or ("item " .. id)
+  if how == "got" then wish[id].got = now end
+  local title = how == "roll" and "Wish list: up for a roll" or how == "loot" and "Wish list: in this loot"
+    or how == "got" and "Wish list: you got it" or "Wish list: it dropped"
+  ns.Toast:Show({ title = title, text = name, color = "good", duration = 12 })
+  if ns.Feed then ns.Feed:Add(nil, { title = title, text = name }) end
+  self:Info("wish list %s: %s", how, name)
+  return true
+end
+
+-- ------------------------------------------------------------ dungeon run timer
+-- (FojjiCore idea, 2026-11-23) The clock starts when you enter a dungeon,
+-- each boss kill (ENCOUNTER_END with success, the game's own event; no
+-- combat log) is a split, and the run ends when you leave: its time is the
+-- last kill. Best time per dungeon, account-wide, for runs that killed at
+-- least as many bosses. Back inside within REJOIN seconds: the same run.
+M.REJOIN = 600
+local function runs()
+  local g = ns.db.global
+  g.dungeonRuns = type(g.dungeonRuns) == "table" and g.dungeonRuns or {}
+  return g.dungeonRuns
+end
+function M.Clock(sec)
+  sec = math.floor((sec or 0) + 0.5)
+  return string.format("%d:%02d", math.floor(sec / 60), sec % 60)
+end
+
+function M:RunCheck()
+  local inside, kind = C.Call("IsInInstance")
+  local now = C.Call("GetTime") or 0
+  local run = self.run
+  if inside and (kind == "party" or kind == "raid") then
+    local name = C.Readable(C.Call("GetInstanceInfo")) or "dungeon"
+    if run and run.name == name and (not run.left or now - run.left < M.REJOIN) then run.left = nil return run end
+    if run then self:RunEnd() end
+    self.run = { name = name, start = now, splits = {} }
+    self:Info("dungeon run: %s started", name)
+    return self.run
+  elseif run and not run.left then
+    run.left = now
+  elseif run and run.left and now - run.left >= M.REJOIN then
+    self:RunEnd()
+  end
+  return self.run
+end
+
+function M:RunSplit(boss)
+  local run = self.run
+  if not run or run.left then return nil end
+  local t = (C.Call("GetTime") or 0) - run.start
+  run.splits[#run.splits + 1] = { boss = boss, t = t }
+  local rec = runs()[run.name]
+  local best = rec and rec.splits and rec.splits[boss]
+  local text = string.format("%s down at %s%s", tostring(boss), M.Clock(t),
+    best and string.format(" (best %s, %s%s)", M.Clock(best), t <= best and "-" or "+", M.Clock(math.abs(t - best))) or "")
+  ns.Toast:Show({ title = run.name, text = text, color = (best and t > best) and "warn" or "good", duration = 8 })
+  self:Info("dungeon run split: %s", text)
+  return t
+end
+
+function M:RunEnd()
+  local run = self.run
+  self.run = nil
+  if not run or #run.splits == 0 then return nil end
+  local total = run.splits[#run.splits].t
+  local all = runs()
+  local rec = all[run.name] or { splits = {} }
+  local better = not rec.best or #run.splits > (rec.bosses or 0) or (#run.splits == (rec.bosses or 0) and total < rec.best)
+  for _, sp in ipairs(run.splits) do
+    if not rec.splits[sp.boss] or sp.t < rec.splits[sp.boss] then rec.splits[sp.boss] = sp.t end
+  end
+  if better then rec.best, rec.bosses, rec.at = total, #run.splits, time() end
+  rec.runs = (rec.runs or 0) + 1
+  rec.last = { t = total, bosses = #run.splits, at = time() }
+  all[run.name] = rec
+  local text = string.format("%d boss%s in %s%s", #run.splits, #run.splits == 1 and "" or "es", M.Clock(total),
+    better and " (new best)" or string.format(" (best %s)", M.Clock(rec.best)))
+  ns.Toast:Show({ title = run.name .. " run", text = text, color = better and "good" or "info", duration = 12 })
+  self:Info("dungeon run: %s %s", run.name, text)
+  return total, better
+end
+
+function M:OnEnable()
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:RunCheck() end)
+  self:On("ZONE_CHANGED_NEW_AREA", function(mod) mod:RunCheck() end)
+  self:On("ENCOUNTER_END", function(mod, _, _, name, _, _, success)
+    if success == 1 or success == true then mod:RunSplit(C.Readable(name) or "boss") end
+  end)
+  self:On("START_LOOT_ROLL", function(mod, _, rollID) mod:WishSeen(itemID(C.Call("GetLootRollItemLink", rollID)), "roll") end)
+  self:On("LOOT_OPENED", function(mod)
+    for slot = 1, (C.Call("GetNumLootItems") or 0) do mod:WishSeen(itemID(C.Call("GetLootSlotLink", slot)), "loot") end
+  end)
+  self:On("CHAT_MSG_LOOT", function(mod, _, msg)
+    if type(msg) ~= "string" or C.IsSecret(msg) then return end
+    local id = itemID(msg)
+    local mine = rawget(_G, "LOOT_ITEM_SELF") and msg:find((LOOT_ITEM_SELF:gsub("%%s.*", "")), 1, true) == 1
+    if id then mod:WishSeen(id, mine and "got" or "other") end
+  end)
+end
