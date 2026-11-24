@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Price history:** Gold > Price history shows a graph of each item's lowest price per day over 7 days, 30 days or everything, with the usual price, the range and the trend. Items you sell or search are tracked by themselves; Track adds any other.
+- **Best time to list:** three charts show how an item's price runs by time of day, day of week and part of the month, with the best time in green and one plain sentence of advice. Tracked items show it on their tooltip.
 - **A live map inside Outrider:** the game's own map art drawn in Outrider's windows, with zoom (mouse wheel), drag to move, click a zone to open it, right-click to go up, Outrider's pins (places, rares, quest givers, bosses) and your arrow.
 - **Draw routes:** Map and places > Map and routes. Draw freehand lines in seven colors, drop raid-icon markers and type labels, with undo and erase. Shown routes appear on the world map and as dots on the minimap.
 - **Share routes:** send one to your party or guild with a button (they need Outrider), or copy it as text. Routes from friends arrive switched off.

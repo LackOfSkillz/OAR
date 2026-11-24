@@ -493,6 +493,11 @@ function M.new(opts)
       local list = game.commodityList and game.commodityList[id]
       if list then local r = list[i] return r and { unitPrice = r[1], quantity = r[2] or 1, numOwnerItems = r[3] or 0, owners = r[4] } end
       local p = game.commodity and game.commodity[id] return p and { unitPrice = p } end,
+    GetCommoditySearchResultsQuantity = function(id)
+      local list = game.commodityList and game.commodityList[id]
+      if not list then return game.commodity and game.commodity[id] and 1 or 0 end
+      local n = 0 for _, r in ipairs(list) do n = n + (r[2] or 1) end return n
+    end,
     GetNumCommoditySearchResults = function(id)
       local list = game.commodityList and game.commodityList[id]
       if list then return #list end

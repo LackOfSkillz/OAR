@@ -27,8 +27,11 @@ end
 
 local function today() return math.floor(time() / 86400) end
 
-function M:Record(itemID, copper)
+function M:Record(itemID, copper, qty)
   if type(itemID) ~= "number" or type(copper) ~= "number" or copper <= 0 then return end
+  -- tracked items also keep hourly samples (PriceHistory)
+  local PH = ns.PriceHistory
+  if PH and PH.enabled and PH.store then ns.Safe("prices:history", PH.Seen, PH, itemID, copper, qty) end
   local h = self.db[itemID]
   if not h then h = {} self.db[itemID] = h end
   local d = today()
@@ -213,14 +216,17 @@ function M:OnBrowse()
   if type(results) ~= "table" then return end
   for _, r in ipairs(results) do
     local id = r.itemKey and r.itemKey.itemID
-    self:Record(id, C.Readable(r.minPrice))
+    self:Record(id, C.Readable(r.minPrice), C.Readable(r.totalQuantity))
   end
   self:Debug("AH browse: %d results", #results)
 end
 
 function M:OnCommodity(_, itemID)
   local info = C.Call("C_AuctionHouse.GetCommoditySearchResultInfo", itemID, 1)
-  if type(info) == "table" then self:Record(itemID, C.Readable(info.unitPrice)) end
+  -- you looked this item up: track its price history (PriceHistory)
+  if ns.PriceHistory and ns.PriceHistory.enabled and ns.PriceHistory.store then ns.PriceHistory:Watch(itemID, "search") end
+  local total = C.Call("C_AuctionHouse.GetCommoditySearchResultsQuantity", itemID)
+  if type(info) == "table" then self:Record(itemID, C.Readable(info.unitPrice), C.Readable(total)) end
 end
 
 -- Full auction house scan (Gary, 2026-11-14: "no loss of functionality
@@ -266,7 +272,7 @@ function M:OnReplicate()
   if type(info) ~= "function" then self.scanning = nil return end
   self.reading = true
   -- also the few cheapest listings of each item (Deals: vendor flips, resale)
-  local mins, cheap, i, listings = {}, {}, 0, 0
+  local mins, cheap, qty, i, listings = {}, {}, {}, 0, 0
   local function step()
     local last = math.min(n - 1, i + M.SCAN_CHUNK - 1)
     for k = i, last do
@@ -277,13 +283,14 @@ function M:OnReplicate()
         local per = math.floor(buyout / count)
         if not mins[itemID] or per < mins[itemID] then mins[itemID] = per end
         M.KeepCheap(cheap, itemID, per, count)
+        qty[itemID] = (qty[itemID] or 0) + count
         listings = listings + 1
       end
     end
     i = last + 1
     if i < n then ns.Timer.After(0, step, "prices:scanstep") return end
     local items = 0
-    for id, p in pairs(mins) do M:Record(id, p) items = items + 1 end
+    for id, p in pairs(mins) do M:Record(id, p, qty[id]) items = items + 1 end
     M.lastScan = { at = time(), items = cheap }
     M.scanning, M.reading = nil, nil
     M:Info("full price scan: %d listings, %d items priced", listings, items)

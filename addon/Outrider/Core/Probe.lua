@@ -96,7 +96,7 @@ Probe.APIS = {
   { "C_ChatInfo.RegisterAddonMessagePrefix", "P8" }, { "C_ChatInfo.SendAddonMessage", "P8" },
   { "C_FriendList.GetNumFriends", "P8" }, { "C_FriendList.GetFriendInfoByIndex", "P8" },
   { "C_FriendList.SendWho", "P8" }, { "C_FriendList.GetNumWhoResults", "P8" }, { "C_FriendList.GetWhoInfo", "P8" },
-  { "GetPlayerInfoByGUID", "P8" }, { "C_MapExplorationInfo.GetExploredMapTextures", "P3" }, { "C_Map.GetMapArtLayers", "P3" }, { "C_Map.GetMapArtLayerTextures", "P3" }, { "C_Map.GetMapInfoAtPosition", "P3" }, { "C_Map.GetMapGroupMembersInfo", "P3" },
+  { "GetPlayerInfoByGUID", "P8" }, { "C_MapExplorationInfo.GetExploredMapTextures", "P3" }, { "C_Map.GetMapArtLayers", "P3" }, { "C_Map.GetMapArtLayerTextures", "P3" }, { "C_Map.GetMapInfoAtPosition", "P3" }, { "C_Map.GetMapGroupMembersInfo", "P3" }, { "C_AuctionHouse.GetCommoditySearchResultsQuantity", "P5" },
   { "C_Map.GetMapChildrenInfo", "P3" }, { "C_FriendList.SetWhoToUi", "P8" }, { "ChatFrameUtil.SendTell", "P8" }, { "ChatFrame_SendTell", "P8" },
   { "C_PartyInfo.InviteUnit", "P8" }, { "C_GuildInfo.Invite", "P8" }, { "CanGuildInvite", "P8" }, { "GetGuildRosterInfo", "P8" }, { "GetClassInfo", "P8" },
   { "C_BattleNet.GetFriendAccountInfo", "P8" }, { "BNGetNumFriends", "P8" }, { "IsInGuild", "P8" },

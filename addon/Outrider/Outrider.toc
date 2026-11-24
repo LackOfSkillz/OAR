@@ -116,6 +116,7 @@ Modules\Professions.lua
 Modules\Crafter.lua
 Modules\CookTrainer.lua
 Modules\Prices.lua
+Modules\PriceHistory.lua
 Modules\AuctionHelper.lua
 Modules\AHBuy.lua
 Modules\TrainShop.lua

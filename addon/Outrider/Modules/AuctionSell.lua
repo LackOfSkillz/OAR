@@ -224,7 +224,10 @@ function M:Store(itemID, p)
   if self.logged <= 12 then
     self:Info("lowest now for item %d: %s (yours %s, %d for sale)", itemID, p.low and money(p.low) or "none", p.mine and money(p.mine) or "none", p.count or 0)
   end
-  if p.low and ns.Prices then ns.Prices:Record(itemID, p.low) end
+  -- selling it: track its price history and best time to list
+  local PH = ns.PriceHistory
+  if PH and PH.enabled and PH.store then PH:Watch(itemID, "sell") end
+  if p.low and ns.Prices then ns.Prices:Record(itemID, p.low, p.count) end
   self:Changed()
 end
 
