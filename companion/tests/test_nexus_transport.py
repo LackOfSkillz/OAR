@@ -21,7 +21,7 @@ def _lines(name):
     out = []
     with open(os.path.join(ROOT, "tests", "fixtures", "contract", name), encoding="utf-8") as fh:
         for line in fh:
-            line = line.rstrip("\n")
+            line = line.rstrip("\r\n")
             if "\t" in line:
                 out.append(line.split("\t", 1))
     return out
