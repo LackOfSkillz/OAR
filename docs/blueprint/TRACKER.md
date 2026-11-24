@@ -32,7 +32,7 @@ it is never live or review acceptance.
 | OI01-11 Error and event semantics | NOT_STARTED | | | |
 | OI01-12 Dependency and duplication audit | NOT_STARTED | | | |
 | OI01-13 Security checks upgrade | NOT_STARTED | | | |
-| OI01-14 Migration and recovery foundation | NOT_STARTED | | | |
+| OI01-14 Migration and recovery foundation | NOT_STARTED | | | includes the owner retention decision: collected data archives instead of deleting (prices, price history, fishing sessions, sightings, routes); log caps stay |
 | OI01-15 Release regression baseline | NOT_STARTED | | | |
 | OI01-GATE Phase 1 review gate | NOT_STARTED | | | stops for ChatGPT review and Gary's approval |
 
