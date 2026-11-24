@@ -177,6 +177,7 @@ Modules\Chat.lua
 Modules\Find.lua
 Modules\RarePlates.lua
 Modules\Advisor.lua
+Intelligence\State.lua
 Intelligence\Radar.lua
 Intelligence\DealDesk.lua
 Intelligence\SessionXP.lua
