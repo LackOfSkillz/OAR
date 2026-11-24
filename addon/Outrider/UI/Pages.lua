@@ -394,6 +394,26 @@ ns.Hub:AddTab("home", "Home", function(p)
 
   function p:Refresh()
     self:Layout()
+    -- Self-check, once a session (Gary, 2026-11-23: the painting showed as a
+    -- black banner on his druid): what each half of the painting holds. A
+    -- half the game reports as empty falls back to the world header art.
+    if not self.artChecked then
+      self.artChecked = true
+      local parts = {}
+      for _, k in ipairs({ "artL", "artR" }) do
+        local t = self.hero[k]
+        local file = t.GetTextureFilePath and t:GetTextureFilePath() or (t.GetTexture and t:GetTexture())
+        local l, r, top, bottom = 0, 0, 0, 0
+        if t.GetTexCoord then l, top, _, bottom, r = t:GetTexCoord() end
+        parts[#parts + 1] = string.format("%s file=%s shown=%s alpha=%.2f size=%.0fx%.0f crop=%.2f-%.2f", k, tostring(file),
+          tostring(t:IsShown()), t:GetAlpha() or 0, t:GetWidth() or 0, t:GetHeight() or 0, tonumber(top) or 0, tonumber(bottom) or 0)
+        if file == nil or file == "" then
+          if not (ns.Art and ns.Art:Set(t, "header_world")) then t:SetColorTexture(Theme:Color("panel")) end
+        end
+      end
+      ns.Log:Info("Home", "painting: halves=%s, %s, hero %.0fx%.0f", tostring(self.hero.halves), table.concat(parts, "; "),
+        self.hero:GetWidth() or 0, self.hero:GetHeight() or 0)
+    end
     -- hero
     local name = tostring(ns.db.key):match("^[^-]+") or "?"
     self.heading:SetText("Welcome back, " .. name)
