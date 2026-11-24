@@ -26,6 +26,8 @@ M.STUTTER_MS = 16         -- one handler this long drops a frame at 60 FPS
 M.LEVELS = { { 0.5, "fine" }, { 2, "small" } } -- % of the game's time; above: heavy
 
 function M:OnInitialize() self.on = false end
+-- a running check stops with the module (OI01-11: no sampler left behind)
+function M:OnDisable() if self.on then self:Stop("module off") end end
 
 -- Called by the event and timer dispatch while a check runs.
 function M:Note(where, ms)

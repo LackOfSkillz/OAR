@@ -5,7 +5,7 @@
 -- Internal messages (ns:Fire) use the same table with names starting "OTR_".
 
 local _, ns = ...
-local Events = { handlers = {}, unitFrames = {}, stats = {}, slow = {} }
+local Events = { handlers = {}, unitFrames = {}, stats = {}, slow = {}, unavailable = {} }
 ns.Events = Events
 
 -- Events addons may not even try to register on Forever: the attempt makes
@@ -53,14 +53,22 @@ function Events:On(event, owner, fn)
     if ns.Log then ns.Log:Warn("events", "refused %s: forbidden for addons on Forever", event) end
     return nil
   end
+  -- OI01-11: an event this client refuses stays refused for the session; the
+  -- caller gets nil, "unavailable" (a degraded capability, not a success), and
+  -- the registration is not retried on every call.
+  if self.unavailable[event] then return nil, "unavailable" end
   local list = self.handlers[event]
   if not list then
-    list = {}
-    self.handlers[event] = list
     if not isInternal(event) then
       local ok = pcall(frame.RegisterEvent, frame, event)
-      if not ok and ns.Log then ns.Log:Info("events", "cannot register %s on this client (feature off)", event) end
+      if not ok then
+        self.unavailable[event] = true
+        if ns.Log then ns.Log:Info("events", "cannot register %s on this client (feature off)", event) end
+        return nil, "unavailable"
+      end
     end
+    list = {}
+    self.handlers[event] = list
   end
   local h = { owner = owner, ownerName = (type(owner) == "table" and type(owner.name) == "string") and owner.name or (type(owner) == "string" and owner) or "?", fn = fn }
   list[#list + 1] = h

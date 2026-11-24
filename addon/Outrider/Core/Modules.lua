@@ -27,6 +27,31 @@ function Base:On(event, fn)
   return ns.Events:On(event, mod, function(...) return fn(mod, ...) end)
 end
 function Base:Off(event) ns.Events:Off(event, self) end
+-- OI01-11: timers owned by the module; Modules:Disable cancels whatever is left.
+local function own(mod, h)
+  if not h then return h end
+  mod.timers = mod.timers or {}
+  mod.timers[h] = true
+  return h
+end
+function Base:After(delay, fn, label)
+  local mod = self
+  local h
+  h = ns.Timer.After(delay, function() if mod.timers then mod.timers[h] = nil end fn(mod) end, label or (mod.name .. ":after"))
+  return own(self, h)
+end
+function Base:Ticker(interval, fn, label)
+  local mod = self
+  return own(self, ns.Timer.Ticker(interval, function(h) fn(mod, h) end, label or (mod.name .. ":ticker")))
+end
+function Base:CancelTimers()
+  local n = 0
+  for h in pairs(self.timers or {}) do
+    if h.Cancel and not (h.IsCancelled and h:IsCancelled()) then h:Cancel() n = n + 1 end
+  end
+  self.timers = nil
+  return n
+end
 function Base:Settings() return ns.DB:ModuleSettings(self.name) end
 function Base:IsEnabled() return self.enabled == true end
 function Base:Debug(msg, ...) return ns.Log:Debug(self.name, msg, ...) end
@@ -110,6 +135,7 @@ end
 function Modules:Disable(mod)
   if not mod.enabled then return end
   ns.Events:OffAll(mod)
+  mod:CancelTimers()
   mod.enabled = false
   if mod.OnDisable then ns.Safe(mod.name .. ":OnDisable", mod.OnDisable, mod) end
   ns.Log:Debug("modules", "disabled %s", mod.name)

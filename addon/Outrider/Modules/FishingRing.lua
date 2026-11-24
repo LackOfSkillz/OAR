@@ -420,6 +420,7 @@ end
 
 function M:OnDisable()
   if self.ticker then self.ticker:Cancel() self.ticker = nil end
+  if self.flyTicker then self.flyTicker:Cancel() self.flyTicker = nil end
   if self.frame then self:Rebuild() end
 end
 
