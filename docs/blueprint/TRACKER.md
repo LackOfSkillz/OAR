@@ -55,8 +55,8 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-03 Class and role profiles | MOCK_GREEN | 8f11a9e | [OI02-03](../reviews/phase2/OI02-03.md) | v4 CharacterState, opaque key, no role inference |
 | OI02-04 Character and account state | MOCK_GREEN | f5f5308 | [OI02-04](../reviews/phase2/OI02-04.md) | per-field event invalidation; alts never live |
 | OI02-05 Goal model | MOCK_GREEN | 579a16a | [OI02-05](../reviews/phase2/OI02-05.md) | multi-goal, scopes, archive not delete, explained conflicts |
-| OI02-06 Candidate adapters: progression | MOCK_GREEN | see commit | [OI02-06](../reviews/phase2/OI02-06.md) | deterministic ids, reasons, quest de-dup |
-| OI02-07 Candidate adapters: resources | NOT_STARTED | | | |
+| OI02-06 Candidate adapters: progression | MOCK_GREEN | e95b785 | [OI02-06](../reviews/phase2/OI02-06.md) | deterministic ids, reasons, quest de-dup |
+| OI02-07 Candidate adapters: resources | MOCK_GREEN | see commit | [OI02-07](../reviews/phase2/OI02-07.md) | units and evidence, no scans, independent producers |
 | OI02-08 Dependency graph | NOT_STARTED | | | |
 | OI02-09 Scoring and trade-offs | NOT_STARTED | | | |
 | OI02-10 Bounded sequence planner | NOT_STARTED | | | |

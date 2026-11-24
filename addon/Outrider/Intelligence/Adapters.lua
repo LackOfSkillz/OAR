@@ -6,7 +6,13 @@
 --     quests (Journey quest XP list over QuestInfo/NPCPack data), dungeons
 --     (DungeonGuide, Travel), dungeonquests (DungeonQuests); plus the current
 --     LevelRoutes step.
---   resources (OI02-07): added in Adapters 07 (below).
+--   resources (OI02-07): WhatNow's gear (Nearby, GearScore, DungeonGuide),
+--     training (ProfTrainer, MoneyGuide), rares (Sightings), gold (MoneyGuide,
+--     LootLog), gather (LootLog, Travel); DealDesk's live vendor-flip lots
+--     (only lots the player's own auction search produced); Handoffs (BoE
+--     upgrades another character holds, from saved inventories).
+--   Every resource cost or gain is in copper (costCopper) or seconds
+--     (costSeconds), with an evidence id; no adapter starts a scan or search.
 -- Rules:
 --   * ids are deterministic: "opp:" .. the producer's own key, sanitized;
 --   * a candidate that can't become a valid record is excluded with a reason
@@ -18,7 +24,8 @@
 --     runtime-only (never serialized) and runs only on the player's click.
 
 local _, ns = ...
-local A = { PROGRESSION = { "errands", "quests", "dungeons", "dungeonquests" }, TTL = 180 }
+local A = { PROGRESSION = { "errands", "quests", "dungeons", "dungeonquests" },
+  RESOURCES = { "gear", "training", "rares", "gold", "gather" }, TTL = 180 }
 ns.NexusAdapters = A
 
 local KIND = { quest = "quest", dungeon = "dungeon", errand = "errand", gold = "gold", gather = "gather",
@@ -129,4 +136,49 @@ end
 
 function A:Progression(revision, now)
   return self:Collect(self.PROGRESSION, revision, now, { levelroute = A.LevelRouteStep })
+end
+
+-- DealDesk: live vendor-flip lots already found by the player's own search.
+-- The gain is a measured copper profit, so benefit scales with it (capped).
+function A.DealLots()
+  local D = ns.Modules:Get("DealDesk")
+  if not (D and D.enabled and D.Rows) then return {} end
+  local out = {}
+  for _, lot in ipairs(D:Rows()) do
+    local profit = tonumber(lot.profitCopper)
+    if profit and profit > 0 and tonumber(lot.costCopper) then
+      out[#out + 1] = { key = "deal:" .. tostring(lot.id), kind = "gold",
+        title = string.format("Vendor flip: item %s, +%s", tostring(lot.itemID), ns.Prices and ns.Prices.Money(profit) or tostring(profit)),
+        benefit = math.min(1, profit / 100000), confidence = 0.9, label = "observed",
+        costCopper = lot.costCopper, why = tostring(lot.source or "live listing and vendor value") }
+    end
+  end
+  return out
+end
+
+-- Handoffs: BoE upgrades your other characters hold (saved inventories, read only).
+function A.HandoffItems()
+  local H = ns.Modules:Get("Handoffs")
+  if not (H and H.enabled and H.Find) then return {} end
+  local out = {}
+  for _, h in ipairs(H:Find()) do
+    out[#out + 1] = { key = "handoff:" .. tostring(h.holder) .. ":" .. tostring(h.itemID), kind = "gear",
+      title = string.format("Mail yourself %s from %s", tostring(h.name), tostring(h.holder):match("^[^%-]+") or "an alt"),
+      benefit = math.min(1, (tonumber(h.pct) or 0) / 20), confidence = 0.7, label = "observed", costCopper = 30,
+      why = string.format("About %d%% better than what you wear; it is in %s's %s.", math.floor(tonumber(h.pct) or 0),
+        tostring(h.holder):match("^[^%-]+") or "an alt", tostring(h.where)) }
+  end
+  return out
+end
+
+function A:Resources(revision, now)
+  return self:Collect(self.RESOURCES, revision, now, { deals = A.DealLots, handoffs = A.HandoffItems })
+end
+
+-- everything, progression and resources, de-duplicated together
+function A:All(revision, now)
+  local names = {}
+  for _, n in ipairs(self.PROGRESSION) do names[#names + 1] = n end
+  for _, n in ipairs(self.RESOURCES) do names[#names + 1] = n end
+  return self:Collect(names, revision, now, { levelroute = A.LevelRouteStep, deals = A.DealLots, handoffs = A.HandoffItems })
 end
