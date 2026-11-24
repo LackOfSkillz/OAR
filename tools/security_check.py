@@ -170,7 +170,7 @@ def selftest():
     py = w("bad.py", "import pickle\nimport subprocess\nsubprocess.run('x', shell=True)\neval('1')\nimport os\nos.system('x')\n"
                      "URL = 'https://evil.example.net/x'\nimport urllib.request\n")
     got = py_violations([py])
-    kinds = sorted({re.sub(r"^[^:]+:\d+: ", "", x).split(" ")[0] for x in got})
+    kinds = sorted({re.sub(r"^.*?:\d+: ", "", x).split(" ")[0] for x in got})  # paths may hold a drive colon
     assert kinds == ["URL", "eval()", "import", "network", "os.system()", "shell=True"], kinds
     fake = "sk" + "-ant-" + "abcdefghijklmnopqrstuvwxyz012345"  # built at runtime so no secret-shaped text sits in the repo
     sec = w("s.txt", 'key = "' + fake + '"' + chr(10) + "placeholder " + fake + chr(10))
