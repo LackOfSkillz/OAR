@@ -37,7 +37,13 @@ function M:Context()
   for _, g in ipairs(goals) do if g.reserveCopper then reserve = math.max(reserve or 0, g.reserveCopper) end end
   -- skipping a step is not completing it (OI02-R09): skipped steps are left
   -- out of the pool, and anything that needs them says so
-  return { copper = gold and gold.value, reserveCopper = reserve, mapID = loc and loc.value.mapID,
+  -- your feedback as a small nudge (Intelligence/Preferences.lua), unless switched off
+  local NP, prefs = ns.NexusPreferences, nil
+  if NP then
+    local ps = NP.Settings(self)
+    if ps.on ~= false then prefs = NP.Adjustments(NP.Sources(), ps) end
+  end
+  return { preferences = prefs, copper = gold and gold.value, reserveCopper = reserve, mapID = loc and loc.value.mapID,
     faction = st and st.faction ~= "unknown" and st.faction or nil, revision = S:Revision(), now = time() }, goals
 end
 
@@ -54,6 +60,8 @@ function M:ContextKey()
   for id in pairs(s.skipped or {}) do skipped[#skipped + 1] = id end
   table.sort(skipped)
   parts[#parts + 1] = "skip=" .. table.concat(skipped, ",")
+  local pr = type(s.prefs) == "table" and s.prefs or {}
+  parts[#parts + 1] = "prefs=" .. tostring(pr.on ~= false) .. ":" .. tostring(pr.since)
   local goals = {}
   for _, g in ipairs(ns.NexusGoals:All()) do
     goals[#goals + 1] = table.concat({ tostring(g.goalId), tostring(g.status), tostring(g.priority), tostring(g.objective),

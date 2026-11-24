@@ -73,6 +73,9 @@ function S.One(node, goals, ctx)
     { "risk", -W.risk * riskCost },
     { "uncertainty", -W.uncertainty * unc },
   }
+  -- your feedback (OI03-10): a small, bounded nudge per kind of step
+  local pref = ctx.preferences and tonumber(ctx.preferences[o.kind])
+  if pref and pref ~= 0 then trace[#trace + 1] = { "your feedback", pref } end
   local score = 0
   for _, t in ipairs(trace) do score = score + t[2] end
   return score, trace

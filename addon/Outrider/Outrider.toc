@@ -182,6 +182,7 @@ Intelligence\State.lua
 Intelligence\Goals.lua
 Intelligence\Adapters.lua
 Intelligence\Graph.lua
+Intelligence\Preferences.lua
 Intelligence\Score.lua
 Intelligence\Planner.lua
 Intelligence\NexusCore.lua
