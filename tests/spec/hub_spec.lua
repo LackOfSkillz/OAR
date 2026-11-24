@@ -9,6 +9,29 @@ local function session(opts)
 end
 
 T.describe("hub", function()
+  T.it("never bigger than the screen, even with Larger windows (Gary, 2026-11-23: the resize grip was off the bottom)", function()
+    local game, ns = session()
+    game.env.UIParent:SetSize(1600, 900)
+    ns.Theme.uiScale = 1.3
+    ns.db.char.hub.w, ns.db.char.hub.h = 1700, 1100
+    game:slash("")
+    local f = ns.Hub.frame
+    local s = f:GetScale()
+    T.ok(f:GetWidth() * s <= 1600 * 0.95 + 1, "fits across")
+    T.ok(f:GetHeight() * s <= 900 * 0.95 + 1, "fits down")
+    T.ok(ns.db.char.hub.h * 1.3 <= 900 * 0.95 + 1, "the smaller size is saved")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("any Outrider window too big for the screen is scaled down to fit", function()
+    local game, ns = session()
+    game.env.UIParent:SetSize(1000, 600)
+    local f = ns.UI:Window(nil, "Big", 1200, 800)
+    f:Show()
+    T.ok(f:GetWidth() * f:GetScale() <= 1000 * 0.95 + 1)
+    T.ok(f:GetHeight() * f:GetScale() <= 600 * 0.95 + 1)
+  end)
+
   T.it("opens on Home with the grouped sidebar, every tab builds without errors", function()
     local game, ns = session()
     game:slash("")

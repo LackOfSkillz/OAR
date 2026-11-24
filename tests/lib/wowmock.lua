@@ -170,7 +170,8 @@ local function buildMethods(game)
   m.GetLeft = function() return 100 end
   m.GetTop = function() return 700 end
   m.GetEffectiveScale = function() return 1 end
-  m.GetScale = function() return 1 end
+  m.GetScale = function(self) return self.__scale or 1 end
+  m.SetScale = function(self, v) self.__scale = v end
   m.SetPoint = function(self, point, a, b, c, d)
     local rel, relPoint, x, y = nil, nil, 0, 0
     if type(a) == "number" then x, y = a, b

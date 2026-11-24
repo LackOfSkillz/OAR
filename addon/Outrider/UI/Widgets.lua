@@ -92,6 +92,31 @@ end
 
 -- Movable window with title bar and close button. pos = table to persist
 -- { point, x, y } (usually a per-character settings table).
+-- Keep a window inside the screen (Gary, 2026-11-23: with "Larger windows"
+-- the hub was scaled past the bottom of the screen, resize grip and all).
+-- First a window that can change size (f.FitSize, the hub) shrinks to fit;
+-- then any window still too big for the screen at its scale is scaled down
+-- just enough; then a window hanging off an edge comes back to the middle.
+UI.FIT = 0.95
+function UI.FitToScreen(f)
+  local sw = UIParent and UIParent.GetWidth and UIParent:GetWidth() or 0
+  local sh = UIParent and UIParent.GetHeight and UIParent:GetHeight() or 0
+  if sw < 300 or sh < 300 then return end
+  local base = Theme.uiScale or 1
+  if f.FitSize then f:FitSize(math.floor(sw * UI.FIT / base), math.floor(sh * UI.FIT / base)) end
+  local w, h = f:GetWidth(), f:GetHeight()
+  local s = math.min(base, sw * UI.FIT / w, sh * UI.FIT / h)
+  if math.abs((f:GetScale() or 1) - s) > 0.001 then f:SetScale(s) end
+  local top, left = f:GetTop(), f:GetLeft()
+  if top and left then
+    local bottom, right = top - h, left + w
+    if top * s > sh + 1 or bottom * s < -1 or left * s < -1 or right * s > sw + 1 then
+      f:ClearAllPoints()
+      f:SetPoint("CENTER")
+    end
+  end
+end
+
 function UI:Window(globalName, title, width, height, pos)
   local f = CreateFrame("Frame", globalName, UIParent, Theme:BackdropTemplate())
   f:SetSize(width, height)
@@ -141,6 +166,8 @@ function UI:Window(globalName, title, width, height, pos)
   if globalName and type(rawget(_G, "UISpecialFrames")) == "table" then
     table.insert(UISpecialFrames, globalName)
   end
+
+  f:HookScript("OnShow", UI.FitToScreen)
 
   f.content = CreateFrame("Frame", nil, f)
   f.content:SetPoint("TOPLEFT", 10, -36)

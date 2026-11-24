@@ -338,6 +338,16 @@ function Hub:Resizer(f)
   end
   local w, h = saved.w or fitW, saved.h or fitH
   f:SetSize(math.max(MIN_W, math.min(MAX_W, w)), math.max(MIN_H, math.min(MAX_H, h)))
+  -- never bigger than the screen at Outrider's window scale (UI.FitToScreen calls this)
+  function f:FitSize(maxW, maxH)
+    local cw, ch = math.min(MAX_W, maxW), math.min(MAX_H, maxH)
+    if self.SetResizeBounds then self:SetResizeBounds(math.min(MIN_W, cw), math.min(MIN_H, ch), math.max(cw, 1), math.max(ch, 1)) end
+    local w, h = self:GetWidth(), self:GetHeight()
+    if w > cw or h > ch then
+      self:SetSize(math.min(w, cw), math.min(h, ch))
+      saved.w, saved.h = math.floor(self:GetWidth() + 0.5), math.floor(self:GetHeight() + 0.5)
+    end
+  end
   local grip = CreateFrame("Button", nil, f)
   grip:SetSize(16, 16)
   grip:SetPoint("BOTTOMRIGHT", -2, 2)
@@ -364,7 +374,7 @@ function Hub:Build()
   f.tabBar:SetPoint("BOTTOMLEFT", 0, 0)
   for _, t in ipairs(self.tabs) do self:AddTabButton(t) end
 
-  f:SetScript("OnShow", function()
+  f:HookScript("OnShow", function()
     ns.db.char.hub.shown = true
     Hub:UpdateWho()
     f.tabBar:Select(ns.db.char.hub.tab or "home")
