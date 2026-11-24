@@ -330,6 +330,7 @@ SOURCES.rares = function()
           confidence = win.state == "alive" and 0.8 or 0.4,
           caveat = win.state ~= "alive" and "Respawn windows are a guess from a few sightings." or nil,
           mapID = last.mapID, label = win.state == "alive" and "observed" or "inferred", panel = "rares",
+          observedAt = tonumber(last.t), -- the sighting's own time, not now (OI02-R11)
           target = last.x and last.y and { mapID = last.mapID, x = last.x, y = last.y } or nil,
           go = wp(last.mapID, last.x, last.y, name) }
       end
@@ -367,6 +368,7 @@ SOURCES.gather = function()
         why = string.format("You saw it up %d minute%s ago.", math.floor((age or 0) / 60), math.floor((age or 0) / 60) == 1 and "" or "s"),
         where = zone(n.mapID) .. " (nearby)",
         benefit = 0.5, confidence = 0.7, mapID = n.mapID, label = "observed",
+        observedAt = age and (time() - math.floor(age)) or nil, -- when you saw it up
         target = { mapID = n.mapID, x = n.x, y = n.y }, go = wp(n.mapID, n.x, n.y, n.name) }
       if #out >= 2 then break end
     end
@@ -460,7 +462,12 @@ end
 
 function M:List(force)
   local now = time()
-  if not force and self.cache and now - self.cacheAt < M.CACHE then return self.cache end
+  -- the cache belongs to one provider and one planning context (OI02-R12):
+  -- switching the planner, or a goal, reserve, pin or skip change, misses it
+  local N0 = ns.NexusCore
+  local provKey = (N0 and N0:Ready()) and ("nexus|" .. N0:ContextKey()) or "whatnow"
+  if not force and self.cache and self.cacheKey == provKey and now - self.cacheAt < M.CACHE then return self.cache end
+  self.cacheKey = provKey
   local st = self:Store()
   -- the planner, when on, owns the ranking (OI02-R08): its plan already read
   -- the same producers, so they aren't run twice; off, the baseline pick
@@ -500,6 +507,8 @@ function M:Go(c)
   local ok, a, b = pcall(c.go)
   self:Info("what now go: %s (%s)", tostring(c.key), ok and "ok" or tostring(a))
   if ok and a == false then
+    -- a plan step's go() is the planner's validated Act: say why it refused
+    if c.nexusId then ns.Print("plan: %s", tostring(b or "that step can't be used now")) end
     if c.alt then ns.Print("%s Try instead: %s", tostring(b or "Couldn't set that up."), c.alt.text) end
     return false
   end

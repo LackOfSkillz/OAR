@@ -106,7 +106,7 @@ T.describe("nexus cross-language contracts", function()
     N:Settings().on = true
     local rec = ns.Serialize.Import(lines("tests/fixtures/contract/nexus_v4_otr1_py.txt")[4][2]) -- an Opportunity
     N.current = { result = { plan = { steps = { rec.opportunityId } } }, revision = ns.NexusState:Revision(), at = game.now,
-      runtime = {}, graph = { nodes = {} } }
+      contextKey = N:ContextKey(), runtime = {}, graph = { nodes = {} } }
     local ok, why = N:Act(rec.opportunityId)
     T.eq(ok, false)
     T.eq(why, "that step isn't in the current plan")

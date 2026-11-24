@@ -71,6 +71,14 @@ end
 local CATEGORY = { quest = "quest", dungeon = "quest", gear = "gear", errand = "errand", gold = "generic",
   gather = "location", profession = "bag", rare = "historical", travel = "generic", explore = "generic" }
 local EV_LABEL = { observed = "observed", community = "community", inferred = "inferred", guide = "community" }
+-- Producers that read the live game state when asked: their facts are
+-- observed now. The others report history (sightings, node visits, saved alt
+-- inventories, auction listings) and must give the observation time, with how
+-- old such a fact may be for a decision (maxAge); without a time the fact's
+-- freshness is unknown (OI02-R11).
+A.LIVE_SOURCES = { errands = true, quests = true, gear = true, dungeons = true, dungeonquests = true,
+  training = true, gold = true, levelroute = true, tips = true }
+A.MAX_AGE = { rares = 14 * 86400, gather = 15 * 60, deals = 600, handoffs = 30 * 86400 }
 function A.EvidenceFor(source, c, kind, now)
   local E = ns.IntelEvidence
   local src = ("nx_" .. tostring(source)):gsub("[^%w_%-]", "_"):sub(1, 48)
@@ -80,7 +88,10 @@ function A.EvidenceFor(source, c, kind, now)
   local value = { kind = kind, benefit = clamp(c.benefit), seconds = tonumber(c.seconds), mapID = tonumber(c.mapID),
     questID = tonumber(c.questID), itemID = tonumber(c.itemID), costCopper = tonumber(c.costCopper) }
   local ttl = tonumber(c.evidenceTTL) or A.TTL
-  return E:Record(src, key, category, value, EV_LABEL[c.label] or "inferred", ttl, c.observedAt)
+  local seen = tonumber(c.observedAt)
+  local opts = { maxAge = tonumber(c.evidenceMaxAge) or A.MAX_AGE[source] }
+  if not seen and not A.LIVE_SOURCES[source] then opts.freshness = "unknown" end
+  return E:Record(src, key, category, value, EV_LABEL[c.label] or "inferred", ttl, seen, opts)
 end
 
 -- One candidate -> v4 Opportunity, or nil, reason.
@@ -107,6 +118,7 @@ function A.Adapt(source, c, revision, now)
   if secs and secs >= 0 and secs == secs then rec.costSeconds = math.min(31536000, math.floor(secs)) end
   local conf = clamp(c.confidence)
   if conf then rec.risk = 1 - conf end
+  if ev.freshness == "unknown" then rec.freshnessUnknown = true end
   local cost, unknown = A.Cost(c, kind)
   rec.costCopper = cost
   if unknown then rec.costUnknown = true end
@@ -153,10 +165,13 @@ function A.Meta(c, questIndex, done)
         local ok = false
         for _, pq in ipairs(any) do if done(pq) then ok = true break end end
         if not ok then
-          -- one of several will do: the one in the pool if any, else the first
-          local pick = any[1]
-          for _, pq in ipairs(any) do if questIndex[pq] then pick = pq break end end
-          need(pick)
+          -- one of several will do (OI02-R14): every alternative is listed and
+          -- the graph and planner accept any one that can be done
+          local alts = {}
+          for _, pq in ipairs(any) do
+            if tonumber(pq) then alts[#alts + 1] = questIndex[pq] or ("quest:q" .. tostring(pq)) end
+          end
+          if #alts > 0 then m.requiresAny = alts end
         end
       end
       if #req > 0 then m.requires = req end
@@ -252,7 +267,8 @@ function A.DealLots()
       out[#out + 1] = { key = "deal:" .. tostring(lot.id), kind = "gold",
         title = string.format("Vendor flip: item %s, +%s", tostring(lot.itemID), ns.Prices and ns.Prices.Money(profit) or tostring(profit)),
         benefit = math.min(1, profit / 100000), confidence = 0.9, label = "observed",
-        costCopper = lot.costCopper, why = tostring(lot.source or "live listing and vendor value") }
+        costCopper = lot.costCopper, observedAt = tonumber(lot.observedAt),
+        why = tostring(lot.source or "live listing and vendor value") }
     end
   end
   return out
@@ -267,6 +283,7 @@ function A.HandoffItems()
     out[#out + 1] = { key = "handoff:" .. tostring(h.holder) .. ":" .. tostring(h.itemID), kind = "gear",
       title = string.format("Mail yourself %s from %s", tostring(h.name), tostring(h.holder):match("^[^%-]+") or "an alt"),
       benefit = math.min(1, (tonumber(h.pct) or 0) / 20), confidence = 0.7, label = "observed", costCopper = 30,
+      observedAt = tonumber(h.observedAt), -- when that character's bags were last saved
       why = string.format("About %d%% better than what you wear; it is in %s's %s.", math.floor(tonumber(h.pct) or 0),
         tostring(h.holder):match("^[^%-]+") or "an alt", tostring(h.where)) }
   end

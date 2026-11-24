@@ -68,7 +68,7 @@ N.SPEC = {
       { "benefit", "unit", true }, { "confidence", "enum:confidence", true }, { "evidenceIds", "list:id:16", true },
       { "expiresAt", "time", true }, { "intent", "enum:intent", true }, { "revision", "count", true },
       { "costSeconds", "seconds", false }, { "costCopper", "copper", false }, { "risk", "unit", false },
-      { "legacyCandidateId", "id", false }, { "why", "text", false }, { "costUnknown", "flag", false },
+      { "legacyCandidateId", "id", false }, { "why", "text", false }, { "costUnknown", "flag", false }, { "freshnessUnknown", "flag", false },
     },
     Plan = {
       { "planId", "id", true }, { "snapshotRevision", "count", true }, { "steps", "list:id:8", true },

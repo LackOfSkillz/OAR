@@ -116,6 +116,37 @@ Full suite (`tools/test.ps1 -RequirePython`):
 - Deps: 0 new.
 - Security: 0 violations.
 
+ChatGPT's review of resubmission 1 (candidate `420a9a8`): REVIEW_CHANGES, limited scope. Findings OI02-R10 to R14 below.
+
+## Resubmission 2 (after ChatGPT REVIEW_CHANGES, limited scope, on 420a9a8)
+
+- **Reviewed SHA:** `420a9a8`.
+- **Candidate SHA:** the commit that adds this section. Take it from `git log -1`; the CI link is in the tracker row.
+- **Scope:** targeted integration fixes only. The planner design is unchanged. No other refactoring. Phase 3 not started; nothing merged into main; nothing published.
+- **Regression tests:** `tests/spec/nexus_review2_spec.lua`, 21 tests. Run against the resubmission-1 addon code (addon and contract stashed), all 21 fail; with the fixes, all pass. Three existing tests were updated to the new behaviour (named in the table).
+
+| Finding | Correction | Files | Regression test |
+|---|---|---|---|
+| OI02-R10 WhatNow and Radar bypass Act | **Picks:** a plan pick no longer carries the producer's callbacks. Its `go` is a closure over `NexusCore:Act(id)`, and producer alternatives (`alt`) are dropped. What now?, Home's Go button, Radar's Go and the next-step key all call that `go`, so every route runs the full `CheckAct`. A refusal prints the reason. **Shown steps:** picks keep only steps that still pass the display checks (planner on, plan current, in the plan, not skipped, not rejected, not expired, evidence resolves). | NexusCore.lua, WhatNow.lua | R10: no producer callback or alternative on a pick; for combat, skipped, expired, disabled, rejected and stale steps, What now?/Home and Radar never run the producer's go() and Act refuses; the next-step key runs through Act and skips a skipped step |
+| OI02-R11 historical facts get fresh times | **Three times per fact:** observedAt (the producer's own time), calculatedAt (now) and expiresAt (the earlier of observedAt plus the kind's maximum age, and calculatedAt plus 180 s). **Times threaded through:** rare sightings (`last.t`), gathering nodes (now minus the age the node log reports), alt inventories (the saved `inv.at`), auction lots (the listing's `observedAt`). **Live producers** (errands, quests, gear, dungeons, dungeon quests, training, gold, route) read the game now, so their facts are observed now. **History with no time** gets `freshness = "unknown"` on the evidence and `freshnessUnknown` on the opportunity (new optional v4 flag), plus an uncertainty charge. It is never claimed as fresh. Saved history is untouched: expiry only decides use. | Evidence.lua, Adapters.lua, WhatNow.lua, Handoffs.lua, Score.lua, Contracts.lua, nexus_v4.lua | R11: the real rares, gather, Handoffs and DealDesk producers keep their own times; history without a time is unknown freshness and scores lower. Updated: review_spec R04 (expiry is now the earlier of the two limits) |
+| OI02-R12 goal changes don't invalidate plans | **Context key:** `NexusCore:ContextKey()` is computed from the data each time: state revision, planner switch, every goal (status, priority, objective, reserve, target, deadline), the pin and the skipped steps. A plan made under another key is stale at once: before the debounced re-plan, and even while paused. **Caches:** What now?'s and Radar's caches are keyed by provider plus this key, so switching the planner or changing a goal never serves the old list. **Switch:** `SetOn` drops the current plan and both caches. | NexusCore.lua, WhatNow.lua, Radar.lua, NexusPage.lua | R12: goal added, reserve raised, skip, pin each make the plan stale while paused; switching off drops it; What now? and Radar change provider within the cache time; an expired step leaves the picks before any re-plan. Updated: transport_spec boundary test (its hand-made plan now has a context key), review_spec R05 (a skip now also reads as "changed") |
+| OI02-R13 unknown expenditure | **Planning:** an unknown-price step is "check the price first", never a confirmed purchase. The plan result says `financial = "unconfirmed"` and lists those steps; the reason code is `cost_unconfirmed`. **Display:** the pick's caveat and the Plan card both say "price unknown", and that the plan doesn't count it as gold spent. **With a reserve** it stays excluded (resubmission 1). | Planner.lua, NexusCore.lua, NexusPage.lua | R13: no reserve gives unconfirmed with the reason code; a reserve excludes it and the plan is confirmed; pick caveat and card tag |
+| OI02-R14 alternative prerequisites | **Data:** `preAny` becomes `requiresAny`, which lists every alternative. **Graph:** a node with requiresAny is valid if any alternative is done or valid, and invalid only when none can be ("needs one of ..."). **Planner:** every plannable alternative is a candidate; a step is addable once any one of them is earlier in the plan or done. This is a targeted change (no general AND/OR graph). Prerequisite cycles through requiresAny are not detected; that is documented as remaining technical debt. | Adapters.lua, Graph.lua, Planner.lua | R14: an unaffordable first alternative doesn't block the quest when the second works; with no possible alternative the reason says so; a real Replan turns the pack's preAny into requiresAny. Updated: review_spec R02 (expects requiresAny) |
+
+**Data preservation:** no data removed or rewritten. The new times are read from records that already exist (sightings, the node log, saved inventories, auction lots), and nothing is written back to them. `DATA_LIFETIME.md` is updated for the three evidence times.
+
+**Still open, unchanged:** the Phase 1 live items (OI01-04 runtime row, OI01-15 in-game checks, the Path stutter re-check, 4 `live_pending` datasets, backup restore verification) and the Phase 2 live p95 frame cost and memory with the planner on.
+
+### Results at the resubmission 2 candidate
+
+Full suite (`tools/test.ps1 -RequirePython`):
+- Lua: 1172 passed, 0 failed, 0 syntax errors.
+- Python: all suites pass.
+- Quality: 22 baselined, 0 new. Candidate selection moved out of `Planner.Plan` into `Planner.Candidates`, so the function stays under the size limit; behaviour is unchanged.
+- Deps: 0 new. NexusCore reads no WhatNow internals: the implicit goal comes through NexusGoals, and the switch relies on What now?'s provider-keyed cache.
+- Security: 0 violations.
+- Benchmark: Nexus still meets 12 of 12 scenarios. The real-producer run gives 4 steps, each with evidence that resolves.
+
 ## Independent review (ChatGPT fills)
 
 | Finding ID | Severity | File/symbol and evidence | Requirement | Correction | Regression test | Status |

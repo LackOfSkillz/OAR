@@ -41,6 +41,33 @@ function M:Context()
     faction = st and st.faction ~= "unknown" and st.faction or nil, revision = S:Revision(), now = time() }, goals
 end
 
+-- The planning context (OI02-R12): everything a plan depends on besides the
+-- world itself. Computed from the data each time, so no change can be missed:
+-- the character state revision, the planner switch, every goal's status,
+-- priority, objective and reserve, the pin, and the skipped steps. A plan made
+-- under another key is stale at once, even before the debounced re-plan runs
+-- and even while paused (a paused plan stays on screen, marked stale).
+function M:ContextKey()
+  local s = self:Settings()
+  local parts = { tostring(ns.NexusState:Revision()), s.on and "on" or "off", "pin=" .. tostring(s.pinned) }
+  local skipped = {}
+  for id in pairs(s.skipped or {}) do skipped[#skipped + 1] = id end
+  table.sort(skipped)
+  parts[#parts + 1] = "skip=" .. table.concat(skipped, ",")
+  local goals = {}
+  for _, g in ipairs(ns.NexusGoals:All()) do
+    goals[#goals + 1] = table.concat({ tostring(g.goalId), tostring(g.status), tostring(g.priority), tostring(g.objective),
+      tostring(g.reserveCopper or 0), tostring(g.target or ""), tostring(g.deadline or "") }, ":")
+  end
+  table.sort(goals)
+  parts[#parts + 1] = "goals=" .. table.concat(goals, ";")
+  if #goals == 0 then
+    -- no goals: the implicit one (What now?'s goal, through NexusGoals)
+    local implicit = ns.NexusGoals:Active()[1]
+    parts[#parts + 1] = "implicit=" .. tostring(implicit and implicit.objective)
+  end
+  return table.concat(parts, "|")
+end
 
 -- Build a plan now (pure apart from reading state). Returns the stored result.
 function M:Replan(why)
@@ -48,6 +75,7 @@ function M:Replan(why)
   if ns.Compat.InCombat() then self.wanted = why or "combat" return nil end
   if self:Settings().paused then return self.current end
   local ctx, goals = self:Context()
+  local contextKey = self:ContextKey()
   local opps, excluded, unavailable, runtime = ns.NexusAdapters:All(ctx.revision, ctx.now)
   local skipped = self:Settings().skipped or {}
   local kept = {}
@@ -57,7 +85,7 @@ function M:Replan(why)
   local ranked, rejected = ns.NexusScore.Rank(graph, goals, ctx)
   -- the pin is a planner input that must pass every constraint (OI02-R01)
   local res = ns.NexusPlanner.Plan(graph, ranked, ctx, { pin = self:Settings().pinned })
-  self.current = { result = res, revision = ctx.revision, at = ctx.now, runtime = runtime, graph = graph,
+  self.current = { result = res, revision = ctx.revision, contextKey = contextKey, at = ctx.now, runtime = runtime, graph = graph,
     ranked = ranked, rejected = rejected, excluded = excluded, unavailable = unavailable, why = why }
   self.replans = (self.replans or 0) + 1
   ns.Events:Fire("OTR_NEXUS_PLAN", why)
@@ -68,6 +96,7 @@ function M:IsStale(now)
   local c = self.current
   if not c then return true, "no plan yet" end
   if c.revision ~= ns.NexusState:Revision() then return true, "your character changed since this plan" end
+  if c.contextKey ~= self:ContextKey() then return true, "your goals or plan settings changed since this plan" end
   if (now or time()) - c.at > M.MAX_AGE then return true, "this plan is old" end
   return false
 end
@@ -90,6 +119,14 @@ function M:Unpin() self:Settings().pinned = nil self:Request("unpin") end
 function M:Skip(id) self:Settings().skipped[id] = true self:Request("skip") end
 function M:Unskip(id) self:Settings().skipped[id] = nil self:Request("unskip") end
 function M:Pause() self:Settings().paused = true end
+-- the planner switch: the old plan is dropped either way (OI02-R12)
+function M:SetOn(on)
+  self:Settings().on = on and true or false
+  self.current = nil
+  local radar = ns.Modules:Get("OpportunityRadar")
+  if radar then radar.dirty = true end
+  if on then self:Replan("switched on") end
+end
 function M:Resume() self:Settings().paused = false self:Request("resume") end
 
 -- The player's click on a step: the producer's own intent, nothing else.
@@ -98,10 +135,13 @@ function M:Resume() self:Settings().paused = false self:Request("resume") end
 -- opportunity hasn't expired, its evidence still resolves (same character and
 -- build, not stale), and only the declared intent runs: a waypoint through the
 -- producer's go(), a page through the Hub. Intent "none" does nothing.
-function M:CheckAct(id, now)
+-- opts.display: the checks for showing a step (combat and intent aren't about
+-- showing it); Act always runs every check.
+function M:CheckAct(id, now, opts)
   now = now or time()
+  local display = opts and opts.display
   if not self:Ready() then return false, "the planner is off" end
-  if ns.Compat.InCombat() then return false, "not in combat" end
+  if not display and ns.Compat.InCombat() then return false, "not in combat" end
   local c = self.current
   local res = c and c.result
   if not (res and res.plan) then return false, "there is no plan" end
@@ -121,6 +161,7 @@ function M:CheckAct(id, now)
     if not row then return false, "its evidence is " .. tostring(evWhy) .. ": press Re-plan" end
   end
   local intent = node.opp.intent
+  if display then return true, intent, cand end
   if intent == "waypoint" and type(cand.go) ~= "function" then return false, "nothing to show for this step" end
   if intent == "panel" and not (cand.panel and ns.Hub) then return false, "nothing to open for this step" end
   if intent == "none" then return false, "this step has nothing to open" end
@@ -155,13 +196,25 @@ function M:Picks(n)
   if not (res and res.plan) then return out end
   local scores = {}
   for _, r in ipairs(c.ranked or {}) do scores[r.id] = r.score end
+  local now = time()
+  local unconfirmed = {}
+  for _, id in ipairs(res.unconfirmed or {}) do unconfirmed[id] = true end
   for i, id in ipairs(res.plan.steps) do
-    if n and i > n then break end
+    if n and #out >= n then break end
     local cand = c.runtime[id]
-    if cand then
+    -- only steps that are still usable are shown (stale, expired, skipped or
+    -- left-out steps disappear at once, before any re-plan)
+    if cand and self:CheckAct(id, now, { display = true }) then
+      -- the producer's own callbacks never leave the planner (OI02-R10): the
+      -- copy's go() is the validated Act, and producer alternatives are dropped
       local copy = {}
-      for k, v in pairs(cand) do copy[k] = v end
+      for k, v in pairs(cand) do if k ~= "go" and k ~= "alt" then copy[k] = v end end
+      copy.go = function() return M:Act(id) end
       copy.score, copy.nexusId, copy.nexusStep, copy.provider = scores[id] or 0, id, i, "nexus"
+      if unconfirmed[id] then
+        copy.priceUnknown = true
+        copy.caveat = "Price unknown: check it before you buy. The plan doesn't count it as gold spent."
+      end
       out[#out + 1] = copy
     end
   end

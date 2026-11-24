@@ -40,6 +40,11 @@ function P.Cards(refresh)
       local tags = { { i == 1 and "Do this next" or ("Then " .. i), i == 1 and "good" or "plain" }, { o.confidence, "plain" }, { minutes(o.costSeconds), "plain" } }
       if o.costCopper and o.costCopper > 0 then tags[#tags + 1] = { ns.Prices and ns.Prices.Money(o.costCopper) or tostring(o.costCopper), "gold" } end
       local line = o.why or ""
+      if o.costUnknown then
+        -- not a confirmed purchase (OI02-R13): the plan doesn't count its gold
+        tags[#tags + 1] = { "price unknown", "plain" }
+        line = "Check the price first: the plan doesn't count it as gold spent. " .. line
+      end
       if P.expanded[id] then
         local parts = { "Evidence " .. tostring(o.evidenceIds[1]) .. " (" .. o.confidence .. ")." }
         for _, t in ipairs(scores[id] and scores[id].trace or {}) do parts[#parts + 1] = string.format("%s %+.2f", t[1], t[2]) end
@@ -131,7 +136,7 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
     { "header", "Plan (preview)" },
     { "note", "A plan for your goals from everything Outrider knows. 1. Switch it on. 2. Add your goals below. 3. Press Go on the top card." },
     { "check", "Use the Nexus planner (preview)", function() return ns.NexusCore:Settings().on end,
-      function(on) ns.NexusCore:Settings().on = on if on then ns.NexusCore:Replan("switched on") end refresh() end, "off by default while it is being tested" },
+      function(on) ns.NexusCore:SetOn(on) refresh() end, "off by default while it is being tested" },
     { "buttons", { { "Re-plan", function() ns.NexusCore:Replan("button") refresh() end, 110 },
       { "Pause", function() ns.NexusCore:Pause() refresh() end, 90 },
       { "Resume", function() ns.NexusCore:Resume() ns.NexusCore:Replan("resume") refresh() end, 90 } } },

@@ -21,8 +21,14 @@
 -- truncated = true, never a made-up sequence. States are the same when they
 -- hold the same steps and end on the same map; the better one is kept. Unknown
 -- step time counts as UNKNOWN_SECONDS against a time budget (unknown is not free).
+-- requiresAny (one of several prerequisites) is satisfied by any alternative
+-- earlier in the plan or done; each plannable alternative is a candidate.
+-- A step with an unknown gold cost is planned as "check the price first": it
+-- adds nothing to the gold spent, so the plan is marked financial =
+-- "unconfirmed" with those steps in result.unconfirmed (OI02-R13).
 -- result: { plan = v4 Plan or nil, why, code, value, alternatives =
---   { {firstStep, value} }, truncated, work, pin = { id, ok, why, code } }
+--   { {firstStep, value} }, truncated, work, pin = { id, ok, why, code },
+--   financial = "confirmed"|"unconfirmed", unconfirmed = { ids } }
 
 local _, ns = ...
 local P = { MAX_CANDIDATES = 60, HORIZON = 8, BEAM = 16, MAX_WORK = 20000, UNKNOWN_SECONDS = 900, MAP_CHANGE = 0.05 }
@@ -30,17 +36,11 @@ ns.NexusPlanner = P
 
 local function key(seq) return table.concat(seq, ">") end
 
-function P.Plan(graph, ranked, ctx, opts)
-  ctx, opts = ctx or {}, opts or {}
-  local horizon = math.min(opts.horizon or P.HORIZON, P.HORIZON)
-  local beam = opts.beam or P.BEAM
-  local maxWork = opts.maxWork or P.MAX_WORK
-  local spendable = ctx.copper and (ctx.copper - (ctx.reserveCopper or 0)) or nil
-  local budgetSeconds = ctx.budgetSeconds
-  local done = ctx.done or {}
+-- The candidate steps: the pin (if it can be scored), the best-ranked steps
+-- above zero whose prerequisites can all be planned, and those prerequisites
+-- (any score). Returns cands (ids), score ({ [id] = score }), pinInfo.
+function P.Candidates(graph, ranked, done, pinId)
   local function node(id) return graph.nodes[id] end
-
-  -- candidates
   local cands, score, pos, blocked = {}, {}, {}, {}
   for _, r in ipairs(ranked) do pos[r.id] = r end
   -- can id and its unfinished prerequisites all be planned? (memoized)
@@ -52,6 +52,12 @@ function P.Plan(graph, ranked, ctx, opts)
     for _, req in ipairs(node(id).meta.requires or {}) do
       if not plannable(req, depth + 1, visiting) then visiting[id] = nil blocked[id] = true return false end
     end
+    local alts = node(id).meta.requiresAny
+    if alts then
+      local any = false
+      for _, alt in ipairs(alts) do if plannable(alt, depth + 1, visiting) then any = true break end end
+      if not any then visiting[id] = nil blocked[id] = true return false end
+    end
     visiting[id] = nil
     blocked[id] = false
     return true
@@ -59,9 +65,12 @@ function P.Plan(graph, ranked, ctx, opts)
   local function add(id)
     if done[id] or score[id] or #cands >= P.MAX_CANDIDATES then return end
     for _, req in ipairs(node(id).meta.requires or {}) do add(req) end
+    -- one of several: every plannable alternative is a candidate, the search picks
+    for _, alt in ipairs(node(id).meta.requiresAny or {}) do
+      if node(alt) and plannable(alt, 1, {}) then add(alt) end
+    end
     if #cands < P.MAX_CANDIDATES and not score[id] then cands[#cands + 1] = id score[id] = pos[id].score end
   end
-  local pinId = opts.pin
   local pinInfo
   if pinId then
     pinInfo = { id = pinId, ok = false }
@@ -73,6 +82,20 @@ function P.Plan(graph, ranked, ctx, opts)
   for _, r in ipairs(ranked) do
     if r.score > 0 and plannable(r.id, 1, {}) then add(r.id) end
   end
+  return cands, score, pinInfo
+end
+
+function P.Plan(graph, ranked, ctx, opts)
+  ctx, opts = ctx or {}, opts or {}
+  local horizon = math.min(opts.horizon or P.HORIZON, P.HORIZON)
+  local beam = opts.beam or P.BEAM
+  local maxWork = opts.maxWork or P.MAX_WORK
+  local spendable = ctx.copper and (ctx.copper - (ctx.reserveCopper or 0)) or nil
+  local budgetSeconds = ctx.budgetSeconds
+  local done = ctx.done or {}
+  local function node(id) return graph.nodes[id] end
+  local pinId = opts.pin
+  local cands, score, pinInfo = P.Candidates(graph, ranked, done, pinId)
   if #cands == 0 then return { why = "nothing worth doing right now fits your goals", code = "no_candidates", work = 0, pin = pinInfo } end
 
   local function canAdd(state, id)
@@ -80,6 +103,11 @@ function P.Plan(graph, ranked, ctx, opts)
     local n = node(id)
     for _, req in ipairs(n.meta.requires or {}) do
       if not state.set[req] and not done[req] then return false, "needs " .. tostring(req) .. " first" end
+    end
+    if n.meta.requiresAny then
+      local any = false
+      for _, alt in ipairs(n.meta.requiresAny) do if state.set[alt] or done[alt] then any = true break end end
+      if not any then return false, "needs one of " .. table.concat(n.meta.requiresAny, ", ") .. " first" end
     end
     for _, x in ipairs(n.meta.excludes or {}) do if state.set[x] then return false, "can't be done with " .. x end end
     for other in pairs(state.set) do
@@ -172,10 +200,16 @@ function P.Plan(graph, ranked, ctx, opts)
   if budgetSeconds then reasons[#reasons + 1] = "time_budget" end
   if truncated then reasons[#reasons + 1] = "search_capped" end
   if pinned then reasons[#reasons + 1] = "pinned" elseif pinInfo then reasons[#reasons + 1] = "pin_infeasible" end
+  -- unknown prices (OI02-R13): such a step is "check the price", not a
+  -- confirmed purchase; the plan's gold is then not guaranteed
+  local unconfirmed = {}
+  for _, id in ipairs(best.seq) do if node(id).opp.costUnknown then unconfirmed[#unconfirmed + 1] = id end end
+  if #unconfirmed > 0 then reasons[#reasons + 1] = "cost_unconfirmed" end
   local plan = { planId = "plan:" .. tostring(ctx.revision or 0) .. ":" .. tostring(work), snapshotRevision = ctx.revision or 0,
     steps = best.seq, reasonCodes = reasons, createdAt = ctx.now or time(), version = 1, truncated = truncated,
     budgetSeconds = budgetSeconds }
   local ok, field = ns.Nexus.Validate("Plan", plan)
   if not ok then return { why = "plan failed validation: " .. tostring(field), code = "invalid_plan", work = work, pin = pinInfo } end
-  return { plan = plan, value = best.value, alternatives = alternatives, truncated = truncated, work = work, pin = pinInfo }
+  return { plan = plan, value = best.value, alternatives = alternatives, truncated = truncated, work = work, pin = pinInfo,
+    unconfirmed = unconfirmed, financial = #unconfirmed > 0 and "unconfirmed" or "confirmed" }
 end

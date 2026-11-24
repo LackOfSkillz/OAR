@@ -3,6 +3,7 @@
 --   ns.NexusGraph.Build(opps, meta, ctx) -> graph
 -- opps: v4 Opportunity records. meta[opportunityId] (all optional):
 --   requires = { ids }      must be done first (prerequisite edges)
+--   requiresAny = { ids }   one of these must be done first (OI02-R14)
 --   faction = "Alliance"|"Horde"
 --   excludes = { ids }      can't both be done (mutually exclusive edges)
 --   overlap = "key"         same reward or objective as others with this key
@@ -45,6 +46,14 @@ function G.Build(opps, meta, ctx)
     for _, req in ipairs(m.requires or {}) do
       g.edges[#g.edges + 1] = { from = req, to = id, type = "requires" }
       if not done[req] and not g.nodes[req] then bad(id, "unmet prerequisite: " .. req) end
+    end
+    if m.requiresAny then
+      local any = false
+      for _, alt in ipairs(m.requiresAny) do
+        g.edges[#g.edges + 1] = { from = alt, to = id, type = "requires_any" }
+        if done[alt] or g.nodes[alt] then any = true end
+      end
+      if not any then bad(id, "unmet prerequisite: one of " .. table.concat(m.requiresAny, ", ")) end
     end
     for _, x in ipairs(m.excludes or {}) do
       if g.nodes[x] then g.edges[#g.edges + 1] = { from = id, to = x, type = "excludes" } end
@@ -104,6 +113,12 @@ function G.Build(opps, meta, ctx)
       if not g.invalid[id] then
         for _, req in ipairs(g.nodes[id].meta.requires or {}) do
           if g.invalid[req] then bad(id, "needs " .. req .. " (" .. g.invalid[req] .. ")") changed = true break end
+        end
+        local alts = g.nodes[id].meta.requiresAny
+        if alts and not g.invalid[id] then
+          local live = false
+          for _, alt in ipairs(alts) do if done[alt] or (g.nodes[alt] and not g.invalid[alt]) then live = true break end end
+          if not live then bad(id, "needs one of " .. table.concat(alts, ", ") .. " (none can be done)") changed = true end
         end
       end
     end

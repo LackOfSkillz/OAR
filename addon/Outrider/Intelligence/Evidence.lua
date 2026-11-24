@@ -45,7 +45,18 @@ local function scope()
 end
 -- observedAt (optional): when the underlying fact was observed; it is kept,
 -- not refreshed, and the expiry counts from it (OI02-R04).
-function E:Record(source, key, category, value, label, ttl, observedAt)
+-- Three times, kept apart (OI02-R11):
+--   observedAt   when the underlying fact was seen (the producer's own time);
+--   calculatedAt when this record was made from it (now);
+--   expiresAt    until when it may drive a decision: the earlier of
+--                observedAt + maxAge (how old a fact of this kind may be) and
+--                calculatedAt + ttl (how long a calculation stays current).
+-- opts.maxAge defaults to ttl. opts.freshness = "unknown" marks a fact whose
+-- observation time no producer knows: observedAt then holds calculatedAt and
+-- the record says so (it is never claimed as a fresh observation). The
+-- permanent history behind a fact is never touched; expiry only decides
+-- whether the fact may be used now.
+function E:Record(source, key, category, value, label, ttl, observedAt, opts)
   if type(source) ~= "string" or not self.sources[source] then return nil end
   if ns.Compat.IsSecret(key) or type(key) ~= "string" or #key < 1 or #key > 120 or key:find("[%c|]") or not key:find("%S") then return nil end
   if not self.TTL[category] then return nil end
@@ -53,17 +64,22 @@ function E:Record(source, key, category, value, label, ttl, observedAt)
   if label == "verified" and not self.sources[source].canVerify then return nil end
   local safe = plain(value, 0)
   if type(safe) ~= "table" then return nil end
+  opts = type(opts) == "table" and opts or {}
   local seconds = ttl or self.TTL[category]
   if not finite(seconds) or seconds < 0 or seconds > 86400 then return nil end
+  local maxAge = opts.maxAge or seconds
+  if not finite(maxAge) or maxAge < 0 or maxAge > 31536000 then return nil end
   local now = time()
   local seen = tonumber(observedAt)
   if seen and (seen ~= seen or seen > now + 5) then return nil end
+  local freshness = seen and "known" or (opts.freshness == "unknown" and "unknown" or "known")
   seen = seen and math.floor(seen) or now
-  if seen + seconds < now then return nil end -- already stale: not recorded as fresh
+  if seen + maxAge < now then return nil end -- too old to decide on (the history itself stays)
   self.serial = self.serial + 1
   local char, build = scope()
   local record = { id = source .. ":" .. key, source = source, category = category,
-    observedAt = seen, expiresAt = seen + seconds, label = label,
+    observedAt = seen, calculatedAt = now, freshness = freshness,
+    expiresAt = math.min(seen + maxAge, now + seconds), label = label,
     build = build, char = char, sourceType = self.sources[source].sourceType, privacy = "local",
     value = safe, revision = self.serial }
   -- Evict oldest by revision without unbounded retention.

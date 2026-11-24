@@ -53,7 +53,7 @@ function M:Find()
           if info and info.bindType == BOE and info.equipLoc and info.equipLoc ~= "" then
             local r = ns.GearScore:Compare("item:" .. id)
             if r and not r.why and r.pct >= 1 then
-              out[#out + 1] = { holder = holder, itemID = id, name = info.name, pct = r.pct, where = place }
+              out[#out + 1] = { holder = holder, itemID = id, name = info.name, pct = r.pct, where = place, observedAt = tonumber(inv.at) }
             end
           end
         end

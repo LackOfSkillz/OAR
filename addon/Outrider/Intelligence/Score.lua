@@ -21,6 +21,7 @@ S.WEIGHTS = { time = 0.3, gold = 0.3, risk = 0.2, uncertainty = 0.2 }
 S.LABEL_UNCERTAINTY = { verified = 0, observed = 0.05, community = 0.15, inferred = 0.3, unknown = 0.5 }
 S.PRIORITY_WEIGHT = { 1, 0.8, 0.6, 0.4, 0.2 }
 S.UNKNOWN_SECONDS = 900 -- same as Planner.UNKNOWN_SECONDS
+S.UNKNOWN_FRESHNESS = 0.1 -- history with no observation time (OI02-R11)
 S.UNKNOWN_COST = 0.15 -- an unknown gold cost is uncertainty, never zero (OI02-R03)
 
 local function kindWeights(objective)
@@ -63,6 +64,7 @@ function S.One(node, goals, ctx)
   if not o.costSeconds then unc = unc + 0.1 end
   if node.travelUnknown then unc = unc + 0.1 end
   if o.costUnknown then unc = unc + S.UNKNOWN_COST end
+  if o.freshnessUnknown then unc = unc + S.UNKNOWN_FRESHNESS end
   unc = math.min(1, unc)
   local trace = {
     { "goal benefit", fit * benefit },

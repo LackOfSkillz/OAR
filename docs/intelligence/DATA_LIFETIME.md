@@ -38,7 +38,7 @@ loses an observation: the source it was computed from is still there.
 
 | Cache | Where | Lifetime and bound |
 |---|---|---|
-| Evidence facts (`IntelEvidence.observations`) | Intelligence/Evidence.lua | expire with their TTL (planner facts 180 s from the time the fact was observed), at most 500, oldest evicted; `Clear(source)` drops one source's facts only (Radar never clears the planner's) |
+| Evidence facts (`IntelEvidence.observations`) | Intelligence/Evidence.lua | each keeps three times: `observedAt` (the producer's own time: a sighting, a node visit, a saved inventory, a listing), `calculatedAt` (when the record was made) and `expiresAt` (the earlier of observedAt + the kind's max age and calculatedAt + 180 s). History with no time is marked `freshness = "unknown"`. At most 500, oldest evicted. `Clear(source)` drops one source's facts only (Radar never clears the planner's). Expiry decides only whether a fact may drive a decision now; the saved history it came from is untouched. |
 | Character state fields | Intelligence/State.lua | until an event invalidates that field |
 | Current plan, graph, scores, runtime candidates | Intelligence/NexusCore.lua (`current`) | replaced on each re-plan; dropped on disable and logout |
 | v4 opportunities | Intelligence/Adapters.lua | rebuilt each re-plan from the producers; expire with their evidence |

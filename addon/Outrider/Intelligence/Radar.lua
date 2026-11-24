@@ -113,6 +113,7 @@ function M:Refresh()
       end
     end
   end
+  self.cardsKey = nexus and ("nexus|" .. N:ContextKey()) or "radar"
   if nexus then
     for i = #cards, 4, -1 do cards[i] = nil end
     self.cards, self.refreshedAt = cards, now
@@ -124,7 +125,12 @@ end
 function M:Cards()
   if not self.enabled then return {} end
   if ns.Compat.InCombat() then return {} end
-  if self.dirty or not self.cards or time() - (self.refreshedAt or 0) > 30 then return self:Refresh() end
+  local N = ns.NexusCore
+  local key = (N and N:Ready()) and ("nexus|" .. N:ContextKey()) or "radar"
+  if self.dirty or not self.cards or self.cardsKey ~= key or time() - (self.refreshedAt or 0) > 30 then
+    self.cardsKey = key
+    return self:Refresh()
+  end
   -- A card can expire before our normal refresh interval. Never show stale actions.
   for _, card in ipairs(self.cards) do
     if not O:Valid(card) then return self:Refresh() end
