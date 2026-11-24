@@ -130,12 +130,12 @@ def main() -> None:
             raise SystemExit(f"Unexpectedly empty pack {name}")
         generated = {file.name: clean_header(file.read_bytes()) for file in files}
         toc_text = generated[toc.name].decode("utf-8")
-        if "Data.lua" not in toc_text or "QuestieDB" not in toc_text:
+        if "Data.lua" not in toc_text or not any(k in toc_text for k in ("QuestieDB", "ForeverDB", "wago.tools")):
             raise SystemExit(f"Missing provenance in {toc.name}; review generator output.")
         ver = re.search(r"## X-Source:\s*([^\n\r]+)", toc_text)
         source_version = ver.group(1) if ver else "unrecorded"
         pending[name] = (generated, source_version)
-    print("Validated all six generated data packs; publishing source, not personal SavedVariables.")
+    print(f"Validated all {len(pending)} generated data packs; publishing source, not personal SavedVariables.")
 
     manifest = []
     for name, (generated, version) in pending.items():
@@ -145,8 +145,15 @@ def main() -> None:
             (target / filename).write_bytes(data)
             manifest.append((name, filename, len(data), sha(data)))
         (target / "COPYING").write_bytes(license_text)
+        extra = ""
+        if "ForeverDB" in version or "wago" in version:
+            extra = ("Also built from [ForeverDB](https://github.com/foreverfraddons/forever-db) (GPLv3; its "
+                     "LICENSE-DATA.txt credits the WoW Forever client tables, AllTheThings (MIT), VMaNGOS, "
+                     "cMaNGOS, pfQuest (MIT), Shortest Path Forever (GPLv3) and Drop Tables (data CC BY-SA 4.0)), "
+                     "[AllTheThings](https://github.com/ATTWoWAddon/AllTheThings) (MIT) and the WoW Forever client "
+                     "tables (Blizzard Entertainment's game data, exported by wago.tools).\n\n")
         (target / "SOURCE.md").write_text(
-            "# " + name + " — provenance\n\n"
+            "# " + name + " — provenance\n\n" + extra +
             "Data converted from [QuestieDB](" + ORIGIN + ") (" + version + ") "
             "using the matching converter in LackOfSkillz/OAR/tools. "
             "Published by Gary Mix with project modifications under GPLv3.\n\n"
