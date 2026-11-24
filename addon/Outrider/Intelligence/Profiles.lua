@@ -69,6 +69,36 @@ end
 
 function P.GoalValid(goal) return validGoal[goal] == true end
 
+-- OI02-03: the v4 CharacterState for this character (Intelligence/Contracts.lua).
+-- characterKey is an opaque local id (created once, stored in char.meta), never
+-- the character's name. The role is the player's explicit choice or "unknown":
+-- nothing is inferred from spells, talents or gear, and a respec changes
+-- nothing until the player picks again. Level, faction and copper come from
+-- the client when it answers; an unanswered field is left out (unknown).
+local FACTIONS = { Alliance = true, Horde = true, Neutral = true }
+function P.StateV4(revision)
+  local cur = P.Current()
+  local meta = ns.db and ns.db.char and ns.db.char.meta or {}
+  if type(meta.nexusId) ~= "string" then
+    meta.nexusId = string.format("char:%x%04x", tonumber(meta.created) or time(), math.random(0, 65535))
+  end
+  local level = tonumber(ns.Compat.Readable(ns.Compat.Call("UnitLevel", "player")))
+  local faction = ns.Compat.Readable(ns.Compat.Call("UnitFactionGroup", "player"))
+  local copper = tonumber(ns.Compat.Readable(ns.Compat.Call("GetMoney")))
+  local rec = {
+    characterKey = meta.nexusId, classToken = cur.class,
+    role = cur.role == "UNKNOWN" and "unknown" or cur.role,
+    roleSource = cur.role == "UNKNOWN" and "unknown" or "explicit",
+    level = level and math.max(1, math.min(60, math.floor(level))) or 1,
+    faction = FACTIONS[faction] and faction or "unknown",
+    takenAt = time(), revision = revision or 1,
+    copper = copper and math.floor(copper) or nil,
+  }
+  local ok, field = ns.Nexus.Validate("CharacterState", rec)
+  if not ok then return nil, field end
+  return rec
+end
+
 -- A role never disables universal quest, travel, economy or profession advice.
 function P.Allows(token, role, hint)
   token = P.Resolve(token)
