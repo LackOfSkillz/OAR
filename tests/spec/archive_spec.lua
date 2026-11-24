@@ -32,7 +32,7 @@ T.describe("archive contract", function()
     local first = list[1]
     T.ok(ns.Archive:Shift("demo", list, { path = "global.demo[npcID]", keys = { npcID = 7 } }))
     local e = rows(ns, "demo")[1]
-    T.ok(e.row == first, "the original table, not a copy")
+    T.ok(e.row ~= first and e.row.a == first.a, "an equal snapshot, not the live table (OI01-R09)")
     identity(ns, e, "global.demo[npcID]", { npcID = 7 })
     T.eq(#list, 2)
     T.ok(ns.Archive:Pop("demo", list, { path = "global.demo", scope = "char" }))

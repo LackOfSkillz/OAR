@@ -253,7 +253,7 @@ end
 function M:DeleteEntry(index)
   index = tonumber(index)
   if not index or index ~= math.floor(index) or index < 1 or index > #self.inst then return false end
-  table.remove(self.inst, index)
+  if not ns.Archive:Move("instances", self.inst, index, { path = "global.instances" }) then return false end
   return true
 end
 

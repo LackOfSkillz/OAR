@@ -107,7 +107,15 @@ function M:Pins(mapID, hidden)
 end
 
 function M:Clear(mapID)
-  if mapID then self.db[mapID] = nil else for k in pairs(self.db) do self.db[k] = nil end end
+  -- what the player clears is archived first (data preservation override)
+  if mapID then
+    if self.db[mapID] ~= nil and not ns.Archive:Put("trailCleared", self.db[mapID], { path = "global.trails[mapID]", keys = { mapID = mapID } }) then return false end
+    self.db[mapID] = nil
+  else
+    for k, list in pairs(self.db) do
+      if ns.Archive:Put("trailCleared", list, { path = "global.trails[mapID]", keys = { mapID = k } }) then self.db[k] = nil end
+    end
+  end
   self.last = nil
   if ns.MapPins then ns.MapPins:Invalidate() end
 end

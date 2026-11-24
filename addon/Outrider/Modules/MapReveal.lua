@@ -51,7 +51,7 @@ end
 function M.Explored(mapID)
   local list = C.Call("C_MapExplorationInfo.GetExploredMapTextures", mapID)
   local out = {}
-  if type(list) ~= "table" then ns.KeepBad(list, "MapReveal:list") return out end
+  if type(list) ~= "table" then return out end
   for _, e in ipairs(list) do
     local ids = {}
     for i, id in ipairs(e.fileDataIDs or {}) do ids[i] = readable(id) end
@@ -92,7 +92,7 @@ function M:RecordAll()
     top, guard = parent, guard + 1
   end
   local all = top and C.Call("C_Map.GetMapChildrenInfo", top, nil, true)
-  for _, m in ipairs(ns.KeepTable(all, "MapReveal:all") or {}) do
+  for _, m in ipairs(type(all) == "table" and all or {}) do
     if readable(m.mapID) then zones[#zones + 1] = m.mapID end
   end
   if here then zones[#zones + 1] = here end

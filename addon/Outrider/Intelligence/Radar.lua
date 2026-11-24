@@ -62,6 +62,8 @@ function M:Mute(kind, on)
   return true
 end
 function M:ClearFeedback()
+  local old = ns.db.char.radarFeedback
+  if type(old) == "table" and next(old) ~= nil and not ns.Archive:Put("radarFeedbackCleared", old, { path = "char.radarFeedback", scope = "char" }) then return false end
   ns.db.char.radarFeedback = {}
   self.dirty = true
   -- Keep WhatNow's independently authored skip history.

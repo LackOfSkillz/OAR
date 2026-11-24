@@ -52,7 +52,7 @@ end
 
 function M:ScanVignettes()
   local list = C.Call("C_VignetteInfo.GetVignettes")
-  if type(list) ~= "table" then ns.KeepBad(list, "RareScan:list") return end
+  if type(list) ~= "table" then return end
   self.vigSeen = self.vigSeen or {}
   local mapID = C.PlayerPosition("player")
   for _, vg in ipairs(list) do

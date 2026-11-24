@@ -89,7 +89,7 @@ function M.Objectives(questID)
   local objs = C.Resolve("C_QuestLog.GetQuestObjectives")
   if type(objs) ~= "function" then return list end
   local ok, o = pcall(objs, questID)
-  for _, e in ipairs(ok and ns.KeepTable(o, "QuestObjectives:o") or {}) do
+  for _, e in ipairs(ok and type(o) == "table" and o or {}) do
     if type(e) == "table" then
       local text = readable(e.text) or ""
       local flag, enough = readable(e.finished), counts(e, text)
@@ -356,7 +356,7 @@ function M:ItemQuestLines(itemID)
   local cap = (ns.TooltipLines and ns.TooltipLines:Settings().questUsesLimit) or 2
   cap = math.max(1, math.min(10, tonumber(cap) or 2))
   local function add(list, prefix)
-    if type(list) ~= "table" then ns.KeepBad(list, "QuestObjectives:list") return end
+    if type(list) ~= "table" then return end
     local total = 0
     for _, questID in ipairs(list) do
       local q = pack.quests and pack.quests[questID]

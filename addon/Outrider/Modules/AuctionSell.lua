@@ -414,7 +414,7 @@ end
 function M:Owned()
   local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
   local out = {}
-  for _, a in ipairs(ns.KeepTable(list, "AuctionSell:list") or {}) do
+  for _, a in ipairs(type(list) == "table" and list or {}) do
     local key = a.itemKey
     local id = key and C.Readable(key.itemID)
     local buyout = tonumber(C.Readable(a.buyoutAmount))

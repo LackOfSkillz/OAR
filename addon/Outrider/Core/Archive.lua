@@ -20,13 +20,14 @@
 --           scope = "account" | "char" }
 --
 -- An entry is { id, path, keys, scope, char, at, row }. `row` is the original table,
--- untouched; path + keys say exactly where it came from, so it can be put back.
+-- copied at the moment it was archived (a snapshot); path + keys say exactly
+-- where it came from, so it can be put back.
 -- Storage: Outrider_DB.global.archive = { v = 2, sets = { [dataset] = { entry, ... } } }.
 -- A saved value of the wrong type is never overwritten: it moves, unchanged, to
 -- Outrider_DB.global.archiveDamaged with the path it was found at.
 
 local _, ns = ...
-local Archive = { V = 2, warned = {} }
+local Archive = { V = 2, warned = {}, MAX_DAMAGED = 500 }
 ns.Archive = Archive
 
 local function g() return ns.db and ns.db.global end
@@ -40,6 +41,14 @@ function Archive:KeepDamaged(path, value)
   Archive.keptThisSession = Archive.keptThisSession or {}
   if type(value) ~= "table" and Archive.keptThisSession[sig] then return true end
   Archive.keptThisSession[sig] = true
+  -- bounded: past MAX_DAMAGED entries further damaged values are only counted
+  -- (nothing already kept is removed); only saved data reaches this, not
+  -- incoming messages, packs or pasted codes (review OI01-R10)
+  local list = root.archiveDamaged
+  if type(list) == "table" and #list >= Archive.MAX_DAMAGED then
+    root.archiveDamagedOverflow = (tonumber(root.archiveDamagedOverflow) or 0) + 1
+    return false
+  end
   local d = root.archiveDamaged
   if d ~= nil and type(d) ~= "table" then
     d = { { path = "archiveDamaged", value = d, at = time() } }
@@ -96,8 +105,12 @@ function Archive:Put(dataset, row, ctx)
   -- a stable id per entry (session + counter) so a later lossless off-load can
   -- confirm exactly which entries it copied (docs/ARCHIVE_GROWTH.md)
   Archive.seq = (Archive.seq or 0) + 1
-  local entry = { id = string.format("%s:%d", tostring(ns.session or "?"), Archive.seq), path = ctx.path, keys = ctx.keys,
-    scope = ctx.scope or "account", char = ns.db and ns.db.key, at = time(), row = row }
+  -- a snapshot, not a reference: later edits to the source row (another module
+  -- still holding it) can't change what was archived (review OI01-R09)
+  local snap = type(row) == "table" and ns.CopyTable(row) or row
+  local entry = { id = string.format("%s:%d", tostring(ns.session or "?"), Archive.seq), path = ctx.path,
+    keys = type(ctx.keys) == "table" and ns.CopyTable(ctx.keys) or ctx.keys,
+    scope = ctx.scope or "account", char = ns.db and ns.db.key, at = time(), row = snap }
   local n = #list
   list[n + 1] = entry
   if list[n + 1] ~= entry then return false, "write not confirmed" end

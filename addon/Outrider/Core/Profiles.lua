@@ -37,10 +37,10 @@ function Profiles:Export(charKey)
 end
 
 function Profiles:Validate(p)
-  if type(p) ~= "table" then ns.KeepBad(p, "Profiles:p") return false, "not a profile" end
+  if type(p) ~= "table" then return false, "not a profile" end
   if p.kind ~= self.KIND then return false, "this string is not an Outrider profile" end
   if type(p.v) ~= "number" or p.v > self.VERSION then return false, "profile is from a newer Outrider version" end
-  if type(p.data) ~= "table" then ns.KeepBad(p.data, "Profiles:p.data") return false, "profile has no data" end
+  if type(p.data) ~= "table" then return false, "profile has no data" end
   for field, value in pairs(p.data) do
     local allowed = false
     for _, f in ipairs(COPYABLE) do if f == field then allowed = true end end

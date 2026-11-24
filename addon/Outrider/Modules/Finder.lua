@@ -43,7 +43,7 @@ function M:Mobs()
   if self.mobs ~= nil then return self.mobs end
   if not rawget(_G, "Outrider_DataMobs") then C.LoadAddOn(self.MOBS_ADDON) end
   local data = rawget(_G, "Outrider_DataMobs")
-  self.mobs = type(data) == "table" and ns.KeepTable(data.maps, "Finder:data.maps") or false
+  self.mobs = type(data) == "table" and type(data.maps) == "table" and data.maps or false
   self:Info(self.mobs and "creature pack loaded from %s%s" or "no creature pack (%s: %s): creatures you met only",
     self.mobs and tostring(data.source) or self.MOBS_ADDON,
     self.mobs and (C.loadReasons[self.MOBS_ADDON] and (" (" .. C.loadReasons[self.MOBS_ADDON] .. ")") or "") or tostring(C.loadReasons[self.MOBS_ADDON]))
@@ -154,7 +154,7 @@ end
 -- Creatures you met (Discovery), by npcID: name, level, classification, position.
 local function met()
   local d = ns.db.global.discovered
-  return type(d) == "table" and ns.KeepTable(d.npcs, "Finder:d.npcs") or {}
+  return type(d) == "table" and type(d.npcs) == "table" and d.npcs or {}
 end
 
 local function creatures(out, want, text, level)

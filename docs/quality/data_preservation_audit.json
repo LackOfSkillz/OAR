@@ -3,6 +3,8 @@
  "generated": "2026-11-24",
  "directive": "docs/blueprint/OWNER_DIRECTIVE_DATA_PRESERVATION.md",
  "unauthorized_data_loss": 0,
+ "keep_bad_policy": "ns.KeepBad/KeepTable only guard values already saved in SavedVariables (138 sites). Incoming messages, pasted codes, imports, shipped data packs and game API results are validated and rejected without being kept (review OI01-R10). archiveDamaged holds at most 500 entries; beyond that values are only counted (archiveDamagedOverflow).",
+ "resets": "/ride reset char|all resets declared settings only (plain values and filled-in tables), archives the old settings first (settingsReset), and keeps all collected data and the archive. No in-game wipe of collected data exists (review OI01-R07).",
  "archive": "Core/Archive.lua v2: copy, confirm, then remove; entry {id, path, keys, scope, char, at, row}; damaged values to global.archiveDamaged",
  "datasets": [
   {
@@ -13,7 +15,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: prices: daily lows past 14 days, keyed by itemID",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "priceHistory",
@@ -23,7 +27,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: price history: rows past the cap and the age limit, and whole untracked items",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "priceHistoryItems",
@@ -33,7 +39,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: price history: rows past the cap and the age limit, and whole untracked items",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "priceWatch",
@@ -43,7 +51,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: price watch eviction and a whole whisper partner are archived before removal",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "sightings",
@@ -53,7 +63,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: sightings and respawn observations, keyed by npcID",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "sightingObservations",
@@ -63,7 +75,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: sightings and respawn observations, keyed by npcID",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "questDiary",
@@ -73,7 +87,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: quest diary, per character",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "chat",
@@ -83,7 +99,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: chat archive and per-person whispers (only when the player turned them on)",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "chatByPerson",
@@ -93,7 +111,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: price watch eviction and a whole whisper partner are archived before removal",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "feedback",
@@ -103,7 +123,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "adviceFeedback",
@@ -113,7 +135,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "layerHistory",
@@ -123,7 +147,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "nodeState",
@@ -133,7 +159,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "deaths",
@@ -143,7 +171,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "economyOutcomes",
@@ -153,7 +183,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "fishNotable",
@@ -163,7 +195,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: fishing notable catches",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "censusPlayers",
@@ -173,7 +207,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: census: players and profession sightings past 30 days are archived with realm and name",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "censusProfs",
@@ -183,7 +219,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: census: players and profession sightings past 30 days are archived with realm and name",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "ahSearchHistory",
@@ -193,7 +231,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: auction search history, mail recipients: the overflow is archived",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "mailRecent",
@@ -203,7 +243,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: auction search history, mail recipients: the overflow is archived",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "xp60OldSchema",
@@ -213,7 +255,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: schema changes keep the old store (XP60, intelligence profile)",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "profileOldSchema",
@@ -223,7 +267,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: schema changes keep the old store (XP60, intelligence profile)",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "instances",
@@ -233,7 +279,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: lockouts past a day and the map tab's two-click clear are archived",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "clearedPlaces",
@@ -243,7 +291,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: lockouts past a day and the map tab's two-click clear are archived",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "clearedDiscovered",
@@ -253,7 +303,9 @@
    "tests": [
     "tests/spec/archive_spec.lua :: lockouts past a day and the map tab's two-click clear are archived",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "dungeonRuns",
@@ -261,8 +313,11 @@
    "retention_mechanism": "KEEP_RUNS",
    "archive_destination": "global.archive.sets.dungeonRuns",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: dungeon runs: the oldest run past KEEP_RUNS",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "trail",
@@ -270,8 +325,11 @@
    "retention_mechanism": "800 dots per map",
    "archive_destination": "global.archive.sets.trail",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: trail: dots past 800 per map keep their mapID",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "spawnLog",
@@ -279,8 +337,11 @@
    "retention_mechanism": "MAX per spot",
    "archive_destination": "global.archive.sets.spawnLog",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: spawn log: fixture unit and spot; rows keep their spot",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "fights",
@@ -288,8 +349,11 @@
    "retention_mechanism": "MAX_HISTORY",
    "archive_destination": "global.archive.sets.fights",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: fights: fixture meter sessions; the oldest fight row",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "xpSessions",
@@ -297,8 +361,11 @@
    "retention_mechanism": "MAX_HISTORY",
    "archive_destination": "global.archive.sets.xpSessions",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: XP sessions: an interrupted record joins history; the oldest is archived",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "salesLedger",
@@ -306,8 +373,11 @@
    "retention_mechanism": "100",
    "archive_destination": "global.archive.sets.salesLedger",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: sales ledger: auctions that disappeared, oldest archived past 100",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "auctionPosts",
@@ -316,7 +386,9 @@
    "archive_destination": "global.archive.sets.auctionPosts",
    "tests": [
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": false,
+   "live_pending": "behaviour checked only statically; needs live-client confirmation"
   },
   {
    "dataset": "petsSeen",
@@ -324,8 +396,11 @@
    "retention_mechanism": "50",
    "archive_destination": "global.archive.sets.petsSeen",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: pets seen: fixture pet unit; oldest past 50",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "discoveredRecent",
@@ -333,8 +408,11 @@
    "retention_mechanism": "RECENT_MAX",
    "archive_destination": "global.archive.sets.discoveredRecent",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: recent discoveries: past 300 the oldest is archived (fixture units)",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "goldLedger",
@@ -342,8 +420,11 @@
    "retention_mechanism": "30",
    "archive_destination": "global.archive.sets.goldLedger",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: gold ledger: sessions past 30",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "rareCastGaps",
@@ -351,8 +432,11 @@
    "retention_mechanism": "MAX_GAPS",
    "archive_destination": "global.archive.sets.rareCastGaps",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: rare cast gaps: fixture rare unit; gaps keep npcID and spell",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "fishSessions",
@@ -360,8 +444,11 @@
    "retention_mechanism": "KEEP_SESSIONS",
    "archive_destination": "global.archive.sets.fishSessions",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: fishing sessions and catches per skill point",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "fishCatchesPerPoint",
@@ -369,8 +456,11 @@
    "retention_mechanism": "KEEP_POINTS",
    "archive_destination": "global.archive.sets.fishCatchesPerPoint",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: fishing sessions and catches per skill point",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "radarFeedback",
@@ -379,7 +469,9 @@
    "archive_destination": "global.archive.sets.radarFeedback",
    "tests": [
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": false,
+   "live_pending": "behaviour checked only statically; needs live-client confirmation"
   },
   {
    "dataset": "nextSessionDismissed",
@@ -387,8 +479,11 @@
    "retention_mechanism": "20",
    "archive_destination": "global.archive.sets.nextSessionDismissed",
    "tests": [
+    "tests/spec/archive_datasets_spec.lua :: next-session dismissals: the old map is archived before it is replaced",
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   },
   {
    "dataset": "trainingOldFormat",
@@ -397,7 +492,9 @@
    "archive_destination": "global.archive.sets.trainingOldFormat",
    "tests": [
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": false,
+   "live_pending": "behaviour checked only statically; needs live-client confirmation"
   },
   {
    "dataset": "macroPrevBodies",
@@ -406,7 +503,69 @@
    "archive_destination": "global.archive.sets.macroPrevBodies",
    "tests": [
     "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
-   ]
+   ],
+   "behaviour_tested": false,
+   "live_pending": "behaviour checked only statically; needs live-client confirmation"
+  },
+  {
+   "dataset": "censusCleared",
+   "saved_path": "global.census[realm]",
+   "retention_mechanism": "player's /ride census reset",
+   "archive_destination": "global.archive.sets.censusCleared",
+   "tests": [
+    "tests/spec/archive_datasets_spec.lua :: trail clear, census reset, route delete, radar clear and instance delete are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "trailCleared",
+   "saved_path": "global.trails[mapID]",
+   "retention_mechanism": "player's trail clear",
+   "archive_destination": "global.archive.sets.trailCleared",
+   "tests": [
+    "tests/spec/archive_datasets_spec.lua :: trail clear, census reset, route delete, radar clear and instance delete are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "routesDeleted",
+   "saved_path": "global.routes.list[id]",
+   "retention_mechanism": "player's route delete",
+   "archive_destination": "global.archive.sets.routesDeleted",
+   "tests": [
+    "tests/spec/archive_datasets_spec.lua :: trail clear, census reset, route delete, radar clear and instance delete are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "radarFeedbackCleared",
+   "saved_path": "char.radarFeedback",
+   "retention_mechanism": "player's Clear feedback",
+   "archive_destination": "global.archive.sets.radarFeedbackCleared",
+   "tests": [
+    "tests/spec/archive_datasets_spec.lua :: trail clear, census reset, route delete, radar clear and instance delete are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "settingsReset",
+   "saved_path": "chars[character] settings",
+   "retention_mechanism": "/ride reset char|all (settings only)",
+   "archive_destination": "global.archive.sets.settingsReset",
+   "tests": [
+    "tests/spec/safety_spec.lua :: reset all puts settings back for every character and keeps collected data and the archive (OI01-R07)",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

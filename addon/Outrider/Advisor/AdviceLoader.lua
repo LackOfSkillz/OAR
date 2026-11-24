@@ -348,7 +348,7 @@ end
 -- Accept an advice code pasted from the companion; returns count, reason.
 function Advice:Paste(text)
   local data, err = ns.Serialize.Import(text)
-  if type(data) ~= "table" then ns.KeepBad(data, "AdviceLoader:data") return 0, err or "not an Outrider code" end
+  if type(data) ~= "table" then return 0, err or "not an Outrider code" end
   if data.kind ~= "advice" then return 0, "that code is not advice" end
   local items, why, answer = self:Check(data)
   if why ~= "ok" then return 0, why end

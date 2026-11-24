@@ -114,13 +114,15 @@ add("snap", "save a snapshot of this character (for the future advisor)", functi
   ns.Print("snapshot taken. It is written to disk on /reload or logout.")
 end)
 
-add("reset", "char|all confirm  wipe settings (needs the word confirm)", function(arg)
+add("reset", "char|all confirm  settings back to defaults (collected data and the archive are kept)", function(arg)
   local scope, confirm = (arg or ""):match("^(%S+)%s*(%S*)$")
   if confirm ~= "confirm" or (scope ~= "char" and scope ~= "all") then
     ns.Print("type /ride reset char confirm  or  /ride reset all confirm") return
   end
-  if scope == "char" then ns.DB:ResetChar() else ns.DB:ResetAll() end
-  ns.Print("reset %s. Reloading.", scope)
+  local ok
+  if scope == "char" then ok = ns.DB:ResetChar() else ok = ns.DB:ResetAll() end
+  if not ok then ns.Print("reset stopped: the old settings could not be archived, nothing changed") return end
+  ns.Print("settings reset (%s); your collected data is kept. Reloading.", scope)
   ReloadUI()
 end)
 

@@ -245,6 +245,7 @@ function M:Delete(id)
   local s = self:Store()
   local r = s.list[tonumber(id) or id]
   if not r then return false end
+  if not ns.Archive:Put("routesDeleted", r, { path = "global.routes.list[id]", keys = { id = r.id, mapID = r.mapID } }) then return false end
   s.list[r.id] = nil
   self:Info("route %d deleted", r.id)
   self:Changed(r.id)

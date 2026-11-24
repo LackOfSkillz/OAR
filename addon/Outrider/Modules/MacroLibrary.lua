@@ -293,7 +293,7 @@ function M:Import(text)
   if not p then return nil, err end
   if type(p) ~= "table" or p.kind ~= self.KIND then return nil, "this string is not an Outrider macro export" end
   if type(p.v) ~= "number" or p.v > self.VERSION then return nil, "made by a newer Outrider" end
-  if type(p.ids) ~= "table" then ns.KeepBad(p.ids, "MacroLibrary:p.ids") return nil, "no macros in this string" end
+  if type(p.ids) ~= "table" then return nil, "no macros in this string" end
   -- A copied string is untrusted; never let it cause unbounded CreateMacro
   -- operations even when the player explicitly clicks Import.
   if #p.ids < 1 or #p.ids > 120 then return nil, "macro set size is invalid" end

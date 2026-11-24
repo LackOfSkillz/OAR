@@ -780,7 +780,11 @@ ns.AddCommand("census", "who's playing: most common level, class, race, professi
     local sent, why = M:Press()
     ns.Print(sent and ("census search: " .. sent .. " (" .. M:Left() .. " to go)") or ("census: " .. tostring(why)))
   elseif arg == "reset" then
-    M.store[M.RealmKey()] = nil
+    local realm = M.RealmKey()
+    if M.store[realm] ~= nil and not ns.Archive:Put("censusCleared", M.store[realm], { path = "global.census[realm]", keys = { realm = realm } }) then
+      ns.Print("census: could not archive, nothing cleared") return
+    end
+    M.store[realm] = nil
     M.sweep = nil
     ns.Print("census cleared for %s", M.RealmKey())
   else

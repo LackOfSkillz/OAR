@@ -88,7 +88,7 @@ end
 -- The AH's GetOwnedAuctions may be absent or restricted; never guess status.
 function M:Owned()
   local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
-  if type(list) ~= "table" then ns.KeepBad(list, "AuctionHelper:list") return {} end
+  if type(list) ~= "table" then return {} end
   local out = {}
   for _, a in ipairs(list) do
     local id = a.itemKey and C.Readable(a.itemKey.itemID)
@@ -181,7 +181,7 @@ function M:Undercut()
   -- Some Forever client revisions provide prices but no auction IDs.
   -- Keep those in the read-only undercut list; cancel is disabled without ID.
   local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
-  for _, a in ipairs(ns.KeepTable(list, "AuctionHelper:list") or {}) do
+  for _, a in ipairs(type(list) == "table" and list or {}) do
     local id = a.itemKey and C.Readable(a.itemKey.itemID)
     local mine = tonumber(C.Readable(a.buyoutAmount))
     local low = id and ns.Prices:History(id)

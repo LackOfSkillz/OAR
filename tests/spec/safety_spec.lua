@@ -62,17 +62,34 @@ T.describe("resets", function()
     local before = ns.db.char
     game:slash("reset char confirm")
     T.eq(game.reloads, 1)
-    T.ok(ns.db.char ~= before, "live table replaced")
     T.eq(ns.db.char.hub.x, 0)
     T.eq(ns.db.raw.chars[ns.db.key], ns.db.char)
+    T.ok(ns.db.char == before, "the character table itself is kept (collected data in it stays)")
   end)
 
-  T.it("reset all writes nothing back", function()
-    local game = mock.new()
-    game:loadAddon()
-    game:login()
+  T.it("reset all puts settings back for every character and keeps collected data and the archive (OI01-R07)", function()
+    local game, ns = session()
+    ns.db.char.hub.x = 500
+    ns.db.global.prices = ns.db.global.prices or {}
+    ns.db.global.prices[2318] = { { 1, 250 } }
+    ns.db.char.fights = { { name = "Fight 1" } }
+    ns.Archive:Put("demo", { a = 1 }, { path = "x" })
+    local L = ns.Modules:Get("Layers")
+    L:Settings().history = { { id = 5, mapID = 1412, at = 1 } } -- data kept inside module settings
+    ns.Modules:Get("Welcome"):Settings().custom = "kept" -- not a declared default: data, stays
     game:slash("reset all confirm")
-    T.no(game:logout():find("Outrider_DB", 1, true))
+    T.eq(game.reloads, 1)
+    local saved = game:logout()
+    T.ok(saved:find("Outrider_DB", 1, true), "the file is still written")
+    local _, ns2 = session({ savedVariables = saved })
+    T.eq(ns2.db.char.hub.x, 0, "window position reset")
+    T.eq(ns2.db.global.prices[2318][1][2], 250, "auction prices kept")
+    T.eq(ns2.db.char.fights[1].name, "Fight 1", "fights kept")
+    T.eq(ns2.Modules:Get("Layers"):Settings().history[1].id, 5, "data inside module settings kept")
+    T.eq(ns2.Archive:Rows("demo")[1].row.a, 1, "archive kept")
+    local snap = ns2.Archive:Rows("settingsReset")[1]
+    T.ok(snap and snap.row.hub.x == 500, "old settings archived, so the reset can be undone")
+    T.eq(ns2.Modules:Get("Welcome"):Settings().custom, "kept")
   end)
 end)
 

@@ -214,7 +214,7 @@ end
 -- ------------------------------------------------------------------ numbers
 -- Everything the session page shows, worked out from the raw counts.
 function M.Stats(s)
-  if type(s) ~= "table" then ns.KeepBad(s, "FishingLog:s") return nil end
+  if type(s) ~= "table" then return nil end
   local out = { catches = s.catches, casts = s.casts, escapes = s.escapes, secs = s.secs, vendor = 0, auction = 0, fish = {} }
   for id, f in pairs(s.fish or {}) do
     local v, a = M.Prices(id)

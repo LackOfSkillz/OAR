@@ -72,7 +72,8 @@ end
 
 function DB:Init()
   self.freshFile = type(Outrider_DB) ~= "table"
-  if self.freshFile then Outrider_DB = {} end
+  -- a damaged root (not a table) is kept in archiveDamaged, never dropped (review OI01-R08)
+  if self.freshFile then ns.KeepBad(Outrider_DB, "Outrider_DB") Outrider_DB = {} end
   self.safeMode = nil
   local db, why = self:Migrate(Outrider_DB)
   if db then Outrider_DB = db else db = self:EnterSafeMode(why) end
@@ -152,17 +153,55 @@ function DB:Characters()
   return out
 end
 
--- Both resets also rebind the live tables so nothing keeps writing into the
--- discarded ones before the reload the slash command performs.
+-- Resets put SETTINGS back to their defaults and keep everything collected
+-- (review OI01-R07, owner data preservation override). A setting is a key the
+-- module declares in its defaults whose default is a plain value or a filled-in
+-- table (a position, a colour), plus the window position. A default that starts
+-- as an empty table is a container the module fills (history, seen lists,
+-- watch lists, words): that is data and stays, like everything else not declared. The old values of every
+-- setting that changes are archived first ("settingsReset"), so a reset can be
+-- undone by hand. There is no wipe of collected data from inside the game.
+local function isSetting(v) return type(v) ~= "table" or next(v) ~= nil end
+local function resetSettings(self, key, char)
+  local before = { hub = char.hub, modules = {} }
+  for name, defs in pairs(self.moduleDefaults) do
+    local m = char.modules and char.modules[name]
+    local s = m and m.settings
+    if type(s) == "table" then
+      local old = {}
+      for k, v in pairs(defs) do if isSetting(v) then old[k] = s[k] end end
+      old.__enabled = m.enabled
+      before.modules[name] = old
+    end
+  end
+  if not ns.Archive:Put("settingsReset", before, { path = "chars[character] settings", keys = { character = key }, scope = "char" }) then
+    return false
+  end
+  char.hub = ns.CopyTable(self.charDefaults.hub)
+  char.modules = type(char.modules) == "table" and char.modules or {}
+  for name, defs in pairs(self.moduleDefaults) do
+    local m = char.modules[name]
+    if not m then m = {} char.modules[name] = m end
+    if type(m.settings) ~= "table" then m.settings = {} end
+    for k, v in pairs(defs) do
+      if isSetting(v) then m.settings[k] = type(v) == "table" and ns.CopyTable(v) or v end
+    end
+    m.enabled = nil -- back to the module's own default on/off
+  end
+  return true
+end
+
 function DB:ResetChar()
-  ns.db.raw.chars[ns.db.key] = nil
-  local char = ns.ApplyDefaults({}, self.charDefaults)
-  ns.db.raw.chars[ns.db.key] = char
-  ns.db.char = char
-  for name in pairs(self.moduleDefaults) do self:ModuleSettings(name) end
+  return resetSettings(self, ns.db.key, ns.db.char)
 end
 
 function DB:ResetAll()
-  Outrider_DB = nil
-  self.reset = true
+  local ok = true
+  for key, char in pairs(ns.db.raw.chars) do
+    if type(char) == "table" then ok = resetSettings(self, key, char) and ok end
+  end
+  local g = ns.db.global
+  g.debug = false
+  g.minimap = ns.CopyTable(self.globalDefaults.minimap)
+  return ok
 end

@@ -103,3 +103,23 @@ Limits that remain:
 - **Behaviour drivers:** 17 of the 42 datasets are covered by the static contract and code review instead of a per-dataset behaviour test, because their recorders need live unit, auction or instance state: dungeon runs, trail, spawn log, fights, XP sessions, ledgers, posts, pets, discoveries, rare cast gaps, fish sessions, catches per point, radar, next session, trainer rows, macro bodies.
 - **Backup restore:** `tools/backup-sv.ps1 -Restore` needs the game closed and was not exercised in CI.
 - **Live client:** all live checks are still outstanding.
+
+---
+
+## Resubmission 2: response to ChatGPT resubmission review (reviewed 5813e9f, REVIEW_CHANGES)
+
+Targeted fixes only; no broad refactor. The earlier records above are kept. The commit
+`2cb89ca` (Path performance: search once per destination, sliced across frames) landed between the
+reviews, after a lag check in game; it is a separate fix and is included in this candidate.
+
+| Finding | Correction | Evidence |
+|---|---|---|
+| OI01-R07 Critical, resets | `DB:ResetChar`/`ResetAll` no longer delete anything. They reset **settings only**: module defaults that are plain values or filled-in tables, the window position and module on/off. Empty-table defaults are data containers (layer history, seen lists, words) and stay, like everything undeclared. The old settings are archived first (`settingsReset`); if that fails, nothing changes. `ResetAll` no longer sets `Outrider_DB = nil`. The command text now says "settings back to defaults (collected data and the archive are kept)". Player clears of collected knowledge archive what they clear: census reset, trail clear, route delete, radar Clear feedback, instance entry delete, and the map tab's two-click clear (from resubmission 1). Edits of the player's own preferences (lists, words, gear sets, macros, layouts, talent picks) are unchanged and listed in the audit. | `safety_spec` "reset all puts settings back...": prices, fights, data inside module settings, the archive and undeclared module data survive reset, logout and reload; old settings archived. `archive_datasets_spec` "trail clear, census reset, route delete, radar clear and instance delete are archived" |
+| OI01-R08 High, malformed root | A non-table `Outrider_DB` is kept through `ns.KeepBad` (buffered before DB init, flushed into `global.archiveDamaged` after). | `archive_datasets_spec` "a damaged Outrider_DB root is kept and survives the next load" |
+| OI01-R09 Moderate, immutability | `Archive:Put` stores a deep copy of the row and keys (a snapshot). Later edits to the source can't change history. | `archive_datasets_spec` "archived entries are snapshots" (nested table too); contract test updated |
+| OI01-R10 Moderate, untrusted input | 29 keep sites on values that were never saved were reverted to plain validation (reject, don't keep): shipped data packs, a pasted advice code, an imported profile, macro import strings, party messages, game API results (owned auctions, vignettes, map exploration, quest objectives, C_DamageMeter). 138 sites remain, all on SavedVariables values. `archiveDamaged` is capped at 500 entries; beyond that values are only counted (`archiveDamagedOverflow`) and nothing kept is removed. | `archive_datasets_spec` bounded-damaged test; policy in the audit JSON (`keep_bad_policy`) |
+| OI01-R11 Moderate, behaviour coverage | New `archive_datasets_spec.lua` (17 cases). It drives the real recorders, with small named fixtures (a fake unit, a stubbed meter session list, a stubbed spot) where live client state is needed. Covered: dungeon runs, trail, spawn log, fights, XP sessions, sales ledger, pets seen, gold ledger, rare cast gaps, fish sessions, catches per point, next-session dismissals, recent discoveries; persistence across logout and load. **43 of 47 datasets now have behaviour tests.** The other 4 (`auctionPosts`, `radarFeedback` overflow, `trainingOldFormat`, `macroPrevBodies`) need auction-house posting, opportunity cards or the macro API that the mock can't fake honestly. They keep the static contract and are marked `live_pending` in the audit. | `docs/quality/data_preservation_audit.json`: 47 datasets with `behaviour_tested` and `live_pending` flags |
+
+Full suite at the candidate: 1055 passed, 0 failed; companion passed; quality 0 new; deps 0 new;
+security 0 violations. Outstanding live-client requirements: OI01-04 runtime row, the in-game checks
+listed in OI01-15, the 4 live_pending datasets, and the Path stutter re-check.
