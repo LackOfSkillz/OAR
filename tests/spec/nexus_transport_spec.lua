@@ -17,6 +17,7 @@ end
 local function lines(path)
   local out = {}
   for line in io.lines(path) do
+    line = line:gsub("$", "") -- the checkout may use CRLF
     local rec, code = line:match("^(%w+)\t(.+)$")
     if rec then out[#out + 1] = { rec, code } end
   end
