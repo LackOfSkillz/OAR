@@ -23,10 +23,20 @@ local M = ns:NewModule("Nearby", {
 ns.Nearby = M
 
 M.ADDON = "Outrider_Data_Gear"
-M.EFFORT = { craft = 1, vendor = 1, alt = 2, gearquest = 3, quest = 3, drop = 4, rare = 4, chest = 4, container = 4, dungeon = 5, world = 6 }
+M.EFFORT = { craft = 1, vendor = 1, alt = 2, crafted = 3, gearquest = 3, quest = 3, drop = 4, rare = 4, chest = 4, container = 4, dungeon = 5, world = 6 }
 M.KIND_LABEL = { vendor = "sold by", quest = "quest", drop = "dropped by", alt = "on", rare = "dropped by the rare",
   chest = "found in a", dungeon = "dropped by", craft = "you can make it with", world = "world drop from",
-  container = "found in" }
+  container = "found in", crafted = "made with" }
+
+-- A source this character can use: gear made by a profession only when you
+-- have that profession ("crafted" sources from the crafting pack say
+-- "Tailoring (skill 75)").
+function M.CanUse(s)
+  if s[1] ~= "crafted" then return true end
+  local prof = type(s[5]) == "string" and s[5]:match("^(.-) %(")
+  local mine = ns.db and ns.db.char and ns.db.char.professions
+  return prof ~= nil and type(mine) == "table" and mine[prof] ~= nil
+end
 
 -- Gear this character can craft (Gary, 2026-11-23: "grow it"): learned
 -- recipes from the profession windows you opened, product = item made.
@@ -147,7 +157,7 @@ function M:Elsewhere(level, faction, mapID)
   for id, it in pairs(self.pack or {}) do
     if M.LevelFits(it, level) then
       for _, s in ipairs(it[4] or {}) do
-        if s[2] ~= mapID and (s[7] == nil or s[7] == faction) then
+        if s[2] ~= mapID and (s[7] == nil or s[7] == faction) and M.CanUse(s) then
           local ok, note = M.QuestOpen(s, level)
           if ok then
             if not stats(id) then
@@ -213,7 +223,7 @@ function M:Candidates(opts)
       local req = it[2] or 0
       if M.LevelFits(it, level) then
         for _, s in ipairs(it[4]) do
-          if s[7] == nil or s[7] == faction then
+          if (s[7] == nil or s[7] == faction) and M.CanUse(s) then
             local ok, note = M.QuestOpen(s, level)
             if ok then
               add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note, qid = s[1] == "quest" and s[8] or nil }, req)
@@ -229,7 +239,7 @@ function M:Candidates(opts)
       local req = it[2] or 0
       if M.LevelFits(it, level) then
         for _, s in ipairs(it[4]) do
-          if s[2] == mapID and (s[7] == nil or s[7] == faction) then
+          if s[2] == mapID and (s[7] == nil or s[7] == faction) and M.CanUse(s) then
             local ok, note = M.QuestOpen(s, level)
             if ok then
               add(id, it[1], s[1], { mapID = s[2], x = s[3], y = s[4], who = s[5], qlevel = s[6], note = note, qid = s[1] == "quest" and s[8] or nil }, req)

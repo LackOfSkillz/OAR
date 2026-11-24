@@ -157,3 +157,24 @@ T.describe("nearby new sources", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("crafted gear", function()
+  T.it("gear made by a profession shows only when you have that profession", function()
+    local game = mock.new({ mapID = 1412, x = 0.5, y = 0.5, level = 20 })
+    game.env.Outrider_DataGear = { source = "test", items = {
+      [801] = { "Made Cloak", 20, 25, { { "crafted", 0, 0, 0, "Tailoring (skill 75)", nil, nil } } },
+    } }
+    game.items = { [400] = { name = "Old Cloak", equipLoc = "INVTYPE_CLOAK" }, [801] = { name = "Made Cloak", equipLoc = "INVTYPE_CLOAK" } }
+    game.itemStats = { [400] = { ITEM_MOD_AGILITY_SHORT = 2 }, [801] = { ITEM_MOD_AGILITY_SHORT = 6 } }
+    game.worn = { [15] = 400 }
+    local ns = game:loadAddon()
+    game:login()
+    local N = ns.Nearby
+    T.eq(#N:Candidates(), 0, "no Tailoring: not listed")
+    ns.db.char.professions = { Tailoring = { skill = 40, max = 75, recipes = {} } }
+    N.elsewhereCache = nil
+    local list = N:Candidates()
+    T.eq(#list, 1)
+    T.contains(N.Describe(list[1]), "made with Tailoring (skill 75)")
+  end)
+end)

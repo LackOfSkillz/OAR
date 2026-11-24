@@ -106,3 +106,32 @@ T.describe("gathering professions", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("recipes to learn", function()
+  T.it("lists recipes you don't know yet that still give skill, learnable now first, with where to learn them", function()
+    local game, ns, M = start()
+    local pack = { source = "spec",
+      recipes = {
+        [9001] = { "Leatherworking", 50, 70, 90, 5001, 1, {}, "trainer", nil, "Trainer Boots" },
+        [9002] = { "Leatherworking", 55, 75, 95, 5002, 1, {}, "item", 7001, "Pattern Gloves" },
+        [9003] = { "Leatherworking", 75, 95, 115, 5003, 1, {}, "item", 7002, "Later Belt" },
+        [9004] = { "Leatherworking", 1, 20, 40, 5004, 1, {}, "trainer", nil, "Grey Belt" },
+        [9005] = { "Tailoring", 50, 70, 90, 5005, 1, {}, "trainer", nil, "Cloth Thing" },
+        [1] = { "Leatherworking", 1, 30, 60, 5006, 1, {}, "trainer", nil, "Light Armor Kit" },
+      },
+      recipeItems = { [7001] = { "Pattern: Gloves", { { "vendor", 1412, 0.52, 0.5, "Pattern Seller", nil } } } },
+    }
+    rawset(game.env, "Outrider_DataCrafting", pack)
+    M.crafting = nil
+    local list = M:ToLearn("Leatherworking", 57, ns.db.char.professions.Leatherworking.recipes)
+    local names = {}
+    for _, e in ipairs(list) do names[#names + 1] = e.name end
+    T.same(names, { "Trainer Boots", "Pattern Gloves", "Later Belt" }, "grey, known and other professions left out; later one last")
+    T.contains(list[1].source.text, "trainer")
+    T.contains(list[2].source.text, "Pattern Seller")
+    T.ok(list[2].source.target ~= nil, "Go has a spot")
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("professions")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

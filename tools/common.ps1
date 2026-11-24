@@ -137,11 +137,26 @@ function Add-OarDataLicenses([string]$Root, [string]$Staging, [string[]]$Folders
   $note = @"
 Outrider build $Label
 
-The Outrider_Data_NPC, _Gear, _Mobs, _Nodes, _Dungeons, _Quests, _Reagents and _Paths folders contain data
+The Outrider_Data_NPC, _Gear, _Mobs, _Nodes, _Dungeons, _Quests, _Reagents, _Paths, _Travel and _Crafting folders contain data
 converted from QuestieDB (https://github.com/Questie/Questie), shared under the
 GNU General Public License version 3 (full text in gpl-3.0.md next to this file).
 Upstream licensing notes: https://github.com/Questie/Questie/blob/master/LICENSE.md
 Outrider is not made by or affiliated with the Questie team.
+
+Since 0.4.5 the Gear, NPC, Travel and Crafting folders also use:
+- ForeverDB (https://github.com/foreverfraddons/forever-db), GNU GPL v3: a merge of
+  the WoW Forever client tables, AllTheThings, QuestieDB, VMaNGOS (GPL v2 or later),
+  cMaNGOS classic-db (GPL v3), pfQuest (MIT, (c) 2017-2021 Eric Mauser), and
+  Drop Tables (https://github.com/valcheffnet/DropTables, data CC BY-SA 4.0,
+  "Drop Tables contributors"), which is where the drop chances come from.
+- Shortest Path Forever (https://github.com/cjber/shortest-path-forever), GPL v3 or
+  later, via ForeverDB: flight paths, boats, zeppelins, docks and portals (Travel).
+- AllTheThings (https://github.com/ATTWoWAddon/AllTheThings), MIT licence,
+  Copyright (c) 2026 AllTheThings WoW Addon: how each recipe is learned (Crafting).
+- WoW Forever client tables (Blizzard Entertainment's game data, exported by
+  wago.tools): what each recipe makes, skill levels and reagents (Crafting).
+World of Warcraft and all related names are trademarks of Blizzard Entertainment.
+Outrider is not affiliated with Blizzard Entertainment or with any project above.
 Outrider_Data_Words has its own licence file inside it.
 "@
   Add-Type -AssemblyName System.IO.Compression
@@ -157,14 +172,14 @@ Outrider_Data_Words has its own licence file inside it.
   }
   if (-not $gpl) { Write-Host "GPLv3 text not found in private\questie-source: not packaging." -ForegroundColor Red; return $false }
   foreach ($f in $Folders) {
-    if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons|Quests|Reagents|Paths)$') {
+    if ($f -match '^Outrider_Data_(NPC|Gear|Mobs|Nodes|Dungeons|Quests|Reagents|Paths|Travel|Crafting)$') {
       Write-Utf8NoBom (Join-Path $Staging "$f\LICENSE-DATA.txt") $note
       Write-Utf8NoBom (Join-Path $Staging "$f\gpl-3.0.md") $gpl
       # the generated TOC still carries the private-copy note: say what applies
       $tocPath = Join-Path $Staging "$f\$f.toc"
       if (Test-Path $tocPath) {
         $lines = Get-Content $tocPath | ForEach-Object {
-          if ($_ -match '^##\s*Notes:') { '## Notes: Data converted from QuestieDB, shared under GPLv3 (see LICENSE-DATA.txt).' } else { $_ } }
+          if ($_ -match '^##\s*Notes:') { '## Notes: Data converted from QuestieDB and ForeverDB, shared under GPLv3 (see LICENSE-DATA.txt).' } else { $_ } }
         Write-Utf8NoBom $tocPath (($lines -join "`n") + "`n")
       }
     }

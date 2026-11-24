@@ -51,6 +51,78 @@ function M:Pack()
   return self.pack
 end
 
+-- The crafting pack (Outrider_Data_Crafting, tools/import_crafting.py: WoW
+-- Forever's client tables, AllTheThings, ForeverDB): what every recipe makes,
+-- its skill colours, and where you learn it.
+M.CRAFT_ADDON = "Outrider_Data_Crafting"
+function M:Crafting()
+  if self.crafting ~= nil then return self.crafting end
+  if not rawget(_G, "Outrider_DataCrafting") then C.LoadAddOn(self.CRAFT_ADDON) end
+  local d = rawget(_G, "Outrider_DataCrafting")
+  self.crafting = type(d) == "table" and type(d.recipes) == "table" and d or false
+  return self.crafting
+end
+
+-- Recipes to learn next for a profession at a skill (Gary, 2026-11-23):
+-- not known yet, learnable now or within LEARN_AHEAD points, still giving
+-- skill (below grey); learnable now first, then the ones that give the most
+-- (orange before yellow), then by skill. Each with how to learn it:
+-- { name, itemID, at, color, how, text, source = {kind, target, text} }
+M.LEARN_AHEAD, M.LEARN_SHOWN = 25, 5
+function M:ToLearn(prof, skill, known)
+  local pack = self:Crafting()
+  if not (pack and prof and skill) then return {} end
+  known = known or {}
+  local knownNames = {}
+  for _, r in pairs(known) do if type(r) == "table" and r.name then knownNames[r.name] = true end end
+  local out = {}
+  for spell, r in pairs(pack.recipes) do
+    local name = r[10] or ("item " .. tostring(r[5]))
+    if r[1] == prof and not known[spell] and not knownNames[name] and r[2] <= skill + M.LEARN_AHEAD and (r[4] == 0 or skill < r[4]) then
+      local color = skill < r[2] and 0 or (r[3] > 0 and skill < r[3]) and 0 or (skill < (r[3] + r[4]) / 2) and 1 or 2
+      out[#out + 1] = { spell = spell, name = name, itemID = r[5], at = r[2], color = color, how = r[8], recipeItem = r[9], now = r[2] <= skill }
+    end
+  end
+  table.sort(out, function(a, b)
+    if a.now ~= b.now then return a.now end
+    if a.color ~= b.color then return a.color < b.color end
+    if a.at ~= b.at then return a.at < b.at end
+    return a.spell < b.spell
+  end)
+  local keep = {}
+  for i = 1, math.min(#out, M.LEARN_SHOWN) do keep[i] = out[i] self:LearnSource(keep[i]) end
+  return keep
+end
+
+-- Where to learn one recipe: the trainer, or the recipe item's nearest source.
+function M:LearnSource(e)
+  local pack = self:Crafting()
+  local prep = ns.Travel and ns.Travel:Prepare()
+  local faction = C.Call("UnitFactionGroup", "player")
+  if e.how == "trainer" then
+    e.source = { kind = "trainer", text = "your " .. "trainer teaches it" }
+    return
+  end
+  local ri = e.recipeItem and pack and pack.recipeItems and pack.recipeItems[e.recipeItem]
+  if not ri then
+    e.source = { kind = "hint", text = e.how == "quest" and "from a quest" or "where to learn it isn't known yet" }
+    return
+  end
+  local best
+  for _, s in ipairs(ri[2] or {}) do
+    if s[2] and s[2] ~= 0 and (not s[6] or s[6] == faction) then
+      local p = ns.Travel and ns.Travel.Point(s[2], s[3], s[4], s[5])
+      local t = p and prep and ns.Travel:TimeTo(prep, p)
+      local text = (s[1] == "vendor" and ("buy " .. ri[1] .. " from " .. s[5]))
+        or ("pattern drops from " .. s[5] .. ((s[7] or 0) > 0 and string.format(" (%.1f%%)", s[7] / 100) or ""))
+      if p and (not best or (t or 1e9) < (best.seconds or 1e9) or (s[1] == "vendor" and best.kind ~= "vendor" and (t or 1e9) < (best.seconds or 1e9) * 2)) then
+        best = { kind = s[1], text = text, target = p, seconds = t, who = s[5] }
+      end
+    end
+  end
+  e.source = best or { kind = "ah", text = ri[1] .. ": the auction house" }
+end
+
 -- Your professions: { {name, skill, max, gather = kind or nil, recipes} } crafting first, by name.
 function M:Profs()
   local store = ns.db.char.professions or {}
@@ -397,6 +469,19 @@ ns.Hub:AddTab("professions", "Professions", function(p)
       row.go:SetPoint("RIGHT", -10, 0)
     end,
     render = function(row, r)
+      if r.heading then
+        row.text:SetText("|cffffd100" .. r.heading .. "|r")
+        row.go:SetText("")
+        return
+      end
+      if r.learn then
+        local e, s = r.learn, r.learn.source or {}
+        local col = M.COLOR[e.color] or M.COLOR[2]
+        row.text:SetText(string.format("%s%s|r  |cff8f96a6skill %d: %s%s|r", col[3], e.name, e.at, s.text or "?",
+          s.seconds and ("  (" .. ns.Travel.Minutes(s.seconds) .. " away)") or ""))
+        row.go:SetText((s.target or s.kind == "ah") and "Go  >" or "")
+        return
+      end
       if r.recipe then
         local col = M.COLOR[r.recipe.diff] or M.COLOR[2]
         row.text:SetText(string.format("%s%s|r  |cff8f96a6%s|r", col[3], r.recipe.name, col[2]))
@@ -485,7 +570,14 @@ ns.Hub:AddTab("professions", "Professions", function(p)
       rows[#rows + 1] = { recipe = e }
       for _, it in ipairs(e.missing) do rows[#rows + 1] = { item = it, source = M:Sources(it.itemID, it.need)[1] } end
     end
+    local gotAll = #rows == 0 and #r.now > 0
+    -- recipes to learn next (crafting pack), with where to learn each
+    local learn = M:ToLearn(pick.name, pick.skill, pick.recipes)
+    if #learn > 0 then
+      rows[#rows + 1] = { heading = "Recipes to learn next" }
+      for _, e in ipairs(learn) do rows[#rows + 1] = { learn = e, source = e.source } end
+    end
     d.need:SetItems(rows)
-    d.gather:SetText(#rows == 0 and #r.now > 0 and "You have everything for your best recipes. Make them above." or "")
+    d.gather:SetText(gotAll and #learn == 0 and "You have everything for your best recipes. Make them above." or "")
   end
 end, 30)

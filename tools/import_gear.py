@@ -157,6 +157,24 @@ def augment_foreverdb(out, counts):
                 note("quest")
         if srcs:
             out[iid] = (name, req, ilvl, srcs)
+    # gear made by a profession (tools/import_crafting.py: WoW Forever client tables)
+    craft = os.path.join(ROOT, "private", "Outrider_Data_Crafting", "Data.lua")
+    if os.path.exists(craft):
+        recipe_row = re.compile(r'^\[(\d+)\]=\{"([^"]+)",(\d+),(\d+),(\d+),(\d+),')
+        for line in open(craft, encoding="utf-8"):
+            m = recipe_row.match(line)
+            if not m:
+                continue
+            prof, at, iid = m.group(2), int(m.group(3)), int(m.group(6))
+            info = fdb.item(d, iid)
+            if not info or info[4] not in GEAR_CLASSES or (info[1] or 0) < 1 or info[2] > 60:
+                continue
+            old = out.get(iid)
+            srcs = list(old[3]) if old else []
+            if not any(x[0] == "crafted" for x in srcs):
+                srcs.append(("crafted", 0, 0.0, 0.0, "%s (skill %d)" % (prof, at), None, None, None))
+                note("crafted")
+                out[iid] = (info[0], info[2], info[3], srcs)
     print("ForeverDB added:", ", ".join("%s %d" % kv for kv in sorted(added.items())))
     return fdb.version(d)
 
