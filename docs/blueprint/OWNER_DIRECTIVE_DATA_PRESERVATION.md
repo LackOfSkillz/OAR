@@ -30,3 +30,12 @@ licensing), and OI08-13 (release licensing audit as a removal step).
 
 Keeping data and permission to redistribute it are separate questions. Provenance notes that
 already exist stay as plain records; they are not a to-do list for removal.
+
+## Retention decision (Gary Mix, 2026-11-24, option 3)
+
+- **Collected on purpose** (prices and price history, fishing catches and sessions, sightings,
+  routes, discoveries and similar): keep every record. Where a size cap exists, old rows move to an
+  archive section of the same saved data instead of being deleted.
+- **Logs and debug data** (event log, error list, performance runs): their rolling caps stay.
+- **Outdated data may be replaced by newer or better data** as development goes on (a corrected fact,
+  a newer data pack revision). Replacing a stale value is allowed; history that was observed stays.
