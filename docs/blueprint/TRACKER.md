@@ -1,0 +1,37 @@
+# Personal Warcraft Intelligence: task tracker
+
+Tracks `docs/blueprint/OUTRIDER_MICROTASKS.md` (124 tasks, 8 phases). Status words are the blueprint's:
+`NOT_STARTED`, `IN_PROGRESS`, `IMPLEMENTED`, `MOCK_GREEN`, `LIVE_PENDING`, `BLOCKED`, `REVIEW_CHANGES`,
+`REVIEW_ACCEPTED`, `RELEASE_APPROVED`. MOCK_GREEN means the full automated suite passed at the named SHA;
+it is never live or review acceptance.
+
+- Branch: `ai/outrider-personal-intelligence`, created 2026-11-24 from `p1-foundation` at
+  `22c76ca4dee229306dc98c82b4543230f4cb4a55` (owner approved in chat, 2026-11-24).
+- Phase 1 base SHA: `22c76ca4dee229306dc98c82b4543230f4cb4a55`.
+- Owner decision 2026-11-24: tasks that need no live client continue while live-evidence tasks
+  (OI01-04) wait; the wait stays visible here and blocks the Phase 1 gate.
+- Evidence per task: `docs/reviews/phase1/<taskId>.md`.
+- Old IDs (TASKS.md P0-P9, I2-xx, XP60-xx) are cross-referenced, never ticked by this tracker.
+
+## Phase 1: Production stabilization
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+| OI01-01 Baseline inventory | MOCK_GREEN | see review | [OI01-01](../reviews/phase1/OI01-01.md) | |
+| OI01-02 Rules and policy register | NOT_STARTED | | | |
+| OI01-03 Branch and reproducible baseline | NOT_STARTED | | | |
+| OI01-04 Runtime and UX baseline | NOT_STARTED | | | needs Gary's live session |
+| OI01-05 Source and license inventory | NOT_STARTED | | | |
+| OI01-06 Code health toolchain | NOT_STARTED | | | |
+| OI01-07 Technical comments cleanup | NOT_STARTED | | | |
+| OI01-08 UI Pages decomposition | NOT_STARTED | | | |
+| OI01-09 MacroTree decomposition | NOT_STARTED | | | |
+| OI01-10 GearShop decomposition | NOT_STARTED | | | |
+| OI01-11 Error and event semantics | NOT_STARTED | | | |
+| OI01-12 Dependency and duplication audit | NOT_STARTED | | | |
+| OI01-13 Security checks upgrade | NOT_STARTED | | | |
+| OI01-14 Migration and recovery foundation | NOT_STARTED | | | |
+| OI01-15 Release regression baseline | NOT_STARTED | | | |
+| OI01-GATE Phase 1 review gate | NOT_STARTED | | | stops for ChatGPT review and Gary's approval |
+
+Phases 2-8 (OI02-OI08): NOT_STARTED; they start only after the previous gate is accepted.

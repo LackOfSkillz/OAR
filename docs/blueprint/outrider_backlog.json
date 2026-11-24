@@ -1,0 +1,1543 @@
+{
+  "revision": "1.0",
+  "baseline_sha": "272ae1b8aa6db40feee7aaf012fdb78b5d30f6ef",
+  "status_note": "Proposed tasks, not completion claims. Follow controlling repository policy.",
+  "phase_count": 8,
+  "task_count": 124,
+  "phases": [
+    {
+      "phase": 1,
+      "title": "Production stabilization",
+      "tasks": [
+        {
+          "id": "OI01-01",
+          "title": "Baseline inventory",
+          "implementation": "Record HEAD, branch, TOC, build, module ownership, existing I2/XP60 tests, open tasks and status inconsistencies; map existing IDs to this backlog.",
+          "acceptance": "Exact SHA and CI link recorded; every reused capability has source and status; stale claims corrected without marking live gates complete.",
+          "depends_on": [],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-02",
+          "title": "Rules and policy register",
+          "implementation": "Reconcile D18/D19, deploy/write permissions, I2-09 block, data and network rules; identify conflicts and owner decisions.",
+          "acceptance": "Policy table cites repo decisions; offline Advice.lua delivery remains disabled if unresolved; no new external bridge.",
+          "depends_on": [
+            "OI01-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-03",
+          "title": "Branch and reproducible baseline",
+          "implementation": "Create approved development branch; run full test suite, capture clean tree, runtime versions, counts, CI and baseline fixture hashes.",
+          "acceptance": "Fresh baseline commands pass or failures are listed and blocked; main unchanged.",
+          "depends_on": [
+            "OI01-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-04",
+          "title": "Runtime and UX baseline",
+          "implementation": "Collect owner-approved actual-client CPU/memory/timers/frame count/startup, errors/taint, common workflow clicks and client build.",
+          "acceptance": "Raw sanitized measurements and repeatable protocol retained; mock numbers not substituted for live evidence.",
+          "depends_on": [
+            "OI01-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-05",
+          "title": "Source and license inventory",
+          "implementation": "Audit each data pack, library, bridge and generated asset for origin, rights, revision, notices and source availability; quarantine unclear extracts.",
+          "acceptance": "Every redistributed input has a reviewed provenance manifest; no extracted GearQuest database without permission; name conflict recorded for review.",
+          "depends_on": [
+            "OI01-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-06",
+          "title": "Code health toolchain",
+          "implementation": "Introduce pinned Lua 5.1-compatible Luacheck and Python Ruff, type/static checks where useful, coverage and complexity reports; baseline existing violations.",
+          "acceptance": "Reproducible tools in CI; no new violations outside documented baseline; report actual coverage, no arbitrary fabricated percentages.",
+          "depends_on": [
+            "OI01-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-07",
+          "title": "Technical comments and documentation cleanup",
+          "implementation": "Replace conversational prompt quotes in production source with rationale, links to requirements and version limitations; retain useful probe evidence.",
+          "acceptance": "Sample and scan changed files; no removed technical facts; tests and diff show comment-only changes where intended.",
+          "depends_on": [
+            "OI01-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-08",
+          "title": "UI Pages decomposition",
+          "implementation": "Split Pages.lua into cohesive page builders using existing Hub/Theme/widgets; preserve public page IDs and navigation.",
+          "acceptance": "Existing page tests pass; owner-approved comparison confirms same functionality and accessibility; TOC order correct.",
+          "depends_on": [
+            "OI01-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-09",
+          "title": "MacroTree decomposition",
+          "implementation": "Separate macro eligibility, explanation, grid model and rendering without changing protected actions.",
+          "acceptance": "Golden macro output and drag/disable/combat tests pass; behavior matches baseline; no new secure calls.",
+          "depends_on": [
+            "OI01-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-10",
+          "title": "GearShop decomposition",
+          "implementation": "Separate query, ranking/cart and rendering ownership; preserve existing action confirmation path.",
+          "acceptance": "Auction query, stale result, click confirmation and close tests pass; no background purchase or scan introduced.",
+          "depends_on": [
+            "OI01-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-11",
+          "title": "Error and event semantics",
+          "implementation": "Fix failed event registration bookkeeping; audit Safe/pcall paths and module timer/event ownership; distinguish degraded capability from success.",
+          "acceptance": "Mock registration exception returns explicit unavailable; disabling cleans handlers/timers; no retry storm or fabricated capability.",
+          "depends_on": [
+            "OI01-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-12",
+          "title": "Dependency and duplication audit",
+          "implementation": "Map module public APIs, OTR_ events, duplicate scoring/helpers and dead code; remove only verified unreachable code with adapters as needed.",
+          "acceptance": "Dependency check rejects new cycles/private coupling; fixture outputs unchanged except documented fixes.",
+          "depends_on": [
+            "OI01-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-13",
+          "title": "Security checks upgrade",
+          "implementation": "Augment regex checks with Python AST and Lua token/static checks where feasible; threat cases for unsafe execution, secrets, redirects, paths and protected actions.",
+          "acceptance": "Negative fixtures catch prohibited behaviors; explicitly document static-analysis limits; no tests weakened to pass.",
+          "depends_on": [
+            "OI01-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-14",
+          "title": "Migration and recovery foundation",
+          "implementation": "Test old/new SavedVariables, bad types, partial data, backups, restoration and feature disable; enforce bounded retention contract.",
+          "acceptance": "Roundtrip preserves user data and other modules; rollback documented and tested on fixtures; live backup before migration.",
+          "depends_on": [
+            "OI01-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-15",
+          "title": "Release regression baseline",
+          "implementation": "Exercise existing quest, gear, AH, macro, navigation, party, rare, profession, character and advisor flows; build competing-addon matrix.",
+          "acceptance": "Critical existing journeys pass; real-client blockers listed; prior features remain usable when new flags off.",
+          "depends_on": [
+            "OI01-14"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI01-GATE",
+          "title": "Phase 1 review gate",
+          "implementation": "Deliver phase diff, evidence pack, licensing findings, baseline metrics, refactor regression results and unresolved policy questions.",
+          "acceptance": "Reviewer checks exact SHA; owner approves live baseline and policy items or explicitly keeps blocked features off; no P0/P1 open without safe approved mitigation.",
+          "depends_on": [
+            "OI01-15"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "Unified intelligence - Nexus",
+      "tasks": [
+        {
+          "id": "OI02-01",
+          "title": "Schema reconciliation",
+          "implementation": "Inspect actual I2 and legacy contracts; freeze additive Evidence, Opportunity, CharacterState, Goal, Plan, Outcome and schema versions.",
+          "acceptance": "Lua/Python schema maps and golden fixtures agree; v1-v4 existing advice/import compatibility preserved.",
+          "depends_on": [
+            "OI01-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-02",
+          "title": "Evidence registry",
+          "implementation": "Extend existing Evidence service for per-kind TTL, revision, source provenance, confidence, validation and local/export privacy.",
+          "acceptance": "Fixtures reject malformed, stale, cross-character/build/ruleset and secret data; verified status cannot be inferred from source name.",
+          "depends_on": [
+            "OI02-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-03",
+          "title": "Class and role profiles",
+          "implementation": "Complete existing Profiles mapping for all nine classes and documented roles; explicit role override and UNKNOWN fallback.",
+          "acceptance": "54 class-goal cases plus hybrid, respec, absent talent and unknown token tests; no unsupported role inference.",
+          "depends_on": [
+            "OI02-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-04",
+          "title": "Character and account state",
+          "implementation": "Build read-only state view over gear, spellbook, location, inventory, gold, professions and alts; distinguish offline snapshot ages.",
+          "acceptance": "Events invalidate affected fields only; no direct private-module dependency; stale alt state displayed and not treated as current.",
+          "depends_on": [
+            "OI02-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-05",
+          "title": "Goal model",
+          "implementation": "Support level, gold, gear, professions, explore and mix plus multiple prioritized targets, deadlines and reserves.",
+          "acceptance": "Create/edit/pause/complete/delete persists per scope; conflicting or infeasible goals produce explanation, not silent override.",
+          "depends_on": [
+            "OI02-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-06",
+          "title": "Candidate adapters - progression",
+          "implementation": "Normalize WhatNow, Journey, QuestInfo, Nearby, DungeonGuide, LevelRoutes and Errands into common opportunities.",
+          "acceptance": "Existing result IDs map deterministically; missing data yields unknown/excluded; no duplicate quests/rewards.",
+          "depends_on": [
+            "OI02-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-07",
+          "title": "Candidate adapters - resources",
+          "implementation": "Normalize GearScore, MoneyGuide, Professions, CraftQueue, DealDesk, Rares, Handoffs and travel providers.",
+          "acceptance": "Independent adapters disable gracefully; every cost/benefit has unit and evidence; no additional automatic scans.",
+          "depends_on": [
+            "OI02-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-08",
+          "title": "Dependency graph",
+          "implementation": "Build prerequisites, eligibility, objective overlap, travel and mutually exclusive action edges.",
+          "acceptance": "Cycle, unmet prerequisite, faction mismatch, double-count, missing travel and resource conflicts tested.",
+          "depends_on": [
+            "OI02-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-09",
+          "title": "Scoring and trade-offs",
+          "implementation": "Implement versioned goal-normalized marginal utility with confidence/risk and hard constraints; deterministic tie break.",
+          "acceptance": "Same input produces same rank; bounds, monotonicity, reserve, low-confidence and cross-unit tests; reason trace reconstructs score.",
+          "depends_on": [
+            "OI02-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-10",
+          "title": "Bounded sequence planner",
+          "implementation": "Add beam or equivalent bounded search, time/work cap, safe partial return and alternatives.",
+          "acceptance": "Known small graph matches exhaustive oracle; adversarial large graph terminates; infeasible budget yields no-plan, not fabricated sequence.",
+          "depends_on": [
+            "OI02-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-11",
+          "title": "Invalidation and execution boundary",
+          "implementation": "Event debounce, snapshot revisions, active plan pin/pause/skip/resume, safe waypoint/open-panel intents on user click.",
+          "acceptance": "Combat, stale plan, late event, logout, disable and changed gear tests; no game actions from plan evaluation.",
+          "depends_on": [
+            "OI02-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-12",
+          "title": "Radar and WhatNow integration",
+          "implementation": "Reuse current Radar/WhatNow interface and existing Hub; add primary/secondary plan cards, alternatives and progressive evidence display.",
+          "acceptance": "Feature flag off gives baseline behavior; no duplicate suggestions; screen reader-friendly labels and no unsolicited combat overlay.",
+          "depends_on": [
+            "OI02-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-13",
+          "title": "Confidence and Troubleshooter core",
+          "implementation": "Expose why, missing prerequisites, stale sources, uncertain estimates and safe remediation; distinguish error from no opportunity.",
+          "acceptance": "Every rejected plan has reason code; diagnostics do not reveal private details or promise unsupported data.",
+          "depends_on": [
+            "OI02-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-14",
+          "title": "Cross-language contract tests",
+          "implementation": "Golden fixture roundtrips across Lua, Python and legacy transports; fuzz bounds and invalid data.",
+          "acceptance": "Stable IDs and numerical units preserved; malformed model/peer data cannot create arbitrary actions.",
+          "depends_on": [
+            "OI02-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-15",
+          "title": "Planner benchmark",
+          "implementation": "Compare Nexus against existing WhatNow using curated representative goals, verify work limits and resource use.",
+          "acceptance": "Report latency/accuracy, test fixtures and differences; live p95 and memory targets verified or explicitly blocked.",
+          "depends_on": [
+            "OI02-14"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI02-GATE",
+          "title": "Phase 2 review gate",
+          "implementation": "Deliver all-class deterministic planner, graph/score contracts, UI, regression tests and performance evidence.",
+          "acceptance": "Reviewer independently traces scenarios and CI; owner validates initial live slice; all nine-class release checks remain tracked.",
+          "depends_on": [
+            "OI02-15"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "Personal learning - AfterAction",
+      "tasks": [
+        {
+          "id": "OI03-01",
+          "title": "Session recorder reconciliation",
+          "implementation": "Extend existing SessionXP, Ledger, LootLog, FightMeter and Alts rather than duplicate history; define session boundaries and interruption states.",
+          "acceptance": "Logout, reload, disconnect, multi-character and duplicate event fixtures show no double counts or false completed sessions.",
+          "depends_on": [
+            "OI02-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-02",
+          "title": "Outcome event schema",
+          "implementation": "Record bounded observed quest, travel, XP, spend/earn, gear, profession and permitted death/recovery events; bind to plan IDs when known.",
+          "acceptance": "Events dedup by semantic key; missing/secret fields unknown; wrong-character, late event and unknown attribution tests pass.",
+          "depends_on": [
+            "OI03-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-03",
+          "title": "Activity timing",
+          "implementation": "Classify observable segments (travel, quest, crafting, dungeon, recovery, unclassified) without pretending to know unseen activity.",
+          "acceptance": "Segments do not overlap or exceed wall time; inactive/unclassified reported; no unsupported combat log or screenshot source.",
+          "depends_on": [
+            "OI03-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-04",
+          "title": "Quest time observations",
+          "implementation": "Capture start/finish and prerequisites when observable; separate multi-session, abandoned, grouped and censored quests.",
+          "acceptance": "No invented durations; samples stratified by context and build; compare against Journey's 300-second baseline.",
+          "depends_on": [
+            "OI03-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-05",
+          "title": "Travel time observations",
+          "implementation": "Record user-traveled edges, mode, map/build and interruptions; distinguish planned from actual trips.",
+          "acceptance": "Teleports, disconnects, flight/boat, detour and unknown map fixtures not mixed with walking samples.",
+          "depends_on": [
+            "OI03-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-06",
+          "title": "Economy outcome capture",
+          "implementation": "Separate actual currency flow from estimated loot value; track confirmed transactions, fees/deposits and costs if observable.",
+          "acceptance": "Disappeared auctions are not sales; no double-counting transfers or estimates as realized profit; unknown fees explicit.",
+          "depends_on": [
+            "OI03-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-07",
+          "title": "Performance and survival observations",
+          "implementation": "Use only readable permitted post-fight meter results and supported death/recovery events; store comparable context.",
+          "acceptance": "Unknown meter, active combat, different builds and missing result cases safely excluded; never derive restricted combat metrics.",
+          "depends_on": [
+            "OI03-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-08",
+          "title": "Chronicle timeline",
+          "implementation": "Create concise chronological milestones and decisions, with plan/outcome references and privacy controls.",
+          "acceptance": "Replay and reload preserve order/dedup; user can clear/export selected history; no raw chat or unrestricted event stream.",
+          "depends_on": [
+            "OI03-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-09",
+          "title": "Estimator and calibration",
+          "implementation": "Use robust median/quantile or conservative shrinkage by class/level/activity, minimum sample counts, recency and fallback estimates.",
+          "acceptance": "Held-out test prevents training leakage; outlier, sparse and patch-change cases widen interval or fall back; report actual calibration error.",
+          "depends_on": [
+            "OI03-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-10",
+          "title": "Preference and feedback model",
+          "implementation": "Record useful/wrong/ignored/completed separately; bounded preference adjustment with reset, opt-out and explicit owner goals dominant.",
+          "acceptance": "Ignored is not negative performance; no feedback amplification from duplicates; change trace explainable and reversible.",
+          "depends_on": [
+            "OI03-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-11",
+          "title": "AfterAction report",
+          "implementation": "Display observed wall-clock XP/hour, realized gold, activity breakdown, uncertainty, milestones and alternative next-session focus.",
+          "acceptance": "Report totals reconcile with source; no fake improvement claim; missing/partial sessions labeled; example screenshots clearly demo data.",
+          "depends_on": [
+            "OI03-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-12",
+          "title": "Next-session planner reuse",
+          "implementation": "Integrate existing XP60 offline planner and NextSession with Nexus and calibrated estimates; preserve safe fallback.",
+          "acceptance": "Fixtures enforce time budget, quest dedup, stale/character/session/build binding; offline delivery still policy-gated.",
+          "depends_on": [
+            "OI03-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-13",
+          "title": "Recovery capability",
+          "implementation": "Resume pinned plan on return; revalidate expired quests, gear, location, time and goals; summarize changes.",
+          "acceptance": "Old plan cannot blindly reapply; user chooses resume or new plan; long absence and deleted quest fixtures pass.",
+          "depends_on": [
+            "OI03-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-14",
+          "title": "Benchmark and measurement harness",
+          "implementation": "Add repeatable baseline comparisons, paired routes, observed outcomes and held-out estimate metrics; export sanitized evidence.",
+          "acceptance": "Same fixture yields same report; sample counts, confidence and unmatched comparisons disclosed; no causal claim without matching.",
+          "depends_on": [
+            "OI03-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-15",
+          "title": "Retention and privacy controls",
+          "implementation": "Add opt-in recording, per-character retention caps, reset/export/delete and no-provider offline support.",
+          "acceptance": "Disabled records no new data; reset/delete removes derived state as documented; bounded persistence and migration tests pass.",
+          "depends_on": [
+            "OI03-14"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI03-GATE",
+          "title": "Phase 3 review gate",
+          "implementation": "Deliver observed session report, learning/calibration, XP60 crosswalk and live sample plan.",
+          "acceptance": "Review checks attribution and statistics; owner logs confirm XP and elapsed time; sparse data cannot produce quantified uplift; unresolved delivery stays off.",
+          "depends_on": [
+            "OI03-15"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "Intelligent planning - Horizon, GearROI, Foresight",
+      "tasks": [
+        {
+          "id": "OI04-01",
+          "title": "Horizon session inputs",
+          "implementation": "Add 15/30/60/120-minute and custom bounded budget, solo/group/either, goals, reserve and stop preferences.",
+          "acceptance": "Inputs validate; no-group excludes group prerequisites; existing saved preferences migrate; no LLM required.",
+          "depends_on": [
+            "OI03-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-02",
+          "title": "Multi-objective planning",
+          "implementation": "Use Nexus to combine quests, gear, gathering, errands, travel and turn-ins; merge overlapping objectives.",
+          "acceptance": "Fixture proves shared travel/reward counted once and prerequisites respected; time bounds shown as estimates with buffer.",
+          "depends_on": [
+            "OI04-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-03",
+          "title": "Session ending strategy",
+          "implementation": "Reserve time for hand-ins, repairs, safe rest point and next-session preparation when applicable.",
+          "acceptance": "Near-deadline replan offers feasible closure, never starts impossible long step; no automatic logout or action.",
+          "depends_on": [
+            "OI04-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-04",
+          "title": "Horizon live adaptation",
+          "implementation": "Replan on meaningful progress or detours, keep pinned plan unless infeasible, offer manual alternate.",
+          "acceptance": "Late events, pause/resume, new goal, budget exhaustion and combat suppression tested; no thrashing.",
+          "depends_on": [
+            "OI04-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-05",
+          "title": "GearROI baseline",
+          "implementation": "Reuse GearScore, QuestRewards, Nearby, GearShop, loot and role profiles; normalize role-specific improvement and source types.",
+          "acceptance": "Guaranteed vs probabilistic source distinct; class/spec/level/bind/slot eligibility tested; no universal DPS claim from stat score.",
+          "depends_on": [
+            "OI04-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-06",
+          "title": "Acquisition time and risk",
+          "implementation": "Estimate travel, prerequisites, run durations, drop probability and competing loot only when supported; unknown otherwise.",
+          "acceptance": "Probability fixtures include zero/unknown, conditional drops, independent-roll assumption and missing group availability; no guaranteed rare-drop time.",
+          "depends_on": [
+            "OI04-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-07",
+          "title": "Replacement horizon",
+          "implementation": "Identify realistic upcoming eligible quest/vendor/crafted/dungeon replacements from verified data and level pace.",
+          "acceptance": "Future item not treated as owned; uncertain pace/availability yields range or unknown; avoids circular dependencies.",
+          "depends_on": [
+            "OI04-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-08",
+          "title": "Gear acquisition utility",
+          "implementation": "Combine incremental role score, estimated useful life, acquisition cost and opportunity cost; use goal constraints/reserves.",
+          "acceptance": "Expensive short-lived item can rank below free alternative; negative/unknown evidence and reserved mount gold tested; units explained.",
+          "depends_on": [
+            "OI04-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-09",
+          "title": "Gear comparison UX",
+          "implementation": "Add current vs candidate, cost/time/risk/lifespan, alternatives and evidence detail to existing Gear pages/tooltips.",
+          "acceptance": "No purchase action except existing user-confirmed flow; user can dismiss/pin; display works with missing price and no provider.",
+          "depends_on": [
+            "OI04-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-10",
+          "title": "Foresight triggers",
+          "implementation": "Add upcoming trainer/quest/mount/material/dungeon needs based on supported prerequisites and user goals; reuse Radar/Handoffs.",
+          "acceptance": "Trigger fixtures include near-route savings and false positives; unknown facts not alerts; no automatic quest acceptance.",
+          "depends_on": [
+            "OI04-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-11",
+          "title": "Quartermaster early reservations",
+          "implementation": "Add explicit material and gold hold indicators to vendor/gear advice and account-wide inventory; connect full allocator later.",
+          "acceptance": "Reserved stock cannot be counted twice; no item transfer/sale blocking without clear UI and override; stale alt inventory flagged.",
+          "depends_on": [
+            "OI04-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-12",
+          "title": "Guardian travel advice",
+          "implementation": "Use verified level/hazard facts and historical deaths where available to label risk, offer safer alternatives.",
+          "acceptance": "No hidden enemy detection or secret-derived calculations; missing risk data labeled; user controls route choice.",
+          "depends_on": [
+            "OI04-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-13",
+          "title": "Pathfinder measured routes",
+          "implementation": "Feed learned edge times into Travel/Journey with source/version and route deviation; do not equate untraveled straight line with valid road.",
+          "acceptance": "Test disconnected edges, map changes, no history, slow mode, wrong build and fallback; route remains player-directed.",
+          "depends_on": [
+            "OI04-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-14",
+          "title": "Dungeon decision improvements",
+          "implementation": "Rank eligible dungeons by gear, XP, quest prerequisites, reputation, readiness and realistic group constraints.",
+          "acceptance": "No assumption of guaranteed drops or group availability; existing dungeon quest and readiness UI remains intact.",
+          "depends_on": [
+            "OI04-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-15",
+          "title": "Foresight quiet UX",
+          "implementation": "Set opt-in categories, cooldown, duplicate suppression, importance threshold, quiet mode and post-combat recheck.",
+          "acceptance": "One primary plus two secondary; no interruptions in combat; dismiss/snooze persists; no irrelevant repeat spam.",
+          "depends_on": [
+            "OI04-14"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI04-GATE",
+          "title": "Phase 4 review gate",
+          "implementation": "Deliver cross-goal session, GearROI, Foresight, Guardian and route tests and representative owner scenarios.",
+          "acceptance": "Reviewer checks costs/eligibility and actual UI; live comparisons report uncertainty and no false savings claims; no new gameplay automation.",
+          "depends_on": [
+            "OI04-15"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "title": "Predictive intelligence - Oracle, Forge, Quartermaster, Treasurer",
+      "tasks": [
+        {
+          "id": "OI05-01",
+          "title": "Scenario contract",
+          "implementation": "Build immutable scenario branch from base snapshot and explicit hypothetical gear, talent, spending, role, zone or profession overrides.",
+          "acceptance": "Before/after actual state hash unchanged; invalid hypothetical item/role/level rejected; assumptions/version included.",
+          "depends_on": [
+            "OI04-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-02",
+          "title": "Oracle deterministic comparisons",
+          "implementation": "Compare alternatives with Nexus, Horizon, GearROI and budget results; expose delta, trade-off and uncertainty.",
+          "acceptance": "No fabricated precise gain; missing data compares only known dimensions; stale base requires refresh; works offline.",
+          "depends_on": [
+            "OI05-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-03",
+          "title": "Forge combat data model",
+          "implementation": "Extend TalentSim/Stats/FightPlan/Spellbook model with versioned abilities, resources, attack speed, damage/heal effects and talent modifiers.",
+          "acceptance": "Use cited or verified facts only; model unknown mechanics explicitly; no double-count current talents or weapon damage.",
+          "depends_on": [
+            "OI05-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-04",
+          "title": "Forge resource and timing",
+          "implementation": "Model energy/mana/rage/combo points where supported, GCD, cooldown, cast time, periodic ticks and resource limits.",
+          "acceptance": "Synthetic analytical scenarios match expected timing; unsupported mechanics do not silently default; role-specific constraints tested.",
+          "depends_on": [
+            "OI05-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-05",
+          "title": "Forge damage mechanics",
+          "implementation": "Add supported hit/miss, resistances, armor, crit, procs, weapon speeds and relevant encounter conditions incrementally.",
+          "acceptance": "Each mechanic has fixture and source; missing coefficient invalidates or widens estimate; no claim of full simulator coverage.",
+          "depends_on": [
+            "OI05-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-06",
+          "title": "Forge healing/tank/survival models",
+          "implementation": "Implement separately labeled healing throughput, resource sustainability, mitigation and survivability scenarios where evidence exists.",
+          "acceptance": "Avoid collapsing HPS, tank survival and DPS into one misleading score; scenario assumptions and unknown enemy damage visible.",
+          "depends_on": [
+            "OI05-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-07",
+          "title": "Forge scenario runner",
+          "implementation": "Run deterministic or seeded bounded simulation outside combat, optional offline Python acceleration using same contracts.",
+          "acceptance": "Repeatable results with seed/version; bounded work; no game action; unsupported class/build safe partial report.",
+          "depends_on": [
+            "OI05-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-08",
+          "title": "Forge equipment and build comparison",
+          "implementation": "Compare hypothetical talents, weapons, gear, consumables, enchants, pets and role profiles using existing TalentLab/GearScore.",
+          "acceptance": "Eligibility and ownership separate; cost/respec and model limits visible; no spending points or equipping automatically.",
+          "depends_on": [
+            "OI05-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-09",
+          "title": "Benchmark training-dummy calibration",
+          "implementation": "Use permitted readable post-fight FightMeter snapshots with owner-controlled exercises; match duration/build/buffs/target conditions.",
+          "acceptance": "Compare like-for-like; exclude missing metrics, active combat and wrong scenario; no overclaim from one test.",
+          "depends_on": [
+            "OI05-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-10",
+          "title": "Macro versioning and rollback",
+          "implementation": "Version generated macro body, rationale and source spellbook; add preview, diff, explicit user approval and rollback via existing rules.",
+          "acceptance": "255-character limit, slots, combat lockdown, respec and rank changes tested; no prohibited commands or automatic execution.",
+          "depends_on": [
+            "OI05-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-11",
+          "title": "Macro regression scenarios",
+          "implementation": "Build all-class fixture matrix for Forever observed macro quirks, modifier paths, spell availability and invalid castsequence patterns.",
+          "acceptance": "Tests check generated text and known restrictions; owner real-client verification separate; no inference that simulated key sequence proves combat results.",
+          "depends_on": [
+            "OI05-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-12",
+          "title": "Quartermaster supply graph",
+          "implementation": "Expand account inventory and CraftQueue to dependency DAG for recipes/materials, intermediate components and alternative sources.",
+          "acceptance": "Cycle detection, stale alt inventory, bound/realm/faction restrictions, quantity rounding, no double allocation tested.",
+          "depends_on": [
+            "OI05-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-13",
+          "title": "Quartermaster reservations and transfers",
+          "implementation": "Reserve quantities by account goal, recommend user-confirmed transfers, shopping list and crafting sequence.",
+          "acceptance": "Competing goals resolved by explicit priority/override; stock remains accurate after changes; no automatic mail/craft/buy.",
+          "depends_on": [
+            "OI05-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-14",
+          "title": "Treasurer budget model",
+          "implementation": "Use Ledger, MoneyGuide, Prices and known costs to track mount/training/repair/gear/profession reserves and planned spend.",
+          "acceptance": "Integer copper, insufficient gold, user override, missing costs, multiple character wallets; no spending advice beyond modeled reserve.",
+          "depends_on": [
+            "OI05-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-15",
+          "title": "Realized economics and sale uncertainty",
+          "implementation": "Track actual sale/fees where supported, compare vendor vs AH vs craft, estimate sale probability only from adequate data.",
+          "acceptance": "Unsold listings and disappeared auctions not realized sales; deposits/costs and unknown market depth shown; report sample counts.",
+          "depends_on": [
+            "OI05-14"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-16",
+          "title": "Professions cost optimizer",
+          "implementation": "Rank skill-up and supply paths considering owned stock, market prices, recipe prerequisites and expected skill gains where supported.",
+          "acceptance": "Missing rates labeled; actual costs and skill-up observations separate; no purchase/craft without manual action.",
+          "depends_on": [
+            "OI05-15"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-17",
+          "title": "Oracle and Forge UX",
+          "implementation": "Integrate scenario controls, comparisons, model assumptions, export and reset into existing Talent/Gear/Advisor surfaces.",
+          "acceptance": "No live state mutation; novice summary and advanced detail; failure/unknown displayed clearly; tests cover stale inputs.",
+          "depends_on": [
+            "OI05-16"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI05-GATE",
+          "title": "Phase 5 review gate",
+          "implementation": "Deliver scenario engine, supported simulation subset, macro regression, reservations, and economy tests.",
+          "acceptance": "Reviewer verifies math and test oracle; owner validates macro/dummy workflows; unsupported mechanics explicitly listed; no speculative guaranteed profit.",
+          "depends_on": [
+            "OI05-17"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "title": "Community intelligence - Cartographer and Fellowship",
+      "tasks": [
+        {
+          "id": "OI06-01",
+          "title": "World observation schema",
+          "implementation": "Extend Discovery/POICapture/Trail/Sightings with build, realm/ruleset, layer, method, precision, consent and provenance.",
+          "acceptance": "Validate IDs, fractional coords, time/build, known map; no player coordinates passed off as exact NPC location.",
+          "depends_on": [
+            "OI05-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-02",
+          "title": "Versioned source registry",
+          "implementation": "Extend Data Registry and pack manifest with license, revision, evidence classification and conflict rules.",
+          "acceptance": "Mixed Classic/Forever sources labeled; old builds invalidated by rules; missing or unlicensed data quarantined.",
+          "depends_on": [
+            "OI06-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-03",
+          "title": "Conflict resolution",
+          "implementation": "Retain disagreeing observations, cluster by context/precision, prioritize stronger evidence without destructive overwrite.",
+          "acceptance": "Wrong layer, relocated NPC, spoofed source, uncertain coordinates and outdated pack fixtures; audit trail preserved.",
+          "depends_on": [
+            "OI06-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-04",
+          "title": "Rare forecasting",
+          "implementation": "Improve Forecasts using same-layer confirmed observations, distinguish sightings from respawns and censored intervals.",
+          "acceptance": "No forecast below minimum sample threshold; unknown layer and patch change handled; probability calibrated only with adequate records.",
+          "depends_on": [
+            "OI06-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-05",
+          "title": "Route/community discovery",
+          "implementation": "Build Explorer and Cartographer views for unseen locations and supported observations, optional personal exploration objectives.",
+          "acceptance": "Unseen distinct from unavailable; route suggestions use verified evidence and player navigation; no restricted data.",
+          "depends_on": [
+            "OI06-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-06",
+          "title": "Privacy-filtered contribution export",
+          "implementation": "Create manual reviewed export of allowed world observations with preview, no unnecessary character identifiers or private coordinates.",
+          "acceptance": "Default off; explicit consent; schema/size validation; export does not expose character account, chat, gold or player route history unless separately approved.",
+          "depends_on": [
+            "OI06-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-07",
+          "title": "Import and pack build pipeline",
+          "implementation": "Offline validate contributor records, dedup, provenance review, reproducible build, version manifest, rollback and moderation queue.",
+          "acceptance": "Malformed/oversized and malicious files rejected without execution; deterministic build; rights review required before publish.",
+          "depends_on": [
+            "OI06-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-08",
+          "title": "Community release gate design",
+          "implementation": "Document optional future external submission, authentication, rate limits, moderation, consent, deletion and policy/legal review; do not deploy service.",
+          "acceptance": "Offline manual workflow functional; any external server/network work remains blocked pending separate authorization.",
+          "depends_on": [
+            "OI06-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-09",
+          "title": "Fellowship consent and protocol",
+          "implementation": "Extend Comm/PartyQuests/KitShare with versioned minimal group goals, readiness, eligibility and opt-in share fields.",
+          "acceptance": "Use supported party/guild/raid/whisper only; sender/scope/size/rate validation; unsupported peer/version safe; no data without opt-in.",
+          "depends_on": [
+            "OI06-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-10",
+          "title": "Fellowship group planner",
+          "implementation": "Combine consenting member opportunities, travel, quest prerequisites, gear needs, availability and fairness.",
+          "acceptance": "Unknown/unshared member not treated as fully ready; avoid repeatedly favoring one member; no private inventory inferred; no auto-invite.",
+          "depends_on": [
+            "OI06-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-11",
+          "title": "Group UX and shared plan",
+          "implementation": "Show group benefit, per-member gaps, shared itinerary and voluntary ready/accept/decline signals; no external chat spam.",
+          "acceptance": "Consent revoke stops sharing; disconnect/roster change invalidates group state; members retain individual plan autonomy.",
+          "depends_on": [
+            "OI06-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-12",
+          "title": "Mentor plan portability foundation",
+          "implementation": "Define shareable curated plan references with source/version, role/class eligibility, expiration and manual acceptance.",
+          "acceptance": "Imported plan cannot run code or automatically act; invalid IDs, inappropriate level and older build rejected or marked stale.",
+          "depends_on": [
+            "OI06-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-13",
+          "title": "Guild contribution and handoff tests",
+          "implementation": "Exercise two or more consenting clients with group changes, conflicting rare sightings, repeated messages and bounded rate.",
+          "acceptance": "Actual owner-led multi-client evidence plus mock adversarial fixtures; no public/global channel or background collector.",
+          "depends_on": [
+            "OI06-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI06-GATE",
+          "title": "Phase 6 review gate",
+          "implementation": "Deliver native observation packs, conflict and rare tests, group planning, privacy and license review.",
+          "acceptance": "Reviewer audits untrusted imports/messages and provenance; owner demonstrates consent with second client; external service not enabled by default.",
+          "depends_on": [
+            "OI06-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 7,
+      "title": "Player education and experience - Expedition, Mentor, UX",
+      "tasks": [
+        {
+          "id": "OI07-01",
+          "title": "Experience modes",
+          "implementation": "Introduce Beginner/Experienced/Advanced preference using existing Hub/Theme and per-character defaults; progressive disclosure.",
+          "acceptance": "Same engine and facts across modes; novice avoids overload; advanced exposes evidence; no duplicate navigation or broken settings.",
+          "depends_on": [
+            "OI06-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-02",
+          "title": "Lesson contract",
+          "implementation": "Define versioned lesson IDs, class/role/level/spell prerequisites, objectives, safe practice and verified sources.",
+          "acceptance": "Unknown spell/build skips rather than invents lesson; no automated input; localization strings separated.",
+          "depends_on": [
+            "OI07-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-03",
+          "title": "Nine-class curriculum",
+          "implementation": "Implement core lessons for Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock and Druid; role-specific variants.",
+          "acceptance": "At least fundamentals, survival, utility and group responsibilities for each; lesson eligibility fixtures and source review; no unverified mechanics marketed as facts.",
+          "depends_on": [
+            "OI07-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-04",
+          "title": "Adaptive lesson delivery",
+          "implementation": "Use learned spellbook, explicit skill goals, opt-in preferences and completion feedback to offer relevant lessons.",
+          "acceptance": "No unsupported inference of skill from hidden data; user can skip/disable/reset; lessons not shown mid-combat.",
+          "depends_on": [
+            "OI07-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-05",
+          "title": "Practice and Benchmark integration",
+          "implementation": "Offer owner-controlled training-dummy exercises, scenario goals and voluntary knowledge checks using permitted post-fight data.",
+          "acceptance": "Missing meter gives qualitative practice only; no action execution; compare only matched test contexts.",
+          "depends_on": [
+            "OI07-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-06",
+          "title": "Mentor curated progression",
+          "implementation": "Build authoring and manual import/export of goals/routes/lessons via existing safe serialization; add compatibility checks.",
+          "acceptance": "No executable data; explicit preview/accept; source/license and build recorded; incompatible steps not installed.",
+          "depends_on": [
+            "OI07-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-07",
+          "title": "Troubleshooter expansion",
+          "implementation": "Diagnose missing quest prerequisite, stale route, wrong macro rank, unsupported API, role mismatch, missing pack and disabled module.",
+          "acceptance": "Actionable reason and safe manual remedy for each; no misleading success on failed registration; privacy-filtered diagnostic export.",
+          "depends_on": [
+            "OI07-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-08",
+          "title": "Confidence UI consistency",
+          "implementation": "Standardize observed/verified/community/inferred/unknown badges, estimate explanations and source details across screens.",
+          "acceptance": "Text not color-only; no 'verified' without evidence; source timestamp/build visible; accessibility fixtures.",
+          "depends_on": [
+            "OI07-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-09",
+          "title": "Recovery and Chronicle UX",
+          "implementation": "Summarize changed progress after absence and resume or discard plan; chronological highlights and user filters.",
+          "acceptance": "No false completion after patch or character switch; clear/delete/export controls consistent; no unnecessary notifications.",
+          "depends_on": [
+            "OI07-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-10",
+          "title": "Explorer challenges",
+          "implementation": "Offer voluntary personal discovery/quest milestones from verified eligibility and known visited history; no performance pressure.",
+          "acceptance": "Unknown visit state not considered completed; no restricted API or invented data; dismiss/reset supported.",
+          "depends_on": [
+            "OI07-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-11",
+          "title": "Navigation and UI quality",
+          "implementation": "Audit common workflows, readability, keyboard navigation, resizing, localization, missing assets and accessibility; reuse UI kit.",
+          "acceptance": "Relevant common actions reachable within target clicks; no clipped text at supported scales; target textures fit actual client limits.",
+          "depends_on": [
+            "OI07-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-12",
+          "title": "Documentation and help completeness",
+          "implementation": "Update HelpData, user guide, README, feature flags, error guide, lesson sources, privacy and onboarding, remove stale status claims.",
+          "acceptance": "Every new public feature/settings/error has a documented workflow; no feature claims without matching evidence; independent review checklist complete.",
+          "depends_on": [
+            "OI07-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI07-GATE",
+          "title": "Phase 7 review gate",
+          "implementation": "Deliver training matrix, UX walkthroughs, documentation and privacy tests.",
+          "acceptance": "Reviewer samples lessons and diagnostics; owner tests novice/advanced flows and accessibility; all-class live limitations remain explicit.",
+          "depends_on": [
+            "OI07-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    },
+    {
+      "phase": 8,
+      "title": "Desktop companion and release",
+      "tasks": [
+        {
+          "id": "OI08-01",
+          "title": "Companion contract inventory",
+          "implementation": "Reconcile Advisor/Snapshot, AdviceLoader, server, context, schemas_v3, coach_v3, XP60 CLI and provider code; map reusable components.",
+          "acceptance": "No second server, model bridge or separate state store; exact existing schema migrations and transport limits documented.",
+          "depends_on": [
+            "OI07-GATE"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-02",
+          "title": "Passport snapshot",
+          "implementation": "Build task-specific local snapshot preview with opaque IDs, allowed field selection, age/build, consent and size limits.",
+          "acceptance": "Sensitive defaults excluded; export/import versioned and validated; stale/wrong-character data cannot be used as current.",
+          "depends_on": [
+            "OI08-01"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-03",
+          "title": "Offline companion experience",
+          "implementation": "Provide practical Windows UI/CLI for finalized session history, scenario exploration, reports, settings and explicit export; reuse existing reader.",
+          "acceptance": "No live game capture; missing/corrupted/in-progress saved file safe; no writes to WTF; native addon works when app absent.",
+          "depends_on": [
+            "OI08-02"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-04",
+          "title": "Manual OTR1 transport UX",
+          "implementation": "Polish player copy/paste Ask/Explain flow with preview, schema check, error messages and expiration.",
+          "acceptance": "Real-client roundtrip validated; old schema compatibility; malicious/oversized payload rejected; no hidden bridge or reload automation.",
+          "depends_on": [
+            "OI08-03"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-05",
+          "title": "XP60 offline delivery policy gate",
+          "implementation": "Reconcile existing watcher with deploy-only write rule and D18/D16; validate process-exit race, destination allowlist and atomic data-only Advice.lua if explicitly approved.",
+          "acceptance": "Without owner policy approval automatic install stays disabled; approved path tested on real Windows, refuses active/unknown client, writes only sanctioned file and data.",
+          "depends_on": [
+            "OI08-04"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-06",
+          "title": "Provider adapters",
+          "implementation": "Reuse local OpenAI-compatible and existing cloud adapters, consent, Credential Manager, endpoint auth/TLS and budget; no mandatory provider.",
+          "acceptance": "No network default; user-approved provider test; retries/timeouts/cancellation/circuit breaker; credentials not logged or bundled.",
+          "depends_on": [
+            "OI08-05"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-07",
+          "title": "AI grounded explanations",
+          "implementation": "Pass only bounded validated evidence and plan/scenario IDs to model; implement strict response schemas, structured errors and deterministic fallback.",
+          "acceptance": "Unknown IDs, injected instructions, malformed/multiple JSON, stale model output, unsupported prose claims and false warnings tested; critical caveats cannot be truncated.",
+          "depends_on": [
+            "OI08-06"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-08",
+          "title": "Provider security and privacy",
+          "implementation": "Review SSRF/redirects, TLS, secrets, local endpoint configuration, file path safety, redaction, budget and prompt injection; minimize exported data.",
+          "acceptance": "Adversarial fixtures and manual review; no arbitrary commands or model-driven file access; cloud spend requires opt-in and enforced limit.",
+          "depends_on": [
+            "OI08-07"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-09",
+          "title": "Optional voice UX gate",
+          "implementation": "If existing I2 opt-in push-to-talk is approved, add desktop-only question input on last explicit snapshot, show age and text preview.",
+          "acceptance": "No screen capture, always-listening microphone or real-time bridge; off by default; if unapproved leave blocked with documented alternative.",
+          "depends_on": [
+            "OI08-08"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-10",
+          "title": "Companion packaging",
+          "implementation": "Create Windows installer/update/uninstall plan, pinned dependencies, offline mode, version checks, settings backup and rollback; no silent startup registration.",
+          "acceptance": "Clean machine trial; uninstall preserves or deletes chosen data; no automatic network or game write; unsigned package warning documented if applicable.",
+          "depends_on": [
+            "OI08-09"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-11",
+          "title": "Competitive usefulness evaluation",
+          "implementation": "Run 25 representative questions/actions against existing baseline and relevant competitors using publicly documented capabilities; record current sources and limitations.",
+          "acceptance": "Blind scoring where feasible; report useful/incorrect/unanswered and latency; no unsupported 'only addon' marketing claim.",
+          "depends_on": [
+            "OI08-10"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-12",
+          "title": "Universal live beta",
+          "implementation": "Run all nine classes and documented roles, solo/group, locale, addon conflicts, low funds, reload/logout, taint and performance tests on actual build.",
+          "acceptance": "Owner-collected sanitized logs, build, scenario and outcomes; no mock substitution; all failures tracked; nonavailable role checks block universal claim.",
+          "depends_on": [
+            "OI08-11"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-13",
+          "title": "Release privacy and license audit",
+          "implementation": "Review distribution manifest, upstream notices, data and asset licenses, naming, private snapshots, credentials and public claims.",
+          "acceptance": "No unlicensed/rebranded extracts or personal logs in packages; owner confirms name and legal review scope; unresolved license blocks distribution.",
+          "depends_on": [
+            "OI08-12"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-14",
+          "title": "Release test and rollback",
+          "implementation": "Full CI exact SHA, clean install/update, old data migration, restore, disable flags, no-provider operation and adverse transport cases.",
+          "acceptance": "Reproducible package hashes, test output and rollback instructions; no P0/P1 defects without approved safe disable; no publish yet.",
+          "depends_on": [
+            "OI08-13"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": false,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        },
+        {
+          "id": "OI08-GATE",
+          "title": "Final independent review and owner approval",
+          "implementation": "Deliver full diff, task status matrix, source/test evidence, actual-client metrics, release notes and signoff checklist.",
+          "acceptance": "Reviewer verifies at exact SHA and records accepted scope; Gary approves merge/publication separately; blocked items clearly excluded from release.",
+          "depends_on": [
+            "OI08-14"
+          ],
+          "status": "NOT_STARTED",
+          "review_gate": true,
+          "owner": "Claude Code; Gary for authorized live/owner gates; ChatGPT for independent review"
+        }
+      ]
+    }
+  ]
+}
