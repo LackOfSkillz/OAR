@@ -1,7 +1,7 @@
 -- Modules/Travel.lua
--- Routes from where Gary stands to any spot in the world (Gary, 2026-11-13:
--- "guide me through the airships, portals and paths, as quickly as
--- possible"). A small graph, rebuilt each time a route is asked for:
+-- Routes from where the player stands to any spot in the world (requirement
+-- 2026-11-13: the fastest way through airships, portals and paths).
+-- A small graph, rebuilt each time a route is asked for:
 --   walk  between any two points on the same continent (world yards / run speed)
 --   fly   between two flight points this character knows, same continent
 --   ride  boats, zeppelins, skycutters, trams, portals: the guide pack
@@ -9,7 +9,7 @@
 -- Dijkstra over the points picks the quickest route. Times are estimates
 -- (RUN, FLY, ride lengths below), good for comparing, not for a stopwatch.
 -- The travel pack (Outrider_Data_Travel, from ForeverDB / Shortest Path
--- Forever, Gary 2026-11-23 "build it"): real flight legs with their flight
+-- Forever, approved 2026-11-23): real flight legs with their flight
 -- times (a flight follows its legs between flight points you know, not a
 -- straight line), boats and zeppelins with their timetables (time = the
 -- average wait at the dock plus the crossing), exact dock spots, portals and
@@ -88,7 +88,7 @@ end
 function M:MapByName(name)
   if type(name) ~= "string" then return nil end
   -- the top of the player's map chain; Zephras Isle hangs off a different
-  -- root than Kalimdor (Gary, 2026-11-21: a cache built in Thunder Bluff
+  -- root than Kalimdor (bug 2026-11-21: a cache built in Thunder Bluff
   -- found no Zephras Isle places), so one cache per root, merged
   local id = C.PlayerPosition("player")
   for _ = 1, 10 do
@@ -324,7 +324,7 @@ function M:Rides()
 end
 
 -- Every way to travel from one place to another that this character can
--- use (Gary, 2026-11-16: "a way to find the portals, ships and airships"):
+-- use (requirement 2026-11-16: find the portals, ships and airships):
 -- { kind, name = "Boat to Theramore", from = point, to = point, where, place }
 -- where: "exact" (guide or captured spot), "flight" (the town's flight
 -- master, the dock is nearby), "zone" (only the zone is known), "taken"

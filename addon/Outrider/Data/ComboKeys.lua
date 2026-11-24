@@ -1,5 +1,5 @@
--- Data/ComboKeys.lua: combined keys (Gary, 2026-11-20: "combine as many best
--- sequences into fewer macros"). Each key folds several single macros into one
+-- Data/ComboKeys.lua: combined keys, to cover the best sequences with fewer
+-- macros (owner request 2026-11-20). Each key folds several single macros into one
 -- button with up to four layers: a plain press, Shift, Ctrl and Alt. Every
 -- layer is a normal macro condition ([nomod], [mod:shift] ...) that Gary holds
 -- himself, so this is the same as any hand-written modifier macro: one press,

@@ -1,7 +1,7 @@
 -- Modules/FishingLog.lua
--- Fishing session detail, spots, records and a wanted list (Gary, 2026-11-23:
--- "research OneCast ... make sure our fishing module is as good if not
--- better"). Outrider already had the one-key cast and hook, lure on the key,
+-- Fishing session detail, spots, records and a wanted list (requirement
+-- 2026-11-23: after researching OneCast, the fishing module must match or
+-- beat it). Outrider already had the one-key cast and hook, lure on the key,
 -- the 4-line HUD, lifetime counts, the skill-up predictor, zones per skill,
 -- trainers, gear swap and the Extravaganza countdown. This adds what OneCast
 -- shows that we didn't:

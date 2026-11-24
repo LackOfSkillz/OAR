@@ -1,5 +1,5 @@
 -- Modules/WhatNow.lua
--- Pathfinder Lite: "What now?" (Gary, 2026-11-14). Not a new routing
+-- Pathfinder Lite: "What now?" (requirement 2026-11-14). Not a new routing
 -- engine: a decision layer over what Outrider already knows. It gathers
 -- candidates from other modules (errands, quests, gear, dungeons, training,
 -- rares, gold, gathering), scores them by benefit, the player's goal, how

@@ -1,6 +1,6 @@
 -- Data/Herbs.lua
 -- Where each herb grows on WoW Forever and the Herbalism skill it needs,
--- from community guides (Gary chose "zone hints", 2026-11-12). Guide facts in
+-- from community guides (zone hints chosen over coordinates, 2026-11-12). Guide facts in
 -- our own words; no coordinates (Forever redrew the zones, hard rule 7).
 -- skill only where a guide states it. Everything verified = false until Gary
 -- picks one in game.

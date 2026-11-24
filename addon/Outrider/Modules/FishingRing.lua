@@ -1,5 +1,5 @@
 -- Modules/FishingRing.lua
--- A ring of fishing buttons and your real fishing skill added up (Gary,
+-- A ring of fishing buttons and your real fishing skill added up (requirement
 -- 2026-11-24: borrow FishFry's best ideas; the ideas only, nothing copied).
 --
 -- The ring shows while a fishing pole is equipped: Cast in the middle, around

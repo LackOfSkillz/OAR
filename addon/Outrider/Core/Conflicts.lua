@@ -15,7 +15,7 @@ Conflicts.KNOWN = {
   { addon = "Auctionator",   relation = "hook",  area = "auction prices" },
   { addon = "TradeSkillMaster", relation = "hook", area = "auction prices" },
   { addon = "GearQuest",     relation = "hook",  area = "gear upgrades (if it exposes data)" },
-  -- the Forever edition's folder (Gary's AddOns, audit 2026-11-15: it was
+  -- the Forever edition's folder (owner's AddOns, audit 2026-11-15: it was
   -- enabled but "0 addons detected")
   { addon = "GearQuestForever", relation = "hook", area = "gear upgrades (GearQuest Forever picks)" },
   { addon = "RareScanner",   relation = "yield", area = "rare alerts" },

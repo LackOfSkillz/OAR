@@ -1,6 +1,6 @@
 -- Modules/QuestTracker.lua
--- Outrider's quest tracker, like Questie's (Gary, 2026-11-17: "add all of
--- that"): your quests grouped by zone, nearest first (or by level), each
+-- Outrider's quest tracker, like Questie's (requirement 2026-11-17: Questie
+-- parity): your quests grouped by zone, nearest first (or by level), each
 -- objective with your party's progress under it ("Oni 6/10").
 --   click a quest        the arrow goes to its nearest objective or turn-in
 --   right-click a quest  fold it; click a zone to fold the zone

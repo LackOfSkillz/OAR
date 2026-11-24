@@ -1,7 +1,7 @@
 -- Modules/TalentLab.lua
--- The Talents page (Gary, 2026-11-23: "a page that looks like [Blizzard's
--- talent window] but you have suggestions for the best builds ... let them
--- tune their build ... read their current build ... let them test builds";
+-- The Talents page (requirement 2026-11-23: looks like Blizzard's talent
+-- window, plus suggestions for the best builds; reads the current build and
+-- lets the player tune and test builds;
 -- research and plan in docs/TALENT_BUILDS_RESEARCH_2026-11-23.md).
 --   * The three trees come live from the client (Talents:Read, C_Traits on
 --     Forever): names, ranks, rows, links. Builds are stored by talent name,
@@ -532,8 +532,8 @@ end
 
 
 -- ------------------------------------------------------------ the studio (page)
--- One screen, three columns (Gary, 2026-11-23: "make columns so you don't
--- have to scroll so much ... a world class ui/ux"):
+-- One screen, three columns (requirement 2026-11-23: columns to cut down
+-- scrolling, a showpiece UI/UX):
 --   top    goal chips, level slider, points / split / change from yours
 --   left   the builds for the goal, best for you first (Try, Follow)
 --   middle the three trees like the game's window, with their links
@@ -600,8 +600,8 @@ function M:Follow(card)
   self:RefreshPage()
 end
 
--- this page's text is a size bigger than the rest (Gary, 2026-11-23: "make
--- the font just a wee bit bigger")
+-- this page's text is a size bigger than the rest (owner request 2026-11-23:
+-- slightly larger font)
 M.BUMP = 2
 local function bigger(t, size)
   local F = ns.Theme.font

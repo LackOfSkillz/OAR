@@ -17,7 +17,7 @@ local M = ns:NewModule("Discovery", {
 })
 
 -- "near": seen within ~10 yards (CheckInteractDistance), as good as talking
--- to it (Gary, 2026-11-20: "standing right next to him").
+-- to it (requirement 2026-11-20: standing right next to the NPC).
 local QUALITY = { nameplate = 1, mouseover = 2, target = 2, near = 3, interact = 3 }
 M.QUALITY = QUALITY
 -- A sure sighting this far (map share) from the stored spot means the NPC

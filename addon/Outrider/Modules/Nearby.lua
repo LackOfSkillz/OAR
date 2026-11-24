@@ -38,7 +38,7 @@ function M.CanUse(s)
   return prof ~= nil and type(mine) == "table" and mine[prof] ~= nil
 end
 
--- Gear this character can craft (Gary, 2026-11-23: "grow it"): learned
+-- Gear this character can craft (requirement 2026-11-23: widen the sources): learned
 -- recipes from the profession windows you opened, product = item made.
 function M.Crafted()
   local out = {}
@@ -88,8 +88,8 @@ local function stats(id)
   return ok and type(s) == "table" and next(s) and s or nil
 end
 
--- Can this character do the quest behind a quest source? (Gary asked where
--- Bow of Hours was: a level 11 quest after an earlier one, shown to a level 4.)
+-- Can this character do the quest behind a quest source? (Case: Bow of Hours,
+-- a level 11 quest after an earlier one, was shown to a level 4.)
 -- Returns false for done or far-too-high quests; else true and a note when
 -- it is not available yet ("from level 5", "after 1 earlier quest").
 function M.QuestOpen(s, level)
@@ -250,7 +250,7 @@ function M:Candidates(opts)
       end
     end
   end
-  -- Few upgrades on this map (Gary, 2026-11-23: GearQuest off and the Gear
+  -- Few upgrades on this map (bug 2026-11-23: GearQuest off and the Gear
   -- page was empty in Moonglade): the best one per slot from other zones,
   -- your continent first.
   if not world and self.pack and #out < M.FEW then
@@ -327,7 +327,7 @@ function M.Source(c)
   local who = w.who and (tostring(w.who):match("^[^-]+") or w.who) or nil
   local src = (M.KIND_LABEL[c.kind] or c.kind) .. (who and (" " .. who) or "")
   if c.kind == "gearquest" then
-    -- no other addon's name on screen (Gary, 2026-11-20: Outrider stands alone)
+    -- no other addon's name on screen (requirement 2026-11-20: Outrider stands alone)
     src = (tostring(c.via or "upgrade"):gsub("^%l", string.upper)) .. (who and (" " .. who) or "") .. (c.zone and (", " .. c.zone) or "")
   end
   if c.kind == "quest" and w.qlevel then src = src .. " (level " .. w.qlevel .. ")" end

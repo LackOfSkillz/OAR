@@ -1,6 +1,6 @@
--- Modules/Path.lua  (the way there; Gary, 2026-11-21: "I'm in a city and I
--- have no clue how to get to where the arrow is pointing ... do this any
--- time a player selects a destination, on the big map and the minimap")
+-- Modules/Path.lua  (the way there; requirement 2026-11-21: in a city the arrow
+-- alone does not show how to get there; draw the way whenever a player
+-- selects a destination, on the big map and the minimap)
 -- Whenever there is a destination (a waypoint, a Journey leg, a quest Outrider
 -- is guiding you to), Outrider draws a line of bright dots from you to it on
 -- the world map and the minimap.
@@ -14,8 +14,8 @@
 -- before costs 1 and a yard off the known paths costs OFF. Re-planned when
 -- the destination changes and every few seconds while you move.
 -- Data only: it draws dots, it never moves you.
--- Verified ground only (Gary, 2026-11-23: "only mark paths that you can
--- verify"; a straight line into the hills sent him at a cliff when the way
+-- Verified ground only (requirement 2026-11-23: mark only paths that can be
+-- verified; a straight line into the hills led to a cliff when the way
 -- in was round the north side): dots are drawn only on walked ground
 -- (your breadcrumbs, shipped trails, creature patrols), and only when that
 -- ground reaches within END_GAP yards of the destination. Otherwise no dots:
@@ -85,8 +85,8 @@ end
 -- ---------------------------------------------------------------- the destination
 -- Outrider's own waypoint (also every Journey leg), else the quest Outrider
 -- handed to the game's quest arrow.
--- Anything you point the game at counts (Gary, 2026-11-21: "everything that
--- a user clicks on"): Outrider's waypoint (and every Journey leg), a quest
+-- Anything you point the game at counts (requirement 2026-11-21: everything
+-- a user clicks on): Outrider's waypoint (and every Journey leg), a quest
 -- you track (clicked on the map or in the tracker: the game's own next
 -- waypoint for it when the client has one, cave entrances and flights
 -- included, else its nearest objective or turn-in from the quest pack), and
@@ -181,8 +181,8 @@ local function routeDots(mapID, lines)
   return c
 end
 
--- Paths walked by Outrider's creator, shipped for everyone (Gary, 2026-11-21:
--- "ship them"): Outrider_Data_Trails, positions only. Used to plan only; they
+-- Paths walked by Outrider's creator, shipped for everyone (decided 2026-11-21):
+-- Outrider_Data_Trails, positions only. Used to plan only; they
 -- never show as "You walked here".
 M.TRAILS_ADDON = "Outrider_Data_Trails"
 function M:Shipped()

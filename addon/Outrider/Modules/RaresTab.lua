@@ -55,7 +55,7 @@ R.STATE = {
   alive = { "ALIVE", "bad" }, open = { "MAY BE UP", "warn" }, waiting = { "NOT YET", "muted" },
   dead = { "DEAD", "muted" }, passed = { "OVERDUE", "warn" }, unknown = { "NOT SEEN LATELY", "muted" },
 }
--- the same, in a sentence (Gary, 2026-11-20: at a glance)
+-- the same, in a sentence (requirement 2026-11-20: at a glance)
 R.STATE_SAYS = {
   alive = "Someone saw it alive in the last 15 minutes. Go now!",
   open = "It could be up now: its usual respawn time has come.",
@@ -116,7 +116,7 @@ ns.Hub:AddTab("rares", "Rares", function(p)
   p.list = UI:ScrollList(p, {
     rows = 11, rowHeight = 44,
     build = function(row)
-      -- a word, not a bare star (Gary, 2026-11-20: clear at a glance)
+      -- a word, not a bare star (requirement 2026-11-20: clear at a glance)
       row.star = UI:Button(row, "Watch", 86)
       row.star:SetHeight(26)
       row.star:SetPoint("RIGHT", -10, 0)
@@ -160,7 +160,7 @@ ns.Hub:AddTab("rares", "Rares", function(p)
     end,
     onClick = function(r) p:Select(r) end,
   })
-  -- the chosen rare, explained (Gary, 2026-11-20)
+  -- the chosen rare, explained (requirement 2026-11-20)
   local d = UI:Card(p, true)
   d:SetWidth(330)
   d:SetPoint("TOPRIGHT", p, "TOPRIGHT", -4, -110)

@@ -229,8 +229,8 @@ function M:OnCommodity(_, itemID)
   if type(info) == "table" then self:Record(itemID, C.Readable(info.unitPrice), C.Readable(total)) end
 end
 
--- Full auction house scan (Gary, 2026-11-14: "no loss of functionality
--- without the other addons"): Auctionator and TSM keep whole-market prices;
+-- Full auction house scan (requirement 2026-11-14: no loss of functionality
+-- when other addons are absent): Auctionator and TSM keep whole-market prices;
 -- this does the same from one click. C_AuctionHouse.ReplicateItems returns
 -- every listing; the cheapest buyout per unit of each item is recorded.
 -- Blizzard allows it once every 15 minutes. Reading only.

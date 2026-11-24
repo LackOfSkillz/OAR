@@ -178,8 +178,8 @@ function M:Marker()
 end
 
 -- The words on the plate. The game already prints the creature's name, so
--- "5/7 Mangy Nightsaber slain" on a Mangy Nightsaber is just "5/7" (Gary,
--- 2026-11-22: "unjumble it"); an item to collect keeps a short name ("Pelt 3/8").
+-- "5/7 Mangy Nightsaber slain" on a Mangy Nightsaber is just "5/7" (requirement
+-- 2026-11-22: less cluttered plates); an item to collect keeps a short name ("Pelt 3/8").
 function M.Short(text, name)
   if type(text) ~= "string" then return "" end
   text = text:match("^[^\n]+") or text

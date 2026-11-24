@@ -1,8 +1,8 @@
 -- Modules/DungeonGuide.lua  (dungeon and raid module, phase 1)
 -- Which dungeons this character is ready for, what each one holds for it,
--- and where to go next for the next step up in gear (Gary, 2026-11-14: "gear
--- awareness that comes from dungeons ... what dungeons you're ready for and
--- what dungeons you need for the gear to get to your next tier").
+-- and where to go next for the next step up in gear (requirement 2026-11-14:
+-- gear awareness from dungeons, both which ones the character is ready for
+-- and which ones drop the gear for the next tier).
 -- Data: Outrider_Data_Dungeons (tools/import_dungeons.py from QuestieDB:
 -- bosses, their gear drops, entrances) and Data/Dungeons.lua (level ranges,
 -- foreverdb.net). Gear is scored with the gear advisor (class weights, armor

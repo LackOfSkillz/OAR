@@ -1,5 +1,5 @@
 -- Modules/Routes.lua
--- Routes you draw on a map (Gary, 2026-11-24: "this level of map integration",
+-- Routes you draw on a map (requirement 2026-11-24: FojjiCore-level map integration,
 -- FojjiCore ideas). A route belongs to one map (a zone, a city or a dungeon
 -- level) and holds freehand lines in a few colors, raid-icon markers and text
 -- labels. Routes are account-wide (every character sees them), drawn on

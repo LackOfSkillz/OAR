@@ -1,8 +1,8 @@
 -- Modules/ProfessionHub.lua  (Professions, "Your professions": the first tab)
--- Gary, 2026-11-21: "combine the professions ... easily craft what's in their
--- bag or direct them to either the auction house or the closest places on the
--- map in their level range to acquire the ingredients ... hero image quality
--- UI/UX and 8th grade easy."
+-- Requirement 2026-11-21: one place for all professions; craft from what is in
+-- the bags, or point to the auction house or the closest places on the
+-- map in the character's level range to get the ingredients; showpiece
+-- UI/UX, easy at an 8th-grade level.
 -- One page, three steps:
 --   1 pick a profession on the left (skill bar, how many you can make now)
 --   2 Make now: what your bags can make, best for skill first; a click makes it
@@ -63,7 +63,7 @@ function M:Crafting()
   return self.crafting
 end
 
--- Recipes to learn next for a profession at a skill (Gary, 2026-11-23):
+-- Recipes to learn next for a profession at a skill (requirement 2026-11-23):
 -- not known yet, learnable now or within LEARN_AHEAD points, still giving
 -- skill (below grey); learnable now first, then the ones that give the most
 -- (orange before yellow), then by skill. Each with how to learn it:
@@ -292,7 +292,7 @@ function M:Go(s)
   return false
 end
 
--- Make a recipe now (Gary's click): opens the profession window on the first
+-- Make a recipe now (player's click): opens the profession window on the first
 -- click, makes the batch on the next.
 function M:Make(prof, e)
   if not (ns.Crafter and prof) then return "unknown" end
@@ -310,7 +310,7 @@ end
 -- Herbs worth picking at your skill, in the guide's order (Data/Herbs.lua
 -- lists them easiest first): every herb up to the first one whose stated
 -- skill is above yours, the last few of them, each with its nearest spot from
--- the ingredient pack (Gary, 2026-11-23: the Herbalism page was empty).
+-- the ingredient pack (bug 2026-11-23: the Herbalism page was empty).
 M.HERBS_SHOWN = 4
 function M:GatherRows(p)
   if p.gather ~= "herb" or not ns.Data then return {} end
@@ -546,7 +546,7 @@ ns.Hub:AddTab("professions", "Professions", function(p)
     if pick.gather then
       d.best:Hide()
       d.h1:SetText("How to raise it")
-      -- the empty lists sat on top of the text (Gary, 2026-11-23): hide the make-now list
+      -- the empty lists sat on top of the text (bug 2026-11-23): hide the make-now list
       d.now:Hide()
       d.none:SetText(M:GatherLine(pick))
       local rows = M:GatherRows(pick)

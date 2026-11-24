@@ -1,7 +1,7 @@
 -- Modules/CookTrainer.lua  (module "ProfTrainer")
 -- One-button profession training for every crafting profession the character
--- has (Gary, 2026-11-14: cooking first, then "mining, enchanting, all the
--- crafting professions ... aware of what crafting skill the character has").
+-- has (requirement 2026-11-14: cooking first, then mining, enchanting and all
+-- other crafting professions, aware of the character's current skill).
 -- For each profession the character knows, from the recipes Outrider saw the
 -- last time that profession's window was open (colour = skill-up chance) and
 -- what is in the bags: orange counts 1 point per craft, yellow 0.75, green
@@ -103,7 +103,7 @@ end
 
 -- ------------------------------------------------------------ the button
 -- A crafted campfire waiting in the bags (Forever: crafting Basic Campfire
--- makes an item that is then used to place the fire; Gary, 2026-11-14).
+-- makes an item that is then used to place the fire; observed 2026-11-14).
 function M:FireItem()
   for bag = 0, 4 do
     for slot = 1, (C.Call("C_Container.GetContainerNumSlots", bag) or 0) do
@@ -131,8 +131,8 @@ function M:FireReady()
   return false
 end
 
--- "Alchemy +10: make Elixir of Minor Defense x5" (Gary, 2026-11-14: "+10: Make"
--- told him nothing). The next recipe is the best colour the bags can make.
+-- "Alchemy +10: make Elixir of Minor Defense x5" (2026-11-14: "+10: Make"
+-- alone was unclear). The next recipe is the best colour the bags can make.
 local VERB = { Cooking = "cook", Alchemy = "brew", Enchanting = "enchant", Mining = "smelt", ["First Aid"] = "make" }
 function M:Label(total)
   if self.state == "fire" then

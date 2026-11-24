@@ -1,5 +1,5 @@
 -- Modules/HerbHelper.lua
--- Gary asked (2026-11-12) for what herbalism addons do, built our own way
+-- Covers what herbalism addons do (requirement 2026-11-12), built our own way
 -- (ideas only, no code or data copied from other addons):
 --   * Find Herbs reminder: herb dots on the minimap come from Blizzard's
 --     "Find Herbs" tracking. If you have Herbalism and it is off, say so once

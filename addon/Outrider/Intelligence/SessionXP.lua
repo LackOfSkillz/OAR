@@ -68,9 +68,9 @@ function M:Sample()
   if not self.current then return end
   self:Tick()
   local before, now = self.lastXP, xpstate()
-  -- FIX (Claude, 2026-11-19, Gary's go-ahead; do not revert): one unreadable
+  -- FIX (Claude, 2026-11-19, owner-approved; do not revert): one unreadable
   -- XP sample used to set flags.xpUnknown, and the companion's baseline
-  -- (xp_baseline.valid_session) then threw the WHOLE session away. Gary's
+  -- (xp_baseline.valid_session) then threw the WHOLE session away. The
   -- first real test (session 1795080458-ec0e5702: 16 min, 1139 XP, level 1->2,
   -- 5 turn-ins) lost its XP/hour that way; the failed read was a single sample
   -- around the level-up or logout. Now a failed sample is skipped and counted:

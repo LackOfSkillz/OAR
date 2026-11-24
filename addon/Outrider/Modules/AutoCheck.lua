@@ -49,8 +49,8 @@ function M:OnEnable()
 end
 
 function M:ShowTestsAtLogin()
-  -- Nothing pops up at login any more (Gary, 2026-11-22: "remove the test
-  -- wave popup on first install and run"). The Wave test button and the
+  -- Nothing pops up at login any more: the test wave popup on first install
+  -- and run was removed (owner request 2026-11-22). The Wave test button and the
   -- sample toast still come up on demand: /ride selftest button | toast.
 end
 

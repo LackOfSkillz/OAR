@@ -1,8 +1,8 @@
 -- Modules/KitShare.lua
--- Gear for the people who need it (Gary, 2026-11-14: "what if Outrider was
--- aware of what other Outrider users needed ... suggests sending the item you
--- have or just found ... check alts first, then family and friends, then the
--- wider Outrider family (all Outrider users)").
+-- Gear for the people who need it (requirement 2026-11-14: know what other
+-- Outrider users need and suggest sending an item you have or just found;
+-- check alts first, then family and friends, then the
+-- wider Outrider community (all Outrider users)).
 -- A kit card says what a character can use and how good its gear is now:
 --   { name, class, level, faction, armor, weapons = {subclass=true}, slots = {[slotID]=score}, t }
 -- Scores use that character's class weights (GearScore:Score with its class).

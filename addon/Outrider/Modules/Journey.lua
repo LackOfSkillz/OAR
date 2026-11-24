@@ -1,12 +1,12 @@
 -- Modules/Journey.lua
--- "Find me the best gear quests and the best XP quests anywhere, then guide
--- me there" (Gary, 2026-11-13). Hub tab Journey (Gary's choice) with two
+-- Finds the best gear quests and the best XP quests anywhere, then guides the
+-- player there (requirement 2026-11-13). Hub tab Journey (owner's choice) with two
 -- lists, plus /ride journey [gear|xp|<number>|stop]:
 --   Gear  upgrades from the gear pack on every map (Nearby with world = true),
 --         best gain first, then the quicker trip
 --   XP    quests you can pick up now on every map (NPC pack), ranked by
 --         estimated XP per minute: XP / (trip + 5 minutes to do it)
---         (Gary chose XP per minute). XP is an estimate from the quest's
+--         (XP per minute chosen as the metric). XP is an estimate from the quest's
 --         level, reduced for quests far below you like the game does.
 -- Guide me: the route comes from Travel; the arrow points at the end of the
 -- first leg. When that leg is done (arrived, landed, loading screen, new
@@ -180,9 +180,9 @@ function M:Step(why)
     return nil
   end
   local first = route.steps[1]
-  -- Already at the end of the walk to a dock or flight master (Gary,
+  -- Already at the end of the walk to a dock or flight master (bug
   -- 2026-11-15, Menethil: the arrow was "arrived", set again and cleared
-  -- once a second): the step now is the ride, which is Gary's to take, so
+  -- once a second): the step now is the ride, which is the player's to take, so
   -- say it once and wait for the loading screen or landing.
   if first.kind == "walk" and route.steps[2] and first.to and first.to.wx then
     local here = ns.Travel.Here()
@@ -222,7 +222,7 @@ function M:Step(why)
 end
 
 -- ------------------------------------------------------------ pin tooltip
--- Gary (2026-11-13): hovering the map marker only said "Map Pin Sharing".
+-- Bug 2026-11-13: hovering the map marker only said "Map Pin Sharing".
 -- Blizzard's own waypoint pin keeps its tooltip; we add our lines under it:
 -- what the marker is for, the step you're on, distance and time, what's next.
 M.PIN_TEMPLATE = "WaypointLocationPinTemplate"
@@ -253,8 +253,8 @@ function M:PinLines()
 end
 
 -- The game's waypoint marker on the minimap (the one Outrider sets with
--- C_Map.SetUserWaypoint) only says "Map Pin" (Gary, 2026-11-22: "all it says
--- is mini map pin"). The minimap draws it itself, so there is no pin frame to
+-- C_Map.SetUserWaypoint) only says "Map Pin" (reported 2026-11-22: the tooltip
+-- gave no other detail). The minimap draws it itself, so there is no pin frame to
 -- hook: when the tooltip opens over the minimap and its first line names a
 -- pin while Outrider has a waypoint, Outrider adds what it is and why.
 function M.MinimapTipLines(owner, firstLine)
@@ -349,8 +349,8 @@ function M:OnEnable()
   self:On("OTR_WAYPOINT_CLEARED", function(mod, _, w, why)
     if mod.goal and why == "arrived" and w and w.opts and w.opts.journey then mod:Step("arrived") end
   end)
-  -- a journey to a rare ends when it is tamed or killed (Gary, 2026-11-15:
-  -- after taming The Rake the guide kept sending him back to Mulgore)
+  -- a journey to a rare ends when it is tamed or killed (bug 2026-11-15:
+  -- after taming The Rake the guide kept pointing back to Mulgore)
   self:On("OTR_SIGHTING_ADDED", function(mod, _, npcID, sight)
     local g = mod.goal
     if g and g.npcID and g.npcID == npcID and type(sight) == "table" and (sight.state == "tamed" or sight.state == "dead") then
@@ -372,9 +372,9 @@ end
 
 -- -------------------------------------------------------------------- tab
 -- ------------------------------------------------------------------ page
--- Journey, rebuilt so anyone gets it at a glance (Gary, 2026-11-20: "I really
--- have no clue how to use this page ... an average 8th grader could understand
--- at a glance what the page is for and how to use it"):
+-- Journey, rebuilt so anyone gets it at a glance (requirement 2026-11-20: the
+-- old page was unclear; an 8th-grade reader should see at a glance what the
+-- page is for and how to use it):
 --   * three steps across the top: 1 pick a place, 2 press Go, 3 follow the arrow
 --   * "Best picks for you": the best quest for XP, the best gear upgrade and
 --     the best zone for your level, each with Go

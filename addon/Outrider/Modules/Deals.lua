@@ -1,6 +1,6 @@
--- Modules/Deals.lua  (Gary, 2026-11-20: "our arbitrage scan, so that we could
--- buy things from the auction house and sell them other places or to vendors
--- for more")
+-- Modules/Deals.lua  (requirement 2026-11-20: an arbitrage scan, to buy at the
+-- auction house and sell elsewhere or to vendors
+-- for more)
 -- Read from the last full price scan (Prices:FullScan keeps the cheapest few
 -- listings of every item):
 --   * Vendor flips: listings whose price per unit is under what a vendor
@@ -58,7 +58,7 @@ end
 function M:Scan() return ns.Prices and ns.Prices.lastScan end
 
 -- Both lists walk every item of the price scan (thousands), so they are
--- worked out once per scan and kept (Gary's lag check at the auction house,
+-- worked out once per scan and kept (lag check at the auction house,
 -- 2026-11-22: 2 FPS, the shopping window redrew them every second). While
 -- item details are still loading, they are worked out again at most every
 -- M.RECHECK seconds.
@@ -79,7 +79,7 @@ end
 
 -- The lists are kept in the saved data too (top M.TOP each), so a /reload
 -- or the next login still shows the last scan's deals instead of nothing
--- (Gary, 2026-11-23: "those screens have been empty"); the price scan list
+-- (bug 2026-11-23: those screens had been empty); the price scan list
 -- itself is too big to save.
 M.KEEP_SAVED = 2 * 3600
 function M:Saved(kind)
@@ -158,7 +158,7 @@ function M:ComputeResale()
         local qty = l[2]
         local deposit = H and H.Deposit and (H:Deposit(itemID, qty) or 0) or 0
         -- What it really sells for again: no more than just under the cheapest
-        -- seller left once you've bought this listing (Gary, 2026-11-23:
+        -- seller left once you've bought this listing (field case 2026-11-23:
         -- Thorium Headed Arrows "usually" 79c were 35c today with 3,400 listed
         -- at 35c; the market had dropped, and a partial buy could only lose).
         local nextPrice = list[2] and list[2][1] or nil
@@ -195,8 +195,8 @@ function M:Age()
   return m < 1 and "just now" or (m == 1 and "1 minute ago") or string.format("%d minutes ago", m)
 end
 
--- Plain words for each deal (Gary, 2026-11-23: "more informative, in an
--- average 8th grader kind of way"; "resell" had read as "sell to a vendor").
+-- Plain words for each deal (requirement 2026-11-23: more informative, at an
+-- 8th-grade reading level; "resell" had read as "sell to a vendor").
 -- The card line: pay -> get back -> keep. The hover: the same as numbered steps.
 local function money(c) return ns.Prices.Money(math.floor(c or 0)) end
 
@@ -235,8 +235,8 @@ function M.ResaleSteps(d)
   return out
 end
 
--- A deal cut to what you can pay for (Gary, 2026-11-23: "list what the
--- player can afford in a quantity they can afford"). Stackable goods are
+-- A deal cut to what you can pay for (requirement 2026-11-23: list only what
+-- the player can afford, in an affordable quantity). Stackable goods are
 -- bought by quantity, cheapest first, so part of a deal is still a deal; a
 -- single item is all or nothing. Returns a copy with qty, cost and profit for
 -- that amount, `partial` when it's less than the whole deal, and `short`

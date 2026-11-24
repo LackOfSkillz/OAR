@@ -1,7 +1,7 @@
 -- Modules/DungeonQuests.lua
--- Dungeon quests and keys, at Attune's level of detail and beyond (Gary,
--- 2026-11-21: "I want our Dungeon module to incorporate this level of
--- information and usability"; research in docs/ATTUNE_RESEARCH.md).
+-- Dungeon quests and keys, at Attune's level of detail and beyond
+-- (requirement 2026-11-21: match that level of information and usability;
+-- research in docs/ATTUNE_RESEARCH.md).
 -- Own build from cited data: Data/Leveling_DungeonQuests.lua (Wowhead's
 -- Forever dungeon guides). Nothing of Attune (All Rights Reserved) is used.
 --   * every dungeon for your faction, sorted by level, with your progress

@@ -61,7 +61,7 @@ M.WEAPON_TYPES = {
   DRUID = set(4, 5, 6, 10, 13, 15),
 }
 -- The weapon skill each weapon type needs (Classic spell ids) and its name.
--- Gary, 2026-11-14: offer only weapons the character can use, for every class:
+-- Requirement 2026-11-14: offer only weapons the character can use, for every class:
 -- a skill the class can learn but this character hasn't is "learn X first".
 M.WEAPON_SKILL = { [0] = { 196, "Axes" }, [1] = { 197, "Two-Handed Axes" }, [2] = { 264, "Bows" }, [3] = { 266, "Guns" },
   [4] = { 198, "Maces" }, [5] = { 199, "Two-Handed Maces" }, [6] = { 200, "Polearms" }, [7] = { 201, "Swords" },
@@ -100,8 +100,8 @@ function M.KnownWeapons()
   return out
 end
 
--- The armor type a class should buy (its heaviest; Gary, 2026-11-14: "no mail
--- for a priest, no cloth for a hunter"): 1 cloth, 2 leather, 3 mail, 4 plate.
+-- The armor type a class should buy (its heaviest; requirement 2026-11-14: no mail
+-- for a priest, no cloth for a hunter): 1 cloth, 2 leather, 3 mail, 4 plate.
 function M.ArmorType(cls, level)
   cls = cls or ns.PlayerClass()
   level = level or C.Call("UnitLevel", "player") or 1
@@ -240,10 +240,10 @@ function M:Usable(link, info)
     end
   end
   -- Hunter shots and Auto Shot need a bow, gun or crossbow: a thrown weapon in the ranged
-  -- slot turns them off (Gary's Khreos was offered throwing daggers at +86%, 2026-11-12)
+  -- slot turns them off (a hunter, Khreos, was offered throwing daggers at +86%, 2026-11-12)
   if ns.PlayerClass() == "HUNTER" and (equipLoc or (info and info.equipLoc)) == "INVTYPE_THROWN" then return "hunter thrown" end
   -- off-hand items do nothing while a two-hander is in the main hand
-  -- (Gary's hunter was told an orb was a +100% upgrade, 2026-11-11)
+  -- (a hunter was told an orb was a +100% upgrade, 2026-11-11)
   if OFFHAND[equipLoc or (info and info.equipLoc) or ""] then
     local mh = C.Call("GetInventoryItemLink", "player", 16)
     if mh and select(1, itemClass(mh)) == "INVTYPE_2HWEAPON" then return "two-hander" end
@@ -285,7 +285,7 @@ function M:Compare(link)
   end
   old = old or 0
   -- A worn item that scores near zero (e.g. a melee weapon for a hunter) made
-  -- anything look like "+5617%" (Gary's snapshot, 2026-11-11): compare against
+  -- anything look like "+5617%" (snapshot 2026-11-11): compare against
   -- at least MIN_BASE points and cap the result at MAX_PCT ("big upgrade").
   local pct, capped = 0, false
   if new ~= old then pct = (new - old) / math.max(old, M.MIN_BASE) * 100 end
@@ -295,8 +295,8 @@ function M:Compare(link)
     against = against }
 end
 
--- Stat by stat, new item minus what it replaces (Gary, 2026-11-14: "tell how
--- much it improves each stat ... am I trading raw damage for -20 agility"):
+-- Stat by stat, new item minus what it replaces (requirement 2026-11-14: show
+-- the change per stat, e.g. raw damage gained against -20 agility):
 -- { {label, delta} }, damage per second first, then the stats this class
 -- weighs most. Armor and DPS keep one decimal.
 M.STAT_LABEL = {
@@ -364,7 +364,7 @@ function M:Verdict(link)
     return string.format("%s at a weapon master first%s", r.why, pct > 0 and string.format(" (+%d%%)", pct) or ""), "warn"
   end
   local pct = math.floor(r.pct + 0.5)
-  -- "fills an empty slot (Ranged (levelling))" on a belt read like the slot was Ranged (Gary's log, 2026-11-11)
+  -- "fills an empty slot (Ranged (levelling))" on a belt read like the slot was Ranged (log 2026-11-11)
   if not r.why and r.empty and r.new > 0 then
     local name = M.SLOT_NAMES[r.slot]
     return name and ("fills your empty " .. name .. " slot") or "fills an empty slot", "good"

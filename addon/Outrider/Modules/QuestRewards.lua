@@ -73,7 +73,7 @@ end
 function M:ScanBags()
   if not self:Settings().bagToasts or C.InCombat() or C.Call("IsInInstance") or not ns.GearScore then return end
   -- Each upgrade is announced once per character, across reloads and logins
-  -- (Gary, 2026-11-18: the same items popped up after every /reload).
+  -- (bug 2026-11-18: the same items popped up after every /reload).
   local s = self:Settings()
   if type(s.toastedUpgrades) ~= "table" then s.toastedUpgrades = {} end
   self.toasted = s.toastedUpgrades

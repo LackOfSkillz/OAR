@@ -1,5 +1,5 @@
--- Modules/SpellCheck.lua  (chat spell check, Gary's request 2026-11-11)
--- While Gary types in a chat box, finished words are checked against the
+-- Modules/SpellCheck.lua  (chat spell check, owner request 2026-11-11)
+-- While the player types in a chat box, finished words are checked against the
 -- English word list addon Outrider_Data_Words (SCOWL size 60, US + GB,
 -- loaded on demand the first time a chat box opens; D12). A small strip
 -- above the chat box shows the first unknown word with up to 3 suggestions
@@ -7,10 +7,10 @@
 -- sent: Enter stays Gary's.
 -- Not checked: slash commands (lines starting with "/"), links, words under
 -- 3 letters, ALL-CAPS (LFG, WTS), words with digits, and the word still
--- being typed (it is checked once Gary pauses for a second). Capitalized
--- words are checked too (Gary reported "Hello Wolrd" was missed); names of
+-- being typed (it is checked once the player pauses for a second). Capitalized
+-- words are checked too (bug report: "Hello Wolrd" was missed); names of
 -- people in chat are known, and Add teaches any other name.
--- Known extras: Gary's own words (/ride spell add <word>, or Add), common
+-- Known extras: the player's own words (/ride spell add <word>, or Add), common
 -- game chat slang, the names of people talking in chat, and any word seen
 -- in other people's chat 3 times (learned per session).
 -- Without the word list the module does nothing.
@@ -77,7 +77,7 @@ function M:Known(word)
 end
 
 -- { {word, s, e} } unknown words in text; the last word only when
--- includeLast (Gary paused typing) or it is followed by a space/punctuation.
+-- includeLast (the player paused typing) or it is followed by a space/punctuation.
 function M:Check(text, includeLast)
   local out = {}
   if type(text) ~= "string" or text == "" or text:sub(1, 1) == "/" or C.IsSecret(text) then return out end

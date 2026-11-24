@@ -1,7 +1,7 @@
 -- Modules/SharedData.lua
--- Family installs start with what Gary's Outrider already learned (Gary,
--- 2026-11-14: "my daughters want a copy ... all the db info needs to
--- transfer"). When the Outrider_Data_Shared addon is installed (made by
+-- Family installs start with what the owner's Outrider already learned
+-- (requirement 2026-11-14: family copies get all the database info
+-- transferred). When the Outrider_Data_Shared addon is installed (made by
 -- tools/export_shared.lua, packed by tools/family.ps1), its world knowledge
 -- is merged into this account's ns.db.global once per export version:
 --   * anything this account doesn't have yet is copied in;

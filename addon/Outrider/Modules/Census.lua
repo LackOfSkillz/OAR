@@ -1,5 +1,5 @@
 -- Modules/Census.lua
--- Who's playing on this realm (Gary, 2026-11-17): the most common level,
+-- Who's playing on this realm (requirement 2026-11-17): the most common level,
 -- class, race and profession, and the highest level seen so far.
 -- Sources, all official and read-only:
 --   * /who results (WHO_LIST_UPDATE): level, class, race, guild, zone. The
@@ -174,8 +174,8 @@ function M:Classes()
   return out
 end
 
--- A new count (Gary, 2026-11-17: "it's giving me a lot of the low level
--- players"). Top level first, in bands that get narrower as levels get
+-- A new count (bug 2026-11-17: results were dominated by low-level
+-- players). Top level first, in bands that get narrower as levels get
 -- busier, so the first ~13 presses cover every level once. Bands that come
 -- back full (50+) are split, but those refinements wait at the END of the
 -- queue: the overview always finishes first, extra presses only add detail.
@@ -298,7 +298,7 @@ function M:OnWho()
 end
 
 -- ------------------------------------------------------------------ people
--- People page (Gary, 2026-11-17): find a player, whisper them,
+-- People page (requirement 2026-11-17): find a player, whisper them,
 -- invite them to your group or guild; a catalog of guilds; /who for a guild
 -- or a zone. Every action is Gary's click; whispers only open the chat box
 -- (he types and sends).

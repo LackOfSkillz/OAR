@@ -1,6 +1,6 @@
 -- Modules/AHBuy.lua
--- Buying from Outrider's auction panels (Gary, 2026-11-14: "one click buy ...
--- I click on it"). Blizzard needs a click for every purchase, so a Buy
+-- Buying from Outrider's auction panels with one click per item (requirement
+-- 2026-11-14). Blizzard needs a click for every purchase, so a Buy
 -- click queues the item, Outrider looks up the cheapest listing by itself,
 -- and a confirm bar beside the auction window shows "Buy <item> for <price>":
 -- that click buys it, then the next queued item is looked up.
@@ -61,7 +61,7 @@ function M:Next()
 end
 
 -- The cheapest listing someone else posted for an item, by price per item
--- (Gary, 2026-11-20: "make sure it buys the lowest price"; a listing of 2 at
+-- (requirement 2026-11-20: always buy the lowest unit price; a listing of 2 at
 -- 3s is cheaper per item than 1 at 2s): { auctionID, price, n } or nil.
 -- Every result is compared, whatever order the game sends them in.
 function M.Cheapest(itemKey)
@@ -95,7 +95,7 @@ function M.NeedMore(e)
 end
 
 -- ------------------------------------------------------------ one click
--- (Gary, 2026-11-20: "I push the buy button once, and it actually buys it.")
+-- (requirement 2026-11-20: one press of the buy button completes the purchase.)
 -- The game buys only from a fresh click, and it needs the listing first. So
 -- the listing is looked up before the click: single items for the cards on
 -- screen, one search at a time (looking is free, only buying needs a click);
@@ -255,8 +255,8 @@ end
 -- The confirm click. The purchase goes out, then Outrider waits for the
 -- game's answer (bought, or why not) before it looks up the next item:
 -- sending the next search while a purchase was still in flight could make
--- the auction house refuse one of them (Gary, 2026-11-20: "auction house
--- errors after I purchased something"). Every answer goes to the log.
+-- the auction house refuse one of them (bug 2026-11-20: auction house errors
+-- right after a purchase). Every answer goes to the log.
 M.DONE_WAIT = 5
 function M:Confirm()
   local e, q = self.current, self.quote

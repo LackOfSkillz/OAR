@@ -1,4 +1,4 @@
--- Modules/BuffRow.lua  (Gary, 2026-11-19: "capture all of the useful features"
+-- Modules/BuffRow.lua  (requirement 2026-11-19: cover the useful features
 -- from the macro addons we looked at; idea from MacroKit, written our own way)
 -- A small row of icons above your action bars for your own self-buffs that are
 -- missing or about to run out. Each icon is a secure button: clicking it casts

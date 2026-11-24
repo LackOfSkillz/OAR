@@ -16,8 +16,8 @@ end
 UI.Text = text
 
 -- ------------------------------------------------------------ tooltips
--- Every control explains itself on hover (Gary, 2026-11-16: "we need tool
--- tips for everything"). UI.Tip(frame, title, body) adds one; buttons,
+-- Every control explains itself on hover (requirement 2026-11-16: tooltips
+-- for everything). UI.Tip(frame, title, body) adds one; buttons,
 -- checkboxes and chips look theirs up by label in ns.Tips.controls (UI/Tips.lua)
 -- when they are made, so one table covers every page. Labels with no tip
 -- are recorded in UI.untipped (the tests list them).
@@ -92,7 +92,7 @@ end
 
 -- Movable window with title bar and close button. pos = table to persist
 -- { point, x, y } (usually a per-character settings table).
--- Keep a window inside the screen (Gary, 2026-11-23: with "Larger windows"
+-- Keep a window inside the screen (bug 2026-11-23: with "Larger windows"
 -- the hub was scaled past the bottom of the screen, resize grip and all).
 -- First a window that can change size (f.FitSize, the hub) shrinks to fit;
 -- then any window still too big for the screen at its scale is scaled down
@@ -335,7 +335,7 @@ function UI:TextDialog(title, body, mode, onAccept, auto)
   local d = self.dialog
   if not d then
     d = self:Window("Outrider_TextDialog", title, 520, 300)
-    -- above the hub and its pages (Gary's screenshot, 2026-11-21: the report
+    -- above the hub and its pages (screenshot 2026-11-21: the report
     -- page's text boxes drew over the copy box)
     d:SetFrameStrata("FULLSCREEN_DIALOG")
     if d.SetToplevel then d:SetToplevel(true) end
@@ -365,8 +365,8 @@ function UI:TextDialog(title, body, mode, onAccept, auto)
     d.accept:Hide()
     d.edit:HighlightText()
     -- WoW keeps the clipboard for Blizzard's own code (CopyToClipboard is
-    -- protected, Forever 1.60.1), so Gary's Ctrl+C does the copy; the box
-    -- then closes by itself (Gary, 2026-11-16: "the button should copy it").
+    -- protected, Forever 1.60.1), so the player's Ctrl+C does the copy; the box
+    -- then closes by itself (requirement 2026-11-16: the button should copy it).
     -- onAccept, when given, runs after the copy.
     d.edit:SetScript("OnKeyDown", function(_, key)
       local ctrl = ns.Compat.Call("IsControlKeyDown") or ns.Compat.Call("IsMetaKeyDown")

@@ -1,5 +1,5 @@
--- Modules/Trail.lua  (breadcrumbs; Gary, 2026-11-15: lost in Dalaran, "put
--- some breadcrumbs on the map as to where I'm supposed to walk")
+-- Modules/Trail.lua  (breadcrumbs; requirement 2026-11-15, after getting lost
+-- in Dalaran: breadcrumbs on the map showing where to walk)
 -- Outrider remembers where you walk and draws it on the world map and the
 -- minimap as small gold dots, so a way out of a city (or any path) you have
 -- walked once is there for good, for every character on the account.

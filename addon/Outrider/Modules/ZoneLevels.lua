@@ -1,6 +1,6 @@
--- Modules/ZoneLevels.lua  (Gary, 2026-11-16: "a world map overlay that tells
--- me what level the area is, so I can tell: I'm level 15, I want to go to
--- this area to level up")
+-- Modules/ZoneLevels.lua  (requirement 2026-11-16: a world map overlay with
+-- each area's level, so a level 15 player can pick an area to
+-- level up in)
 -- On a continent map every zone gets its level range over it ("Westfall
 -- 10-20"), coloured for this character: green = your level, yellow = a few
 -- levels up, red = too high, grey = too low for XP. On a zone map the
@@ -13,14 +13,14 @@
 -- The range comes from the busiest WINDOW of creature levels (most of a
 -- zone's creatures sit within a dozen levels), then its 10th to 90th
 -- percentile: city guards at 55, a stray dragon or level 1 pets don't
--- stretch it (Gary's first look, 2026-11-16: Elwynn read 3-30). Rares and
+-- stretch it (first test, 2026-11-16: Elwynn read 3-30). Rares and
 -- bosses are left out; capital cities get no label.
 -- On a zone map the zone is cut into a GRID x GRID grid and every part with
 -- enough creatures gets its own small range where they spawn ("5-7"), so
--- the areas inside a zone show too (Gary asked the same day). Labels are our own font strings on the map canvas,
+-- the areas inside a zone show too (requested the same day). Labels are our own font strings on the map canvas,
 -- drawn above Blizzard's pins (the art of an explored area is a pin and hid
--- the numbers; Gary, 2026-11-16: "once an area is discovered, the numbers go
--- away"); nothing of Blizzard's is changed. Data only.
+-- the numbers; bug 2026-11-16: once an area was discovered, the numbers went
+-- away); nothing of Blizzard's is changed. Data only.
 
 local _, ns = ...
 local C = ns.Compat
@@ -208,7 +208,7 @@ function M:Labels(mapID)
         end
       end
     end
-    -- a world of one zone (Zephras Isle is its own continent: Gary,
+    -- a world of one zone (Zephras Isle is its own continent: bug
     -- 2026-11-21, no levels on its map): label it like a zone
     if #out == 0 then asZone() end
   end
@@ -291,7 +291,7 @@ function M:Refresh()
     local f = label(self, canvas, i)
     f:SetFrameLevel(top)
     f.data = l
-    -- a size up (Gary, 2026-11-16: "slightly bigger, easier to see")
+    -- a size up (owner request 2026-11-16: slightly bigger, easier to see)
     if f.text.SetFontObject then f.text:SetFontObject(l.area and "GameFontNormal" or "GameFontNormalLarge") end
     if f.range.SetFontObject then f.range:SetFontObject("GameFontNormalLarge") end
     f:SetSize(l.area and 70 or 260, l.area and 20 or 40)

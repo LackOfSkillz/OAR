@@ -1,5 +1,5 @@
 -- Modules/Crafter.lua
--- One-press profession macros (Gary, 2026-11-12): "Cook", "Brew", "Herb".
+-- One-press profession macros (requirement 2026-11-12): "Cook", "Brew", "Herb".
 -- Each press of the macro runs "/ride make <Profession>", which:
 --   * opens that profession's window if it isn't open (press again to make);
 --   * picks the learned recipe you have every reagent for, best skill-up
@@ -37,7 +37,7 @@ function M:Owned()
   if not ok then return out end
   -- five fixed slots (prof 1, prof 2, archaeology, fishing, cooking); Forever
   -- has no archaeology, so slot 3 is empty: ipairs stopped there and Fishing
-  -- and Cooking never showed (Gary, 2026-11-23: "I just got fishing")
+  -- and Cooking never showed (bug 2026-11-23, seen right after learning Fishing)
   local slots = { a, b, c, d, e }
   for i = 1, 5 do
     local idx = slots[i]
@@ -187,7 +187,7 @@ function M:Make(prof)
       return "opened"
     end
   end
-  -- never stack up campfires (Gary, 2026-11-14): one already in the bags is placed instead
+  -- never stack up campfires (requirement 2026-11-14): one already in the bags is placed instead
   if self.onlyRecipe == "Basic Campfire" and ns.ProfTrainer and ns.ProfTrainer:FireItem() then
     ns.Print("you already have a campfire in your bags: the next click places it")
     self:Info("make %s: campfire already in the bags, not making another", prof)
@@ -276,7 +276,7 @@ ns.AddCommand("make", "[Profession]  make what you have ingredients for (no name
     -- "Cooking train": only recipes that still give skill (CookTrainer's button)
     local prof, train = arg:match("^(.-)%s+train$")
     -- "Cooking fire": craft one Basic Campfire, a Cooking recipe on Forever
-    -- (not a spell, so /cast can't build it; Gary, 2026-11-14)
+    -- (not a spell, so /cast can't build it; observed 2026-11-14)
     local fireProf = arg:match("^(.-)%s+fire$")
     M.trainOnly = prof ~= nil
     M.onlyRecipe = fireProf and "Basic Campfire" or nil

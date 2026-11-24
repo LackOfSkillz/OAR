@@ -1,6 +1,6 @@
--- Modules/ClassFight.lua  (Fight macros for the other six classes; Gary, 2026-11-16:
--- "exactly the same thing for every single class ... drag the macro to slot 1
--- and slot 2 ... throughout their characters' entire life cycle")
+-- Modules/ClassFight.lua  (Fight macros for the other six classes; requirement 2026-11-16:
+-- the same as the hunter for every class, macros dragged to slot 1 and slot 2
+-- and kept current for the character's whole levelling life)
 -- Same rules as the hunter's (Modules/HunterFight.lua does the writing):
 -- built only from spells this character knows, rewritten out of combat when
 -- a spell is learned, gear changes, a buff goes on or off, or (druid) the
@@ -257,7 +257,7 @@ function CASTER.PALADIN(kind, add)
   -- On Forever Judgement doesn't use up the Seal (research 2026-11-18), so
   -- re-sealing after each Judgement wasted a global cooldown and mana: Seal
   -- once per fight, Judgement whenever it's off cooldown.
-  -- Gary, 2026-11-21 (Gul's fights): ",null" doesn't hold on Forever, the
+  -- Field test 2026-11-21 (Gul's fights): ",null" doesn't hold on Forever, the
   -- sequence wraps and the Seal was recast every press (25 casts in 15 s). A
   -- sequence of real spells parks on Judgement while it cools down: Seal, then
   -- three Judgements (about 30 s, the Seal's length), then Seal again.

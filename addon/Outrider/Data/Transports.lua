@@ -1,6 +1,6 @@
 -- Data/Transports.lua
 -- Boats, zeppelins, skycutters, trams and fixed portals on WoW Forever, from
--- community guides (Gary chose "guides + learn", 2026-11-13). Zones by NAME;
+-- community guides, then learned in game (approach chosen 2026-11-13). Zones by NAME;
 -- the game turns names into map IDs at runtime (no IDs typed in by hand).
 -- Dock coordinates only where a guide states them; otherwise the zone is
 -- known but not the dock, and Outrider learns the exact spot the first time
@@ -22,8 +22,8 @@ local MGG = "method.gg (read 2026-11-16)"
 local WH = "wowhead.com Forever zone guides (read 2026-11-21)"
 -- Zeppelin masters and shipmasters stand on the towers and docks: their spots
 -- come from QuestieDB's Forever NPC data (read 2026-11-21) and "npc" lets
--- Outrider's own sighting of that NPC move the spot (Gary, 2026-11-21: the
--- arrow sent him to the middle of Durotar for the Undercity zeppelin).
+-- Outrider's own sighting of that NPC move the spot (bug 2026-11-21: the
+-- arrow pointed to the middle of Durotar for the Undercity zeppelin).
 local QDB = "QuestieDB Forever NPC spawns (read 2026-11-21)"
 
 ns.Data:Register("link", "forever-guides", {

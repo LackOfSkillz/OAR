@@ -1,8 +1,8 @@
 -- Modules/QuestsNear.lua  (Quests, "Near me": the first tab of Quests)
--- Gary, 2026-11-21: "I'm near Undercity but the quest page is sending me way
--- back to Orgrimmar ... add a default tab: quests near me that the player
--- should do next based on level, equipment, location, XP per hour and gold
--- per hour."
+-- Requirement 2026-11-21: near Undercity the quest page pointed all the way
+-- back to Orgrimmar; the default tab lists quests near the player to do
+-- next, based on level, equipment, location, XP per hour and gold
+-- per hour.
 -- One ranked list of what's worth doing next, from where you stand:
 --   * quests in your log: the time to their nearest objective (or turn-in)
 --   * quests you can pick up: from the quest pack's givers, for your level,

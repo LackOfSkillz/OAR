@@ -1,4 +1,4 @@
--- Data/Macros_More.lua  (Gary, 2026-11-19: "use the ideas to write our own version")
+-- Data/Macros_More.lua  (ideas reused, text written fresh; requirement 2026-11-19)
 -- Outrider's own macros for the spells our first packs left out, every class.
 -- Written by Outrider; the ideas come from looking at the Forever macro addons
 -- and sites (MacroKit, Arcane Shortcuts, foreverwow.com), none of their text.

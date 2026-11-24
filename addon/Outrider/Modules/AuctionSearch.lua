@@ -1,6 +1,6 @@
 -- Modules/AuctionSearch.lua
--- Free searches and shopping lists at the auction house (Gary, 2026-11-22:
--- match Auctionator). Two views in the shopping window:
+-- Free searches and shopping lists at the auction house (requirement 2026-11-22:
+-- parity with Auctionator). Two views in the shopping window:
 --   * Search: type what you want, with plain extras Outrider understands:
 --       "linen cloth"            names containing it
 --       "\"Linen Cloth\""        that exact name

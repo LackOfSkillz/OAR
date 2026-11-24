@@ -1,7 +1,7 @@
 -- Modules/PriceHistory.lua
--- Price history with graphs, and the best time to list (Gary, 2026-11-24:
--- "price tracking of items with graphs over time and best time of
--- day/week/month to list an item").
+-- Price history with graphs, and the best time to list (requirement 2026-11-24:
+-- track item prices with graphs over time and the best time of
+-- day/week/month to list an item).
 --
 -- What is measured: the cheapest listing on the auction house each time
 -- Outrider sees an item (a full scan, browsing, searching, the sell tab), and

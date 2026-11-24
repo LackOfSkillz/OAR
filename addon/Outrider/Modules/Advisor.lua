@@ -1,7 +1,7 @@
 -- Modules/Advisor.lua  (P9-02 /ride ask and the Advisor tab)
 -- /ride ask (out of combat): takes a fresh snapshot and shows it as a code
 -- to copy (Ctrl+C); Claude answers with an advice code that Gary pastes with
--- the tab's "Paste advice" button. No reload (Gary, 2026-11-11). The older
+-- the tab's "Paste advice" button. No reload needed (requirement 2026-11-11). The older
 -- disk route stays: /ride ask reload, then Advice.lua after a /reload.
 -- Advisor hub tab: the items ns.Advice:Load() accepted (whitelisted actions
 -- only), each with title, why, confidence and a "Do it" button. Buttons only
@@ -229,7 +229,7 @@ ns.Hub:AddTab("advisor", "Advisor", function(p)
   end
   placeSteps()
   if p.HookScript then p:HookScript("OnSizeChanged", placeSteps) end
-  -- AI Advisor switch (Gary, 2026-11-19): turns the private session recorder
+  -- AI Advisor switch (owner request 2026-11-19): turns the private session recorder
   -- and next-hour plan on or off here instead of /ride xp60 and
   -- /ride nextsession. Only shown when those modules are installed.
   p.coach = CreateFrame("Frame", nil, p)

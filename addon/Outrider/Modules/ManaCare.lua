@@ -1,6 +1,6 @@
--- Modules/ManaCare.lua  (Gary, 2026-11-22: "the healing macro should
--- incorporate mana restoration ... only take mana potions if mana is below a
--- certain level")
+-- Modules/ManaCare.lua  (requirement 2026-11-22: the healing macro should
+-- include mana restoration, using mana potions only below a
+-- set mana level)
 -- A macro can't see your mana (no [mana<30] condition exists; FOREVER_CONSTRAINTS),
 -- and Outrider may not press anything for you (hard rule 1). So, the legal way:
 --   * the best mana potion in your bags goes on Alt of the Heal key (and Ctrl

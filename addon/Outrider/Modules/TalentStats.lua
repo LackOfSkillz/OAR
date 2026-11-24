@@ -1,7 +1,7 @@
 -- Modules/TalentStats.lua
--- What a talent build gives, added up (Gary, 2026-11-23: "it should give
--- them their stats at different level ranges based on the build they
--- select"). Phase 2 of docs/TALENT_BUILDS_RESEARCH_2026-11-23.md.
+-- What a talent build gives, added up (requirement 2026-11-23: show the
+-- stats at different level ranges for the selected
+-- build). Phase 2 of docs/TALENT_BUILDS_RESEARCH_2026-11-23.md.
 --   * Each talent's own description from the client (C_Traits.GetTraitDescription
 --     for the rank, else the spell's description) is read for the numbers it
 --     gives: crit, hit, stats in %, damage and healing in %, mana cost, armor,
@@ -72,7 +72,7 @@ function M.Parse(text)
 end
 
 -- What one rank of a talent gives: { [key] = value }; nil when nothing matched.
--- Gary, 2026-11-23: a Balance build said "+74% less Mana cost". A text that
+-- Bug 2026-11-23: a Balance build said "+74% less Mana cost". A text that
 -- already shows a talent at its rank (Moonglow 3/3: "by 9%") was multiplied
 -- by the rank again. Now: the client's rank 1 and rank 2 texts are compared
 -- when it has them (rank 1's number is one rank); a single text is read as

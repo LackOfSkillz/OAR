@@ -39,7 +39,7 @@ M.TEMPLATE = table.concat({
 }, "\n")
 
 -- Solo (no pet at all): the macro Torrant tamed Mystmane with on 2026-11-11,
--- back for Khreos at Gary's ask (2026-11-15). One press, one action:
+-- back for Khreos on request (2026-11-15). One press, one action:
 --   out of combat  target her, Concussive Shot pulls and slows
 --   in combat      Tame Beast; if her stun breaks it: Wing Clip, then Tame
 --                  Beast again (the sequence keeps alternating)
@@ -56,7 +56,7 @@ M.SOLO = table.concat({
   "/castsequence [combat] reset=combat/shift Tame Beast, Wing Clip",
 }, "\n")
 
--- Trap (Gary, 2026-11-17, level 20 with Freezing Trap): no pet. One press, one action:
+-- Trap (requirement 2026-11-17, level 20 with Freezing Trap): no pet. One press, one action:
 --   out of combat  1st press: Freezing Trap at your feet
 --                  2nd press: Concussive Shot pulls her onto the trap (frozen)
 --   in combat      Tame Beast; if her stun breaks it: Wing Clip slows her,

@@ -1,5 +1,5 @@
 -- Modules/Disenchant.lua
--- "Disenchant" value on gear tooltips (Gary, 2026-11-22: match Auctionator).
+-- "Disenchant" value on gear tooltips (requirement 2026-11-22: match Auctionator).
 -- What disenchanting a green or blue weapon or armor piece likely gives, at
 -- the auction house prices Outrider has seen for those materials.
 -- Source: the classic disenchanting tables (Wowpedia, "Disenchanting

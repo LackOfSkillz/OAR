@@ -28,7 +28,7 @@ local EVENTS = {
 }
 
 -- Innkeepers, guild masters and others mostly open a plain chat (gossip)
--- window, so on GOSSIP_SHOW the NPC's title decides (Gary, 2026-11-11).
+-- window, so on GOSSIP_SHOW the NPC's title decides (decided 2026-11-11).
 -- English titles; anything not matched is left to Discovery.
 local TITLE_KINDS = {
   { "innkeeper", "innkeeper" }, { "guild master", "guild_master" }, { "guild registrar", "guild_master" },
@@ -98,7 +98,7 @@ function M:Backfill()
   return added
 end
 
--- Flight points straight from the client (Gary's choice, 2026-11-11): the
+-- Flight points straight from the client (owner's choice, 2026-11-11): the
 -- game knows every node on a map with its position, discovered or not, so
 -- these need no discovery. Faction: Enum.FlightPathFaction 0 neutral,
 -- 1 Horde, 2 Alliance. Stored as "taxi-<nodeID>", source "client".
@@ -146,7 +146,7 @@ end
 -- An NPC seen up close (Discovery): its places move to where it stands, and
 -- a service NPC whose title says what it does (Fishing Trainer, Innkeeper)
 -- becomes a place, so your sighting beats the data pack on the map and in
--- "nearest" (Gary, 2026-11-20: "outrider should adjust the poi").
+-- "nearest" (requirement 2026-11-20: Outrider adjusts the POI itself).
 function M:OnNpcPlaced(_, npcID, e)
   if type(npcID) ~= "number" or type(e) ~= "table" or not (e.mapID and e.x and e.y) then return end
   local prefix, found = "npc-" .. npcID .. "-", false

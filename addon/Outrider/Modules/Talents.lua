@@ -1,6 +1,6 @@
 -- Modules/Talents.lua
--- Talent advisor (Gary, 2026-11-16: "build a talent tree recommendation into
--- outrider ... make it the best available").
+-- Talent advisor (requirement 2026-11-16: a talent tree recommendation built
+-- into Outrider, aiming for the best available).
 --   * Reads this character's talent trees from the client (names, ranks,
 --     tiers, prerequisites) at login and whenever points change, and logs
 --     the tree once so names can be checked against the build data.

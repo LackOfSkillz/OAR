@@ -1,7 +1,7 @@
 -- Modules/TalentSim.lua
--- Numbers per talent build, and a ranking (Gary, 2026-11-23: "a damage/heal/
--- tank sim ... and outrider should be able to analyze builds and recommend
--- the best builds"). Phases 3 and 4 of docs/TALENT_BUILDS_RESEARCH_2026-11-23.md.
+-- Numbers per talent build, and a ranking (requirement 2026-11-23: a damage/heal/
+-- tank sim, so Outrider can analyze builds and recommend
+-- the best ones). Phases 3 and 4 of docs/TALENT_BUILDS_RESEARCH_2026-11-23.md.
 --   * Estimate: one minute against a dummy with the spells Outrider's own
 --     Fight (or Heal) key casts, in its order: damage over time when it has
 --     run out, cooldowns when ready, the filler between. Each spell's numbers

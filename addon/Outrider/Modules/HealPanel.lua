@@ -1,11 +1,11 @@
--- Modules/HealPanel.lua  (click-to-heal party bars; Gary, 2026-11-16)
+-- Modules/HealPanel.lua  (click-to-heal party bars; requirement 2026-11-16)
 -- A small panel of health bars for the group, like HealBot: a click on a
 -- bar casts a heal on that player. Each bar is a SecureUnitButtonTemplate
 -- button with "unit" and "type1"/"spell1" attributes, so the click itself
 -- casts: Outrider never casts anything (hard rule 1).
 --
--- Assigned players (Gary: "in larger raids you get assigned 2 or 3 people
--- ... select the members you're focused on and ignore everybody else"):
+-- Assigned players (larger raids assign a healer 2 or 3 people: select the
+-- members to focus on and hide everybody else):
 -- names picked out of combat on the Class page or with /ride heal assign.
 -- With any assigned player in the group, the panel shows only them (and
 -- you, unless switched off).

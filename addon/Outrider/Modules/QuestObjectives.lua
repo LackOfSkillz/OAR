@@ -1,6 +1,6 @@
 -- Modules/QuestObjectives.lua
--- Where your quests' objectives are (Gary, 2026-11-17: "build all of those
--- quests into outrider by using the information in the Questie database").
+-- Where your quests' objectives are (requirement 2026-11-17: build every quest
+-- into Outrider from the information in the Questie database).
 -- The private pack Outrider_Data_Quests (tools/import_questie_quests.py, D10)
 -- lists every quest's mobs, objects, items and places to explore with their
 -- spawn points. For the quests in your log, the unfinished objectives become
@@ -10,8 +10,8 @@
 -- them), but the moment your mouse passes over one your quest needs (its
 -- name in the tooltip), a pop-up says so and the spot is saved as seen on
 -- Forever (verified), so the next search starts there.
--- Questie parity (Gary, 2026-11-17: "as full featured as Questie for quest
--- items and areas"):
+-- Questie parity (requirement 2026-11-17: as full featured as Questie for quest
+-- items and areas):
 --   * "?" turn-in pins where a finished quest is handed in
 --   * "!" pins on objects that give quests (wanted posters...), filtered like
 --     NPC quest givers (level, faction, class, race, quests done and needed)
@@ -72,7 +72,7 @@ end
 
 -- A quest's objectives with a trustworthy "finished": the client's flag must
 -- agree with the counts (numFulfilled/numRequired, else the "1/5" in the
--- text). Gary, 2026-11-18: with 1 of 5 Crisp Spider Meat the quest showed as
+-- text). Bug 2026-11-18: with 1 of 5 Crisp Spider Meat the quest showed as
 -- done; a count below what's needed is never finished, whatever a flag says.
 local function counts(e, text)
   local have, need = tonumber(readable(e.numFulfilled)), tonumber(readable(e.numRequired))
@@ -418,7 +418,7 @@ function M:Nearest(questID)
   if W and W.PlayerWorldPos then cont, wx, wy = W.PlayerWorldPos() end
   local best, bestD
   -- distance in yards: on your map from map spots, elsewhere from world
-  -- positions (Gary, 2026-11-21: by Undercity, "Go to nearest" sent him back
+  -- positions (bug 2026-11-21: by Undercity, "Go to nearest" pointed back
   -- to Orgrimmar because every other map counted the same); another
   -- continent counts as very far
   local function consider(mapID, x, y, label)
@@ -465,7 +465,7 @@ function M:Nearest(questID)
   end
 end
 
--- Track the quest the way clicking it on the world map does (Gary,
+-- Track the quest the way clicking it on the world map does (bug
 -- 2026-11-18: the tracker click showed no arrow or area on the minimap): the
 -- game's own super-tracking draws the arrow and the shaded objective area from
 -- Forever's own quest data, and moves to the turn-in when the quest is done.
@@ -496,8 +496,8 @@ end
 function M:Guide(questID)
   local spot = self:Nearest(questID)
   -- in another zone or on another continent: plan the trip (flight masters,
-  -- zeppelins, skyboats, boats) and let the arrow lead step by step (Gary,
-  -- 2026-11-21: Exploring the Horde sends him to Undercity and the click did
+  -- zeppelins, skyboats, boats) and let the arrow lead step by step (bug
+  -- 2026-11-21: Exploring the Horde leads to Undercity and the click did
   -- nothing). The game's own quest arrow can't cross continents.
   if spot and not M.SameZone(spot) and ns.Journey and ns.Travel then
     local target = ns.Travel.Point(spot.mapID, spot.x, spot.y, spot.label)
@@ -522,8 +522,8 @@ function M:Guide(questID)
 end
 
 -- When a quest becomes ready, move the arrow to its turn-in right away
--- (Gary, 2026-11-18). Only when the arrow is free or still on one of our
--- quest spots; a waypoint Gary set himself (/way, a map note, a rare) stays.
+-- (requirement 2026-11-18). Only when the arrow is free or still on one of our
+-- quest spots; a waypoint the player set (/way, a map note, a rare) stays.
 function M:CheckReady()
   local now = {}
   for _, q in ipairs(M.Log()) do if q.complete then now[q.questID] = q end end

@@ -1,10 +1,10 @@
 -- Data/Money.lua
--- Ways to earn gold before 60 on WoW Forever (Gary, 2026-11-14: "build a guide
--- that leads people to the best way to make money at their level and for
--- their profession"). Guide facts in our own words, no coordinates. Gold per
+-- Ways to earn gold before 60 on WoW Forever: a guide to the best way to make
+-- money for a character's level and professions (requirement 2026-11-14).
+-- Guide facts in our own words, no coordinates. Gold per
 -- hour (copper) only where a guide reports one; those are beta or first-week
 -- live reports, so everything is verified = false. MoneyGuide replaces a
--- guide's number with Gary's own measured gold per hour once he has done that
+-- guide's number with the player's own measured gold per hour once they have done that
 -- kind of earning for 15 minutes.
 -- category: what loot measures it (skin, herb, ore, fish, cloth, mob, craft)
 -- Sources (read 2026-11-14):

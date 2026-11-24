@@ -1,5 +1,5 @@
 -- UI/MapView.lua
--- A live map inside Outrider's own windows (Gary, 2026-11-24, after FojjiCore's
+-- A live map inside Outrider's own windows (requirement 2026-11-24, after FojjiCore's
 -- dungeon journal map). It draws the game's own map art for any map (zone,
 -- city, continent, dungeon level) from C_Map.GetMapArtLayers +
 -- C_Map.GetMapArtLayerTextures, every explorable area on top (the same data

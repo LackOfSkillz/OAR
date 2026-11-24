@@ -1,6 +1,6 @@
--- Modules/NetTest.lua  (Gary, 2026-11-21: "is there a way Outrider could
--- communicate with other Outrider users without being in the same party or
--- guild ... let's test it")
+-- Modules/NetTest.lua  (experiment 2026-11-21: can Outrider users
+-- communicate without being in the same party or
+-- guild? This tests it)
 -- A TEST of an Outrider-wide network through a hidden chat channel. On
 -- Classic clients Blizzard switched addon messages off in custom channels
 -- (FOREVER_CONSTRAINTS C11, reported, never measured on Forever); this finds

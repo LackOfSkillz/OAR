@@ -1,5 +1,5 @@
 -- UI/Art.lua
--- Pictures for the Expedition look (Gary, 2026-11-15). Custom art made by Gary
+-- Pictures for the Expedition look (design choice 2026-11-15). Custom art made by Gary
 -- with GPT (docs/ART_REQUESTS.md) lives in Art\ as TGA files; Art\Manifest.lua
 -- (written by tools/art.py) says which ones are installed. Anything missing
 -- falls back to art that ships with the game, so the page never shows a blank

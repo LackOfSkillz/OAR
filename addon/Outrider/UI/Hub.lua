@@ -17,8 +17,8 @@ ns.Hub = Hub
 local UI, Theme = ns.UI, ns.Theme
 
 local MAX_ROWS = 44 -- module rows built; as many show as the page has room for (tour 2026-11-19: 19 left half the page empty), the rest scroll with the mouse wheel
--- starting size; the window is resizable (Gary, 2026-11-13). Larger since
--- 2026-11-19 (Gary: "open a little larger"), never more than 90% of the screen.
+-- starting size; the window is resizable (requirement 2026-11-13). Larger since
+-- 2026-11-19 (owner request: open a little larger), never more than 90% of the screen.
 local W, H = 1280, 860
 local MIN_W, MIN_H, MAX_W, MAX_H = 860, 520, 1800, 1200
 local SIDE = 160             -- grouped sidebar on the left; pages to its right
@@ -30,8 +30,8 @@ local L = {
   noOthers = "no other characters saved yet: log in on another character once.",
 }
 
--- Where each page sits in the sidebar. Redesigned 2026-11-20 (Gary: "a more
--- logical grouping ... use all best practice ui/ux"): grouped by what you're
+-- Where each page sits in the sidebar. Redesigned 2026-11-20 (requirement: more
+-- logical grouping, UI/UX best practice): grouped by what you're
 -- doing, most-used first, Advisor / Settings / Help at the bottom. Twin pages
 -- became one sidebar entry with sub-tabs (Hub.SUBS); every old page id still
 -- opens (links, commands, the remembered page), on its host's sub-tab.
@@ -75,7 +75,7 @@ Hub.SUBS = {
   settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
   help      = { { "help", "Help" }, { "feedback", "Report or idea" }, { "commands", "All commands" } },
   dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" }, { "dungeonmap", "Dungeon maps" } },
-  -- one Professions page (Gary, 2026-11-21: "combine the professions"):
+  -- one Professions page (requirement 2026-11-21: combine the professions):
   -- what to make and where to get it first, then the planner, fishing, tools
   professions = { { "professions", "Your professions" }, { "crafting", "Shopping list" }, { "fishing", "Fishing" }, { "fishbook", "Fish collection" }, { "profdetails", "Trainers and tools" } },
 }
@@ -425,7 +425,7 @@ function Hub:Panel(t)
       ns.Art:Set(p.scene, banner)
       if p.scene.SetAlpha then p.scene:SetAlpha(0.45) end
     end
-    -- hero (2026-11-16, Gary: "every page a custom premium feel", like What
+    -- hero (2026-11-16, requirement: every page has a custom premium feel, like What
     -- now?): the page's picture in a gold frame, the title, what the page is
     -- for, and Help on the right.
     p.hubTile = CreateFrame("Frame", nil, p, Theme:BackdropTemplate())
@@ -447,7 +447,7 @@ function Hub:Panel(t)
     p.hubSub:SetJustifyH("LEFT")
     if p.hubSub.SetWordWrap then p.hubSub:SetWordWrap(false) end
     p.hubSub:SetText(ns.Tips and ns.Tips.pages[t.id] or "")
-    -- how to use it, in numbered steps (Gary, 2026-11-20: an 8th grader gets the page at a glance)
+    -- how to use it, in numbered steps (requirement 2026-11-20: an 8th grader gets the page at a glance)
     local steps = ns.Tips and ns.Tips.steps and ns.Tips.steps[t.id]
     if steps then
       p.hubSteps = {}
@@ -623,7 +623,7 @@ Hub:AddTab("overview", L.overview, function(p)
       { cap = "Layer", value = id and label or "—", note = id and string.format("%.0f%% sure", conf * 100) or "learning from nearby mobs" },
       { cap = "Build", value = tostring(ns.build):match("^(%d%d%d%d%d%d%d%d)") or tostring(ns.build), note = tostring(ns.build):match("%-(%x+)$") },
     })
-    -- counted, not named (Gary, 2026-11-20: no other addon's name in Outrider)
+    -- counted, not named (requirement 2026-11-20: no other addon's name in Outrider)
     local n = #ns.Conflicts:Detect()
     self.addons:SetText("|cfff1d58eOther addons|r   " .. (n > 0 and (n .. " found; Outrider shares or steps aside, and never needs them")
       or "none found; Outrider needs no other addon"))
@@ -839,7 +839,7 @@ Hub:AddTab("tools", L.tools, function(p)
 end, 90)
 
 -- ------------------------------------------------------------- page tour
--- Development only (Gary, 2026-11-18, D19): a screenshot of every Outrider
+-- Development only (decision 2026-11-18, D19): a screenshot of every Outrider
 -- page so Claude can review the UI. /ride tour opens the first page and shows
 -- a Next button; each click of Next saves one screenshot of what's on screen
 -- (the game's own Screenshot()), then moves on. Nothing happens without that

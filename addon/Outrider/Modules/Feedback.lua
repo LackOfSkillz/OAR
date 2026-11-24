@@ -1,6 +1,6 @@
--- Modules/Feedback.lua  (bug reports and ideas; Gary, 2026-11-21: "a player
--- using Outrider can create a report or request in the game UI and it gets
--- sent to our GitHub ... make it super easy, think average 8th grader")
+-- Modules/Feedback.lua  (bug reports and ideas; requirement 2026-11-21: a player
+-- can create a report or request in the game UI that ends up on our GitHub,
+-- simple enough for an 8th-grade reader)
 -- WoW lets an addon send nothing to the internet, so Outrider builds the
 -- report and a ready-made GitHub link; the player copies it (Ctrl+C), pastes
 -- it in a web browser and clicks Submit. Three steps on one page (Help, Report
@@ -77,7 +77,7 @@ function M.Errors(n)
   local list = ns.Errors and ns.Errors.list or {}
   for i = #list, 1, -1 do
     local e = list[i]
-    -- only Outrider's own (Gary's report carried a Blizzard chat frame error)
+    -- only Outrider's own (a field report carried a Blizzard chat frame error)
     local mine = type(e) == "table" and ((ns.Modules and ns.Modules.Get and ns.Modules:Get(e.where))
       or tostring(e.msg):find("Outrider", 1, true) or tostring(e.trace or ""):find("Outrider", 1, true))
     if mine then
@@ -280,7 +280,7 @@ ns.Hub:AddTab("feedback", "Report or idea", function(p)
     end
     local k = self.kind and K[self.kind]
     self.text.edit.hint:SetText(k and k.ask or "Pick one above first.")
-    -- the button always answers (Gary, 2026-11-21: a switched-off button
+    -- the button always answers (bug 2026-11-21: a switched-off button
     -- still looked gold and "nothing happened"): with no choice it says so
     if self.kind and self.status:GetText() and self.status:GetText():find("Pick one", 1, true) then self.status:SetText("") end
   end

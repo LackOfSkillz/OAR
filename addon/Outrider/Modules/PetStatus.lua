@@ -5,7 +5,7 @@
 --   * happiness shows only when an API for it exists; meanwhile the module
 --     logs the pet's buffs once per session so Claude can see how Forever
 --     represents happiness (auto-collected, no typing);
---   * Feed (Gary, 2026-11-13: "if I click feed it should feed my pet"): a
+--   * Feed (requirement 2026-11-13: one click on Feed feeds the pet): a
 --     secure button with "/cast Feed Pet" + "/use <food>", so one click feeds.
 --     Forever has no GetPetFoodTypes, so the diet is learned: a Feed Pet cast
 --     after a click marks that food as eaten by this pet family, a red error
@@ -272,7 +272,7 @@ function M:Build()
   local s = self:Settings()
   local f = UI:Window("Outrider_PetStatus", "Pet", 280, M.OPEN_H, s.pos)
   -- the corner button folds the panel up to its header and opens it again
-  -- (Gary, 2026-11-13: "an up or down arrow, the header stays on screen")
+  -- (requirement 2026-11-13: an up or down arrow, the header stays on screen)
   f.close.label:Hide()
   -- the title stops before the Feed button that sits in the folded header
   f.title:SetPoint("RIGHT", f.bar, "RIGHT", -100, 0)
@@ -295,7 +295,7 @@ function M:Build()
   f.focusLabel = UI.Text(c, "small", "muted") f.focusLabel:SetPoint("LEFT", f.hpMax, "RIGHT", 10, 0) f.focusLabel:SetText("Focus")
   f.focusVal = UI.Text(c, "small", "text") f.focusVal:SetPoint("LEFT", f.focusLabel, "RIGHT", 4, 0)
   -- Each block sits under the one above, so wrapped text never overlaps
-  -- (Gary, 2026-11-18 screenshot: abilities ran over the damage line and the
+  -- (screenshot 2026-11-18: abilities ran over the damage line and the
   -- Feed button over the diet). The panel grows to fit; Feed gets its own row.
   f.fight = UI.Text(c, "small", "muted") f.fight:SetPoint("TOPLEFT", f.line3, "BOTTOMLEFT", 0, -6)
   f.skills = UI.Text(c, "small", "text") f.skills:SetPoint("TOPLEFT", f.fight, "BOTTOMLEFT", 0, -4)
@@ -329,7 +329,7 @@ function M:PlaceFeed()
   if not cx then return end
   local w, h = f:GetWidth() or 220, f:GetHeight() or 120
   if self:Settings().collapsed then
-    -- folded: Feed sits in the header, left of the up/down arrow (Gary,
+    -- folded: Feed sits in the header, left of the up/down arrow (bug
     -- 2026-11-13: it covered the arrow, so the panel couldn't be opened)
     ns.SecureButtons:Place(self.feed, "TOPRIGHT", UIParent, "BOTTOMLEFT", cx + w / 2 - 30, cy + h / 2 - 5)
   else
@@ -339,8 +339,8 @@ function M:PlaceFeed()
   ns.SecureButtons:SetShown(self.feed, self:NeedsFood())
 end
 
--- Feed shows only when the pet could use food (Gary, 2026-11-18: "hide the
--- feed button til the pet needs to be fed"): happiness below Happy. When the
+-- Feed shows only when the pet could use food (requirement 2026-11-18: hide
+-- the feed button until the pet needs food): happiness below Happy. When the
 -- client gives no happiness at all, Feed stays visible, as before.
 function M:NeedsFood()
   local h = self.happiness
@@ -476,7 +476,7 @@ function M:Refresh(why)
   if type(d.speed) == "number" then fight[#fight + 1] = string.format("every %.1fs", d.speed) end
   if type(d.armor) == "number" then fight[#fight + 1] = string.format("armor %d", d.armor) end
   f.fight:SetText(table.concat(fight, ", "))
-  -- How useful is it (Gary, 2026-11-13): average damage per second from its
+  -- How useful is it (requirement 2026-11-13): average damage per second from its
   -- basic attacks, next to your own ranged weapon's. No combat log (hard
   -- rule 4), so abilities like Bite add on top of this.
   local dps = M.DPS(d.dmgLo, d.dmgHi, d.speed)
@@ -520,8 +520,8 @@ end
 -- One log line per login / pet change: Claude's view of what Forever exposes.
 function M:LogPet(d)
   if not d then self:Info("no pet") return end
-  -- attack speed and damage too (Gary, 2026-11-14: "Mystmane is supposed to
-  -- be one of the fastest bears"; wild readings all say 2.0)
+  -- attack speed and damage too (2026-11-14: Mystmane is reputed to be one
+  -- of the fastest bears; wild readings all say 2.0)
   self:Info("pet %s npcID=%s family=%s level=%s xp=%s/%s focus=%s happinessAPI=%s speed=%s damage=%s-%s buffs=[%s]", tostring(d.name),
     tostring(d.npcID), tostring(d.family), tostring(d.level), tostring(d.xp), tostring(d.xpMax), tostring(d.focus),
     tostring(d.happiness), type(d.speed) == "number" and string.format("%.2f", d.speed) or "?",

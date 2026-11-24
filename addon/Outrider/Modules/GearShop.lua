@@ -1,8 +1,8 @@
 -- Modules/GearShop.lua
--- Gear upgrades from the auction house (Gary, 2026-11-14: "search for weapons
--- ... search for armor, the best piece in each category ... aware of how much
--- coin I have ... character aware: no mail for a priest, no cloth for a
--- hunter ... I click buy").
+-- Gear upgrades from the auction house (requirement 2026-11-14: search weapons
+-- and armor for the best piece in each category, within the gold on hand,
+-- character aware (no mail for a priest, no cloth for a hunter), bought with
+-- the player's click).
 -- With the auction house open:
 --   * Search weapons: weapons this class can use, required level from
 --     (level - 10) to its level; the top 10 upgrades you can afford.
@@ -14,7 +14,7 @@
 -- the gold carried are left out. Each line has a Buy button: AHBuy looks up
 -- the cheapest listing and its confirm bar buys it on Gary's click.
 -- Random-suffix items ("of the Monkey") are scored on their base item.
---   * Search bags (Gary, 2026-11-16: "scan for bags as well"): bags bigger
+--   * Search bags (requirement 2026-11-16: scan for bags too): bags bigger
 --     than the smallest one you carry, ranked by slots gained; hunters also
 --     get quivers or ammo pouches for the weapon they shoot; profession bags
 --     only for a profession you have. Slots come from the item tooltip
@@ -153,7 +153,7 @@ end
 
 -- Slots a bag has, from its tooltip ("16 Slot Bag"); nil until the item is loaded.
 -- Kept per item: a bag's size never changes, and reading a tooltip for every
--- bag on every redraw made the Bags view lag (Gary, 2026-11-22: 2 FPS).
+-- bag on every redraw made the Bags view lag (measured 2026-11-22: 2 FPS).
 M.slotCache = {}
 function M.BagSlotsOf(itemID)
   local c = M.slotCache[itemID]
@@ -291,8 +291,8 @@ function M:Results()
 end
 
 -- The net of every gain and loss, each stat weighed by what this class needs
--- (GearScore's score): "= overall +12% (score 24.0 -> 27.0)" (Gary, 2026-11-14:
--- "lose a little spirit but gain agility: the overall improvement?").
+-- (GearScore's score): "= overall +12% (score 24.0 -> 27.0)" (requirement 2026-11-14:
+-- the overall result when, say, a little spirit is traded for agility).
 function M.Overall(b)
   if b.empty then return "|cff7fff7f= fills an empty slot|r" end
   local pct = math.floor(b.pct + 0.5)
@@ -310,8 +310,8 @@ function M.Gain(b)
 end
 
 -- ------------------------------------------------------------ panel
--- The shopping window beside the auction house (Gary, 2026-11-20: "make the
--- auction UI a show piece that would make a hero image"). A painted header
+-- The shopping window beside the auction house (requirement 2026-11-20: a
+-- showpiece auction UI, good enough for a hero image). A painted header
 -- with your gold, a side menu (Training: Skill-ups, Recipes, Shopping list;
 -- Gear: Weapons, Armor, Bags) and item cards: icon in its quality colour,
 -- name, what it does for you, the price in coins and a Buy button. Every Buy
@@ -394,8 +394,8 @@ function M.NewCard(parent, width)
   card.price = UI.Text(card, "normal", "text")
   card.price:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -84, 9)
   card.price:SetJustifyH("RIGHT")
-  -- one button, two clicks on the same spot (Gary, 2026-11-20: "I don't like
-  -- how I have to chase the buy button"): Add puts it in the cart; once its
+  -- one button, two clicks on the same spot (requirement 2026-11-20: the buy
+  -- button must not move between clicks): Add puts it in the cart; once its
   -- price is in, the same button says Buy and that click buys it.
   card.buy = UI:Button(card, "Buy", 64, function() M.CardClick(card) end)
   -- stackable goods: the price quote comes while the mouse rests here, so the click buys

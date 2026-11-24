@@ -34,7 +34,7 @@ local LABELS = {
 }
 M.LABELS = LABELS
 
--- Markers (Gary, 2026-11-11: "less 8 bit", colour by group, different
+-- Markers (requirement 2026-11-11: less pixelated, colour by group, different
 -- symbols): the client's own minimap tracking icons as the symbol, a soft
 -- ring in the group colour behind it. Groups: merchant, trainer, service, rare.
 local TRACK = "Interface\\Minimap\\Tracking\\"
@@ -119,9 +119,9 @@ function M.IconFor(pin)
   return ICON[kind] or (TRACK .. "None")
 end
 
--- Gathering nodes are a thin hollow square (Gary, 2026-11-14): Blizzard's
+-- Gathering nodes are a thin hollow square (requirement 2026-11-14): Blizzard's
 -- Find Herbs / Find Minerals dot shows inside it when the node is really up,
--- an empty square means it's gone. Green = Gary saw it up lately, grey = he
+-- an empty square means it's gone. Green = the player saw it up lately, grey = they
 -- picked it lately (LootLog:NodeState).
 M.GATHER = { herb = true, ore = true, fish = true }
 M.STATE_COLOR = { up = { 0.35, 1.00, 0.35, 1 }, picked = { 0.55, 0.55, 0.55, 0.6 } }
@@ -191,7 +191,7 @@ function M.Paint(frame, pin)
   local c = pin.ringColor or pin.questColor or M.GROUP_COLOR[M.Group(pin.kind)] or { 1, 1, 1 }
   frame.ring:SetColorTexture(c[1], c[2], c[3], (pin.questColor or pin.ringColor) and 0.95 or 0.55)
   -- a dead rare dims a little, never out of sight: it still marks where it
-  -- spawns (Gary, 2026-11-20: a dead rare's pin was too faint to find)
+  -- spawns (bug 2026-11-20: a dead rare's pin was too faint to find)
   if pin.faded then frame:SetAlpha(0.85) end
   local ok = frame.icon:SetTexture(M.IconFor(pin))
   if ok == false then
@@ -413,7 +413,7 @@ function M:BuildPins(mapID)
       if e.mapID == mapID and e.spawns and e.spawns[1] then addRare(e.npcID, e.name, e.spawns[1].x, e.spawns[1].y) end
     end
     -- Spots Gary reported a rare at before Outrider saw it (Data poi kind
-    -- "rare_spot", Gary 2026-11-20). Gone once a known rare pin is within ~4%.
+    -- "rare_spot", reported 2026-11-20). Gone once a known rare pin is within ~4%.
     for _, e in ipairs(ns.Data:All("poi")) do
       if e.kind == "rare_spot" and e.mapID == mapID then
         local near = false
@@ -426,16 +426,16 @@ function M:BuildPins(mapID)
         end
       end
     end
-    -- Every rare and rare elite in the creature pack (Gary, 2026-11-13: "how
-    -- was I supposed to find that rare elite?"), at every spawn spot it has
-    -- (Gary, 2026-11-14: Slydris has 4).
+    -- Every rare and rare elite in the creature pack (requirement 2026-11-13: a
+    -- rare elite had no way to be found), at every spawn spot it has
+    -- (2026-11-14: Slydris has 4).
     local mobs = ns.Finder and ns.Finder:Mobs()
     for _, r in ipairs(mobs and mobs[mapID] or {}) do
       local rank, pts = r[5], r[6]
       if (rank == 2 or rank == 4) and pts and pts[1] then
         local label = string.format("%s (%s, level %d)", r[2], rank == 2 and "rare elite" or "rare", r[4])
         local many = #pts > 2
-        -- Every spawn spot, also for a rare already seen (Gary, 2026-11-17:
+        -- Every spawn spot, also for a rare already seen (bug 2026-11-17:
         -- Den'dralass's other spots were hidden behind her one sighting).
         local first = 3
         if not seen[r[1]] then
@@ -475,7 +475,7 @@ function M:BuildPins(mapID)
 end
 
 -- ------------------------------------------------------------ show / hide
--- (Gary, 2026-11-17: "be able to hide them or show them in the ui") A
+-- (requirement 2026-11-17: pins can be hidden or shown from the UI) A
 -- "Pins" button on the world map opens switches per group of pins and one
 -- for all of them; the same settings as the Map pins tab on Map and places, per character, also
 -- for the minimap.
@@ -585,8 +585,8 @@ function M:ReleaseAll()
   self.used = {}
 end
 
--- World map readability (Gary, 2026-11-11: "having trouble seeing my position
--- and direction on the map"): smaller pins, drawn under Blizzard's pins, a
+-- World map readability (requirement 2026-11-11: the player's position and
+-- facing were hard to see on the map): smaller pins, drawn under Blizzard's pins, a
 -- clear circle around the player, and pins of the same group that sit
 -- within CLUSTER of each other merged into one ("and 3 more here" on hover).
 -- Rares and guildmates are never merged.
@@ -622,7 +622,7 @@ function M.Declutter(pins, px, py)
   return out
 end
 
--- Frame level for our pins (Gary, 2026-11-17: Zephras Isle map showed none
+-- Frame level for our pins (bug 2026-11-17: Zephras Isle map showed none
 -- of 300 built pins). "canvas level + 1" can sit under Blizzard's map art
 -- layers; the map's own pin level manager knows the real order. Our pins go
 -- just under the town/area icons (and so under the player arrow).
@@ -707,8 +707,8 @@ function M:Refresh()
     local pin = self:AcquirePin(canvas)
     pin.data = data
     -- keep pins the same size on screen when the map canvas is zoomed
-    -- rares are twice the size, with a red halo and their name (Gary, 2026-11-20:
-    -- "make it really noticeable")
+    -- rares are twice the size, with a red halo and their name (requirement 2026-11-20:
+    -- rares must stand out clearly)
     local big = data.kind == "rare" and not data.small
     pin:SetScale((data.kind == "path" and 0.8 or data.small and 0.55 or big and M.RARE_SCALE or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
     M.Paint(pin, data)

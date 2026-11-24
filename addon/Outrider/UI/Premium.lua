@@ -1,6 +1,6 @@
 -- UI/Premium.lua
--- Premium building blocks (Gary, 2026-11-16: "a lot of pages need artwork and
--- premium ui/ux feel"), in the style of the What now? cards, for any page:
+-- Premium building blocks (requirement 2026-11-16: many pages need artwork and
+-- a premium UI/UX feel), in the style of the What now? cards, for any page:
 --   UI:CardList(parent)   rich cards: picture, title, tags, a line, item chips
 --                         (real item icons, item tooltip on hover), buttons
 --   UI:StatusTiles(parent) a checklist as tiles: icon, text, green or red mark

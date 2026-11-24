@@ -1,5 +1,5 @@
 -- Modules/FishBook.lua
--- Fish collection, milestones, when fish bite and what to cook (Gary,
+-- Fish collection, milestones, when fish bite and what to cook (requirement
 -- 2026-11-24: borrow FishFry's best ideas; ideas only, nothing copied).
 --
 --   * Collection: every fish you've caught, with this character's count and

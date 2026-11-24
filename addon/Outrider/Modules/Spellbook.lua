@@ -98,7 +98,7 @@ function M:TrainingStore()
   return ns.db.global.classTraining[class]
 end
 
--- The trainer's own list is the truth (Gary, 2026-11-21: Outrider's typed-in
+-- The trainer's own list is the truth (bug 2026-11-21: Outrider's typed-in
 -- list missed Backstab Rank 2, Parry and Sinister Strike Rank 3 and showed
 -- Pick Lock at 1). GetTrainerServiceInfo's returns differ between clients:
 -- on Forever the second value is the status ("available", "unavailable",
@@ -169,7 +169,7 @@ end
 -- next level, and whether anything was observed at all.
 -- Has this character learned a trainer row? The list is kept for the class
 -- (every druid sees the same trainer), but what one character learned isn't
--- another's (Gary, 2026-11-23: Sheer had learned everything to 10 and the
+-- another's (bug 2026-11-23: Sheer had learned everything to 10 and the
 -- page said 20 spells to learn, from a visit before she learned them). The
 -- spellbook decides: a spell you know counts as learned, unless the book
 -- shows a lower rank than the row.

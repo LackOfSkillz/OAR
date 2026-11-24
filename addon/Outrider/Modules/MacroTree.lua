@@ -1,7 +1,7 @@
--- Modules/MacroTree.lua  (Gary, 2026-11-19: "the macro page should be similar
--- to the talents layout ... macros pre-created ... in tiers of levels 1 to 10
--- ... icons people just drag onto their action bar ... and explanation. Our
--- macros are supposed to give even a new player ... that same level of skill.")
+-- Modules/MacroTree.lua  (requirement 2026-11-19: a macro page laid out like the
+-- talents page, macros pre-created in level tiers (1 to 10 and up), icons to
+-- drag onto the action bar, each with an explanation, so that even a new
+-- player gets an experienced player's macros.)
 --
 -- The Macros page as a skill tree:
 --   * Your keys: the fight keys (Fight, Pull, Strike, Heal, Pet...) that
@@ -746,7 +746,7 @@ ns.Hub:AddTab("macros", "Macros", function(p)
   keys:SetPoint("RIGHT", d, "LEFT", -12, 0)
   keys:SetHeight(128)
   p.keys = keys
-  -- combined keys row (Gary, 2026-11-20: fewer macros, each with Shift / Ctrl / Alt layers)
+  -- combined keys row (requirement 2026-11-20: fewer macros, each with Shift / Ctrl / Alt layers)
   keys.comboHead = UI.Text(keys, "normal", "goldText")
   keys.comboHead:SetPoint("TOPLEFT", 12, -124)
   keys.comboHead:SetText("Combined keys  |cff8f96a6one button each, hold Shift, Ctrl or Alt for the other layers|r")

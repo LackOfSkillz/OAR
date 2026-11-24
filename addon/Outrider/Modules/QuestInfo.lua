@@ -1,6 +1,6 @@
 -- Modules/QuestInfo.lua
--- What Questie knows about a quest beyond its objectives (Gary, 2026-11-17:
--- "add all of that"), from the quest pack (QuestieDB, GPLv3, unverified):
+-- What Questie knows about a quest beyond its objectives (requirement 2026-11-17:
+-- cover all of it), from the quest pack (QuestieDB, GPLv3, unverified):
 --   chains        "Part 2 of 4 · next: Dry Times" (nextQuestInChain)
 --   breadcrumbs   "Leads to: X"; a warning when you take a quest whose
 --                 breadcrumb you skipped (you'd lose its XP)
@@ -362,7 +362,7 @@ ns.Hub:AddTab("journal", "Journal", function(p)
   p.stats = UI:StatStrip(p)
   p.stats:SetPoint("TOPLEFT", 0, 0)
   p.stats:SetPoint("RIGHT", p, "RIGHT", -4, 0)
-  -- filters (Gary, 2026-11-20: clear at a glance)
+  -- filters (requirement 2026-11-20: clear at a glance)
   p.filter = "all"
   p.chips = {}
   local FILTERS = { { "all", "All" }, { "handed in", "Finished" }, { "took", "Took" }, { "abandoned", "Gave up" } }

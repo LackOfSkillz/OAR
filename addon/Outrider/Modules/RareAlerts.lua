@@ -43,8 +43,8 @@ function M:ShouldAlert(info, now)
   return true
 end
 
--- Rare or rare elite (Gary, 2026-11-21: "make a distinction between rare and
--- elite with a different sound and visual cue"): a rare is blue, a rare elite
+-- Rare or rare elite (requirement 2026-11-21: tell rare and rare elite apart
+-- with a different sound and visual cue): a rare is blue, a rare elite
 -- is red, with its own deeper alarm and a longer flash. The class comes from
 -- the unit (UnitClassification) or the rare pack (rank "rareelite").
 M.LOOK = {
@@ -76,7 +76,7 @@ function M:Text(info)
   if M.IsElite(info) then parts[#parts + 1] = "elite" end
   if info.family then parts[#parts + 1] = info.family end
   parts[#parts + 1] = HOW[info.how] or info.how
-  -- which way to look (Gary, 2026-11-15: lost The Rake among the beasts)
+  -- which way to look (bug 2026-11-15: The Rake was lost among the beasts)
   local dir = info.how == "nameplate" and info.unit and ns.RarePlates and ns.RarePlates.Direction(info.unit)
   if dir then parts[#parts + 1] = dir end
   return table.concat(parts, " · ")
@@ -101,7 +101,7 @@ function M:OnRareSeen(_, info)
   local note
   if tame and tame.enabled and info.tameable and (not info.level or info.level <= myLevel) then
     button = { label = "Pull/Tame", macro = tame:Body(info.name) }
-    -- Classic rule (Gary, 2026-11-11): you can't tame while you have a pet,
+    -- Classic rule (confirmed 2026-11-11): you can't tame while you have a pet,
     -- even a dismissed one; it has to be in a stable slot.
     local petName = ns.Compat.Readable(ns.Compat.Call("UnitName", "pet"))
     if petName then note = "Stable " .. petName .. " first: /ride near stable" end
@@ -126,7 +126,7 @@ function M:OnRareSeen(_, info)
   elseif sound then
     ns.Compat.Call("PlaySound", sound, "Master")
   end
-  -- Hard to miss while camping (Gary, 2026-11-14): a pulse round the screen
+  -- Hard to miss while camping (requirement 2026-11-14): a pulse round the screen
   -- edge (blue for a rare, red and longer for a rare elite), and the arrow to
   -- her when her exact spot is known (minimap marker).
   if s.flash then self:Flash(look) end

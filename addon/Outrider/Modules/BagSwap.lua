@@ -1,6 +1,6 @@
--- Modules/BagSwap.lua  (Gary, 2026-11-20: "when I buy a new bag ... adjust
--- everything around to free up a single bag so I can remove one of the smaller
--- ones and replace it with the bigger one ... one click")
+-- Modules/BagSwap.lua  (requirement 2026-11-20: after buying a new bag, move
+-- items around to empty one smaller bag so it can be replaced by the bigger
+-- one, in one click)
 -- One press (/ride bagswap, or the Bag Swap key on the Macros page):
 --   1. picks the biggest bag in your bags that beats one you wear;
 --   2. picks where it goes: an empty bag slot, else your smallest bag;

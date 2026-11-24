@@ -1,6 +1,6 @@
 -- Modules/NodePack.lua
--- Herb and ore spawn points for the whole world (Gary, 2026-11-13: "pull the
--- node map into our database"), from the private load-on-demand addon
+-- Herb and ore spawn points for the whole world (requirement 2026-11-13: the
+-- node map in our own database), from the private load-on-demand addon
 -- Outrider_Data_Nodes (tools/import_nodes.py, Questie's Forever objects, D10).
 -- Profession aware: herbs only for herbalists, ore only for miners. Skill
 -- aware for herbs: a herb needs the skill the herb guide (Data/Herbs.lua)
@@ -102,7 +102,7 @@ function M:Nearest(px, py, mapID, node)
   return pts[best], pts[best + 1], #pts / 2
 end
 
--- Gary's switch (2026-11-13: "in case I'm wrong"): off = only nodes Outrider
+-- A switch in case the pack is wrong (requirement 2026-11-13): off = only nodes Outrider
 -- saw you gather. Redraws the map and minimap at once.
 function M:SetShown(on)
   self:Settings().show = on and true or false

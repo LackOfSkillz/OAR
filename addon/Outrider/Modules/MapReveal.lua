@@ -1,10 +1,10 @@
 -- Modules/MapReveal.lua
--- Reveal unexplored map areas (Gary, 2026-11-17, Leatrix Maps style), from
+-- Reveal unexplored map areas (requirement 2026-11-17, Leatrix Maps style), from
 -- official data only. The client tells each character which map areas it has
 -- explored, with the exact textures (C_MapExplorationInfo.GetExploredMapTextures).
 -- Outrider records those for every zone, from every character on the account
 -- and on the world map draws the areas this character hasn't explored yet,
--- tinted so they stand out. Gary OK'd fetching the game's full overlay list
+-- tinted so they stand out. Fetching the game's full overlay list was approved
 -- (2026-11-17): Data/MapOverlays.lua holds every explorable area of every
 -- Forever zone from the client's own tables for build 1.60.1.70938 (via
 -- wago.tools, tools/import_map_overlays.py), so the whole map shows; the
@@ -267,7 +267,7 @@ function M:Refresh()
   -- coast and parchment into the overlay tiles, so the old 0.55 darkening drew
   -- a big shadow over the map and the sea. Drawn as Blizzard draws explored
   -- areas, revealed land looks like the rest of the map. Old saved 0.55 is dropped.
-  -- A faint cool tint (Gary, 2026-11-23: "yes, faint tint"): revealed areas
+  -- A faint cool tint (chosen 2026-11-23): revealed areas
   -- looked exactly like explored ones. 0.82 with a touch of blue marks them
   -- without the old 0.55 shadow over coast and sea.
   local tint = s.tint or M.TINT

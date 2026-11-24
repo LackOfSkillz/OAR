@@ -1,7 +1,7 @@
 -- UI/SecureButtons.lua
 -- Pool of SecureActionButtonTemplate buttons for rare alerts, the tame
 -- helper and macro buttons. The click does the work (a hardware event from
--- Gary); Lua never calls a protected function.
+-- the player); Lua never calls a protected function.
 -- Secure buttons can't be created, retargeted, shown or hidden in combat, so:
 --   * PREWARM buttons are created out of combat at login, so Acquire in
 --     combat still returns one;
@@ -91,7 +91,7 @@ end
 
 -- Spell on an item from the bags, the secure template's own way: type "spell"
 -- with "target-item" casts the spell and puts it on that item (Feed Pet on a
--- food, Gary 2026-11-13: the macro version did nothing).
+-- food; tested 2026-11-13: the macro version did nothing).
 function SB:SetSpellOnItem(btn, spell, item)
   btn.wantSpell, btn.wantItem = spell, item
   return ns.Combat:Run("secure:spell", function()

@@ -1,8 +1,8 @@
 -- Modules/SpawnLog.lua
--- What spawns at a watched rare's spot, in order (Gary, 2026-11-13: "my
--- theory: the other rare spawns, then 2 trash bears, then Mystmane; let's
--- find evidence"). While Gary is near a spot where a watched rare has been
--- seen, every creature he sees (nameplate, mouseover, target) is logged once
+-- What spawns at a watched rare's spot, in order (2026-11-13, to test a
+-- theory: the other rare spawns, then 2 trash bears, then Mystmane; needs
+-- evidence). While the player is near a spot where a watched rare has been
+-- seen, every creature they see (nameplate, mouseover, target) is logged once
 -- per spawn (its GUID), with the time first seen and the time it died
 -- (seen dead, or its health hit 0). No combat log (hard rule 4).
 -- ns.db.global.spawnLogs[rareNpcID] = { {name, npcID, guid, seen, died}, ... } (last 200)

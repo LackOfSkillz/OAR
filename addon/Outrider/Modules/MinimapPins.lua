@@ -5,8 +5,8 @@
 -- C_Minimap.GetViewRadius (zoom/indoor aware) and, when the minimap rotates
 -- (CVar rotateMinimap), the player's facing. Updates 5x per second only
 -- while moving, plus on zoom change and new places. Dots are plain textures.
--- Kept readable (Gary: "the minimap is so busy I can't see which direction
--- I'm facing", Thunder Bluff, 2026-11-11): only the `max` nearest places
+-- Kept readable (bug: the minimap was too busy to see the player's facing,
+-- Thunder Bluff, 2026-11-11): only the `max` nearest places
 -- (12), nothing within CLEAR pixels of the player arrow, smaller dots, and
 -- quest givers left to the world map unless switched on
 -- (/ride minipins <n> | quests on|off).
@@ -21,7 +21,7 @@ local M = ns:NewModule("MinimapPins", {
 })
 M.CLEAR, M.SIZE, M.PATH = 11, 10, 8
 ns.MinimapPins = M
--- A rare that just showed up (Gary, 2026-11-15: "put a blue box around him",
+-- A rare that just showed up (requirement 2026-11-15: a blue box around it,
 -- like the yellow herb boxes): the game gives no NPC positions, so the box
 -- marks its nearest known spawn spot (rare pack) within NEAR yards of where
 -- you stood when the alarm went off, for LIVE seconds. Drawn on top of the
@@ -89,7 +89,7 @@ M.WHY = {
 }
 
 -- Each dot is a small button: hover shows name, kind and distance; click
--- opens the same card as the world map pin (Gary asked, 2026-11-11).
+-- opens the same card as the world map pin (requirement 2026-11-11).
 function M:Dot(i)
   local d = self.dots[i]
   if not d then
@@ -109,7 +109,7 @@ function M:Dot(i)
         local line, color = ns.LootLog:StateLine(p)
         if line then GameTooltip:AddLine(line, ns.Theme:Color(color)) end
       end
-      -- why it's on your minimap, in plain words (Gary, 2026-11-22)
+      -- why it's on your minimap, in plain words (requirement 2026-11-22)
       if M.WHY[p.kind] then GameTooltip:AddLine(M.WHY[p.kind], ns.Theme:Color("text")) end
       if p.kind ~= "path" then GameTooltip:AddLine("Click for details and the way there", ns.Theme:Color("muted")) end
       GameTooltip:Show()

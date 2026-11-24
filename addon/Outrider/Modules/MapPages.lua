@@ -1,5 +1,5 @@
 -- Modules/MapPages.lua
--- Pages built around the in-window map (UI/MapView.lua), Gary 2026-11-24:
+-- Pages built around the in-window map (UI/MapView.lua), requirement 2026-11-24:
 --   Map and places > Map and routes : any map, draw and share routes
 --   Dungeons > Dungeon maps         : every dungeon's own map with its bosses
 --                                     and your routes for it

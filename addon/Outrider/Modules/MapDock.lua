@@ -1,5 +1,5 @@
 -- Modules/MapDock.lua
--- An Outrider panel on the side of the world map (Gary, 2026-11-24, FojjiCore
+-- An Outrider panel on the side of the world map (requirement 2026-11-24, FojjiCore
 -- idea). It follows the map you're looking at: the dungeons in that zone
 -- (click: its own map), the bosses on a dungeon map with what they drop, the
 -- rares there, and the routes drawn on that map with an on/off click each,

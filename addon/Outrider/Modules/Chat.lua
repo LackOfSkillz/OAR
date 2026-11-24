@@ -11,7 +11,7 @@
 --   * /ride copychat: the last 100 lines of the main chat window to copy.
 --   * Timestamps: /ride chat time on|off sets Blizzard's own showTimestamps.
 -- Secret message text (Midnight restricted chat) is left untouched.
--- P8-07 triage (Gary chose "own chat tab", 2026-11-11): once, out of combat,
+-- P8-07 triage (option "own chat tab" chosen 2026-11-11): once, out of combat,
 -- a chat tab named LFG is opened (or reused); Trade/LookingForGroup channel
 -- lines and LFG/LFM lines from any channel show only there. Lines asking
 -- for this character's role ("LF dps", "LF hunter") are marked [for you]
@@ -137,7 +137,7 @@ end
 
 -- Class colors only with an explicit, readable character GUID. Unknown
 -- classes, NPCs and clickable player hyperlinks are unchanged.
--- Class colours on names (Gary, 2026-11-23: a General line showed
+-- Class colours on names (bug 2026-11-23: a General line showed
 -- "|Hplayer:Mia Starleaf:407:CHANNEL:1[Mia Starleaf]" as raw text). The old
 -- way handed Blizzard a coloured author, and Blizzard builds the clickable
 -- player link from the author, so the colour codes broke the link. Now the

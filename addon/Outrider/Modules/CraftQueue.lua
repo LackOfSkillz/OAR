@@ -126,7 +126,7 @@ local function rec(r)
   return prof and prof.recipes and prof.recipes[r.id] or {}
 end
 
--- The page rebuilt to read at a glance (Gary, 2026-11-20): recipes with their
+-- The page rebuilt to read at a glance (owner request 2026-11-20): recipes with their
 -- picture and whether they still give skill; your queue; what you need, with
 -- pictures, what you have and what to buy.
 ns.Hub:AddTab("crafting", "Crafting", function(p)

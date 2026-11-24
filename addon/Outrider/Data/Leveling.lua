@@ -1,6 +1,6 @@
 -- Data/Leveling.lua
--- Outrider's leveling knowledge base (Gary, 2026-11-21: "make sure all our
--- leveling guidance matches ... add it to our leveling knowledge base").
+-- Outrider's leveling knowledge base: all leveling guidance is kept consistent
+-- with one shared source (requirement 2026-11-21).
 -- Source: Wowhead's WoW Forever leveling guides (wowhead.com/forever/guides/leveling,
 -- read in the browser 2026-11-21):
 --   ZONES = Forever Zones Overview (Serenal, updated 2026-09-17)

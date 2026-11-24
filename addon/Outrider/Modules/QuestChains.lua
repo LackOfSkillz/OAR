@@ -1,7 +1,7 @@
 -- Modules/QuestChains.lua
--- Quest chains, step by step (Gary, 2026-11-21: "a quest chain feature ... so
--- you can tell which steps in the chain are complete, and the ones not
--- complete you click and the arrow and pin lead you to it").
+-- Quest chains, step by step (requirement 2026-11-21: show which steps in a
+-- chain are complete; clicking an unfinished step sets the arrow and pin
+-- to it).
 -- From the quest pack (Outrider_Data_Quests, QuestieDB, community data):
 -- info[id].pa / .pl = quests that must come first (any / all), info[id].n =
 -- the next quest. Givers from the NPC pack (quest givers carry the quests

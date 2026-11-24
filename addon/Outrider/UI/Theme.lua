@@ -7,9 +7,9 @@ local _, ns = ...
 local Theme = { name = "theme" }
 ns.Theme = Theme
 
--- Expedition look (Gary chose the mockup, 2026-11-15): near-black window, a
+-- Expedition look (mockup chosen 2026-11-15): near-black window, a
 -- darker sidebar, cards one step up, hairline borders. `accent` is the class
--- colour when that setting is on (Gary, 2026-11-13); `gold` marks what is
+-- colour when that setting is on (owner request 2026-11-13); `gold` marks what is
 -- selected or the main action on a page, whatever the class.
 Theme.colors = {
   bg      = { 0.059, 0.067, 0.086, 1.00 },  -- solid: nothing behind shows through

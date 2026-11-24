@@ -31,7 +31,7 @@ M.FRAMES = {
 -- decorative children faded on each window (whichever exist)
 M.PARTS = { "NineSlice", "Bg", "Background", "TitleBg", "TopTileStreaks", "Portrait", "PortraitContainer",
   "BorderFrame", "Border", "Inset" }
--- Windows whose text is dark brown on parchment (Gary, 2026-11-11: gossip
+-- Windows whose text is dark brown on parchment (bug 2026-11-11: gossip
 -- became "unreadable" on the dark panel): keep the parchment page, restyle
 -- only the frame (border, title bar, portrait).
 M.PARCHMENT = { GossipFrame = true, QuestFrame = true, QuestLogFrame = true, OpenMailFrame = true,

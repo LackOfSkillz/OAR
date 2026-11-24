@@ -97,10 +97,10 @@ function M:Node(kind, items)
   return self:AddNode(kind, mapID, x, y, items[1] and items[1].name)
 end
 
--- What Outrider last knew about a node spot (Gary, 2026-11-14: "I keep going to
--- nodes and someone else has snatched them"). An addon can't see live nodes
+-- What Outrider last knew about a node spot (requirement 2026-11-14: avoid trips
+-- to nodes another player already took). An addon can't see live nodes
 -- from a distance (Find Herbs' yellow dots can't be read), so this remembers
--- only what Gary saw himself: "up" when its tooltip showed under his mouse,
+-- only what the player saw: "up" when its tooltip showed under the mouse,
 -- "picked" when he gathered it. Picked spots stay dimmed PICKED_FOR seconds;
 -- "up" is trusted for UP_FOR. Positions are where Gary stood, so a match is
 -- anything within NEAR of the spot.

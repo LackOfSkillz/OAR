@@ -211,9 +211,9 @@ function M:Install(entry, force)
     local _, _, current = C.Call("GetMacroInfo", index)
     current = C.Readable(current)
     -- Ours if it's text Outrider wrote (now or before), or only lines
-    -- Outrider wrote (Gary, 2026-11-23: Sheer's Fight macro came back from
+    -- Outrider wrote (bug 2026-11-23: Sheer's Fight macro came back from
     -- the game without its Thorns line; Outrider then refused to update it
-    -- and the Macros page couldn't drag it). A line Gary typed himself still
+    -- and the Macros page couldn't drag it). A line the player typed still
     -- blocks it, force or not.
     if not rec or not M.Wrote(rec, current, body) then
       return false, "macro text was changed outside Outrider; review it manually before updating"
@@ -236,8 +236,8 @@ function M:Install(entry, force)
     table.insert(prev, 1, old.body)
     for i = M.KEEP_PREV + 1, #prev do prev[i] = nil end
   end
-  -- Remember what the game actually holds, not what we asked for (Gary,
-  -- 2026-11-23: he never edited his macros, yet the game's Fight differed from
+  -- Remember what the game actually holds, not what we asked for (bug
+  -- 2026-11-23: macros never edited by hand, yet the game's Fight differed from
   -- Outrider's record and Outrider stopped updating it). If the game kept
   -- something else, say so once in the log; the next update still treats a
   -- text made of Outrider's own lines as ours.
@@ -329,9 +329,9 @@ end
 -- --------------------------------------------------------------- tab
 local STATE_COLOR = { ready = "text", installed = "good", changed = "warn" }
 
--- Build- and level-aware list (Gary, 2026-11-18: "a rogue ... should only be
--- presented with rogue macros ... and the recommendations based on their
--- build and their level"). Entries() is already this class only; Sections()
+-- Build- and level-aware list (requirement 2026-11-18: a rogue sees only rogue
+-- macros, with recommendations based on the character's
+-- build and level). Entries() is already this class only; Sections()
 -- orders them: Recommended for you (the fight keys written for your build,
 -- then pack macros for your build and level), From level N (not yet), and
 -- Other builds (tagged for another talent tree of your class).

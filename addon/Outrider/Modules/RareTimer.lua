@@ -1,11 +1,11 @@
 -- Modules/RareTimer.lua
--- A countdown for a rare said to spawn on a fixed timer (Gary, 2026-11-13:
--- "the server rebooted at 3pm EST; Mystmane supposedly spawns every three
--- hours, let's track that"). A timer = { every (s), from (epoch), source }.
+-- A countdown for a rare said to spawn on a fixed timer (report 2026-11-13:
+-- the server rebooted at 3pm EST; Mystmane reportedly spawns every three
+-- hours, to be tracked). A timer = { every (s), from (epoch), source }.
 -- Next window = from + k * every. When Outrider sees the rare dead, the timer
 -- restarts from that death. The claim stays marked unverified; the spawn log
 -- and sightings show whether she really comes on time.
--- One pop-up about 5 minutes before a window (Gary asked for rare alerts). Home's
+-- One pop-up about 5 minutes before a window (rare alerts were requested). Home's
 -- rare card and the Watch and alerts tab on Rares show the countdown.
 
 local _, ns = ...
@@ -21,7 +21,7 @@ ns.RareTimer = M
 function M:OnInitialize()
   local g = ns.db.global
   g.rareTimers = type(g.rareTimers) == "table" and g.rareTimers or {}
-  -- Gary's report, 2026-11-13: server restart 15:00 EST (20:00 UTC), Mystmane every 3 h (unverified)
+  -- Field report 2026-11-13: server restart 15:00 EST (20:00 UTC), Mystmane every 3 h (unverified)
   if not g.rareTimers[259388] and not g.mystmaneTimerSeeded then
     g.mystmaneTimerSeeded = true
     g.rareTimers[259388] = { name = "Mystmane", every = 3 * 3600, from = 1794600000,

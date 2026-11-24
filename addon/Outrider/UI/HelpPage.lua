@@ -1,6 +1,6 @@
 -- UI/HelpPage.lua
--- The Help system (Gary, 2026-11-16: the first version was "really bad ux ...
--- we need an elite premium help system").
+-- The Help system (requirement 2026-11-16: the first version's UX was poor;
+-- replaced by a premium help system).
 --   * Landing: a card per section (icon, name, what's in it); click to open.
 --   * Left pane: search box and the topic list grouped by section, with icons.
 --   * Right pane: one topic at a time in a large readable font, its points

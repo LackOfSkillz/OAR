@@ -1,5 +1,5 @@
 -- Modules/Fishing.lua  (P5-11)
--- One key for fishing while a fishing pole is equipped and Gary chose a key
+-- One key for fishing while a fishing pole is equipped and the player chose a key
 -- (setting `key`, /ride fishkey <KEY>; off until chosen):
 --   bobber not out -> the key clicks a pooled secure button: /cast Fishing
 --   bobber out     -> the key does the client's INTERACTTARGET binding,
@@ -23,11 +23,11 @@ ns.Fishing = M
 local POLE_CLASS, POLE_SUBCLASS = 2, 20
 local LOUD = { Sound_SFXVolume = "1.0", Sound_MusicVolume = "0.0", Sound_AmbienceVolume = "0.1" }
 -- Soft targeting for objects, so the Interact key reaches the bobber without
--- the mouse on it (Gary, 2026-11-14: "it casts but won't catch"). 3 = on for
+-- the mouse on it (bug 2026-11-14: the key cast but could not hook). 3 = on for
 -- mouse and keyboard; arc 2 = wide; range in yards (the bobber lands about
 -- 20 away). Only while the pole is on; the old values come back after.
 -- autoLootDefault: Blizzard's own Auto Loot option, so the press that hooks
--- the fish also takes it (Gary, 2026-11-14); restored with the rest.
+-- the fish also takes it (requirement 2026-11-14); restored with the rest.
 local SOFT = { SoftTargetInteract = "3", SoftTargetInteractArc = "2", SoftTargetInteractRange = "30", autoLootDefault = "1" }
 
 function M:PoleEquipped()
@@ -42,7 +42,7 @@ end
 
 -- Lures by name, best first (Classic bonuses: Attractor +100, Flesh Eating Worm
 -- and Bright Baubles +75, Fish Lens and Nightcrawlers +50, Shiny Bauble +25;
--- wowhead classic item pages, unverified on Forever). Gary, 2026-11-14: the
+-- wowhead classic item pages, unverified on Forever). Requirement 2026-11-14: the
 -- fish key puts a lure on when none is active, then casts on the next press.
 M.LURES = { "Aquadynamic Fish Attractor", "Flesh Eating Worm", "Bright Baubles", "Aquadynamic Fish Lens",
   "Nightcrawlers", "Shiny Bauble" }

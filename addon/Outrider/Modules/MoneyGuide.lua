@@ -1,6 +1,6 @@
 -- Modules/MoneyGuide.lua
--- The best ways to earn gold at your level and with your professions (Gary,
--- 2026-11-14). Two halves:
+-- The best ways to earn gold at your level and with your professions
+-- (requirement 2026-11-14). Two halves:
 --   * Guide: Data/Money.lua (cited Forever gold guides, unverified), filtered
 --     by level, professions and faction.
 --   * Your own numbers: every loot window is booked to a kind of earning
@@ -35,7 +35,7 @@ function M:OnEnable()
   self:On("GET_ITEM_INFO_RECEIVED", self.OnItemInfo)
 end
 
--- What one item is worth to Gary: auction price less a 5% cut when known, else vendor.
+-- What one item is worth to the player: auction price less a 5% cut when known, else vendor.
 function M.Worth(itemID)
   if not ns.Prices then return 0 end
   local ah, _, vendor = ns.Prices:Get(itemID)
@@ -43,7 +43,7 @@ function M.Worth(itemID)
   return vendor or 0
 end
 
--- Worth now, or once the game has loaded the item (Gary, 2026-11-14: a 12
+-- Worth now, or once the game has loaded the item (bug 2026-11-14: a 12
 -- Pound Mud Snapper worth 12 silver counted as nothing; a first-time item's
 -- details, price included, aren't loaded yet when it lands in the bags).
 -- fn(copperEach) is called once, now or on GET_ITEM_INFO_RECEIVED.

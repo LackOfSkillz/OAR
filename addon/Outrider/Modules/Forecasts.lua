@@ -1,5 +1,5 @@
 -- Modules/Forecasts.lua  (P8-08 forecasts)
--- Respawn forecasts from every respawn gap Sightings has observed (Gary's own
+-- Respawn forecasts from every respawn gap Sightings has observed (the player's own
 -- and guildmates' shared sightings, P8-03): the usual range (middle 80% of
 -- the gaps once there are 5+, else min to max), the median, and how many
 -- observations it rests on. Under 3 observations it says so instead of

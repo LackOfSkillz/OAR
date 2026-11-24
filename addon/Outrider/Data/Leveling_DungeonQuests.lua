@@ -1,7 +1,7 @@
 -- Data/Leveling_DungeonQuests.lua
 -- Dungeon quests, dungeon entrances and recommended dungeon levels for the
--- leveling knowledge base (Gary, 2026-11-21: "add it to our leveling
--- knowledge base"). Source: Wowhead's WoW Forever dungeon guides
+-- leveling knowledge base, so dungeon guidance shares its source
+-- (requirement 2026-11-21). Source: Wowhead's WoW Forever dungeon guides
 -- (wowhead.com/forever/guide/..., read in the browser 2026-11-21):
 --   each dungeon's own overview page (levels, quest givers)
 --   EVERY    = Every Dungeon Quest in WoW Forever (Serenal, updated 2026-11-20)

@@ -1,6 +1,6 @@
 -- UI/Form.lua
--- Pages built from rows, so every /ride command can be a control (Gary,
--- 2026-11-13: "do everything in the UI, no typing slash commands"). A form is
+-- Pages built from rows, so every /ride command can be a control (requirement
+-- 2026-11-13: everything doable in the UI, no typed slash commands). A form is
 -- a scrolling column of rows:
 --   { "header", "Text" }                         section heading
 --   { "note", "Text" or function }               muted help line (function = live text)

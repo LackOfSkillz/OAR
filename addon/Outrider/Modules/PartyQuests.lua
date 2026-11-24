@@ -1,7 +1,7 @@
 -- Modules/PartyQuests.lua
--- Quest announcements to the party, like Questie's (Gary, 2026-11-17:
--- "Questie announces to the party ... when all party members have completed
--- a quest, we need Outrider to do the same thing").
+-- Quest announcements to the party, like Questie's (requirement 2026-11-17:
+-- Questie announces progress to the party, including when all members have
+-- completed a quest; Outrider does the same).
 --   your progress   "Outrider: Shadowhide Pendant: 10/10 for [Solomon's Law]!"
 --                   when an objective is done, "Quest ready to hand in" when
 --                   all are, "Quest completed" when you hand it in (each once)

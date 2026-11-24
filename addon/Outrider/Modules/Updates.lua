@@ -1,6 +1,6 @@
 -- Modules/Updates.lua
--- Telling family installs that a newer Outrider exists (Gary, 2026-11-14:
--- "how do they get notified that there are updates?"). An addon can't reach
+-- Telling family installs that a newer Outrider exists (requirement 2026-11-14:
+-- family installs must learn about updates). An addon can't reach
 -- the internet, so in game it uses what it knows:
 --   * its own build date (family builds are stamped "v0.3.0-family-YYYYMMDD-HHMM"):
 --     after AGE days, one line a day pointing at the "Update Outrider" desktop

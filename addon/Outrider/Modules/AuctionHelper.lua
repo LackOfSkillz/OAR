@@ -241,7 +241,7 @@ end
 function M:Refresh()
   if not self.open then return end
   -- the shopping window has all of this (Sell bags, My auctions): no
-  -- second box beside the auction house (Gary, 2026-11-22). This small
+  -- second box beside the auction house, to avoid duplicate UI (2026-11-22). This small
   -- panel stays only for when the shopping window is switched off.
   local G = ns.GearShop
   if G and G.enabled ~= false then

@@ -165,7 +165,7 @@ end
 
 -- At logout: keep the /ride ask snapshot if it was taken in the last 10
 -- minutes (data read during logout is often empty: no position, quest levels
--- 0, Gary's report 2026-11-11), else refresh it.
+-- 0, field report 2026-11-11), else refresh it.
 function Snap:OnLogout()
   if self.askedThisSession and time() - self.askedThisSession < 600 then return false end
   self:Collect()

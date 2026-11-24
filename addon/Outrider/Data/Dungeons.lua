@@ -1,14 +1,14 @@
 -- Data/Dungeons.lua
 -- Level range, group size and type for each WoW Forever dungeon and raid, by
--- the name the dungeon pack uses (Gary, 2026-11-14: "recommend what dungeons
--- you're ready for"). Source: foreverdb.net/dungeons (read 2026-11-14; beta and
+-- the name the dungeon pack uses, so the addon can recommend dungeons the
+-- character is ready for (requirement 2026-11-14). Source: foreverdb.net/dungeons (read 2026-11-14; beta and
 -- first-week data). verified = false until Gary has been inside.
 -- Raid release dates are reported, not official: Onyxia, Hyjal Summit and the
 -- new Barrow Deeps open first (Dec 9 2026); Molten Core has no date yet.
 
 local _, ns = ...
 local SRC = "foreverdb.net"
--- 2026-11-21 (Gary: match Wowhead): 5-player ranges from Wowhead's Forever
+-- 2026-11-21 (requirement: match Wowhead): 5-player ranges from Wowhead's Forever
 -- dungeon guides (each dungeon's own page; Data/Leveling_DungeonQuests.lua has
 -- the details and where the Dungeons Overview differs); was = the old range.
 local WHD = "wowhead.com Forever dungeon guides (read 2026-11-21)"

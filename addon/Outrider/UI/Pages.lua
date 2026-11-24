@@ -1,6 +1,6 @@
 -- UI/Pages.lua
--- Hub pages that turn /ride commands into controls (Gary, 2026-11-13: "do
--- everything inside the Outrider window, logical and helpful"). Buttons run
+-- Hub pages that turn /ride commands into controls (requirement 2026-11-13:
+-- everything doable inside the Outrider window, logical and helpful). Buttons run
 -- the same code as the typed command (UI.Run), so nothing behaves differently.
 -- Anything without its own control is on the All commands tab in Help.
 -- Home: what you need right now (nearest places, where you're headed, best
@@ -16,10 +16,10 @@ local function set(name) local m = mod(name) return m and m:Settings() or {} end
 local function onoff(v) return v and "on" or "off" end
 
 -- ------------------------------------------------------------------ Home
--- Home, rebuilt as the showpiece (Gary, 2026-11-21: "if the rest of the pages
--- are hero shot worthy this page needs to be epic legendary worthy ... more
--- options for directions and more informative ... an average 8th grader
--- should be able to look at it and instantly know what to do").
+-- Home, rebuilt as the showpiece (requirement 2026-11-21: the flagship page,
+-- above the other hero pages; more directions, more information, and an
+-- 8th-grade reader should
+-- know at a glance what to do).
 --   hero: painted scene, class emblem, name, level, zone (and if it suits
 --   you), XP bar with rested, gold; 1-2-3 steps
 --   next step: big card, Go, and two other ideas you can click
@@ -139,7 +139,7 @@ ns.Hub:AddTab("home", "Home", function(p)
   end
   -- darker on the left so the words read over the painting
   -- solid dark under the emblem and name, then a long soft fade to clear, so
-  -- every word reads even where the painting is bright (Gary's screenshot,
+  -- every word reads even where the painting is bright (screenshot
   -- 2026-11-21: "rested" and step 3 ran into the adventurer)
   p.hero.shade = p.hero:CreateTexture(nil, "BORDER")
   p.hero.shade:SetPoint("TOPLEFT", 1, -1)
@@ -374,8 +374,8 @@ ns.Hub:AddTab("home", "Home", function(p)
     end
     local rowsOfTiles = math.ceil(#self.where.tiles / per)
     self.where:SetHeight(46 + rowsOfTiles * (TH + 6))
-    -- cards: three columns, two rows, as tall as the window allows (Gary's
-    -- screenshot: a third of the page was empty)
+    -- cards: three columns, two rows, as tall as the window allows (a
+    -- screenshot showed a third of the page empty)
     local cw = math.floor((w - 2 * HOME_PAD) / 3)
     local used = (self.hero:GetHeight() or 164) + (self.next:GetHeight() or 128) + (self.where:GetHeight() or 122) + 3 * HOME_PAD
     local free = (self:GetHeight() or 0) - used - 2 * HOME_PAD
@@ -395,8 +395,8 @@ ns.Hub:AddTab("home", "Home", function(p)
 
   function p:Refresh()
     self:Layout()
-    -- Self-check, once a session (Gary, 2026-11-23: the painting showed as a
-    -- black banner on his druid): what each half of the painting holds. A
+    -- Self-check, once a session (bug 2026-11-23: the painting showed as a
+    -- black banner on a druid): what each half of the painting holds. A
     -- half the game reports as empty falls back to the world header art.
     if not self.artChecked then
       self.artChecked = true
@@ -569,7 +569,7 @@ ns.Hub:AddTab("home", "Home", function(p)
 end)
 
 -- ------------------------------------------------------------ Waypoints
--- A grid of picture tiles (Gary, 2026-11-20: pages an 8th grader gets at a
+-- A grid of picture tiles (requirement 2026-11-20: pages an 8th grader gets at a
 -- glance): { {label, art, fallbackIcon, fn, tip}, ... }, used as a "custom" form row.
 local function iconTiles(items, perRow)
   perRow = perRow or 6
@@ -602,8 +602,8 @@ end
 ns.ClassPage = ns.ClassPage or {}
 ns.ClassPage.IconTiles = iconTiles
 
--- The trainers that matter to this character (Gary, 2026-11-20: "waypoints
--- should have all the trainers ... anything relevant to the character"):
+-- The trainers that matter to this character (requirement 2026-11-20: waypoints
+-- to all trainers and anything else relevant to the character):
 -- class trainer, weapon master, pet trainer for hunters, the cooking, first
 -- aid and fishing trainers everyone can use, and one per profession learned.
 local SECONDARY = { "Cooking", "First Aid", "Fishing" }
@@ -684,7 +684,7 @@ ns.Hub:AddTab("waypoints", "Waypoints", function(p)
     { "buttons", { { "Clear arrow", Run("way clear") }, { "Say my coordinates", Run("coords") } } },
     { "header", "Take me to the nearest..." },
     { "note", "Press a place: the gold arrow points to the closest one Outrider knows. Follow it; it clears when you arrive." },
-    -- picture tiles (Gary, 2026-11-20): the map-pin pictures, one press each
+    -- picture tiles (requirement 2026-11-20): the map-pin pictures, one press each
     { "custom", iconTiles(places, 6), rows(#places) },
     { "header", "Your trainers" },
     { "note", "Every trainer that matters to you, nearest first when you press one. A trainer Outrider hasn't seen yet says so: talk to one once, or stand next to it." },
@@ -728,8 +728,8 @@ ns.Hub:AddTab("rarealerts", "Rare alerts", function(p)
 end)
 
 -- ------------------------------------------------------------ Class page
--- One page named after the character's class (Gary, 2026-11-13: "class aware,
--- dynamic, relevant to the character being played"). A hunter sees hunter
+-- One page named after the character's class (requirement 2026-11-13: class aware,
+-- dynamic, relevant to the character being played). A hunter sees hunter
 -- tools only, a mage mage tools only. Sections appear when the class has them.
 local CLASS_ICON = "Interface\\Icons\\ClassIcon_"
 local CLASS_NAME = { WARRIOR = "Warrior", PALADIN = "Paladin", HUNTER = "Hunter", ROGUE = "Rogue", PRIEST = "Priest",
@@ -750,7 +750,7 @@ local KEY_NOTE = {
 -- spellbook pages; talents left out): ready now (your level, not known yet)
 -- and the next two levels that bring something new.
 local function trainerSpells(cls)
-  -- what your trainer showed you is the truth (Gary, 2026-11-21); the typed-in
+  -- what your trainer showed you is the truth (bug 2026-11-21); the typed-in
   -- spell table is only a fallback until you've opened your trainer once
   if ns.Spellbook and ns.Spellbook.TrainerLists and (not cls or cls == (ns.PlayerClass and ns.PlayerClass())) then
     local now, soon, nextLevel, any = ns.Spellbook:TrainerLists()
@@ -802,7 +802,7 @@ local function classRows(cls, page)
   local F = function() return set("HunterFight") end
   local function opt(key) return function(on) ns.Slash:Run("fight " .. key .. " " .. onoff(on)) end end
   local fight = ns.HunterFight and ns.HunterFight:Supported()
-  -- at a glance: level, talent points, spells waiting at the trainer (Gary, 2026-11-20)
+  -- at a glance: level, talent points, spells waiting at the trainer (requirement 2026-11-20)
   r({ "stats", function()
     local now, _, nextLevel = trainerSpells(cls)
     local level = tonumber(C.Readable(C.Call("UnitLevel", "player"))) or 1
@@ -816,7 +816,7 @@ local function classRows(cls, page)
         note = pts > 0 and "spend them in the talent window (N)" or nil },
     }
   end })
-  -- what to do now, in order, in plain words (Gary, 2026-11-23: "not 8th grade ready")
+  -- what to do now, in order, in plain words (requirement 2026-11-23: the old text was not 8th-grade ready)
   r({ "header", "Do this now" })
   r({ "cards", function()
     local now = trainerSpells(cls)
@@ -982,7 +982,7 @@ local function profRows()
     table.sort(out, function(x, y) return x.cap < y.cap end)
     return out
   end })
-  -- each profession in plain words: where it stands and what to do next (Gary, 2026-11-20)
+  -- each profession in plain words: where it stands and what to do next (requirement 2026-11-20)
   r({ "header", "What to do next" })
   r({ "cards", function()
     local out = {}
@@ -1267,11 +1267,11 @@ ns.Hub:AddTab("dungeons", "Dungeons", function(p)
 end)
 
 -- ------------------------------------------------------------- What now?
--- Pathfinder Lite in the Expedition look (Gary's concept picture, 2026-11-15):
+-- Pathfinder Lite in the Expedition look (owner's concept picture, 2026-11-15):
 -- page title in the display font, goal chips with icons, step cards with a
 -- picture, Go / Details / Not useful, and a side column with errands, rare
 -- watch, this session and a character snapshot. Pictures come from ns.Art
--- (Gary's custom art when installed, game icons until then). No made-up
+-- (the custom art when installed, game icons until then). No made-up
 -- numbers: confidence shows as Unchecked / Guess, never as a percentage.
 local CARD_H, CARD_GAP, SIDE_W, TOP, PIC, BTN_W = 116, 8, 224, 104, 76, 124
 local GOAL_ICON = {
@@ -1617,7 +1617,7 @@ ns.Hub:AddTab("chat", "Chat", function(p)
 end)
 
 -- -------------------------------------------------------------- Sharing
--- The Outrider Discord (Gary, 2026-11-23). The game can't open web links, so
+-- The Outrider Discord (added 2026-11-23). The game can't open web links, so
 -- the button shows the address in a box to copy (Ctrl+C) into a browser.
 ns.DISCORD = "https://discord.gg/NqsBsDPqy"
 function ns.ShowDiscord() UI:TextDialog("Join us on Discord", ns.DISCORD, "copy") end

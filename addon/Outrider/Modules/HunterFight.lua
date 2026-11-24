@@ -1,6 +1,6 @@
 -- Modules/HunterFight.lua  (class Fight macros; the file keeps its first name)
--- Spam macros per class (Gary, 2026-11-13: "class aware, only what is relevant
--- to the character being played"). Each class has its own keys, built only
+-- Spam macros per class (requirement 2026-11-13: class aware, only what is relevant
+-- to the character being played). Each class has its own keys, built only
 -- from spells this character knows:
 --   HUNTER  Fight (ranged), Strike (melee), Pet (care)
 --   MAGE    Fight (ranged nuke), Strike (close: Frost Nova, Fire Blast, Arcane Explosion)
@@ -90,7 +90,7 @@ function M:Kinds()
     out = {}
     for _, k in ipairs(base) do out[#out + 1] = k end
   end
-  -- Gary, 2026-11-23: a druid with no Bear or Cat Form yet had a Strike key
+  -- Bug 2026-11-23: a druid with no Bear or Cat Form yet had a Strike key
   -- that did the same as Fight. Strike waits for a form; Pull takes its place.
   if cls == "DRUID" and not (M.FormIndex and (M.FormIndex("Bear Form", "Dire Bear Form") or M.FormIndex("Cat Form"))) then
     for i = #out, 1, -1 do if out[i] == "melee" then table.remove(out, i) end end
@@ -104,9 +104,9 @@ function M:Kinds()
 end
 
 -- ------------------------------------------------------------ Pull
--- A Pull key for the classes without one (Gary, 2026-11-23: "pull with a
--- weapon if it has one, pull with a spell if it doesn't have a ranged
--- weapon"). Warriors and rogues have the plan's own Pull; hunters pull with
+-- A Pull key for the classes without one (requirement 2026-11-23: pull with a
+-- ranged weapon if there is one, otherwise with a spell).
+-- Warriors and rogues have the plan's own Pull; hunters pull with
 -- Fight. The spell is the class's ranged opener, the first one known.
 M.PULL = {
   DRUID = { "Moonfire", "Wrath" },
@@ -230,7 +230,7 @@ function M:Lines(kind)
   end
   if CASTER[cls] then CASTER[cls](kind, add) return L end
   if cls ~= "HUNTER" then return L end
-  -- Pet key (Gary got his pet, 2026-11-12): one button for pet care, out of
+  -- Pet key (added when the first pet was tamed, 2026-11-12): one button for pet care, out of
   -- the spam keys because Mend Pet is a channel. Dead pet: Revive Pet; no pet
   -- out: Call Pet; otherwise Mend Pet.
   if kind == "pet" then
@@ -246,7 +246,7 @@ function M:Lines(kind)
   if s.pet then add(9, "/petattack [pet,harm]", "sends the pet at your target every press, so it pulls aggro off you") end
   if kind == "melee" then
     add(1, "/startattack", "keeps swinging")
-    -- Gary, 2026-11-16: Strike means melee, so switch to Monkey (Fight
+    -- Requirement 2026-11-16: Strike means melee, so switch to Monkey (Fight
     -- switches back to Hawk). Once per fight: a macro can't see buffs and
     -- "!" on an aspect that is already up still spends the press. Left out
     -- only when Monkey is already up and nothing (no Hawk) will replace it.
@@ -258,7 +258,7 @@ function M:Lines(kind)
       add(5, "/cast [mod:shift] Wing Clip", "Shift: slows it so you can step back and shoot")
     end
     if known("Raptor Strike") then add(2, "/cast Raptor Strike", "whenever it is off cooldown") end
-    -- Gary, 2026-11-17: Immolation Trap. On Forever traps can be set in
+    -- Requirement 2026-11-17: Immolation Trap. On Forever traps can be set in
     -- combat (Icy Veins, Mobalytics Forever hunter guides); it lands at your
     -- feet, so it belongs in the melee key where the mob stands on it. The
     -- Survival guide puts it between Raptor Strike and Mongoose Bite. On
@@ -271,7 +271,7 @@ function M:Lines(kind)
   end
   if self:Ranged() ~= "bow" then return L end
   -- One sequence per pull: Hunter's Mark, Concussive Shot, then Auto Shot,
-  -- then Serpent Sting (Gary 2026-11-12: open with Mark and Concussive, not a
+  -- then Serpent Sting (requirement 2026-11-12: open with Mark and Concussive, not a
   -- plain arrow). Auto Shot sits inside the sequence so it starts once, right
   -- after Concussive, and is never re-sent ("!Auto Shot" in a castsequence
   -- works and moves on, measured 2026-11-12; re-sending it every press
@@ -281,7 +281,7 @@ function M:Lines(kind)
   -- 2026-11-13). Out of combat only, and "!" never turns it off. Distracting
   -- Shot stays out: it pulls the mob off the pet onto you.
   -- Only while Hawk is off: a macro can't test buffs, so Outrider rewrites
-  -- Fight (out of combat) when Hawk turns on or off (Gary, 2026-11-13: a
+  -- Fight (out of combat) when Hawk turns on or off (bug 2026-11-13: a
   -- press spent on Hawk when it was already on wasted a click).
   if known("Aspect of the Hawk") and not M.HawkOn() then
     add(6, "/cast [nocombat] !Aspect of the Hawk", "before the pull: Hawk on (never turned off)")
@@ -309,7 +309,7 @@ function M:Lines(kind)
     add(2, "/castsequence reset=combat/target " .. table.concat(seq, ","),
       "Mark, Auto Shot, Sting, then Arcane Shot on cooldown, round and round")
   end
-  -- Back to Hawk after Strike put Monkey up (Gary, 2026-11-16). Last line,
+  -- Back to Hawk after Strike put Monkey up (requirement 2026-11-16). Last line,
   -- so it is only reached when Arcane Shot is cooling down: a press that
   -- would do nothing else. Hawk already up = that press does nothing.
   if known("Aspect of the Hawk") and known("Aspect of the Monkey") then
@@ -332,8 +332,8 @@ function M:Body(kind)
     for i, l in ipairs(lines) do if l.text:find("mod:alt", 1, true) or l.text == "/cancelform" then at = i + 1 end end
     table.insert(lines, at, { keep = 3, text = "/use [mod:alt] " .. potion, why = "Alt: drink " .. potion .. " (when the low mana cue shows)" })
   end
-  -- Every fight key swings too (Gary, 2026-11-23: after a pull the mob walked
-  -- up and he had to click it again to start auto attack). Not where a shot
+  -- Every fight key swings too (bug 2026-11-23: after a pull the mob walked
+  -- up and needed a second click to start auto attack). Not where a shot
   -- repeats (Auto Shot, a wand's Shoot, Throw): starting melee would stop it.
   local fighting, shoots, swings, at = false, false, false, nil
   for i, l in ipairs(lines) do
@@ -432,7 +432,7 @@ function M:Update(why)
       local entry = self:Entry(kind)
       -- Created only from Gary's click (Macros tab Install or /ride fight), like
       -- every library macro; once ours, it follows the spellbook by itself.
-      -- Strike also comes along once Fight is ours (Gary asked for both, 2026-11-12).
+      -- Strike also comes along once Fight is ours (both requested, 2026-11-12).
       local wanted = not entry.empty and (installed[entry.name] or why == "command" or (kind ~= "ranged" and installed[self:Settings().name]))
       if wanted and lib:State(entry) ~= "installed" then
         local ok, msg = lib:Install(entry)
@@ -455,7 +455,7 @@ function M:Update(why)
       ns.Print("macros %s ready: open the macro window (/macro), Character tab, and drag them to your bar",
         table.concat(made, " and "))
     elseif #made > 0 and not self.toldRewrite then
-      -- Gary, 2026-11-19: a silent rewrite at level-up looked like nothing
+      -- Feedback 2026-11-19: a silent rewrite at level-up looked like nothing
       -- happened. One line per session (rule 6); the macro on your bar is the
       -- same slot, only its text changed.
       self.toldRewrite = true
@@ -605,11 +605,11 @@ end
 
 function M:OnEnable()
   self:ShotOverlay()
-  -- One time: Gary asked to turn Wing Clip back on (2026-11-12). After this,
-  -- /ride fight wingclip on|off is his to change again.
+  -- One time: Wing Clip turned back on by request (2026-11-12). After this,
+  -- /ride fight wingclip on|off is the player's to change again.
   local s = self:Settings()
   if not s.wingclipOn20261112 then s.wingclipOn20261112, s.wingclip = true, true end
-  -- One time: guide order (Gary chose it, 2026-11-13): Hawk, Mark, Auto Shot,
+  -- One time: guide order (chosen 2026-11-13): Hawk, Mark, Auto Shot,
   -- Serpent, Arcane; Concussive leaves the spam key (the Class page toggle
   -- brings it back).
   if not s.guideOrder20261113 then s.guideOrder20261113, s.concussive = true, false end

@@ -1,6 +1,6 @@
 -- Modules/AuctionSell.lua
--- Selling at the auction house (Gary, 2026-11-22: "match all the features
--- that Auctionator has"). Two views in the shopping window:
+-- Selling at the auction house (requirement 2026-11-22: feature parity with
+-- Auctionator's selling). Two views in the shopping window:
 --   * Sell bags: every stack in the bags that can go on the auction house,
 --     one card per item. Outrider looks up the lowest price someone else
 --     asks right now (one search at a time, only while the buy cart is idle),

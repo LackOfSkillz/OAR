@@ -1,6 +1,6 @@
 -- Modules/GearQuestBridge.lua  (P6-07 GearQuest bridge)
 -- GearQuest Forever (CurseForge project 1698950, by weber8210/Henrik8210,
--- installed with Gary's OK 2026-11-11) has no documented API, but exposes
+-- installed with owner approval 2026-11-11) has no documented API, but exposes
 -- its addon table as the global `GearQuest`. This module READS its picks
 -- (read only, every call in pcall; GearQuest's frames are never touched):
 --   GQ.Data:GetSlotsForClass(class) -> slot names
@@ -74,7 +74,7 @@ function M:Picks()
 end
 
 function M:Activity()
-  -- no other addon's name on screen (Gary, 2026-11-20); the log keeps the detail
+  -- no other addon's name on screen (owner request 2026-11-20); the log keeps the detail
   if not self:GQ() then return "Not needed: the Gear tab works on its own" end
   if self.broken then return "Extra picks paused this session (" .. self.broken .. " failed)" end
   return "Extra upgrade picks show in the Gear tab"

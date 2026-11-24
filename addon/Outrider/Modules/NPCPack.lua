@@ -69,7 +69,7 @@ function M:OnEnable()
 end
 
 -- Where you saw the NPC yourself, up close (Discovery, interact or near):
--- that beats the pack's spot (Gary, 2026-11-20). mapID, x, y or nil.
+-- that beats the pack's spot (requirement 2026-11-20). mapID, x, y or nil.
 function M.Seen(npcID)
   local d = ns.db.global.discovered
   local e = type(d) == "table" and type(d.npcs) == "table" and d.npcs[npcID]
@@ -129,8 +129,8 @@ function M:PlacesFor(mapID)
 end
 
 -- ---------------------------------------------------------------- quest levels
--- Quest givers carry the quests they start (Gary, 2026-11-11: "hard to tell
--- if quests on the map are right for my level"). Colors follow the game's
+-- Quest givers carry the quests they start (requirement 2026-11-11: show
+-- whether quests on the map suit the character's level). Colors follow the game's
 -- quest log: red 5+ levels above you, orange 3-4, yellow within 2, green
 -- below that down to the grey level, grey after (no XP; hidden unless
 -- /ride questpins grey on). The grey level uses the Classic formula
@@ -240,7 +240,7 @@ function M:OfKind(kind)
 end
 
 -- ---------------------------------------------------------------- zone report
--- "Which quests in this zone haven't I done?" (Gary, 2026-11-13). Every quest
+-- Which quests in this zone are still not done (requirement 2026-11-13). Every quest
 -- the pack's givers on this map start, sorted into done / in your log /
 -- available now / locked (level or earlier quest), skipping the other
 -- faction's and other classes' quests. Saved in ns.db.char.zoneQuests[mapID]

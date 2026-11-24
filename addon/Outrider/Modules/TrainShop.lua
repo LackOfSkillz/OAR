@@ -1,7 +1,7 @@
 -- Modules/TrainShop.lua
--- Auction-house shopping for profession training (Gary, 2026-11-14: "search
--- the auction house to find ingredients I need to gain skill ... and recipes
--- ... for leatherworking, alchemy, cooking ... recommend what I should buy").
+-- Auction-house shopping for profession training (requirement 2026-11-14: search
+-- the auction house for skill-up ingredients and recipes
+-- for leatherworking, alchemy, cooking, and recommend what to buy).
 -- With the auction house open, one click on "Find training materials":
 --   1. Needs: for every crafting profession this character has, each known
 --      recipe that still gives skill (orange, yellow, green; colours from the
@@ -14,9 +14,9 @@
 --      are free; skill chance: orange 1, yellow 0.75, green 0.25) and lists
 --      recipes for sale that this character doesn't know yet, with the skill
 --      they need (read from the item's tooltip).
--- Read only: buying is Gary's own click in Blizzard's auction window.
--- Pick a profession (Gary, 2026-11-16: "I should be able to select which
--- training I want to do"): chips for this character's crafting professions
+-- Read only: buying is the player's own click in Blizzard's auction window.
+-- Pick a profession (requirement 2026-11-16: choose which profession to
+-- train): chips for this character's crafting professions
 -- only, plus All. One profession searches only its own ingredients and
 -- recipes; All gives every profession a share of the list, so a long Cooking
 -- list no longer pushes Alchemy off the panel.
@@ -126,7 +126,7 @@ function M:Query(entry)
   return ok
 end
 
--- Start (Gary's click). Searches run back to back; if one goes unanswered the
+-- Start (player's click). Searches run back to back; if one goes unanswered the
 -- rest wait for a click each.
 function M:Start()
   if not self.open then ns.Print("open the auction house first") return end
@@ -211,7 +211,7 @@ function M:NoteRecipe(prof, itemID, price, itemKey)
   if known then self.knownHidden = (self.knownHidden or 0) + 1 return end
   if not read and C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, itemID) end
   -- only this character counts: a recipe another character knows is still
-  -- one this character may want (Gary, 2026-11-20)
+  -- one this character may want (requirement 2026-11-20)
   self.recipesForSale[#self.recipesForSale + 1] = { prof = prof, itemID = itemID, name = name or ("item " .. itemID),
     price = price, need = need, read = read, itemKey = itemKey or { itemID = itemID } }
 end
@@ -266,7 +266,7 @@ end
 
 
 -- Recipes worth showing: skill known, usable now or within 25 points; usable
--- now first, then cheapest (Gary's first search found 119, 2026-11-14).
+-- now first, then cheapest (the first live search found 119, 2026-11-14).
 M.SOON = 25
 function M:UsefulRecipes()
   self:Recheck()
@@ -374,7 +374,7 @@ end
 
 -- ------------------------------------------------------------ panel
 -- Drawn inside the shopping window (GearShop): the profession chips, and the
--- cards for its three Training views (Gary, 2026-11-20: sub-items for training).
+-- cards for its three Training views (requirement 2026-11-20: sub-items for training).
 
 -- The skill-up lines on show: All gives each profession a fair share.
 function M:Picked()

@@ -36,8 +36,8 @@ function M:OnEnable()
 end
 
 -- Minimap vignettes (the skull/star a rare can get): seen from much farther
--- than a nameplate (Gary, 2026-11-14: "sound an alarm when she spawns while I
--- camp"). C9 says rares may have none on Forever, so the first vignettes of a
+-- than a nameplate (requirement 2026-11-14: sound an alarm when a camped rare
+-- spawns). C9 says rares may have none on Forever, so the first vignettes of a
 -- session are logged to settle it. A vignette on a rare creature alerts like a
 -- nameplate, with its exact position. Read-only.
 function M:IsRareCreature(npcID, mapID, atlas)

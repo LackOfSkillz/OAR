@@ -1,7 +1,7 @@
--- Modules/FightPlan.lua  (Gary, 2026-11-18: "research every class, spec, race
--- and faction ... a pre-generated fight macro for each ... best rotation for
--- the level ... both the ranged and melee version ... and tell them when the
--- macro isn't efficient for their build")
+-- Modules/FightPlan.lua  (requirement 2026-11-18: every class, spec, race and
+-- faction gets a pre-generated fight macro with the best rotation for its
+-- level, ranged and melee versions, and a warning when the macro isn't
+-- efficient for the character's build)
 --
 -- The fight keys HunterFight writes now come from Data/FightPlans.lua (built
 -- from docs/fight_macro_catalog_draft.lua; research in
@@ -53,7 +53,7 @@ end
 -- ------------------------------------------------------------ who you are
 function M.Plan() return ns.FightPlans and ns.FightPlans:Class(ns.PlayerClass()) end
 
--- The build chosen on the Macros page before 10 talent points (Gary,
+-- The build chosen on the Macros page before 10 talent points (requirement
 -- 2026-11-19: pick your build from level 1, so the keys and the tree aim at it).
 function M.Planned(plan)
   local MT = ns.MacroTree
@@ -195,7 +195,7 @@ function M.DruidForms(text)
     for n in list:gmatch("%d+") do out[#out + 1] = tostring(map[n] or n) end
     return "form:" .. table.concat(out, "/")
   end)
-  -- Moonkin casts like no form (Gary, 2026-11-22): a plain [noform] clause
+  -- Moonkin casts like no form (fix 2026-11-22): a plain [noform] clause
   -- also fires in Moonkin Form, by its stance bar number
   local moonkin = F.FormIndex("Moonkin Form")
   if moonkin then text = text:gsub("%[noform%]", "[noform][form:" .. moonkin .. "]") end

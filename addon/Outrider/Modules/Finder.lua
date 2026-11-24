@@ -1,8 +1,8 @@
 -- Modules/Finder.lua
--- The Find page's search engine (Gary, 2026-11-13: "a feature-rich map:
--- pick a place, a critter to hunt, a quest, the best XP or gear for my
--- level, an item, an NPC; searchable and sortable; use the available data,
--- not only places I know"). One list of entries from every source:
+-- The Find page's search engine (requirement 2026-11-13: a feature-rich map
+-- to pick a place, a creature to hunt, a quest, the best XP or gear for the
+-- level, an item or an NPC; searchable and sortable; uses all available data,
+-- not only places already visited). One list of entries from every source:
 --   gear     upgrades for this character from the gear pack, every map
 --   item     any item in the gear pack by name, with where it comes from
 --   quest    quests you can pick up now, every map (NPC pack), with estimated XP
@@ -58,7 +58,7 @@ local function add(out, kind, name, mapID, x, y, t)
 end
 
 -- ------------------------------------------------------------ awareness
--- Everything suggested must suit THIS character (Gary, 2026-11-13: race,
+-- Everything suggested must suit THIS character (requirement 2026-11-13: race,
 -- level, faction and class aware; never send Alliance to Horde NPCs or the
 -- other way round). Quests: faction, class, race and level in NPCPack.
 -- Gear: faction and level in Nearby, class in GearScore. Places and NPCs
@@ -115,7 +115,7 @@ function P.item(out, text)
 end
 
 -- Quests you can do now. Red ones (5+ levels above you) are left out: they
--- topped "best quests" by raw XP although you can't do them yet (Gary's tour,
+-- topped "best quests" by raw XP although you can't do them yet (test tour,
 -- 2026-11-18: "A Sealed Crate [60]" three times for a level 20). A quest with
 -- several givers is listed once; Find() keeps the nearest after timing.
 function P.quest(out)

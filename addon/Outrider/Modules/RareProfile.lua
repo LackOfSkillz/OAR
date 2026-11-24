@@ -1,6 +1,6 @@
 -- Modules/RareProfile.lua
--- What a rare is like in a fight (Gary, 2026-11-13: "for Mystmane, let's
--- collect some data"), built by itself whenever a rare is on screen, no
+-- What a rare is like in a fight (requirement 2026-11-13: collect fight data,
+-- starting with Mystmane), built by itself whenever a rare is on screen, no
 -- typing, no combat log (hard rule 4):
 --   * when RareScan sees it (target, mouseover, nameplate): level, max health,
 --     attack speed, family, classification;

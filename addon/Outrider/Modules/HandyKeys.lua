@@ -1,5 +1,5 @@
--- Modules/HandyKeys.lua  (Gary, 2026-11-19: "what can we use scripts within
--- macros for ... build those and build them into every macro")
+-- Modules/HandyKeys.lua  (requirement 2026-11-19: find what scripts inside
+-- macros are useful for, and build those helpers into the macros)
 -- One-press helpers you put on a bar, each a macro line "/ride <command>":
 --   Nameplates  enemy nameplates on or off (rares are seen from much further)
 --   Vendor      at a merchant: sell grey junk and repair

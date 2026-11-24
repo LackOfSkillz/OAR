@@ -1,7 +1,7 @@
 -- Modules/RarePlates.lua  (P7-07 nameplates, rare marker)
 -- When a rare's nameplate appears, a big pulsing star floats just above it
--- (Gary, 2026-11-15: The Rake spawned among a crowd of beasts and he could
--- not find it fast enough): gold for a rare on this character's watchlist or
+-- (bug 2026-11-15: The Rake spawned among a crowd of beasts and could
+-- not be found fast enough): gold for a rare on this character's watchlist or
 -- in the rare pack, silver for any other rare (RareScan decides what a rare
 -- is). M.Direction says where the plate is on screen for the alert toast. The marker is Outrider's own
 -- frame anchored to the plate, never a child of Blizzard's nameplate, and

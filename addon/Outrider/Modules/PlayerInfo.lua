@@ -1,7 +1,7 @@
 -- Modules/PlayerInfo.lua
--- Extra lines on other players' tooltips (Gary, 2026-11-17: "when we hover
--- over a creature or a pet it gives us the speed and different info ... is
--- there a way to do that with players"):
+-- Extra lines on other players' tooltips (requirement 2026-11-17: the same
+-- speed and other details creature and pet tooltips already show, for
+-- players):
 --   live        attack speed, max health and mana/energy/rage, PvP flag and rank
 --   remembered  professions they linked in trade chat (Census), when and where
 --               we last saw them, "your alt"
@@ -233,8 +233,8 @@ ns.TooltipLines:Add("unit", "player", M, function(tip, data)
 end)
 
 -- ------------------------------------------------------------------ PvP odds
--- (Gary, 2026-11-17: "if me and that player did have a PvP round, what would
--- be the likelihood of the outcome") A rough estimate, labelled as one. It
+-- (requirement 2026-11-17: the likely outcome of a PvP fight against that
+-- player) A rough estimate, labelled as one. It
 -- adds up what Outrider can measure, as a logistic score:
 --   level gap      0.45 per level (capped at 8); a "??" skull level is ~2%
 --   health         2 x log(your max health / theirs)
@@ -353,8 +353,8 @@ function M:OnSystem(_, msg)
 end
 
 -- ------------------------------------------------------------------ rares and elites
--- (Gary, 2026-11-17: "can we do something similar for rare and elite
--- critters?") The same kind of rough estimate for a fight with a rare,
+-- (requirement 2026-11-17: the same for rare and elite
+-- creatures) The same kind of rough estimate for a fight with a rare,
 -- rare elite, elite or boss creature, labelled as one:
 --   level gap      0.5 per level (capped at 8); "??" or a world boss is ~1%
 --   health         1.6 x log(your side's health / its health), when readable

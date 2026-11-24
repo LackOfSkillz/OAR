@@ -84,8 +84,8 @@ function M:Calibrate()
   return M.swap
 end
 
--- Pins Gary asked Claude for in chat, set once on the named character's next
--- login (never replacing a waypoint he set himself). Coordinates from the
+-- Pins requested from Claude in chat, set once on the named character's next
+-- login (never replacing a waypoint the player set). Coordinates from the
 -- Questie Forever DB and Outrider's own sightings.
 M.REQUESTS = {
   -- (Vulgara's pin, 2026-11-14 08:08, retired: Gary reached her at 08:12)

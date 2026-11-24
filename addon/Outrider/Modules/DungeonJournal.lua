@@ -180,7 +180,7 @@ ns.AddCommand("journal", "journal [dungeon name]  browse bosses, loot, quests an
 end)
 
 -- ------------------------------------------------------------ bosses on dungeon maps
--- (Gary, 2026-11-23: ideas from FojjiCore.) The travel pack lists the
+-- (2026-11-23: ideas from FojjiCore.) The travel pack lists the
 -- creatures inside each instance that drop blue or better gear, at their
 -- spot in the instance's own world coordinates. On a dungeon map the game
 -- turns that spot into a map position (C_Map.GetMapPosFromWorldPos), so the

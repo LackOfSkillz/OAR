@@ -1,6 +1,6 @@
 -- Modules/FishingHUD.lua
--- A 4-line box shown only while a fishing pole is equipped (Gary, 2026-11-14:
--- "especially the fishing hud ... clutter is too much clutter"):
+-- A 4-line box shown only while a fishing pole is equipped; kept to four lines
+-- to limit screen clutter (owner request 2026-11-14):
 --   Fishing 87/150 (+25)   Lure 6:12          skill and lure time left
 --   Here: Smallfish 70% · Mud Snapper 25%      what you've caught in this zone
 --   42 fish · 1g 20s (1g 05s/h)                this session, valued like MoneyGuide
@@ -9,7 +9,7 @@
 -- Hover: each fish here with what to do with it (cook / sell at AH / vendor).
 -- Also: "too hard here" when many fish get away, one chat line when the pole
 -- comes off, a sound for rare catches, pins for fishing pools you mouse over.
--- Read only, except the Weapons button (Gary's click, secure, works in combat).
+-- Read only, except the Weapons button (player's click, secure, works in combat).
 
 local _, ns = ...
 local C = ns.Compat
@@ -128,7 +128,7 @@ function M:Advice(id)
 end
 
 -- ------------------------------------------------------------ session
--- A session survives a /reload or taking the pole off for a moment (Gary,
+-- A session survives a /reload or taking the pole off for a moment (bug
 -- 2026-11-14: the 12 Pound Mud Snapper dropped out of the HUD after a reload).
 -- It's kept per character and picked up again if the last catch or cast was
 -- less than RESUME seconds ago.
@@ -280,7 +280,7 @@ function M:Build()
   f.lines = {}
   for i = 1, 4 do
     local t = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    -- one line each, never wrapped (Gary's screenshot, 2026-11-14: a long
+    -- one line each, never wrapped (screenshot 2026-11-14: a long
     -- "Here" line wrapped onto the next); the box grows to fit instead
     t:SetPoint("TOPLEFT", 8, -6 - (i - 1) * 15)
     t:SetJustifyH("LEFT")

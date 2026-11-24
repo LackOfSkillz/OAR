@@ -1,5 +1,5 @@
--- Modules/LagCheck.lua  (Gary, 2026-11-21: "my daughter is saying it's
--- causing some fps drops ... add some debugging for lag for users")
+-- Modules/LagCheck.lua  (requirement 2026-11-21: a user reported FPS drops;
+-- give users a way to debug lag)
 -- A one-minute measurement any player can start (Help, Report or idea, "Check
 -- for lag"; /ride lag): while it runs, every Outrider event handler and timer
 -- is timed (Core/Events.lua and Core/Timer.lua ask M.on) and the game's FPS is

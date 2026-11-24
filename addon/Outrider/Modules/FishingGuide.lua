@@ -1,6 +1,6 @@
 -- Modules/FishingGuide.lua
--- The Fishing page (Gary, 2026-11-17: "look up fishing addons ... add all the
--- best fishing features and data"; Fishing Buddy Forever, Forever Fishing and
+-- The Fishing page (requirement 2026-11-17: survey fishing addons and cover
+-- the best fishing features and data; Fishing Buddy Forever, Forever Fishing and
 -- FishFry compared). Outrider already had one-key cast and hook, sound focus,
 -- auto loot, lure timer, catches per zone, gold per hour, rare-catch sound,
 -- pool pins and a goal (Fishing, FishingHUD, LootLog). This adds:
@@ -162,7 +162,7 @@ function M:People(kind)
   return out
 end
 
--- where an NPC stands: where you saw it yourself first (Gary, 2026-11-20),
+-- where an NPC stands: where you saw it yourself first (requirement 2026-11-20),
 -- then places Outrider recorded, then the NPC pack
 function M.Place(name)
   local d = ns.db.global.discovered
@@ -366,7 +366,7 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
     end },
     -- your real skill added up (FishFry idea, 2026-11-24)
     { "note", function() return ns.FishingRing and ns.FishingRing:BreakdownLine() or "" end },
-    -- gear swap first: it's what you reach for every time (Gary, 2026-11-20)
+    -- gear swap first: it's what you reach for every time (owner request 2026-11-20)
     { "header", "Fishing gear", icon = "INV_Fishingpole_02" },
     { "buttons", { { "Fishing gear on", act(function() return M:GearOn() end), 150 }, { "Usual gear back", act(function() return M:GearOff() end), 150 } } },
     { "note", "Puts on your best fishing pole and any gear with a Fishing bonus from your bags; Usual gear back puts back what you wore. Out of combat." },
@@ -387,7 +387,7 @@ ns.Hub:AddTab("fishing", "Fishing", function(p)
     { "check", "Sound for rare catches", function() return ns.FishingHUD and ns.FishingHUD:Settings().rareSound end,
       function(on) if ns.FishingHUD then ns.FishingHUD:Settings().rareSound = on end end },
     -- the session in full, spots, records and the wanted list (FishingLog;
-    -- Gary, 2026-11-23: as good as OneCast or better)
+    -- requirement 2026-11-23: as good as OneCast or better)
     { "header", "This session", icon = "INV_Misc_PocketWatch_01" },
     { "stats", function()
       local L = ns.FishingLog

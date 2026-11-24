@@ -1,6 +1,6 @@
 -- Data/Fishing.lua
--- Fishing guide data for WoW Forever (Gary, 2026-11-17: "add all the best
--- fishing features and data"). Everything here is verified = false until
+-- Fishing guide data for WoW Forever, covering the best-known fishing features
+-- and data (requirement 2026-11-17). Everything here is verified = false until
 -- seen in game; zones and NPCs by NAME (the game turns names into maps and
 -- the NPC pack into places at runtime).
 -- Sources (read 2026-11-17):

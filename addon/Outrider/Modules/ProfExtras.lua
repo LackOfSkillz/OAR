@@ -61,7 +61,7 @@ function M:ReadTrainer()
   ns.db.char.trainers = ns.db.char.trainers or {}
   ns.db.char.trainers[kind] = { trainer = trainer, at = time(), list = list }
   -- what this NPC teaches, account-wide by npcID: the "take me there" buttons
-  -- trust it over titles (Gary, 2026-11-21: Forever's fishing trainer is
+  -- trust it over titles (observed 2026-11-21: Forever's fishing trainer is
   -- "<Fisher>", not "Fishing Trainer")
   local npcID = C.UnitNpcID and C.UnitNpcID("npc")
   if npcID and #list > 0 then

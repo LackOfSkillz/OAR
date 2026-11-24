@@ -1,5 +1,5 @@
--- Modules/ComboKeys.lua  (Gary, 2026-11-20: "a lot of macros for individual
--- actions ... combine as many best sequences into fewer macros")
+-- Modules/ComboKeys.lua  (requirement 2026-11-20: too many single-action
+-- macros; fold the best sequences into fewer macros)
 -- Five combined keys per class, built from what the character knows:
 --   Stop     interrupt; Shift stun; Ctrl / Alt longer crowd control
 --   Save     your big defensive; Shift escape; Ctrl / Alt the next one

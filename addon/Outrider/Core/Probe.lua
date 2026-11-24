@@ -24,7 +24,7 @@ Probe.APIS = {
   { "C_AssistedCombat.GetNextCastSpell", "P4", "Blizzard one-button rotation" },
   { "C_AssistedCombat.IsAvailable", "P4" }, { "C_AssistedCombat.GetActionSpell", "P4" },
   { "C_AssistedCombat.GetRotationSpells", "P4" },
-  -- Official ways to see a fight without the combat log (Gary, 2026-11-16).
+  -- Official ways to see a fight without the combat log (requirement 2026-11-16).
   -- Presence only; names to check, nothing is called. Blizzard's damage meter
   -- (its frame is registered in Edit Mode on this client):
   { "C_DamageMeter.IsDamageMeterAvailable", "P4", "damage meter" },

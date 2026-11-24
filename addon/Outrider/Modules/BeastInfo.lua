@@ -53,8 +53,8 @@ function M:Lines(unit, shift)
       end
     end
     lines[#lines + 1] = table.concat(parts, " · ")
-    -- How fast it hits, read live from the game (Gary, 2026-11-13: "which pet
-    -- has the best DPS?"). Lower is faster; remembered for the Finder.
+    -- How fast it hits, read live from the game, to compare pet DPS
+    -- (requirement 2026-11-13). Lower is faster; remembered for the Finder.
     if ns.PlayerClass() == "HUNTER" then
       local speed = C.Readable(C.Call("UnitAttackSpeed", unit))
       if type(speed) == "number" and speed > 0 then
@@ -62,8 +62,8 @@ function M:Lines(unit, shift)
         lines[#lines + 1] = string.format("Attacks every %.1fs (%s)", speed, feel)
         local d = npcID and ns.db.global.discovered and ns.db.global.discovered.npcs[npcID]
         if d then d.attackSpeed = speed end
-        -- another hunter's pet (Gary, 2026-11-15: "Ice Ember, level 12, 1.1 s,
-        -- where do I get that?"): pets carry their owner's name for them, so
+        -- another hunter's pet (use case 2026-11-15: an Ice Ember, level 12, 1.1 s,
+        -- seen as a pet; where to tame one?): pets carry their owner's name for them, so
         -- keep what identifies the beast (family, level, speed, model), never
         -- the owner's or the pet's name, once per pet per session
         if isPet and not C.Call("UnitIsUnit", unit, "pet") then self:NotePet(unit, family, level, speed, petOf) end
