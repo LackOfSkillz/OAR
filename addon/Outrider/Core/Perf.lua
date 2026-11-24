@@ -55,6 +55,8 @@ function Perf:Runtime()
     end
   end
   out.errors, out.taint = errs, taint
+  -- collected rows moved to the archive so far (owner retention decision 2026-11-24)
+  out.archiveRows = ns.Archive and ns.Archive:Count() or 0
   return out
 end
 

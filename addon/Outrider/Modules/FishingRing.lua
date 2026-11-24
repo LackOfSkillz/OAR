@@ -26,6 +26,8 @@ local M = ns:NewModule("FishingRing", {
   phase = "P5",
   order = 77,
   defaults = { show = true, shape = "circle", scale = 1, point = nil, lure = nil },
+  -- one fishing HUD on screen: step aside for the fishing addons (hard rule 8)
+  yieldsTo = { "FishingBuddy", "ForeverFishing", "FishFry" },
 })
 ns.FishingRing = M
 
