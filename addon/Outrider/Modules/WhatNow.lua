@@ -152,6 +152,7 @@ SOURCES.errands = function()
       c.why = "New ranks and spells make every fight faster."
     elseif e.kind == "vendor" then
       c.benefit = 0.35
+      c.costCopper = 0 -- selling costs nothing
       c.why = "Frees bag space and turns junk into gold."
     else
       c.why = "Gets you what your crafting list is missing."
@@ -192,7 +193,8 @@ SOURCES.quests = function()
         benefit = benefit, confidence = 0.6, seconds = e.seconds, mapID = e.mapID, label = "community",
         -- Journey uses a Classic-level formula and fixed five-minute task
         -- estimate. These are NOT observed quest XP or completion times.
-        questID = e.questID, estimatedQuestXP = e.xp, estimatedTripSeconds = e.seconds,
+        questID = e.questID, questFaction = e.faction, preAll = e.preAll, preAny = e.preAny,
+        estimatedQuestXP = e.xp, estimatedTripSeconds = e.seconds,
         estimatedActivitySeconds = ns.Journey.QUEST_TIME, estimateBasis = "journey_community",
         target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
         caveat = "Quest spots come from Classic data and may have moved on Forever.",
@@ -254,7 +256,7 @@ SOURCES.gear = function()
       why = string.format("A %d%% upgrade for you.", math.floor((e.pct or 0) + 0.5)),
       where = string.format("%s, %s away%s", zone(e.mapID), minutes(e.seconds) or "?", e.note and (" (" .. e.note .. ")") or ""),
       benefit = clamp((e.pct or 0) / 30), confidence = 0.7, seconds = e.seconds, mapID = e.mapID, label = "community",
-      itemID = e.itemID, panel = "gear",
+      itemID = e.itemID, panel = "gear", gearSource = e.source, estimatedTripSeconds = e.seconds,
       target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
       caveat = "Where it drops or sells comes from Classic data.",
       go = function() return ns.Journey:Go(e) end }
@@ -307,7 +309,7 @@ SOURCES.training = function()
     title = string.format("Train %s (+%d expected)", prof, total),
     why = "You already carry what it needs: no shopping trip.",
     where = "anywhere (press your Training key)", benefit = clamp(total / 10), confidence = 0.85,
-    label = "observed", panel = "professions",
+    label = "observed", panel = "professions", costCopper = 0, -- crafts from what you carry
     go = hub("professions") } }
 end
 
@@ -459,9 +461,20 @@ end
 function M:List(force)
   local now = time()
   if not force and self.cache and now - self.cacheAt < M.CACHE then return self.cache end
-  local cands, failed = self:Candidates()
   local st = self:Store()
-  local list = M.Pick(cands, self:Goal(), st.skip, now)
+  -- the planner, when on, owns the ranking (OI02-R08): its plan already read
+  -- the same producers, so they aren't run twice; off, the baseline pick
+  local N = ns.NexusCore
+  local cands, failed, list
+  if N and N:Ready() then
+    list = N:Picks(M.MAX) or {}
+    cands, failed = list, (N.current and N.current.unavailable) or {}
+    self.provider = "nexus"
+  else
+    cands, failed = self:Candidates()
+    list = M.Pick(cands, self:Goal(), st.skip, now)
+    self.provider = "whatnow"
+  end
   self.cache, self.cacheAt, self.failed = list, now, failed
   if not self.loggedAt then self:LogAll("first look") end
   local keys = {}
@@ -496,6 +509,7 @@ end
 function M:Skip(c)
   if not c then return end
   self:Store().skip[c.key] = time()
+  if c.nexusId and ns.NexusCore then ns.NexusCore:Skip(c.nexusId) end
   self:Info("what now not useful: %s (%s, score %.2f)", tostring(c.key), self:Goal(), c.score or 0)
   self.cache = nil
 end

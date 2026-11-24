@@ -35,21 +35,12 @@ function M:Context()
   local goals = ns.NexusGoals:Active()
   local reserve
   for _, g in ipairs(goals) do if g.reserveCopper then reserve = math.max(reserve or 0, g.reserveCopper) end end
-  local done = {}
-  for id in pairs(self:Settings().skipped or {}) do done[id] = true end
+  -- skipping a step is not completing it (OI02-R09): skipped steps are left
+  -- out of the pool, and anything that needs them says so
   return { copper = gold and gold.value, reserveCopper = reserve, mapID = loc and loc.value.mapID,
     faction = st and st.faction ~= "unknown" and st.faction or nil, revision = S:Revision(), now = time() }, goals
 end
 
--- meta for the graph from the producers' own candidates
-local function metaFor(runtime)
-  local meta = {}
-  for id, c in pairs(runtime or {}) do
-    local q = ns.NexusAdapters.QuestKey(c)
-    meta[id] = { mapID = tonumber(c.mapID), overlap = q and ("quest:" .. q) or nil }
-  end
-  return meta
-end
 
 -- Build a plan now (pure apart from reading state). Returns the stored result.
 function M:Replan(why)
@@ -61,16 +52,11 @@ function M:Replan(why)
   local skipped = self:Settings().skipped or {}
   local kept = {}
   for _, o in ipairs(opps) do if not skipped[o.opportunityId] then kept[#kept + 1] = o end end
-  local graph = ns.NexusGraph.Build(kept, metaFor(runtime), ctx)
+  local meta = ns.NexusAdapters.MetaAll(runtime)
+  local graph = ns.NexusGraph.Build(kept, meta, ctx)
   local ranked, rejected = ns.NexusScore.Rank(graph, goals, ctx)
-  local res = ns.NexusPlanner.Plan(graph, ranked, ctx)
-  -- a pinned step that is still valid goes first
-  local pin = self:Settings().pinned
-  if res.plan and pin and graph.nodes[pin] and not graph.invalid[pin] then
-    local steps = { pin }
-    for _, s in ipairs(res.plan.steps) do if s ~= pin and #steps < 8 then steps[#steps + 1] = s end end
-    res.plan.steps = steps
-  end
+  -- the pin is a planner input that must pass every constraint (OI02-R01)
+  local res = ns.NexusPlanner.Plan(graph, ranked, ctx, { pin = self:Settings().pinned })
   self.current = { result = res, revision = ctx.revision, at = ctx.now, runtime = runtime, graph = graph,
     ranked = ranked, rejected = rejected, excluded = excluded, unavailable = unavailable, why = why }
   self.replans = (self.replans or 0) + 1
@@ -107,23 +93,79 @@ function M:Pause() self:Settings().paused = true end
 function M:Resume() self:Settings().paused = false self:Request("resume") end
 
 -- The player's click on a step: the producer's own intent, nothing else.
-function M:Act(id)
+-- Every check must pass (OI02-R05): the planner is on, not in combat, the plan
+-- is current, the step is one of its steps, it isn't skipped or left out, its
+-- opportunity hasn't expired, its evidence still resolves (same character and
+-- build, not stale), and only the declared intent runs: a waypoint through the
+-- producer's go(), a page through the Hub. Intent "none" does nothing.
+function M:CheckAct(id, now)
+  now = now or time()
+  if not self:Ready() then return false, "the planner is off" end
+  if ns.Compat.InCombat() then return false, "not in combat" end
   local c = self.current
-  local cand = c and c.runtime and c.runtime[id]
-  if not cand then return false, "that step isn't in the current plan" end
-  local stale, why = self:IsStale()
+  local res = c and c.result
+  if not (res and res.plan) then return false, "there is no plan" end
+  local stale, why = self:IsStale(now)
   if stale then return false, why end
-  if type(cand.go) == "function" then
-    local ok, err = pcall(cand.go)
-    if not ok then return false, tostring(err) end
+  local inPlan = false
+  for _, s in ipairs(res.plan.steps) do if s == id then inPlan = true break end end
+  if not inPlan then return false, "that step isn't in the current plan" end
+  if (self:Settings().skipped or {})[id] then return false, "you skipped that step" end
+  if c.rejected and c.rejected[id] then return false, "that step was left out: " .. tostring(c.rejected[id]) end
+  local node = c.graph and c.graph.nodes[id]
+  local cand = c.runtime and c.runtime[id]
+  if not (node and cand) then return false, "that step isn't in the current plan" end
+  if now > node.opp.expiresAt then return false, "that step's information is out of date: press Re-plan" end
+  for _, ev in ipairs(node.opp.evidenceIds) do
+    local row, evWhy = ns.IntelEvidence:Get(ev, now)
+    if not row then return false, "its evidence is " .. tostring(evWhy) .. ": press Re-plan" end
+  end
+  local intent = node.opp.intent
+  if intent == "waypoint" and type(cand.go) ~= "function" then return false, "nothing to show for this step" end
+  if intent == "panel" and not (cand.panel and ns.Hub) then return false, "nothing to open for this step" end
+  if intent == "none" then return false, "this step has nothing to open" end
+  return true, intent, cand
+end
+
+function M:Act(id)
+  local ok, intent, cand = self:CheckAct(id)
+  if not ok then return false, intent end
+  if intent == "waypoint" then
+    local fine, err = pcall(cand.go)
+    if not fine then return false, tostring(err) end
     return true, "waypoint"
   end
-  if cand.panel and ns.Hub then
-    ns.Hub:Build():Show()
-    ns.Hub:ShowTab(cand.panel)
-    return true, "panel"
+  ns.Hub:Build():Show()
+  ns.Hub:ShowTab(cand.panel)
+  return true, "panel"
+end
+
+-- ------------------------------------------------------------ one source of picks (OI02-R08)
+-- With the planner on, What now?, the Home cards and Radar all show the plan's
+-- steps (this list), so the player never sees two rankings. Each pick is a copy
+-- of the producer's own candidate (its go() for the click) with the plan's
+-- order and score; off, every page keeps its baseline. Re-plans only when there
+-- is no current plan or it went stale, never in combat or while paused.
+function M:Picks(n)
+  if not self:Ready() then return nil end
+  if not ns.Compat.InCombat() and not self:Settings().paused and self:IsStale() then self:Replan("picks") end
+  local c = self.current
+  local res = c and c.result
+  local out = {}
+  if not (res and res.plan) then return out end
+  local scores = {}
+  for _, r in ipairs(c.ranked or {}) do scores[r.id] = r.score end
+  for i, id in ipairs(res.plan.steps) do
+    if n and i > n then break end
+    local cand = c.runtime[id]
+    if cand then
+      local copy = {}
+      for k, v in pairs(cand) do copy[k] = v end
+      copy.score, copy.nexusId, copy.nexusStep, copy.provider = scores[id] or 0, id, i, "nexus"
+      out[#out + 1] = copy
+    end
   end
-  return false, "nothing to open for this step"
+  return out
 end
 
 -- ------------------------------------------------------------ troubleshooting (OI02-13)
@@ -135,6 +177,7 @@ local REASON = {
   ["over budget"] = { "over_budget", "costs more than you can spend above your gold reserve", "lower the reserve on your goal, or earn gold first" },
   ["cost with no gold reading"] = { "gold_unknown", "has a cost but your gold isn't known yet", "open your bags once so Outrider reads your gold" },
   cycle = { "prerequisite_cycle", "its prerequisites loop back on themselves (data problem)", "skip it; please report it" },
+  ["cost unknown"] = { "cost_unknown", "its gold cost isn't known and you set a gold reserve", "visit the vendor once so Outrider sees the price, or remove the reserve" },
 }
 local function reasonFor(why)
   why = tostring(why)
@@ -153,6 +196,8 @@ function M:Diagnose()
   if not c then add("info", "no_plan_yet", "No plan has been made yet.", "press Re-plan") return out end
   local stale, why = self:IsStale()
   if stale then add("info", "stale", why .. ".", "press Re-plan") end
+  local pin = c.result and c.result.pin
+  if pin and not pin.ok then add("limit", pin.code or "pin_infeasible", "Your pinned step can't go first: " .. tostring(pin.why) .. ".", "unpin it, or do what it needs first") end
   for _, name in ipairs(c.unavailable or {}) do
     add("error", "source_unavailable", "Couldn't read suggestions from " .. name .. ".", "it may be switched off on the Modules page")
   end
@@ -176,6 +221,18 @@ function M:Diagnose()
   for _, r in ipairs(c.ranked or {}) do
     local n = c.graph.nodes[r.id]
     if n.travelUnknown or not n.opp.costSeconds or n.opp.confidence == "inferred" or n.opp.confidence == "unknown" then unsure = unsure + 1 end
+  end
+  local missing = {}
+  for _, r in ipairs(c.ranked or {}) do
+    for _, u in ipairs(c.graph.nodes[r.id].meta.unknown or {}) do if u ~= "excludes" then missing[u] = (missing[u] or 0) + 1 end end
+  end
+  local mk = {}
+  for k in pairs(missing) do mk[#mk + 1] = k end
+  table.sort(mk)
+  if #mk > 0 then
+    local parts = {}
+    for _, k in ipairs(mk) do parts[#parts + 1] = string.format("%s for %d", k, missing[k]) end
+    add("info", "metadata_unknown", "Some steps lack details (" .. table.concat(parts, ", ") .. "); the plan treats them as unknown, not free.", nil)
   end
   if unsure > 0 then add("info", "uncertain_estimates", string.format("%d step%s rest on guesses (time, travel or a doubtful source); they score lower.", unsure, unsure == 1 and "" or "s"), nil) end
   for _, p in ipairs(ns.NexusGoals:Check(time(), { copper = (ns.NexusState:Get("gold") or {}).value, level = (ns.NexusState:Get("level") or {}).value })) do

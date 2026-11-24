@@ -83,11 +83,15 @@ function M:Refresh()
   if ns.Compat.InCombat() then self.dirty = true return self.cards or {} end
   self.dirty = false
   self.recomputeCount = (self.recomputeCount or 0) + 1
-  E:Clear()
+  E:Clear("WhatNow")
   E:Register("WhatNow", "ready")
   local profile = ns.ClassProfiles.Current()
   local now, cards = time(), {}
-  local candidates = ns.WhatNow:Candidates()
+  -- with the planner on, Radar shows the plan's steps in the plan's order
+  -- (one source of recommendations, OI02-R08); off, its own ranking
+  local N = ns.NexusCore
+  local nexus = N and N:Ready()
+  local candidates = nexus and (N:Picks() or {}) or ns.WhatNow:Candidates()
   for _, c in ipairs(candidates) do
     if visible(c, now) and not self:Settings().muted[c.kind] and
       ns.ClassProfiles.Allows(profile.class, profile.role, c.roleHint) then
@@ -109,7 +113,12 @@ function M:Refresh()
       end
     end
   end
-  self.cards, self.refreshedAt = O:Top(cards, 3), now
+  if nexus then
+    for i = #cards, 4, -1 do cards[i] = nil end
+    self.cards, self.refreshedAt = cards, now
+  else
+    self.cards, self.refreshedAt = O:Top(cards, 3), now
+  end
   return self.cards
 end
 function M:Cards()
@@ -224,7 +233,7 @@ end
 function M:OnDisable()
   if self.pending then self.pending:Cancel() self.pending = nil end
   self.dirty = false
-  E:Clear()
+  E:Clear("WhatNow")
   self.cards = nil
   if self.window then self.window:Hide() end
 end

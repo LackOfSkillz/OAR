@@ -50,7 +50,7 @@ function M:GearList()
     if p then
       local t = ns.Travel:TimeTo(prep, p)
       out[#out + 1] = { kind = "gear", name = c.name, itemID = c.itemID, pct = c.pct, target = p, seconds = t, mapID = w.mapID,
-        detail = ns.Nearby.Describe(c), note = w.note }
+        detail = ns.Nearby.Describe(c), note = w.note, source = c.kind }
     end
   end
   table.sort(out, function(a, b)
@@ -73,7 +73,8 @@ function M:XPList()
       local t = p and ns.Travel:TimeTo(prep, p)
       if t then
         local xp = M.XP(q.level, level)
-        out[#out + 1] = { kind = "xp", name = q.name, level = q.level, questID = q.questID,
+        out[#out + 1] = { kind = "xp", name = q.name, level = q.level, questID = q.questID or q.id,
+          faction = q.faction, preAll = q.preAll, preAny = q.preAny,
           xp = xp, target = p, seconds = t, mapID = q.mapID,
           giver = q.giver, rate = xp / ((t + M.QUEST_TIME) / 60), diff = q.diff }
       end

@@ -50,6 +50,39 @@ function A.QuestKey(c)
   return name and ("n" .. name:lower()) or nil
 end
 
+-- Gold cost (OI02-R03): a known cost is a number (0 included); a cost the
+-- producer doesn't know is costUnknown, never 0. Kinds that never spend gold
+-- are known zero. Gear is free only from a drop or a quest reward (Nearby's
+-- source kind); a vendor item or anything else has an unknown price.
+A.FREE_KINDS = { quest = true, dungeon = true, rare = true, gather = true, explore = true }
+A.FREE_GEAR = { drop = true, quest = true, object = true }
+function A.Cost(c, kind)
+  local cost = tonumber(c.costCopper)
+  if cost and cost == cost and cost > -1e12 and cost < 1e12 then return math.floor(cost), false end
+  if A.FREE_KINDS[kind] then return 0, false end
+  if kind == "gear" and A.FREE_GEAR[c.gearSource] then return 0, false end
+  return nil, true
+end
+
+-- Evidence (OI02-R04): every opportunity cites a real IntelEvidence record made
+-- from its producer's candidate, with the time the fact was observed (the
+-- candidate's observedAt when it has one, else now: the producer read it now).
+-- The opportunity expires with its evidence, not on a fresh timer.
+local CATEGORY = { quest = "quest", dungeon = "quest", gear = "gear", errand = "errand", gold = "generic",
+  gather = "location", profession = "bag", rare = "historical", travel = "generic", explore = "generic" }
+local EV_LABEL = { observed = "observed", community = "community", inferred = "inferred", guide = "community" }
+function A.EvidenceFor(source, c, kind, now)
+  local E = ns.IntelEvidence
+  local src = ("nx_" .. tostring(source)):gsub("[^%w_%-]", "_"):sub(1, 48)
+  if not E.sources[src] then E:Register(src, "ready", { sourceType = "module" }) end
+  local key = idPart(c.key):sub(1, 100)
+  local category = (kind == "gold" and tostring(c.key):find("^deal:")) and "auction" or CATEGORY[kind] or "generic"
+  local value = { kind = kind, benefit = clamp(c.benefit), seconds = tonumber(c.seconds), mapID = tonumber(c.mapID),
+    questID = tonumber(c.questID), itemID = tonumber(c.itemID), costCopper = tonumber(c.costCopper) }
+  local ttl = tonumber(c.evidenceTTL) or A.TTL
+  return E:Record(src, key, category, value, EV_LABEL[c.label] or "inferred", ttl, c.observedAt)
+end
+
 -- One candidate -> v4 Opportunity, or nil, reason.
 function A.Adapt(source, c, revision, now)
   if type(c) ~= "table" or type(c.key) ~= "string" or c.key == "" then return nil, "no key" end
@@ -61,22 +94,91 @@ function A.Adapt(source, c, revision, now)
   local benefit = clamp(c.benefit)
   if not benefit then return nil, "no benefit" end
   now = now or time()
+  local ev = A.EvidenceFor(source, c, kind, now)
+  if not ev then return nil, "no usable evidence" end
   local key = idPart(source .. ":" .. c.key):sub(1, 110)
   local rec = {
     opportunityId = "opp:" .. key, kind = kind, title = title, benefit = benefit,
-    confidence = LABEL[c.label] or "unknown", evidenceIds = { ("ev:" .. key):sub(1, 120) },
-    expiresAt = now + A.TTL, intent = c.go and "waypoint" or (c.panel and "panel") or "none",
+    confidence = LABEL[c.label] or "unknown", evidenceIds = { ev.id },
+    expiresAt = ev.expiresAt, intent = c.go and "waypoint" or (c.panel and "panel") or "none",
     revision = revision or 1, legacyCandidateId = idPart(c.key):sub(1, 120), why = clean(c.why, 300),
   }
   local secs = tonumber(c.seconds)
   if secs and secs >= 0 and secs == secs then rec.costSeconds = math.min(31536000, math.floor(secs)) end
   local conf = clamp(c.confidence)
   if conf then rec.risk = 1 - conf end
-  local cost = tonumber(c.costCopper)
-  if cost and cost == cost then rec.costCopper = math.floor(cost) end
+  local cost, unknown = A.Cost(c, kind)
+  rec.costCopper = cost
+  if unknown then rec.costUnknown = true end
   local ok, field = ns.Nexus.Validate("Opportunity", rec)
   if not ok then return nil, "invalid " .. tostring(field) end
   return rec
+end
+
+-- Graph metadata from the producer's own candidate (OI02-R02). What a
+-- producer doesn't say is listed in m.unknown, never guessed:
+--   mapID, travelSeconds (the producer's trip estimate), faction (a quest's
+--   pack faction; a quest for both factions is open to all), requires (a
+--   quest's unfinished prerequisites, as opportunity ids when they are in the
+--   plan's pool, else as "quest:q<id>" so the graph says what's missing),
+--   overlap (the same quest from two producers), excludes (no producer
+--   reports mutual exclusions yet: listed as unknown).
+-- questIndex: { [questID] = opportunityId } over the pool; done(qid) checks the
+-- quest log (C_QuestLog.IsQuestFlaggedCompleted).
+local function questDone(qid) return ns.Compat.Call("C_QuestLog.IsQuestFlaggedCompleted", qid) == true end
+function A.Meta(c, questIndex, done)
+  done = done or questDone
+  questIndex = questIndex or {}
+  local m, unknown = {}, {}
+  m.mapID = tonumber(c.mapID)
+  if not m.mapID then unknown[#unknown + 1] = "map" end
+  local trip = tonumber(c.estimatedTripSeconds) or tonumber(c.seconds)
+  if trip and trip >= 0 then m.travelSeconds = math.floor(trip) else unknown[#unknown + 1] = "travel" end
+  local q = A.QuestKey(c)
+  if q then m.overlap = "quest:" .. q end
+  local qid = tonumber(c.questID)
+  if c.kind == "quest" or c.kind == "dungeon" then
+    if c.questFaction == "Alliance" or c.questFaction == "Horde" then m.faction = c.questFaction
+    elseif not qid then unknown[#unknown + 1] = "faction" end
+    if qid then
+      local req = {}
+      local function need(pq)
+        req[#req + 1] = questIndex[pq] or ("quest:q" .. tostring(pq))
+      end
+      for _, pq in ipairs(type(c.preAll) == "table" and c.preAll or {}) do
+        if tonumber(pq) and not done(pq) then need(pq) end
+      end
+      local any = type(c.preAny) == "table" and c.preAny or {}
+      if #any > 0 then
+        local ok = false
+        for _, pq in ipairs(any) do if done(pq) then ok = true break end end
+        if not ok then
+          -- one of several will do: the one in the pool if any, else the first
+          local pick = any[1]
+          for _, pq in ipairs(any) do if questIndex[pq] then pick = pq break end end
+          need(pick)
+        end
+      end
+      if #req > 0 then m.requires = req end
+    else
+      unknown[#unknown + 1] = "prerequisites"
+    end
+  end
+  unknown[#unknown + 1] = "excludes"
+  m.unknown = unknown
+  return m
+end
+
+-- meta for every opportunity in a Collect result
+function A.MetaAll(runtime, done)
+  local index = {}
+  for id, c in pairs(runtime or {}) do
+    local qid = tonumber(c.questID)
+    if qid and (not index[qid] or id < index[qid]) then index[qid] = id end
+  end
+  local meta = {}
+  for id, c in pairs(runtime or {}) do meta[id] = A.Meta(c, index, done) end
+  return meta
 end
 
 -- Run producers; returns opportunities (sorted by id), excluded, unavailable.

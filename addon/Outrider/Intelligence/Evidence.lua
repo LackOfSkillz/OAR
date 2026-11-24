@@ -1,6 +1,6 @@
 -- Typed, bounded evidence lifecycle. No automatic export/network or secret computations.
 local _, ns = ...
-local E = { sources = {}, observations = {}, serial = 0, MAX = 100, TTL = {
+local E = { sources = {}, observations = {}, serial = 0, MAX = 500, TTL = {
   quest = 180, gear = 180, bag = 30, location = 30, talent = 180,
   auction = 120, historical = 86400, errand = 60, generic = 120,
 }}
@@ -43,7 +43,9 @@ end
 local function scope()
   return tostring(ns.db and ns.db.key or "?"), tostring(ns.build or "unknown")
 end
-function E:Record(source, key, category, value, label, ttl)
+-- observedAt (optional): when the underlying fact was observed; it is kept,
+-- not refreshed, and the expiry counts from it (OI02-R04).
+function E:Record(source, key, category, value, label, ttl, observedAt)
   if type(source) ~= "string" or not self.sources[source] then return nil end
   if ns.Compat.IsSecret(key) or type(key) ~= "string" or #key < 1 or #key > 120 or key:find("[%c|]") or not key:find("%S") then return nil end
   if not self.TTL[category] then return nil end
@@ -53,10 +55,15 @@ function E:Record(source, key, category, value, label, ttl)
   if type(safe) ~= "table" then return nil end
   local seconds = ttl or self.TTL[category]
   if not finite(seconds) or seconds < 0 or seconds > 86400 then return nil end
+  local now = time()
+  local seen = tonumber(observedAt)
+  if seen and (seen ~= seen or seen > now + 5) then return nil end
+  seen = seen and math.floor(seen) or now
+  if seen + seconds < now then return nil end -- already stale: not recorded as fresh
   self.serial = self.serial + 1
   local char, build = scope()
   local record = { id = source .. ":" .. key, source = source, category = category,
-    observedAt = time(), expiresAt = time() + seconds, label = label,
+    observedAt = seen, expiresAt = seen + seconds, label = label,
     build = build, char = char, sourceType = self.sources[source].sourceType, privacy = "local",
     value = safe, revision = self.serial }
   -- Evict oldest by revision without unbounded retention.
@@ -117,6 +124,12 @@ function E:Exportable(ids)
   end
   return out
 end
-function E:Clear()
-  self.observations = {}
+-- Clear(source): drop one source's runtime facts (Radar rebuilds its own;
+-- the planner's stay). Clear() drops all. These are in-memory caches, never
+-- saved data (docs/intelligence/DATA_LIFETIME.md).
+function E:Clear(source)
+  if source == nil then self.observations = {} return end
+  for id, row in pairs(self.observations) do
+    if row.source == source then self.observations[id] = nil end
+  end
 end

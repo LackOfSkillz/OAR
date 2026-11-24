@@ -8,7 +8,7 @@
 --   it adds to uncertainty instead.
 -- goldCost = copper / spendable gold, capped at 1.
 -- riskCost = the record's risk (1 - producer confidence), unknown counts 0.5.
--- uncertaintyCost: by confidence label, plus unknown time or travel.
+-- uncertaintyCost: by confidence label, plus unknown time, travel or gold cost.
 -- Hard constraints dominate: invalid graph nodes and anything costing more than
 -- the spendable gold are never scored. Ties break by id. Every result carries a
 -- trace whose terms add up to its score exactly (to 1e-9).
@@ -20,6 +20,7 @@ ns.NexusScore = S
 S.WEIGHTS = { time = 0.3, gold = 0.3, risk = 0.2, uncertainty = 0.2 }
 S.LABEL_UNCERTAINTY = { verified = 0, observed = 0.05, community = 0.15, inferred = 0.3, unknown = 0.5 }
 S.PRIORITY_WEIGHT = { 1, 0.8, 0.6, 0.4, 0.2 }
+S.UNKNOWN_COST = 0.15 -- an unknown gold cost is uncertainty, never zero (OI02-R03)
 
 local function kindWeights(objective)
   local W = ns.WhatNow and ns.WhatNow.WEIGHTS or {}
@@ -56,6 +57,7 @@ function S.One(node, goals, ctx)
   local unc = S.LABEL_UNCERTAINTY[o.confidence] or 0.5
   if not o.costSeconds then unc = unc + 0.1 end
   if node.travelUnknown then unc = unc + 0.1 end
+  if o.costUnknown then unc = unc + S.UNKNOWN_COST end
   unc = math.min(1, unc)
   local trace = {
     { "goal benefit", fit * benefit },

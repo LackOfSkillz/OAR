@@ -263,7 +263,9 @@ function M:ZoneReport(mapID, nosave)
         and M.RaceOK(q[9])
       if mine and not seen[qid] then
         seen[qid] = true
-        local entry = { id = qid, name = name, level = qlvl, giver = r[5], x = r[3], y = r[4] }
+        -- faction and prerequisites ride along for the Nexus graph (OI02-R02)
+        local entry = { id = qid, name = name, level = qlvl, giver = r[5], x = r[3], y = r[4],
+          faction = qfac, preAll = preAll, preAny = preAny }
         if done(qid) then
           rep.done = rep.done + 1
         elseif C.Call("C_QuestLog.IsOnQuest", qid) == true then

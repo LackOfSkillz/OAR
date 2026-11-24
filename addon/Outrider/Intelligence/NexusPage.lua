@@ -72,11 +72,64 @@ function P.Cards(refresh)
   return cards, table.concat(notes, "\n")
 end
 
+-- ------------------------------------------------------------ goals (OI02-R07)
+-- The player's goals as cards: raise or lower the priority, pause or resume,
+-- add or clear a gold reserve, archive (kept, never deleted). Add buttons make
+-- a new goal of each kind. All edits go through ns.NexusGoals (validated, and
+-- they trigger a re-plan through OTR_NEXUS_GOALS_CHANGED).
+P.OBJECTIVES = { { "level", "Level up", "+ Level" }, { "gold", "Make gold", "+ Gold" }, { "gear", "Better gear", "+ Gear" },
+  { "professions", "Professions", "+ Professions" }, { "explore", "Explore", "+ Explore" }, { "mix", "A bit of everything", "+ Mix" } }
+P.RESERVE_STEP = 10000 -- one gold
+local OBJ_LABEL, OBJ_ICON = {}, { level = "Spell_Holy_SurgeOfLight", gold = "INV_Misc_Coin_02", gear = "INV_Chest_Chain",
+  professions = "Trade_BlackSmithing", explore = "INV_Misc_Spyglass_03", mix = "INV_Misc_Book_09" }
+for _, o in ipairs(P.OBJECTIVES) do OBJ_LABEL[o[1]] = o[2] end
+
+function P.AddGoal(objective)
+  local G = ns.NexusGoals
+  local n = 0
+  for _, g in ipairs(G:All()) do if g.status == "active" or g.status == "paused" then n = n + 1 end end
+  return G:Create(objective, { priority = math.min(5, n + 1) })
+end
+
+function P.GoalCards(refresh)
+  local G = ns.NexusGoals
+  local list = {}
+  for _, g in ipairs(G:All()) do if g.status == "active" or g.status == "paused" then list[#list + 1] = g end end
+  table.sort(list, function(a, b)
+    if a.priority ~= b.priority then return a.priority < b.priority end
+    return a.goalId < b.goalId
+  end)
+  local function redo() if refresh then refresh() end end
+  local cards = {}
+  for _, g in ipairs(list) do
+    local id = g.goalId
+    local tags = { { "Priority " .. g.priority, g.priority == 1 and "good" or "plain" }, { g.status == "paused" and "paused" or "active", "plain" } }
+    if g.reserveCopper and g.reserveCopper > 0 then
+      tags[#tags + 1] = { "keep " .. (ns.Prices and ns.Prices.Money(g.reserveCopper) or tostring(g.reserveCopper)), "gold" }
+    end
+    cards[#cards + 1] = { pic = "Interface\\Icons\\" .. (OBJ_ICON[g.objective] or "INV_Misc_QuestionMark"),
+      title = OBJ_LABEL[g.objective] or g.objective, tags = tags,
+      line = g.status == "paused" and "Paused: the plan ignores it until you resume it." or "The plan works toward this; priority 1 counts most.",
+      actions = {
+        { "Higher", function() G:Edit(id, { priority = math.max(1, g.priority - 1) }) redo() end, "Make this goal count more (priority 1 is the most)." },
+        { "Lower", function() G:Edit(id, { priority = math.min(5, g.priority + 1) }) redo() end, "Make this goal count less." },
+        { g.status == "paused" and "Resume goal" or "Pause goal", function()
+          if g.status == "paused" then G:Resume(id) else G:Pause(id) end redo() end,
+          g.status == "paused" and "Plan for this goal again." or "Leave this goal out of the plan for now; it stays here." },
+        { "Keep 1g more", function() G:Edit(id, { reserveCopper = (g.reserveCopper or 0) + P.RESERVE_STEP }) redo() end,
+          "Raise the gold the plan must leave untouched by 1 gold." },
+        { "No reserve", function() G:Edit(id, { reserveCopper = 0 }) redo() end, "Let the plan spend all your gold for this goal." },
+        { "Archive", function() G:Delete(id) redo() end, "Put this goal away. It is kept in your saved goals, not deleted." },
+      } }
+  end
+  return cards
+end
+
 ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
   local function refresh() p:Refresh() end
   UI:FormPage(p, {
     { "header", "Plan (preview)" },
-    { "note", "A plan for your goals from everything Outrider knows. 1. Switch it on. 2. Set goals on the Next steps page. 3. Press Go on the top card." },
+    { "note", "A plan for your goals from everything Outrider knows. 1. Switch it on. 2. Add your goals below. 3. Press Go on the top card." },
     { "check", "Use the Nexus planner (preview)", function() return ns.NexusCore:Settings().on end,
       function(on) ns.NexusCore:Settings().on = on if on then ns.NexusCore:Replan("switched on") end refresh() end, "off by default while it is being tested" },
     { "buttons", { { "Re-plan", function() ns.NexusCore:Replan("button") refresh() end, 110 },
@@ -92,6 +145,17 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
       local _, note = P.Cards(refresh)
       return note
     end },
+    { "header", "My goals" },
+    { "note", function()
+      local n = #P.GoalCards()
+      return n == 0 and "No goals yet: the plan uses your What now? goal. Add one or more:" or "Add another goal:"
+    end },
+    { "buttons", (function()
+      local row = {}
+      for _, o in ipairs(P.OBJECTIVES) do row[#row + 1] = { o[3], function() P.AddGoal(o[1]) refresh() end, 100 } end
+      return row
+    end)(), plain = true },
+    { "cards", function() return P.GoalCards(refresh) end },
     { "header", "What's holding the plan back" },
     { "note", function()
       if not ns.NexusCore:Settings().on then return "" end

@@ -15,7 +15,8 @@
 -- never quietly dropped). Overlapping rewards count once: the best node of an
 -- overlap group keeps its benefit, the others get countedBenefit = 0 and an
 -- "overlap" note. A different map with no travel estimate is marked
--- travelUnknown (its cost is unknown, not zero). Deterministic: ties by id.
+-- travelUnknown (its cost is unknown, not zero). A step whose gold cost is
+-- unknown (costUnknown) is invalid ("cost unknown") when a gold reserve is set. Deterministic: ties by id.
 
 local _, ns = ...
 local G = {}
@@ -50,6 +51,12 @@ function G.Build(opps, meta, ctx)
     end
     local cost = n.opp.costCopper
     if spendable and cost and cost > 0 and cost > spendable then bad(id, "over budget") end
+    -- an unknown price is not free (OI02-R03): with a gold reserve to protect
+    -- it can't be planned; otherwise it is planned as uncertain, with a note
+    if n.opp.costUnknown then
+      if (ctx.reserveCopper or 0) > 0 then bad(id, "cost unknown")
+      else n.notes[#n.notes + 1] = "gold cost unknown" end
+    end
     if m.mapID and ctx.mapID and m.mapID ~= ctx.mapID then
       if m.travelSeconds then
         g.edges[#g.edges + 1] = { from = "here", to = id, type = "travel", seconds = m.travelSeconds }
