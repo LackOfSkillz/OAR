@@ -1,7 +1,6 @@
 {
  "note": "Existing findings accepted as the OI01-06 baseline; new code must not add any.",
  "accepted": [
-  "lua-file-size:addon/Outrider/UI/Pages.lua",
   "lua-func-size:addon/Outrider/Modules/Advisor.lua:203",
   "lua-func-size:addon/Outrider/Modules/DungeonQuests.lua:183",
   "lua-func-size:addon/Outrider/Modules/FishingGuide.lua:350",
@@ -16,9 +15,9 @@
   "lua-func-size:addon/Outrider/Modules/TalentLab.lua:817",
   "lua-func-size:addon/Outrider/UI/Form.lua:21",
   "lua-func-size:addon/Outrider/UI/MapView.lua:129",
-  "lua-func-size:addon/Outrider/UI/Pages.lua:114",
-  "lua-func-size:addon/Outrider/UI/Pages.lua:1426",
-  "lua-func-size:addon/Outrider/UI/Pages.lua:396",
+  "lua-func-size:addon/Outrider/UI/Pages/Home.lua:108",
+  "lua-func-size:addon/Outrider/UI/Pages/Home.lua:390",
+  "lua-func-size:addon/Outrider/UI/Pages/WhatNow.lua:168",
   "py-unused-import:companion/outrider_companion/intelligence/next_session_delivery.py:os",
   "py-unused-import:companion/outrider_companion/intelligence/session_reader.py:os",
   "py-unused-import:companion/tests/test_contract_golden.py:planner",

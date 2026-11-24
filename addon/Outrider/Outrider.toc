@@ -228,7 +228,14 @@ Modules\LevelRoutes.lua
 Modules\Finder.lua
 UI\HelpData.lua
 UI\HelpPage.lua
-UI\Pages.lua
+UI\Pages\Kit.lua
+UI\Pages\Home.lua
+UI\Pages\World.lua
+UI\Pages\Character.lua
+UI\Pages\Gold.lua
+UI\Pages\WhatNow.lua
+UI\Pages\Social.lua
+UI\Pages\Settings.lua
 
 Core\Slash.lua
 Core\Boot.lua
