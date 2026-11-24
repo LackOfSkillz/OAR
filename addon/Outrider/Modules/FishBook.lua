@@ -7,7 +7,7 @@
 --     Catfish": the name says so), first catch date.
 --   * Milestones: catch totals, kinds of fish, rare and trophy catches, skill;
 --     bronze, silver and gold with points. One toast when one is earned
---     (setting); Share puts one line in guild chat on your click.
+--     (setting); Share shows a line to copy into chat.
 --   * When they bite: every catch is counted by server hour (4-hour blocks)
 --     per zone, so a fish caught mostly at night shows it. Measured from your
 --     own catches only, nothing assumed.
@@ -255,14 +255,19 @@ function M:Check()
   return new
 end
 
+-- The line to share, shown in a copy box: Outrider sends no chat itself
+-- (security check OI01-13); the player pastes it where they like.
+function M:ShareText(key)
+  for _, x in ipairs(M.LIST) do
+    if x.key == key and self.book.earned[key] then return string.format("Fishing milestone: %s (%s)", x.title, x.text) end
+  end
+  return nil
+end
+
 function M:Share(key)
-  local m
-  for _, x in ipairs(M.LIST) do if x.key == key then m = x end end
-  if not (m and self.book.earned[key]) then return false end
-  if not C.Call("IsInGuild") then ns.Print("not in a guild") return false end
-  local send = C.Resolve("C_ChatInfo.SendChatMessage") or rawget(_G, "SendChatMessage")
-  if type(send) ~= "function" then return false end
-  pcall(send, string.format("Fishing milestone: %s (%s)", m.title, m.text), "GUILD")
+  local text = self:ShareText(key)
+  if not text then return false end
+  if ns.UI and ns.UI.TextDialog then ns.UI:TextDialog("Share this milestone", text, "copy") end
   return true
 end
 
@@ -317,7 +322,7 @@ ns.Hub:AddTab("fishbook", "Fish collection", function(p)
   local UI = ns.UI
   UI:FormPage(p, {
     { "header", "Fish collection" },
-    { "note", "Every fish you've caught, the milestones you've earned and when each fish bites. 1. Fish. 2. Look here. 3. Share a milestone with your guild if you like." },
+    { "note", "Every fish you've caught, the milestones you've earned and when each fish bites. 1. Fish. 2. Look here. 3. Share a milestone: copy its line into chat." },
     { "stats", function()
       local col = M:Collection()
       local pts, n = M:Points()
@@ -363,7 +368,7 @@ ns.Hub:AddTab("fishbook", "Fish collection", function(p)
         else tags[#tags + 1] = { m.have .. " / " .. m.goal, "plain" } end
         out[#out + 1] = { pic = "Interface\\Icons\\" .. (m.earned and "INV_Misc_Trophy_03" or "INV_Misc_QuestionMark"), title = m.title,
           tags = tags, line = m.text,
-          actions = m.earned and { { "Share", function() M:Share(m.key) end, "Puts one line about this milestone in guild chat." } } or nil }
+          actions = m.earned and { { "Share", function() M:Share(m.key) end, "Shows one line about this milestone to copy into chat." } } or nil }
       end
       return out
     end },

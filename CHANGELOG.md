@@ -4,7 +4,7 @@
 
 - **Fishing ring:** while a pole is on, Cast sits in the middle of a ring of Lure, Find Fish, Basic Campfire, Cooking, Weapons back and the Fishing page, each edged green, amber or red, with counts and the lure timer. Hover the lure for every lure in your bags. Circle or bar, drag to move.
 - **Your real fishing skill:** base + pole + gear + lure, compared with the zone you're in.
-- **Fish collection and milestones:** every fish you've caught (this character and the account, common, rare or trophy), when each one bites by server time, and bronze, silver and gold milestones with points, a toast, and Share to guild.
+- **Fish collection and milestones:** every fish you've caught (this character and the account, common, rare or trophy), when each one bites by server time, and bronze, silver and gold milestones with points, a toast, and a Share line to copy into chat.
 - **Cook your fish:** the raw fish in your bags, what they cook into, how many you can make and what's missing, with a Cook button.
 - **Price history:** Gold > Price history shows a graph of each item's lowest price per day over 7 days, 30 days or everything, with the usual price, the range and the trend. Items you sell or search are tracked by themselves; Track adds any other.
 - **Best time to list:** three charts show how an item's price runs by time of day, day of week and part of the month, with the best time in green and one plain sentence of advice. Tracked items show it on their tooltip.

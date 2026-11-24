@@ -131,14 +131,10 @@ T.describe("fish book", function()
     local pts, n = B:Points()
     T.eq(n, 3)
     T.eq(pts, 5 + 5 + 10)
-    -- share: one guild line on your click
-    local said
-    game.env.IsInGuild = function() return true end
-    game.env.SendChatMessage = function(msg, chan) said = { msg, chan } end
+    -- share: a copy box with the line; nothing is sent
+    T.contains(B:ShareText("t1"), "Trophy")
     T.ok(B:Share("t1"))
-    T.eq(said[2], "GUILD")
-    T.contains(said[1], "Trophy")
-    T.eq(B:Share("c5000"), false, "not earned: nothing sent")
+    T.eq(B:Share("c5000"), false, "not earned: nothing to share")
   end)
 
   T.it("tells when a fish bites from your own catches by server hour", function()

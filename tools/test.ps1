@@ -35,7 +35,8 @@ if ($code -eq 0 -and -not $Filter) {
     # OI01-06 code health gate: no finding outside docs/quality/baseline.json
     $q = Join-Path (Join-Path $script:RepoRoot 'tools') 'quality.py'
     $dq = Join-Path (Join-Path $script:RepoRoot 'tools') 'deps.py'
-    $qOut = cmd /c "`"$($py.Source)`" -I `"$q`" --selftest 2>&1 && `"$($py.Source)`" -I `"$q`" --check 2>&1 && `"$($py.Source)`" -I `"$dq`" --check 2>&1"
+    $sc = Join-Path (Join-Path $script:RepoRoot 'tools') 'security_check.py'
+    $qOut = cmd /c "`"$($py.Source)`" -I `"$q`" --selftest 2>&1 && `"$($py.Source)`" -I `"$q`" --check 2>&1 && `"$($py.Source)`" -I `"$dq`" --check 2>&1 && `"$($py.Source)`" -I `"$sc`" --selftest 2>&1 && `"$($py.Source)`" -I `"$sc`" 2>&1"
     $qExit = $LASTEXITCODE
     $qOut | Out-Host
     if ($qExit -ne 0) { Write-Host "Code health gate failed (new findings above)." -ForegroundColor Red; $code = 1 }

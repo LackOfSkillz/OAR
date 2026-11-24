@@ -30,8 +30,8 @@ it is never live or review acceptance.
 | OI01-09 MacroTree decomposition | MOCK_GREEN | bc0c647 | [OI01-09](../reviews/phase1/OI01-09.md) | model and page split from module; page builder still one big function |
 | OI01-10 GearShop decomposition | MOCK_GREEN | 29464cb | [OI01-10](../reviews/phase1/OI01-10.md) | query / rank / view split; buy confirm path unchanged |
 | OI01-11 Error and event semantics | MOCK_GREEN | 6336abb | [OI01-11](../reviews/phase1/OI01-11.md) | refused events report unavailable; module-owned timers cancelled on disable |
-| OI01-12 Dependency and duplication audit | MOCK_GREEN | see commit | [OI01-12](../reviews/phase1/OI01-12.md) | deps map + gate; 32 pairs, 48 private reads baselined; nothing removed |
-| OI01-13 Security checks upgrade | NOT_STARTED | | | |
+| OI01-12 Dependency and duplication audit | MOCK_GREEN | ad8b16b | [OI01-12](../reviews/phase1/OI01-12.md) | deps map + gate; 32 pairs, 48 private reads baselined; nothing removed |
+| OI01-13 Security checks upgrade | MOCK_GREEN | see commit | [OI01-13](../reviews/phase1/OI01-13.md) | token/AST/secret gate; fixed FishBook chat bypass; PartyQuests auto party lines noted for owner |
 | OI01-14 Migration and recovery foundation | NOT_STARTED | | | includes the owner retention decision: collected data archives instead of deleting (prices, price history, fishing sessions, sightings, routes); log caps stay |
 | OI01-15 Release regression baseline | NOT_STARTED | | | |
 | OI01-GATE Phase 1 review gate | NOT_STARTED | | | stops for ChatGPT review and Gary's approval |
