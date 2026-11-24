@@ -207,8 +207,15 @@ end
 
 function M:Record(questID, what)
   local list = self:History()
+  -- OI03-04: the play session, whether you were in a group, and the game build
+  -- ride along, so quest times can be told apart by context (added fields:
+  -- older rows simply lack them and count as unknown context)
+  local P = ns.PlaySession
+  local _, gameBuild = C.Call("GetBuildInfo")
   list[#list + 1] = { t = time(), id = questID, what = what, lvl = readable(C.Call("UnitLevel", "player")),
-    zone = readable(C.Call("GetZoneText")), name = self:Name(questID) }
+    zone = readable(C.Call("GetZoneText")), name = self:Name(questID),
+    ps = P and P:Id() or nil, seg = P and P:Segment() or nil,
+    grp = readable(C.Call("IsInGroup")) == true or nil, gb = readable(gameBuild) }
   while #list > M.HISTORY_CAP and ns.Archive:Shift("questDiary", list, { path = "global.questHistory[character]", keys = { character = ns.db.key }, scope = "char" }) do end
 end
 

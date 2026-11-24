@@ -188,6 +188,7 @@ Intelligence\NexusCore.lua
 Intelligence\Radar.lua
 Intelligence\DealDesk.lua
 Intelligence\SessionXP.lua
+Intelligence\QuestTimes.lua
 Intelligence\ActivityTimeline.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua

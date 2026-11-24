@@ -94,6 +94,7 @@ ChatGPT's conditions for Phase 3:
 |---|---|---|---|---|
 | OI03-01 Session recorder reconciliation | MOCK_GREEN (live partly confirmed) | cfea4d3 | [OI03-01](../reviews/phase3/OI03-01.md) | shared PlaySession marker (reload / logout / interrupted); SessionXP and Ledger segments merge; reload no longer a completed session; xp60 clear archives first |
 | OI03-02 Outcome event schema | MOCK_GREEN | 89885ea | [OI03-02](../reviews/phase3/OI03-02.md) | v4 OutcomeEvent; opt-in recorder of 12 observed kinds; dedup by meaning, unknown fields named, other character refused, late marked; attribution likely or unknown, never direct |
-| OI03-03 Activity timing | MOCK_GREEN | see commit | [OI03-03](../reviews/phase3/OI03-03.md) | contiguous observable labels (recovery, dungeon, crafting, travel, quest, inactive, unclassified); add up to wall time; no combat log |
+| OI03-03 Activity timing | MOCK_GREEN | 2057aee | [OI03-03](../reviews/phase3/OI03-03.md) | contiguous observable labels (recovery, dungeon, crafting, travel, quest, inactive, unclassified); add up to wall time; no combat log |
+| OI03-04 Quest time observations | MOCK_GREEN | see commit | [OI03-04](../reviews/phase3/OI03-04.md) | derived from the existing quest diary (adds session, group, build to new rows); complete / multi / abandoned / open / censored; strata; Journey 300 s comparison only with enough samples |
 
 Phases 4-8 (OI04-OI08): NOT_STARTED.
