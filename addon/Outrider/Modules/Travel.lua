@@ -8,6 +8,12 @@
 --         (Data/Transports.lua) plus trips Outrider saw Gary make
 -- Dijkstra over the points picks the quickest route. Times are estimates
 -- (RUN, FLY, ride lengths below), good for comparing, not for a stopwatch.
+-- The travel pack (Outrider_Data_Travel, from ForeverDB / Shortest Path
+-- Forever, Gary 2026-11-23 "build it"): real flight legs with their flight
+-- times (a flight follows its legs between flight points you know, not a
+-- straight line), boats and zeppelins with their timetables (time = the
+-- average wait at the dock plus the crossing), exact dock spots, portals and
+-- lifts. Without the pack the old estimates are used.
 -- Learning (no typing): at the flight master the client lists every flight
 -- point and which ones this character knows; and a loading screen that is
 -- not a flight, hearthstone, teleport or death moves Gary between two places,
@@ -28,6 +34,41 @@ M.FLY = 30         -- yards per second on a flight path (estimate)
 M.FLY_START = 20   -- seconds to talk to the flight master and take off
 M.RIDE = { boat = 180, zeppelin = 180, skycutter = 180, tram = 60, portal = 10, learned = 120 }
 local TELEPORTS = { "hearthstone", "teleport", "portal", "astral recall" }
+M.TRAVEL_ADDON = "Outrider_Data_Travel"
+M.HOP = 5          -- seconds added per flight leg (landing at a flight point on the way)
+
+-- The travel pack, or false.
+function M:Pack()
+  if self.pack ~= nil then return self.pack end
+  if not rawget(_G, "Outrider_DataTravel") then C.LoadAddOn(self.TRAVEL_ADDON) end
+  local d = rawget(_G, "Outrider_DataTravel")
+  self.pack = type(d) == "table" and type(d.taxi) == "table" and d or false
+  if self.pack then
+    -- flight legs both ways, quickest kept: legs[a][b] = seconds
+    local legs = {}
+    for _, l in ipairs(d.flights or {}) do
+      for _, ab in ipairs({ { l[1], l[2] }, { l[2], l[1] } }) do
+        legs[ab[1]] = legs[ab[1]] or {}
+        if not legs[ab[1]][ab[2]] or l[3] < legs[ab[1]][ab[2]] then legs[ab[1]][ab[2]] = l[3] end
+      end
+    end
+    self.legs = legs
+  end
+  self:Info(self.pack and "travel pack loaded from %s" or "no travel pack (%s): flights and boats use estimates",
+    self.pack and tostring(d.source) or self.TRAVEL_ADDON)
+  return self.pack
+end
+
+-- Seconds of the quickest way through a timetable from stop i to stop j:
+-- the average wait for the next departure (half the period) plus the
+-- crossing (arrive at j - depart from i, around the clock).
+function M.Crossing(ride, i, j)
+  local period, stops = ride[3], ride[4]
+  local a, b = stops[i], stops[j]
+  if not (a and b and period and period > 0) then return nil end
+  local t = (b[2] - a[3]) % period
+  return period / 2 + t, t
+end
 
 function M:OnInitialize()
   local g = ns.db.global
@@ -227,9 +268,44 @@ function M:Rides()
   local function add(kind, a, b, cost, label, note, l)
     if a and b then out[#out + 1] = { kind = kind, from = a, to = b, cost = cost, label = label, note = note, link = l } end
   end
+  local pack = self:Pack()
+  local covered = {}
+  if pack then
+    local function dock(id)
+      local dk = pack.docks and pack.docks[id]
+      local pt = dk and M.Point(dk[1][1], dk[1][2], dk[1][3], dk[2] or M.ZoneName(dk[1][1]))
+      return pt, dk
+    end
+    for _, r in ipairs(pack.rides or {}) do
+      if not r[2] or r[2] == faction then
+        local stops = r[4]
+        for i = 1, #stops do
+          for j = 1, #stops do
+            if i ~= j then
+              local a, b = dock(stops[i][1]), dock(stops[j][1])
+              local cost, crossing = M.Crossing(r, i, j)
+              if a and b and cost then
+                if not a.label or a.label:find("^map ") then a.label = M.ZoneName(a.mapID) end
+                local note = string.format("leaves about every %s, the trip takes %s", M.Minutes(r[3]), M.Minutes(crossing))
+                add(r[1], a, b, cost, tostring(a.label) .. " to " .. M.ZoneName(b.mapID), note, { kind = r[1], pack = true })
+                covered[r[1] .. ":" .. a.mapID .. ":" .. b.mapID] = true
+              end
+            end
+          end
+        end
+      end
+    end
+    for _, p in ipairs(pack.portals or {}) do
+      local a = M.Point(p[3][1], p[3][2], p[3][3], p[2])
+      local b = M.Point(p[4][1], p[4][2], p[4][3], M.ZoneName(p[4][1]))
+      add(p[1] == "lift" and "lift" or "portal", a, b, p[5] or 10, p[2], nil, { kind = p[1], pack = true })
+    end
+  end
   for _, packs in pairs(ns.Data.packs.link or {}) do
     for _, l in ipairs(packs) do
-      if (not l.faction or l.faction == faction) and (not l.race or l.race == race) then
+      local fromMap, toMap = self:MapByName(l.from.zone), self:MapByName(l.to.zone)
+      local dup = pack and fromMap and toMap and (covered[l.kind .. ":" .. fromMap .. ":" .. toMap] or covered[l.kind .. ":" .. toMap .. ":" .. fromMap])
+      if not dup and (not l.faction or l.faction == faction) and (not l.race or l.race == race) then
         local a, b = endPoint(self, l.from), endPoint(self, l.to)
         local cost = l.ride or M.RIDE[l.kind] or 180
         add(l.kind, a, b, cost, l.from.place .. " to " .. l.to.place, l.note, l)
@@ -253,7 +329,7 @@ end
 -- where: "exact" (guide or captured spot), "flight" (the town's flight
 -- master, the dock is nearby), "zone" (only the zone is known), "taken"
 -- (a ride you took, from the spot you left).
-M.KIND_NAME = { boat = "Boat", zeppelin = "Zeppelin", skycutter = "Skyship", tram = "Tram", portal = "Portal", learned = "Ride" }
+M.KIND_NAME = { boat = "Boat", zeppelin = "Zeppelin", skycutter = "Skyship", tram = "Tram", portal = "Portal", lift = "Lift", learned = "Ride" }
 function M:Departures()
   local out = {}
   for _, r in ipairs(self:Rides()) do
@@ -269,8 +345,14 @@ end
 -- Flight points this character knows, as points.
 function M:Flights()
   local out = {}
+  local pack = self:Pack()
   for id in pairs(charTaxi()) do
     local n = ns.db.global.taxiNodes[id]
+    local t = pack and pack.taxi[id]
+    if (not n or not n.wx) and t then
+      local p = M.Point(t[3][1], t[3][2], t[3][3], t[1])
+      n = p and { cont = p.cont, wx = p.wx, wy = p.wy, mapID = p.mapID, x = p.x, y = p.y, name = t[1] }
+    end
     if n and n.wx then
       out[#out + 1] = { taxi = id, cont = n.cont, wx = n.wx, wy = n.wy, mapID = n.mapID, x = n.x, y = n.y, label = n.name }
     end
@@ -313,7 +395,16 @@ function M:Prepare(from)
       if v ~= u and a.cont and a.cont == b.cont then
         local d = dist(a, b)
         relax(v, d / M.RUN, "walk")
-        if a.taxi and b.taxi then relax(v, M.FLY_START + d / M.FLY, "fly") end
+        if a.taxi and b.taxi then
+          local legs = self.legs
+          if legs and next(legs) then
+            -- the real legs only: a flight goes from flight point to flight point
+            local sec = legs[a.taxi] and legs[a.taxi][b.taxi]
+            if sec then relax(v, sec + ((how[u] and how[u].kind == "fly") and M.HOP or M.FLY_START), "fly") end
+          else
+            relax(v, M.FLY_START + d / M.FLY, "fly")
+          end
+        end
       end
     end
     for _, r in ipairs(a.ride or {}) do
@@ -338,7 +429,7 @@ function M:TimeTo(prep, target)
 end
 
 local VERB = { boat = "Take the boat", zeppelin = "Take the zeppelin", skycutter = "Take the skycutter",
-  tram = "Take the tram", portal = "Take the portal", learned = "Take the ride you took before" }
+  tram = "Take the tram", portal = "Take the portal", lift = "Take the lift", learned = "Take the ride you took before" }
 
 function M:Route(target, prep)
   prep = prep or self:Prepare()
@@ -356,7 +447,7 @@ function M:Route(target, prep)
   local steps = {}
   local function step(kind, to, text, ride)
     local last = steps[#steps]
-    if kind == "walk" and last and last.kind == "walk" then last.to, last.text = to, text return end
+    if (kind == "walk" or kind == "fly") and last and last.kind == kind then last.to, last.text = to, text return end
     steps[#steps + 1] = { kind = kind, to = to, text = text, ride = ride }
   end
   for _, c in ipairs(chain) do

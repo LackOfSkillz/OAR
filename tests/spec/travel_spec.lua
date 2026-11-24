@@ -42,6 +42,46 @@ T.describe("travel", function()
     T.ok(r.seconds < 1800 / 7)
   end)
 
+  T.it("travel pack: a flight follows real legs through flight points you know, one Fly step", function()
+    local game, ns = session()
+    rawset(game.env, "Outrider_DataTravel", { source = "spec", taxi = {}, docks = {}, rides = {}, portals = {},
+      flights = { { 1, 3, 50 }, { 3, 2, 50 } } })
+    ns.Travel.pack = nil
+    ns.db.global.taxiNodes = { [1] = { name = "West FP", mapID = 100, x = 0.12, y = 0.5, cont = 1, wx = 120, wy = 500 },
+      [2] = { name = "East FP", mapID = 200, x = 0.88, y = 0.5, cont = 1, wx = 1880, wy = 500 },
+      [3] = { name = "Middle FP", mapID = 200, x = 0.2, y = 0.9, cont = 1, wx = 1200, wy = 900 } }
+    ns.db.char.taxiKnown = { [1] = true, [2] = true, [3] = true }
+    local r = ns.Travel:Route(ns.Travel.Point(200, 0.9, 0.5, "Camp"))
+    local flies = 0
+    for _, st in ipairs(r.steps) do if st.kind == "fly" then flies = flies + 1 end end
+    T.eq(flies, 1, "two legs, one flight")
+    T.contains(r.steps[2].text, "East FP")
+    local want = 20 / 7 + ns.Travel.FLY_START + 50 + ns.Travel.HOP + 50 + 20 / 7
+    T.ok(math.abs(r.seconds - want) < 1, "the legs' real flight times, not a straight line")
+    -- no leg between two known flight points: no flight between them
+    rawset(game.env, "Outrider_DataTravel", { source = "spec", taxi = {}, docks = {}, rides = {}, portals = {}, flights = { { 3, 2, 50 } } })
+    ns.Travel.pack = nil
+    r = ns.Travel:Route(ns.Travel.Point(200, 0.9, 0.5, "Camp"))
+    for _, st in ipairs(r.steps) do T.ok(st.text:find("East FP") == nil or st.kind ~= "fly" or r.steps[1].kind == "walk") end
+  end)
+
+  T.it("travel pack: a timetabled boat counts the average wait and the crossing, and names both", function()
+    local game, ns = session()
+    rawset(game.env, "Outrider_DataTravel", { source = "spec", taxi = {}, flights = {}, portals = {},
+      docks = { [1] = { { 100, 0.1, 0.5 }, "West dock" }, [2] = { { 300, 0.5, 0.5 }, nil } },
+      rides = { { "boat", nil, 300, { { 1, 0, 60 }, { 2, 200, 260 } } } } })
+    ns.Travel.pack = nil
+    local r = ns.Travel:Route(ns.Travel.Point(300, 0.5, 0.6, "Shore"))
+    T.ok(r, "a way across")
+    local boat
+    for _, st in ipairs(r.steps) do if st.kind == "boat" then boat = st end end
+    T.ok(boat, "a boat step")
+    T.contains(boat.text, "West dock to Far Isle")
+    T.contains(boat.text, "leaves about every 5 min")
+    T.ok(math.abs(r.seconds - (150 + 140 + 100 / 7)) < 1, "half the period waiting, 140 s crossing, then the walk")
+    T.eq(ns.Travel.Crossing({ "boat", nil, 300, { { 1, 0, 60 }, { 2, 200, 260 } } }, 2, 1), 150 + 40, "back round the clock: leaves at 260, in at 300")
+  end)
+
   T.it("another continent: no way until a ride is known, then walk, ride, walk", function()
     local _, ns = session()
     local target = ns.Travel.Point(300, 0.5, 0.5, "Hermit")
