@@ -602,6 +602,18 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "travelTrips",
+   "saved_path": "char.outcomes.travel",
+   "retention_mechanism": "MAX (200 trips), oldest archived",
+   "archive_destination": "global.archive.sets.travelTrips",
+   "tests": [
+    "tests/spec/traveltimes_spec.lua :: the 201st trip archives the oldest",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [
