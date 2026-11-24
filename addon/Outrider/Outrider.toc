@@ -260,6 +260,7 @@ UI\Pages\WhatNow.lua
 UI\Pages\Social.lua
 UI\Pages\Settings.lua
 Intelligence\NexusPage.lua
+Intelligence\AfterAction.lua
 
 Core\Slash.lua
 Core\Boot.lua

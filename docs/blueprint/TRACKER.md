@@ -101,6 +101,7 @@ ChatGPT's conditions for Phase 3:
 | OI03-07 Performance and survival | MOCK_GREEN | 9f75e3f | [OI03-07](../reviews/phase3/OI03-07.md) | FightMeter rows gain context (level, talents, build, group, session) and exclusion reasons; derived DPS strata, build-matched comparison, survival stats |
 | OI03-08 Chronicle timeline | MOCK_GREEN | 2c03436 | [OI03-08](../reviews/phase3/OI03-08.md) | milestones and decisions only, keyed (no duplicates on replay or reload), in time order; hide, clear (archived first) and export as text |
 | OI03-09 Estimator and calibration | MOCK_GREEN | 2dfaf14 | [OI03-09](../reviews/phase3/OI03-09.md) | median with shrinkage to a prior, p10-p90; current build first (older build widens), recency, MAD outliers widen, sparse falls back with a reason; time-ordered held-out calibration (error, coverage) |
-| OI03-10 Preference and feedback model | MOCK_GREEN | see commit | [OI03-10](../reviews/phase3/OI03-10.md) | reads existing feedback, one vote per suggestion; ignored and not-now count for nothing; per-kind nudge bounded to 0.05 in the score trace; opt-out, reset (from now) and undo |
+| OI03-10 Preference and feedback model | MOCK_GREEN | ad495ca | [OI03-10](../reviews/phase3/OI03-10.md) | reads existing feedback, one vote per suggestion; ignored and not-now count for nothing; per-kind nudge bounded to 0.05 in the score trace; opt-out, reset (from now) and undo |
+| OI03-11 AfterAction report | MOCK_GREEN | see commit | [OI03-11](../reviews/phase3/OI03-11.md) | Home > After action: wall-clock XP/h, realized gold (transfers and estimates apart), time breakdown, milestones, estimates with ranges, own-history numbers (no claims), ideas; partial sessions labelled; example data labelled |
 
 Phases 4-8 (OI04-OI08): NOT_STARTED.

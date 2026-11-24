@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **After action (private, opt-in):** Home > After action shows how your session really went: XP an hour by the clock, the gold you really made (transfers between your own characters and loot estimates kept apart, auction sales confirmed from the mail), where the time went (quests, travel, dungeons, crafting, dead, idle), your milestones, and how long quests and walks take you, with a range. Switch on Record outcomes there; everything stays on your PC.
 - **Plan (preview), off by default:** Home > Plan (preview) turns your goals and what Outrider knows into a short plan: the next step and two after it, each with Go, Why (the evidence and score), Pin and Skip, plus what is holding the plan back. It only suggests; every step is your click. Add and order your goals there (My goals), with an optional gold reserve. With the planner on, What now?, Home and Radar show the same plan.
 - **Smoother walking with a destination set:** the way-there dots no longer re-plan the whole route every few steps (one re-plan could freeze the game for a third of a second). The route network is searched once per destination, spread over several frames, and each step while walking just picks the best way onto it.
 - **Fishing ring:** while a pole is on, Cast sits in the middle of a ring of Lure, Find Fish, Basic Campfire, Cooking, Weapons back and the Fishing page, each edged green, amber or red, with counts and the lure timer. Hover the lure for every lure in your bags. Circle or bar, drag to move.

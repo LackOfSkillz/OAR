@@ -178,6 +178,9 @@ function M:NodesFor(mapID)
   return out
 end
 
+-- the estimated value of what you looted this session (an estimate, not gold)
+function M:SessionValue() return tonumber(self.sessionValue) end
+
 function M:Activity()
   local caught = 0
   for _, c in pairs(self.session) do caught = caught + c end
