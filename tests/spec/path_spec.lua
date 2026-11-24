@@ -261,5 +261,21 @@ T.describe("the way there", function()
     game:advance(1)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("a destination change during an unfinished search still finishes the new search", function()
+    local game, ns, P = session()
+    road(ns, 100, 0.1, 0.5)
+    local env = getfenv and getfenv(ns.Path.Step) or _G
+    local old, t = env.debugprofilestop, 0
+    env.debugprofilestop = function() t = t + 5 return t end
+    ns.Waypoints:Set(100, 0.5, 0.5, "Far")
+    T.ok(P.stepping and not P.graph.done, "first search pending")
+    ns.Waypoints:Set(100, 0.3, 0.5, "Near") -- replaces it while its slice waits
+    for _ = 1, 400 do if P.graph.done then break end game:advance(0.02) end
+    env.debugprofilestop = old
+    T.ok(P.graph.done, "the replacement search was carried on without another event")
+    T.eq(P.graph.b.wx, P.graph.b.wx)
+    T.ok(#P:Pins(100) > 0)
+  end)
 end)
 

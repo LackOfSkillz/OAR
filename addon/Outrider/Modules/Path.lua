@@ -490,7 +490,9 @@ function M:Replan(why)
       self.stepping = true
       self:After(0, function(mod)
         mod.stepping = nil
-        if mod.graph == g and mod.enabled then mod:Replan(why) end
+        -- carry on with whatever search is current, also one that replaced g
+        -- while this slice waited (a destination change mid-search)
+        if mod.enabled and mod.graph and not mod.graph.done then mod:Replan(why) end
       end, "path:step")
     end
     return

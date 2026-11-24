@@ -34,6 +34,37 @@ it is never live or review acceptance.
 | OI01-13 Security checks upgrade | MOCK_GREEN | dc6f373 | [OI01-13](../reviews/phase1/OI01-13.md) | token/AST/secret gate; fixed FishBook chat bypass; PartyQuests auto party lines noted for owner |
 | OI01-14 Migration and recovery foundation | MOCK_GREEN | 81d14ac | [OI01-14](../reviews/phase1/OI01-14.md) | Core/Archive: 27 collected-data drops now archive; log caps kept; SV backup taken |
 | OI01-15 Release regression baseline | MOCK_GREEN | 8de1ffa | [OI01-15](../reviews/phase1/OI01-15.md) | journeys green in mock; live list for Gary; fishing ring now yields to fishing addons |
-| OI01-GATE Phase 1 review gate | REVIEW_CHANGES -> resubmitted (3) | 24c2e1d | [packet](../reviews/phase1/OI01-GATE.md) | R12-R14 addressed; CI 45425888539 green; awaiting re-review, live data, owner decisions |
+| OI01-GATE Phase 1 review gate | REVIEW_ACCEPTED (automated scope) | 24c2e1d | [packet](../reviews/phase1/OI01-GATE.md) | ChatGPT 2026-11-24, CI 45425888539; owner authorized Phase 2; live and release approval pending |
 
-Phases 2-8 (OI02-OI08): NOT_STARTED; they start only after the previous gate is accepted.
+### Phase 1 items still open (do not block Phase 2; must close before the applicable release approval)
+
+1. Live-client performance and regression check (OI01-04 runtime row, OI01-15 list, Path stutter in game).
+2. Live data-preservation checks for auctionPosts, radarFeedback, trainingOldFormat, macroPrevBodies.
+3. Backup restoration check (`tools/backup-sv.ps1 -Restore`, game closed).
+4. Route finder: a destination change during an unfinished search must schedule the replacement. **Fixed after acceptance** (path_spec "a destination change during an unfinished search still finishes the new search"); in the Phase 2 packet for review.
+5. Measure synchronous graph initialisation and the real maximum frame time in game.
+
+## Phase 2: Unified intelligence (Nexus)
+
+Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), which is addressed "assuming you're ready to authorize Phase 2". Phase 2 base: the commit after the Phase 1 acceptance.
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+| OI02-01 Schema reconciliation | NOT_STARTED | | | |
+| OI02-02 Evidence registry | NOT_STARTED | | | |
+| OI02-03 Class and role profiles | NOT_STARTED | | | |
+| OI02-04 Character and account state | NOT_STARTED | | | |
+| OI02-05 Goal model | NOT_STARTED | | | |
+| OI02-06 Candidate adapters: progression | NOT_STARTED | | | |
+| OI02-07 Candidate adapters: resources | NOT_STARTED | | | |
+| OI02-08 Dependency graph | NOT_STARTED | | | |
+| OI02-09 Scoring and trade-offs | NOT_STARTED | | | |
+| OI02-10 Bounded sequence planner | NOT_STARTED | | | |
+| OI02-11 Invalidation and execution boundary | NOT_STARTED | | | |
+| OI02-12 Radar and WhatNow integration | NOT_STARTED | | | |
+| OI02-13 Confidence and Troubleshooter core | NOT_STARTED | | | |
+| OI02-14 Cross-language contract tests | NOT_STARTED | | | |
+| OI02-15 Planner benchmark | NOT_STARTED | | | |
+| OI02-GATE Phase 2 review gate | NOT_STARTED | | | stops for ChatGPT review and Gary's approval |
+
+Phases 3-8 (OI03-OI08): NOT_STARTED.
