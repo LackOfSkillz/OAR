@@ -51,15 +51,45 @@ function M:Read(sessionID)
     source = "Blizzard C_DamageMeter", petSplitKnown = pet > 0 }
 end
 
+-- OI03-07: what makes two fights comparable, stored with each one: level,
+-- the talent build (points per tree), the game build, item level, whether you
+-- were in a group, the zone and the play session.
+function M.Context()
+  local ctx = {}
+  ctx.level = tonumber(C.Readable(C.Call("UnitLevel", "player")))
+  local T = ns.Modules:Get("Talents")
+  local ok, state = pcall(function() return T and T.Read and T:Read() end)
+  if ok and type(state) == "table" and state.tabs then
+    local parts = {}
+    for i, tab in ipairs(state.tabs) do parts[i] = tostring(tab.spent or 0) end
+    ctx.talents = table.concat(parts, "/")
+  end
+  local _, gameBuild = C.Call("GetBuildInfo")
+  ctx.build = C.Readable(gameBuild)
+  ctx.ilvl = ns.WhatNow and ns.WhatNow.ItemLevel and ns.WhatNow.ItemLevel() or nil
+  ctx.grouped = C.Call("IsInGroup") == true
+  ctx.mapID = tonumber(C.Readable(C.PlayerPosition("player")))
+  ctx.playSessionId = ns.PlaySession and ns.PlaySession:Id() or nil
+  return ctx
+end
+
+-- why fights were left out this session (counts only)
+function M:Excluded(why)
+  self.excluded = self.excluded or {}
+  self.excluded[why] = (self.excluded[why] or 0) + 1
+end
+
 function M:Capture()
-  if C.InCombat() then return false end
+  if C.InCombat() then self:Excluded("combat still active") return false end
   local sessions = self:Sessions()
   for _, e in ipairs(sessions) do
     local id = type(e) == "table" and C.Readable(e.sessionID)
     if type(id) == "number" and not self.seen[id] then
       self.seen[id] = true
-      local row = self:Read(id)
+      local row, why = self:Read(id)
+      if not row then self:Excluded(why or "no result") end
       if row then
+        row.context = M.Context()
         local name = C.Readable(e.name)
         row.name = type(name) == "string" and name or ("Fight " .. id)
         local history = self:History()
