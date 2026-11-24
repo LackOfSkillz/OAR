@@ -38,7 +38,10 @@ function M:ScanSkills()
   local ok, a, b, c, d, e = pcall(get)
   if not ok then return end
   local store = self:Store()
-  for _, idx in ipairs({ a, b, c, d, e }) do
+  -- all five slots: Forever's empty archaeology slot stopped ipairs before Fishing and Cooking
+  local slots = { a, b, c, d, e }
+  for i = 1, 5 do
+    local idx = slots[i]
     if idx then
       local ok2, name, _, skill, max = pcall(info, idx)
       if ok2 and type(name) == "string" then

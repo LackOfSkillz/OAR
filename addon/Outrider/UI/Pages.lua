@@ -346,13 +346,14 @@ ns.Hub:AddTab("home", "Home", function(p)
   function p:Layout()
     local w = self:GetWidth() or 1100
     if w < 400 then w = 1100 end
-    -- the hero painting is 4:1; show the band that fills the banner without
-    -- stretching, a little above the middle (the adventurer's head and the
-    -- dungeon gate sit there)
+    -- The hero painting: two 1024x256 halves cut from the band the banner
+    -- shows (2026-11-23: the 1024x512 halves, 2 MB each, drew black on
+    -- Forever while the 1 MB page headers drew fine). The cut band is 7.7:1;
+    -- show the middle part that fills the banner without stretching.
     local hw, hh = w - 2, (self.hero:GetHeight() or 150) - 2
     if self.hero.halves and hw > 0 and hh > 0 and self.hero.artL.SetTexCoord then
-      local band = math.min(1, 4 * hh / hw)
-      local top = math.max(0, math.min(1 - band, 0.46 - band / 2))
+      local band = math.min(1, 7.7 * hh / hw)
+      local top = (1 - band) / 2
       self.hero.artL:SetTexCoord(0, 1, top, top + band)
       self.hero.artR:SetTexCoord(0, 1, top, top + band)
     end

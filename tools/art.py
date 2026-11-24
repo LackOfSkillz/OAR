@@ -142,8 +142,8 @@ SPECS = {
     # one hero banner per sidebar group
     "header_explore": (1024, 256),
     "header_world": (1024, 256),
-    "home_hero_l": (1024, 512),
-    "home_hero_r": (1024, 512),
+    "home_hero_l": (1024, 256),   # 2026-11-23: 1024x512 drew black on Forever; the shown band only
+    "home_hero_r": (1024, 256),
     "header_professions": (1024, 256),
     "header_gold": (1024, 256),
     "header_character": (1024, 256),

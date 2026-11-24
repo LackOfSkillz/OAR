@@ -135,3 +135,20 @@ T.describe("recipes to learn", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("profession slots", function()
+  T.it("Fishing and Cooking show although Forever's archaeology slot is empty", function()
+    local game, ns, M = start()
+    local slots = { [1] = { "Herbalism", 7, 75 }, [4] = { "Fishing", 1, 75 }, [5] = { "Cooking", 1, 75 } }
+    game.env.GetProfessions = function() return 1, nil, nil, 4, 5 end
+    game.env.GetProfessionInfo = function(i) local s = slots[i] if s then return s[1], nil, s[2], s[3], 0, 0, nil end end
+    local owned = ns.Crafter:Owned()
+    T.ok(owned.Fishing ~= nil, "Fishing")
+    T.ok(owned.Cooking ~= nil, "Cooking")
+    ns.Professions:ScanSkills()
+    T.eq(ns.db.char.professions.Fishing.skill, 1)
+    local names = {}
+    for _, p in ipairs(M:Profs()) do names[p.name] = true end
+    T.ok(names.Fishing, "on the Professions page")
+  end)
+end)

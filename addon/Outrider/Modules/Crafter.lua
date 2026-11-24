@@ -35,9 +35,16 @@ function M:Owned()
   if type(get) ~= "function" or type(info) ~= "function" then return out end
   local ok, a, b, c, d, e = pcall(get)
   if not ok then return out end
-  for _, idx in ipairs({ a, b, c, d, e }) do
-    local ok2, name, _, _, _, _, _, line = pcall(info, idx)
-    if ok2 and type(name) == "string" then out[name] = line or true end
+  -- five fixed slots (prof 1, prof 2, archaeology, fishing, cooking); Forever
+  -- has no archaeology, so slot 3 is empty: ipairs stopped there and Fishing
+  -- and Cooking never showed (Gary, 2026-11-23: "I just got fishing")
+  local slots = { a, b, c, d, e }
+  for i = 1, 5 do
+    local idx = slots[i]
+    if idx then
+      local ok2, name, _, _, _, _, _, line = pcall(info, idx)
+      if ok2 and type(name) == "string" then out[name] = line or true end
+    end
   end
   -- Forever leaves Cooking out of GetProfessions (2026-11-12): also count any
   -- profession whose window was opened (Professions records it with its line).
