@@ -47,6 +47,7 @@ UI\Settings.lua
 
 # Intelligence 2.0 base services (passive until Radar enabled)
 Intelligence\Profiles.lua
+Intelligence\Contracts.lua
 Intelligence\Evidence.lua
 Intelligence\Opportunity.lua
 Intelligence\Economy.lua
