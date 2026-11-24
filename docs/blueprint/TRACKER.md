@@ -53,8 +53,8 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-01 Schema reconciliation | MOCK_GREEN | 5e92959 | [OI02-01](../reviews/phase2/OI02-01.md) | v4 spec shared by Lua and Python; 18 golden fixtures agree; v1-v3 unchanged |
 | OI02-02 Evidence registry | MOCK_GREEN | 1774bd5 | [OI02-02](../reviews/phase2/OI02-02.md) | provenance, canVerify, refusal reasons, v4 view |
 | OI02-03 Class and role profiles | MOCK_GREEN | 8f11a9e | [OI02-03](../reviews/phase2/OI02-03.md) | v4 CharacterState, opaque key, no role inference |
-| OI02-04 Character and account state | MOCK_GREEN | see commit | [OI02-04](../reviews/phase2/OI02-04.md) | per-field event invalidation; alts never live |
-| OI02-05 Goal model | NOT_STARTED | | | |
+| OI02-04 Character and account state | MOCK_GREEN | f5f5308 | [OI02-04](../reviews/phase2/OI02-04.md) | per-field event invalidation; alts never live |
+| OI02-05 Goal model | MOCK_GREEN | see commit | [OI02-05](../reviews/phase2/OI02-05.md) | multi-goal, scopes, archive not delete, explained conflicts |
 | OI02-06 Candidate adapters: progression | NOT_STARTED | | | |
 | OI02-07 Candidate adapters: resources | NOT_STARTED | | | |
 | OI02-08 Dependency graph | NOT_STARTED | | | |

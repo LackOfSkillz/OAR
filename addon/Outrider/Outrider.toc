@@ -178,6 +178,7 @@ Modules\Find.lua
 Modules\RarePlates.lua
 Modules\Advisor.lua
 Intelligence\State.lua
+Intelligence\Goals.lua
 Intelligence\Radar.lua
 Intelligence\DealDesk.lua
 Intelligence\SessionXP.lua
