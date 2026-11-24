@@ -16,10 +16,15 @@
 --      they need (read from the item's tooltip).
 -- Read only: buying is the player's own click in Blizzard's auction window.
 -- Pick a profession (requirement 2026-11-16: choose which profession to
--- train): chips for this character's crafting professions
--- only, plus All. One profession searches only its own ingredients and
+-- train): chips for every profession this character has, crafting and
+-- gathering, plus All. One profession searches only its own ingredients and
 -- recipes; All gives every profession a share of the list, so a long Cooking
 -- list no longer pushes Alchemy off the panel.
+-- Gathering professions (bug 2026-11-24: the page showed only Cooking and First
+-- Aid for a character with Herbalism and Fishing) have no recipes to rank:
+-- their chip searches supplies that help them instead (Fishing: lures and a
+-- pole; its books come from the Fishing recipe search; Mining: a pick;
+-- Skinning: a knife). Herbalism needs nothing bought: one plain card says so.
 
 local _, ns = ...
 local C = ns.Compat
@@ -43,11 +48,45 @@ M.WAIT = 4 -- seconds to wait for an answer before switching to one search per c
 
 local function have(id) return ns.Crafter and ns.Crafter.Have(id) or 0 end
 local function itemName(id) local i = C.ItemInfo(id) return i and i.name or nil end
+local function profIcon(prof)
+  local P = ns.ProfExtras and ns.ProfExtras.PROF_ICON
+  return "Interface\\Icons\\" .. ((P and P[prof]) or "INV_Misc_Book_09")
+end
 
--- This character's crafting professions (gathering ones have no recipes).
+-- Every profession this character has, crafting and gathering, sorted.
 function M:Professions()
-  local T = ns.ProfTrainer
-  return T and T:Professions() or {}
+  local out = {}
+  for name in pairs(ns.Crafter and ns.Crafter:Owned() or {}) do
+    if type(name) == "string" and name ~= "" then out[#out + 1] = name end
+  end
+  table.sort(out)
+  return out
+end
+
+-- Gathering professions: no recipes, supplies instead.
+M.GATHER = { Fishing = true, Herbalism = true, Mining = true, Skinning = true }
+-- Tools the auction house may sell. Standard Classic item names, not yet
+-- verified on WoW Forever.
+M.TOOLS = { Fishing = { "Fishing Pole" }, Mining = { "Mining Pick" }, Skinning = { "Skinning Knife" } }
+M.SUPPLY_KEEP = 3 -- cheapest results kept per searched name
+
+-- Names to search for a gathering profession (Fishing lures are cited in Fishing.lua).
+function M.Supplies(prof)
+  local out = {}
+  if prof == "Fishing" and ns.Fishing and type(ns.Fishing.LURES) == "table" then
+    for _, name in ipairs(ns.Fishing.LURES) do out[#out + 1] = name end
+  end
+  for _, name in ipairs(M.TOOLS[prof] or {}) do out[#out + 1] = name end
+  return out
+end
+
+-- The gathering professions in view: the chosen one, or every one on All.
+function M:GatherInView()
+  local out, chosen = {}, self:Chosen()
+  for _, p in ipairs(self:Professions()) do
+    if M.GATHER[p] and (not chosen or p == chosen) then out[#out + 1] = p end
+  end
+  return out
 end
 
 -- The chosen profession, or nil for All (a choice this character lacks = All).
@@ -59,7 +98,7 @@ end
 
 function M:Choose(prof)
   self:Settings().prof = prof
-  self.prices, self.recipesForSale, self.queue = nil, nil, nil
+  self.prices, self.recipesForSale, self.queue, self.supplies = nil, nil, nil, nil
   self:Info("training shopping: %s", prof or "all professions")
   if self.open then self:Start() else self:Refresh() end
 end
@@ -100,6 +139,9 @@ function M:Queue()
     if type(name) == "string" then q[#q + 1] = { kind = "item", itemID = itemID, text = name } end
   end
   table.sort(q, function(a, b) return a.text < b.text end)
+  for _, prof in ipairs(self:GatherInView()) do
+    for _, name in ipairs(M.Supplies(prof)) do q[#q + 1] = { kind = "supply", prof = prof, text = name } end
+  end
   local owned = ns.Crafter and ns.Crafter:Owned() or {}
   local profs, chosen = {}, self:Chosen()
   for prof in pairs(owned) do
@@ -113,7 +155,7 @@ end
 function M:Query(entry)
   local sorts = { { sortOrder = 0, reverseSort = false } } -- price, low first
   local query
-  if entry.kind == "item" then
+  if entry.kind == "item" or entry.kind == "supply" then
     query = { searchString = entry.text, sorts = sorts, filters = {} }
   else
     query = { searchString = "", sorts = sorts, filters = {},
@@ -131,6 +173,7 @@ end
 function M:Start()
   if not self.open then ns.Print("open the auction house first") return end
   self.queue, self.pos, self.prices, self.recipesForSale, self.seenRecipes = self:Queue(), 0, {}, {}, 0
+  self.supplies = {}
   self.knownHidden = 0
   self.manual = false
   self:Info("training shopping: %d searches", #self.queue)
@@ -172,12 +215,70 @@ function M:OnResults()
     if id and type(price) == "number" then
       if w.entry.kind == "item" then
         if id == w.entry.itemID then self.prices[id] = { price = price, qty = C.Readable(r.totalQuantity) } end
+      elseif w.entry.kind == "supply" then
+        self:NoteSupply(w.entry, id, price, r.itemKey)
       else
         self:NoteRecipe(w.entry.prof, id, price, r.itemKey)
       end
     end
   end
   if self.manual then self:Refresh() else self:Next() end
+end
+
+-- A supply for sale: kept only when its name holds the searched name (a
+-- search for "Fishing Pole" also finds other things), cheapest few per name.
+function M:NoteSupply(entry, itemID, price, itemKey)
+  local name = itemName(itemID)
+  if not name then
+    if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, itemID) end
+    return
+  end
+  if not name:lower():find(entry.text:lower(), 1, true) then return end
+  local list = self.supplies or {}
+  self.supplies = list
+  for _, s in ipairs(list) do
+    if s.itemID == itemID then
+      if price < s.price then s.price, s.itemKey = price, itemKey or s.itemKey end
+      return
+    end
+  end
+  list[#list + 1] = { prof = entry.prof, term = entry.text, itemID = itemID, name = name, price = price,
+    itemKey = itemKey or { itemID = itemID } }
+end
+
+-- Supplies on show: the professions in view, cheapest M.SUPPLY_KEEP per name.
+function M:ShownSupplies()
+  local inView = {}
+  for _, p in ipairs(self:GatherInView()) do inView[p] = true end
+  local list = {}
+  for _, s in ipairs(self.supplies or {}) do if inView[s.prof] then list[#list + 1] = s end end
+  table.sort(list, function(a, b)
+    if a.prof ~= b.prof then return a.prof < b.prof end
+    if a.price ~= b.price then return a.price < b.price end
+    return a.name < b.name
+  end)
+  local out, per = {}, {}
+  for _, s in ipairs(list) do
+    per[s.term] = (per[s.term] or 0) + 1
+    if per[s.term] <= M.SUPPLY_KEEP then out[#out + 1] = s end
+  end
+  return out
+end
+
+-- Cards for the gathering professions in view: supplies, and the Herbalism note.
+function M:GatherCards()
+  local cards = {}
+  for _, s in ipairs(self:ShownSupplies()) do
+    cards[#cards + 1] = { itemID = s.itemID, item = { itemID = s.itemID }, title = s.name,
+      sub = "Helps " .. s.prof, price = s.price, action = { { name = s.name, itemKey = s.itemKey } } }
+  end
+  for _, p in ipairs(self:GatherInView()) do
+    if p == "Herbalism" then
+      cards[#cards + 1] = { icon = profIcon("Herbalism"), title = "Herbalism",
+        sub = "Herbalism levels by picking herbs: nothing to buy. The Professions > Herbalism page shows where." }
+    end
+  end
+  return cards
 end
 
 -- What a recipe item's tooltip says: the skill it needs and whether this
@@ -391,11 +492,6 @@ function M:Picked()
   return picked
 end
 
-local function profIcon(prof)
-  local P = ns.ProfExtras and ns.ProfExtras.PROF_ICON
-  return "Interface\\Icons\\" .. ((P and P[prof]) or "INV_Misc_Book_09")
-end
-
 -- cards, status, searching, pos, total for "training" | "recipes" | "list"
 function M:View(view)
   local money = ns.Prices.Money
@@ -408,8 +504,11 @@ function M:View(view)
   if not self.prices then
     local n = 0
     for _ in pairs(self:Needs()) do n = n + 1 end
-    return {}, n > 0 and string.format("Looks up the %d ingredients your skill-up recipes need, and recipes you don't know yet.", n)
-      or "Open each profession window once so Outrider knows which recipes still give skill.", false, 0, 0
+    local gather = self:GatherInView()
+    local text = n > 0 and string.format("Looks up the %d ingredients your skill-up recipes need, and recipes you don't know yet.", n)
+      or (#gather > 0 and string.format("Looks up supplies for sale that help %s.", table.concat(gather, ", ")))
+      or "Open each profession window once so Outrider knows which recipes still give skill."
+    return {}, text, false, 0, 0
   end
   local cards = {}
   if view == "recipes" then
@@ -462,8 +561,22 @@ function M:View(view)
       priceText = #x.buy == 0 and "|cff7fff7ffree|r" or (x.missing and "|cffffc84dpart from a vendor|r" or nil),
       action = #buys > 0 and buys or nil }
   end
-  return cards, #cards > 0 and "Cheapest skill first. Amber counts: not on the auction house (a vendor may sell them)."
-    or "Nothing found that trains your professions.", false, 0, 0
+  local recipeCards = #cards
+  for _, c in ipairs(self:GatherCards()) do cards[#cards + 1] = c end
+  local chosen = self:Chosen()
+  local status
+  if recipeCards > 0 then
+    status = "Cheapest skill first. Amber counts: not on the auction house (a vendor may sell them)."
+  elseif chosen == "Herbalism" then
+    status = "Herbalism has nothing to buy at the auction house."
+  elseif chosen and M.GATHER[chosen] then
+    status = #cards > 0 and string.format("Supplies for sale that help %s, cheapest first. Buy queues it; the bar above the auction window confirms.", chosen)
+      or string.format("Nothing for sale right now that helps %s.", chosen)
+  else
+    status = #cards > 0 and "Supplies for sale that help your gathering professions, cheapest first."
+      or "Nothing found that trains your professions."
+  end
+  return cards, status, false, 0, 0
 end
 
 function M:Build()
@@ -484,7 +597,7 @@ function M:Build()
   return f
 end
 
--- Chips for All and each crafting profession (with its icon), the chosen one lit.
+-- Chips for All and each profession (with its icon), the chosen one lit.
 function M:Chips(f)
   local list = { false }
   for _, p in ipairs(self:Professions()) do list[#list + 1] = p end

@@ -451,7 +451,8 @@ function M.new(opts)
       game.queries[#game.queries + 1] = q
       local out = {}
       for id, l in pairs(game.ahListings or {}) do
-        local hit = (q.searchString ~= "" and l.name == q.searchString)
+        -- the real search matches part of a name ("Fishing Pole" finds "Strong Fishing Pole")
+        local hit = (q.searchString ~= "" and l.name:find(q.searchString, 1, true) ~= nil)
           or (q.itemClassFilters and l.recipe and q.itemClassFilters[1].subClassID == l.recipe)
           or (q.itemClassFilters and l.class and q.itemClassFilters[1].classID == l.class
             and (not q.itemClassFilters[1].inventoryType or q.itemClassFilters[1].inventoryType == l.invType))
@@ -541,8 +542,20 @@ function M.new(opts)
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
   -- professions: game.prof = { name, skill, max, recipes = { [id] = { name, reagents = {[itemID]=n} } } }
-  base.GetProfessions = function() if game.prof then return 1 end end
-  base.GetProfessionInfo = function() local p = game.prof if p then return p.name, nil, p.skill, p.max, 0, 0, p.line end end
+  -- several at once: game.profs = { [slot] = { name, skill, max, line } } in the
+  -- real five-slot shape (prof 1, prof 2, archaeology, fishing, cooking; nil = empty)
+  base.GetProfessions = function()
+    if game.profs then
+      local s = game.profs
+      return s[1] and 1 or nil, s[2] and 2 or nil, s[3] and 3 or nil, s[4] and 4 or nil, s[5] and 5 or nil
+    end
+    if game.prof then return 1 end
+  end
+  base.GetProfessionInfo = function(idx)
+    local p = game.prof
+    if game.profs then p = game.profs[idx] end
+    if p then return p.name, nil, p.skill, p.max, 0, 0, p.line end
+  end
   base.UnitCastingInfo = function(unit) if unit == "player" then return game.casting end end
   base.C_TradeSkillUI = {
     GetAllRecipeIDs = function()

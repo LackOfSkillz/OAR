@@ -177,6 +177,18 @@ local controls = {
 
   -- Journey / Finder kinds
   ["All"] = "Show every kind of result (or every profession).",
+  -- profession chips (auction house Training views and elsewhere)
+  ["Herbalism"] = "Herbalism only. Nothing to buy for it: it levels by picking herbs.",
+  ["Mining"] = "Mining only. At the auction house: a mining pick for sale.",
+  ["Skinning"] = "Skinning only. At the auction house: a skinning knife for sale.",
+  ["Cooking"] = "Cooking only: its skill-ups and recipes.",
+  ["First Aid"] = "First Aid only: its skill-ups and manuals.",
+  ["Alchemy"] = "Alchemy only: its skill-ups and recipes.",
+  ["Blacksmithing"] = "Blacksmithing only: its skill-ups and plans.",
+  ["Enchanting"] = "Enchanting only: its skill-ups and formulas.",
+  ["Engineering"] = "Engineering only: its skill-ups and schematics.",
+  ["Leatherworking"] = "Leatherworking only: its skill-ups and patterns.",
+  ["Tailoring"] = "Tailoring only: its skill-ups and patterns.",
   ["Zones"] = "Zones and areas, with their level ranges.",
   ["Travel"] = "Flight paths, boats, zeppelins and portals.",
   ["Herbs, ore"] = "Herb and ore spawn points.",

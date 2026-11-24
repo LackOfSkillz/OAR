@@ -282,3 +282,115 @@ T.describe("add then buy on the same button (2026-11-20)", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("every profession, gathering too (2026-11-24: only Cooking and First Aid had chips)", function()
+  local function gatherer()
+    local game, ns = session()
+    -- the five-slot shape: Herbalism in slot 1, Fishing in the fishing slot, no archaeology
+    game.profs = { [1] = { name = "Herbalism", skill = 10, max = 75, line = 182 },
+      [4] = { name = "Fishing", skill = 75, max = 150, line = 356 } }
+    ns.db.char.professions = {
+      Cooking = { skill = 40, max = 75, line = 185, recipes = { [1] = { name = "Snack", diff = 0, reagents = { [2318] = 1 } } } },
+      ["First Aid"] = { skill = 30, max = 75, line = 129, recipes = {} },
+    }
+    game.items[90001] = { name = "Shiny Bauble" }
+    game.items[90002] = { name = "Fishing Pole" }
+    game.items[90003] = { name = "Strong Fishing Pole" }
+    game.items[90004] = { name = "Pole Rack" } -- answers the search but isn't a pole
+    game.items[90005] = { name = "Book: Fishing Basics" }
+    game.ahListings[90001] = { name = "Shiny Bauble", minPrice = 300, qty = 20 }
+    game.ahListings[90002] = { name = "Fishing Pole", minPrice = 50 }
+    game.ahListings[90003] = { name = "Strong Fishing Pole", minPrice = 5000 }
+    game.ahListings[90004] = { name = "Fishing Pole", minPrice = 1 }
+    game.ahListings[90005] = { name = "Book: Fishing Basics", minPrice = 900, recipe = 9 }
+    return game, ns
+  end
+  local function choose(game, ns, prof)
+    game:fire("AUCTION_HOUSE_SHOW")
+    ns.TrainShop:Choose(prof)
+    local guard = 0
+    while ns.TrainShop.queue and guard < 40 do guard = guard + 1 game:fire("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED") end
+  end
+  local function labels(ns)
+    local out = {}
+    for _, c in ipairs(ns.TrainShop.frame.chips) do if c:IsShown() then out[#out + 1] = c.label:GetText() .. (c.on and "*" or "") end end
+    return table.concat(out, ",")
+  end
+
+  T.it("chips: All and every profession this character has, crafting and gathering", function()
+    local game, ns = gatherer()
+    game:fire("AUCTION_HOUSE_SHOW")
+    T.eq(labels(ns), "All*,Cooking,First Aid,Fishing,Herbalism")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("Fishing searches each lure, a pole and the Fishing books; results become supply cards with a Buy", function()
+    local game, ns = gatherer()
+    choose(game, ns, "Fishing")
+    T.eq(labels(ns), "All,Cooking,First Aid,Fishing*,Herbalism")
+    local texts, books = {}, false
+    for _, q in ipairs(game.queries or {}) do
+      if q.searchString ~= "" then texts[q.searchString] = true end
+      local f = q.itemClassFilters and q.itemClassFilters[1]
+      if f and f.classID == 9 and f.subClassID == 9 then books = true end
+    end
+    for _, lure in ipairs(ns.Fishing.LURES) do T.ok(texts[lure], "searched " .. lure) end
+    T.ok(texts["Fishing Pole"], "searched a pole")
+    T.ok(books, "Fishing books still searched")
+    T.ok(not texts["Light Leather"], "no Cooking ingredients")
+    local cards, status = ns.TrainShop:View("training")
+    local byName = {}
+    for _, c in ipairs(cards) do byName[c.title] = c end
+    local b = byName["Shiny Bauble"]
+    T.ok(b, "a lure card")
+    T.eq(b.sub, "Helps Fishing")
+    T.eq(b.price, 300)
+    T.eq(b.action[1].name, "Shiny Bauble")
+    T.eq(b.action[1].itemKey.itemID, 90001)
+    T.ok(byName["Fishing Pole"] and byName["Strong Fishing Pole"], "poles whose name holds the search")
+    T.eq(byName["Pole Rack"], nil, "a result without the searched name is left out")
+    T.contains(status, "help Fishing")
+    T.eq(#(game.bought or {}), 0, "nothing bought without a click")
+    -- drawn in the shopping window with a Buy button
+    local G = ns.GearShop
+    G.open = true
+    G:Pick("training")
+    local shown = {}
+    for _, r in ipairs(G.frame.rows) do if r:IsShown() then shown[#shown + 1] = r.text:GetText() .. (r.buy:IsShown() and "+buy" or "") end end
+    T.contains(table.concat(shown, ","), "Shiny Bauble+buy")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("Herbalism: one plain card, no search", function()
+    local game, ns = gatherer()
+    choose(game, ns, "Herbalism")
+    T.eq(#(game.queries or {}), 0, "nothing to search")
+    local cards, status = ns.TrainShop:View("training")
+    T.eq(#cards, 1)
+    T.eq(cards[1].title, "Herbalism")
+    T.contains(cards[1].sub, "picking herbs")
+    T.eq(cards[1].action, nil)
+    T.contains(status, "nothing to buy")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("All adds supplies after the crafting skill-ups; a crafting chip is unchanged", function()
+    local game, ns = gatherer()
+    ns.db.char.professions.Alchemy = { skill = 30, max = 75, line = 171, recipes = {
+      [2] = { name = "Elixir of Minor Defense", diff = 0, reagents = { [765] = 2, [3371] = 1 } } } }
+    choose(game, ns, nil)
+    local cards = ns.TrainShop:View("training")
+    local titles = {}
+    for _, c in ipairs(cards) do titles[#titles + 1] = c.title end
+    local all = table.concat(titles, "|")
+    T.ok(all:find("Elixir of Minor Defense", 1, true) < all:find("Shiny Bauble", 1, true), "recipes first, then supplies")
+    T.contains(all, "Herbalism")
+    game.queries = nil
+    choose(game, ns, "Alchemy")
+    T.eq(#game.queries, 2, "Silverleaf and Alchemy recipes only")
+    cards = ns.TrainShop:View("training")
+    T.eq(#cards, 1)
+    T.contains(cards[1].title, "Elixir of Minor Defense")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

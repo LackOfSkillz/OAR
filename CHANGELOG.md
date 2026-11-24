@@ -166,6 +166,7 @@ First release on CurseForge.
 
 ## Unreleased
 
+- Auction house Training: a chip for every profession you have, gathering too (only Cooking and First Aid showed). Skill-ups for Fishing lists lures and poles for sale (books still under Recipes), Mining a pick, Skinning a knife, each with its own Buy; Herbalism says it levels by picking herbs.
 - Heal keys rebuilt for the most healing per second (research in docs/HEAL_MACRO_RESEARCH_2026-11-22.md): druid Rejuvenation then Regrowth (the efficient heal on Forever), Swiftmend and Nature's Swiftness for resto, Innervate on Alt; priest Renew then Heal/Greater Heal, shield on Shift, Flash Heal on Ctrl, Penance for Discipline, Inner Focus on Alt; paladin Holy Light, Flash of Light on Ctrl, Divine Favor + Holy Shock on Shift; shaman Healing Wave, Lesser Healing Wave on Ctrl, Nature's Swiftness on Shift, Riptide loop and Chain Heal for resto.
 - Mana: the best mana potion in your bags on Alt + Heal (after the class mana spell) and Ctrl + Recover; a low mana cue once per fight under 30%.
 - Every class's fight keys without ",null" (it wraps on Forever); the wand on Shift; Lava Burst removed (gone on Forever).
