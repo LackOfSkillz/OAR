@@ -63,6 +63,28 @@ class Baseline(unittest.TestCase):
         self.assertEqual(b["sampleCount"], 2)
         self.assertEqual(b["basis"], "wall")
 
+    def test_reload_segments_are_one_session_not_two_or_none(self):
+        # OI03-01: a /reload splits one play session; the first segment is
+        # final=False (not a completed session) and the two are joined
+        first = session(sessionId="seg-1", playSessionId="ps:1", segment=1, final=False,
+                        endReason="reload", durationSeconds=900, xpEarned=3000)
+        second = session(sessionId="seg-2", playSessionId="ps:1", segment=2, final=True,
+                         endReason="logout", durationSeconds=900, xpEarned=6000, levelEnd=21)
+        merged = xp_baseline.merge_segments([first, second])
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["durationSeconds"], 1800)
+        self.assertEqual(merged[0]["xpEarned"], 9000)
+        self.assertEqual(merged[0]["levelEnd"], 21)
+        self.assertIs(merged[0]["final"], True)
+        self.assertEqual(first["durationSeconds"], 900, "input records unchanged")
+        b = xp_baseline.baseline([first, second])
+        self.assertEqual(b["sampleCount"], 1)
+        self.assertEqual(b["xpPerHour"], 18000)
+        # an interrupted last segment makes the whole session ineligible
+        broken = session(sessionId="seg-3", playSessionId="ps:1", segment=3, final=False,
+                         endReason="interrupted", flags={"incomplete": True})
+        self.assertIsNone(xp_baseline.baseline([first, second, broken])["xpPerHour"])
+
     def test_unknown_rollover_or_partial_session_not_eligible(self):
         b = xp_baseline.baseline([
             session(xpVerified=False), session(sessionId="other", flags={"rolloverUnknown": True}),

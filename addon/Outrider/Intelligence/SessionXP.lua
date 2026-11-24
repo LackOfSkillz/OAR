@@ -8,6 +8,57 @@ local M = ns:NewModule("SessionXP", {
 })
 ns.SessionXP = M
 M.SCHEMA, M.MAX_HISTORY, M.MAX_ZONES, M.MAX_QUESTS = 1, 20, 12, 40
+M.DUP_SECONDS = 5
+
+-- OI03-01: every record is a segment of a play session (Intelligence/
+-- PlaySession.lua). A /reload ends a segment, not the session: that segment
+-- gets endReason "reload" and final = false (it was not a completed
+-- session), and the next one continues the same playSessionId. A clean
+-- logout gives "logout" (final stays true); a login with no logout before it
+-- gives "interrupted" (the record already joined history as incomplete).
+-- Merged() joins segments into play sessions for anything that reports totals.
+function M.Stamp(rec)
+  local P = ns.PlaySession
+  if P and P:Id() then rec.playSessionId, rec.segment = P:Id(), P:Segment() end
+end
+function M:OnPlaySession(_, kind, prev)
+  local store = self:Store()
+  if prev and prev.id then
+    for i = #store.history, 1, -1 do
+      local r = store.history[i]
+      if r.playSessionId == prev.id and (r.segment or 1) == prev.segment then
+        r.endReason = prev.reason
+        if prev.reason == "reload" then r.final = false end
+        break
+      end
+    end
+  end
+  if self.current then M.Stamp(self.current) end
+end
+M.MERGE = { sum = { "durationSeconds", "xpEarned" }, last = { "levelEnd", "endedAt", "final", "endReason" } }
+function M:Merged()
+  local hist = self:Store().history
+  local merged = ns.PlaySession.Merge(hist, M.MERGE)
+  -- verified only if every segment was; flags are the union of the segments'
+  -- (in a new table: the saved records are never changed)
+  local bad, flags = {}, {}
+  for _, r in ipairs(hist) do
+    local id = r.playSessionId
+    if id then
+      if r.xpVerified ~= true then bad[id] = true end
+      flags[id] = flags[id] or {}
+      for k, v in pairs(type(r.flags) == "table" and r.flags or {}) do if v then flags[id][k] = v end end
+    end
+  end
+  for _, s in ipairs(merged) do
+    local id = s.playSessionId
+    if id then
+      if bad[id] then s.xpVerified = false end
+      s.flags = flags[id]
+    end
+  end
+  return merged
+end
 local function integer(v, max)
   return type(v) == "number" and v == math.floor(v) and v >= 0 and v <= (max or 1e10)
 end
@@ -125,6 +176,7 @@ function M:Start()
     xpVerified = xp ~= nil, final = false, zones = {}, questsTurnedIn = {},
     flags = {}, build = tostring(ns.build or "unknown") }
   if not xp then s.flags.xpUnknown = true end
+  M.Stamp(s)
   store.current, self.current, self.lastXP = s, s, xp
   self.zoneById, self.zoneId, self.lastClock = {}, nil, clock()
   self:SetZone(zone())
@@ -136,6 +188,11 @@ function M:OnQuest(_, questID, rewardXP)
   if not integer(questID, 2147483647) or questID == 0 then return end
   self:Sample()
   local list = self.current.questsTurnedIn
+  -- the same turn-in reported twice (a duplicate event) counts once (OI03-01)
+  local at = math.floor(self.current.durationSeconds)
+  for _, q in ipairs(list) do
+    if q.questID == questID and math.abs((q.atOffsetSeconds or 0) - at) <= M.DUP_SECONDS then return end
+  end
   if #list >= M.MAX_QUESTS then self.current.flags.questOverflow = true return end
   rewardXP = C.Readable(rewardXP)
   list[#list + 1] = { questID = questID, atOffsetSeconds = math.floor(self.current.durationSeconds),
@@ -187,6 +244,7 @@ function M:OnEnable()
     mod:RefreshCandidateSnapshot()
   end)
   self:On("PLAYER_LOGOUT", function(mod) mod:Checkpoint(true) end)
+  self:On("OTR_PLAYSESSION", self.OnPlaySession)
 end
 function M:OnDisable()
   if self.candidateTicker then self.candidateTicker:Cancel() self.candidateTicker = nil end
@@ -216,9 +274,15 @@ ns.AddCommand("xp60", "on|off|status|clear (private session XP recorder)", funct
     ns.Print("XP session recorder disabled.")
   elseif arg == "clear" then
     if M.current then M:Checkpoint(false) end
+    -- kept, not deleted: the old history goes to the archive first
+    local old = ns.db.char.xp60
+    if type(old) == "table" and next(old) ~= nil and not ns.Archive:Put("xpSessionsCleared", old, { path = "char.xp60", scope = "char" }) then
+      ns.Print("XP session history kept: it couldn't be archived, so nothing was cleared.")
+      return
+    end
     ns.db.char.xp60 = { schema = 1, history = {} }
     if M.enabled then M:Start() end
-    ns.Print("XP session history cleared for this character.")
+    ns.Print("XP session history cleared for this character (the old records are in the archive).")
   else
     ns.Print("XP recorder: %s (%s)", M.enabled and "on" or "off", M:Activity())
   end

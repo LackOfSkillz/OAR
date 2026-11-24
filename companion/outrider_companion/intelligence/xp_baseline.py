@@ -19,13 +19,52 @@ def valid_session(s):
             and _number(s.get("levelStart")) and 1 <= s["levelStart"] <= 200)
 
 
+def merge_segments(sessions):
+    """Join /reload segments into play sessions (OI03-01, addon PlaySession.Merge).
+
+    Records sharing a playSessionId are one play session: duration and XP are
+    summed, levelStart comes from the first segment, levelEnd/final/endedAt
+    from the last, xpVerified only if every segment was, flags are the union.
+    Records without a playSessionId (older data) stay as they are. The input
+    records are not changed.
+    """
+    out, by_id = [], {}
+    for r in sessions or []:
+        if not isinstance(r, dict):
+            continue
+        sid = r.get("playSessionId")
+        cur = by_id.get(sid) if sid else None
+        if cur is None:
+            cur = dict(r)
+            cur["flags"] = dict(r.get("flags") or {}) if isinstance(r.get("flags"), dict) else r.get("flags")
+            cur["segments"] = 1
+            out.append(cur)
+            if sid:
+                by_id[sid] = cur
+            continue
+        cur["segments"] += 1
+        for f in ("durationSeconds", "xpEarned"):
+            if _number(r.get(f)) and _number(cur.get(f)):
+                cur[f] = cur[f] + r[f]
+        for f in ("levelEnd", "endedAt", "final", "endReason"):
+            if f in r:
+                cur[f] = r[f]
+        if r.get("xpVerified") is not True:
+            cur["xpVerified"] = False
+        if isinstance(r.get("flags"), dict) and isinstance(cur.get("flags"), dict):
+            for k, v in r["flags"].items():
+                if v:
+                    cur["flags"][k] = v
+    return out
+
+
 def baseline(sessions, *, target_level=None, game_build=None):
     """Rate uses *wall clock* hours, not only time spent earning XP.
 
     Unknown rested, boost or grouping state is reported, not assumed equal.
     """
     eligible = []
-    for s in sessions[-20:]:
+    for s in merge_segments(sessions)[-20:]:
         if not valid_session(s):
             continue
         if target_level is not None and abs(s["levelStart"] - target_level) > 3:

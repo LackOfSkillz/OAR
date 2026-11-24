@@ -31,6 +31,20 @@ function M:OnEnable()
   end
   self:On("PLAYER_MONEY", self.OnMoney)
   self:On("PLAYER_LOGOUT", self.OnLogout)
+  self:On("OTR_PLAYSESSION", self.OnPlaySession)
+end
+
+function M:OnPlaySession(_, _, prev)
+  if not (prev and prev.id) then return end
+  for i = #(ns.db.char.ledger or {}), 1, -1 do
+    local r = ns.db.char.ledger[i]
+    if type(r) == "table" and r.playSessionId == prev.id and (r.segment or 1) == prev.segment then r.endReason = prev.reason break end
+  end
+end
+
+-- saved ledger records joined into play sessions (a reload isn't a new session)
+function M.Merged(list)
+  return ns.PlaySession.Merge(list or ns.db.char.ledger, { sum = { "net" }, last = { "stop", "endReason" } })
 end
 
 function M:OnMoney()
@@ -54,7 +68,12 @@ function M:OnLogout()
   local net, perHour = self:Summary()
   local c = ns.db.char
   c.ledger = ns.KeepTable(c.ledger, "Ledger:c.ledger") or {}
-  table.insert(c.ledger, { start = self.start, stop = time(), net = net, book = self.book })
+  local rec = { start = self.start, stop = time(), net = net, book = self.book }
+  -- OI03-01: one record per segment of a play session; a reload's segment is
+  -- marked when the next one starts (OnPlaySession) and Merged() joins them
+  local P = ns.PlaySession
+  if P and P:Id() then rec.playSessionId, rec.segment = P:Id(), P:Segment() end
+  table.insert(c.ledger, rec)
   while #c.ledger > 30 and ns.Archive:Shift("goldLedger", c.ledger, { path = "char.ledger", scope = "char" }) do end
   local parts = {}
   for ctx, b in pairs(self.book) do
@@ -68,7 +87,7 @@ end
 -- P9-01: this session and the saved sessions' gold per hour
 function M:Snapshot()
   local net, perHour = self:Summary()
-  local g = ns.Forecasts and ns.Forecasts.Gold(ns.db.char.ledger)
+  local g = ns.Forecasts and ns.Forecasts.Gold(M.Merged(ns.db.char.ledger))
   return { sessionNet = net, sessionPerHour = math.floor(perHour), avgPerHour = g and math.floor(g.perHour),
     sessions = g and g.sessions }
 end

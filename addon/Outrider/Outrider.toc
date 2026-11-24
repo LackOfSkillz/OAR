@@ -51,6 +51,7 @@ Intelligence\Contracts.lua
 Intelligence\Evidence.lua
 Intelligence\Opportunity.lua
 Intelligence\Economy.lua
+Intelligence\PlaySession.lua
 
 # Advisor groundwork (dormant until Phase 9)
 Advisor\Snapshot.lua

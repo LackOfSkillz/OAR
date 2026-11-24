@@ -92,5 +92,6 @@ ChatGPT's conditions for Phase 3:
 
 | Task | Status | SHA | Evidence | Notes |
 |---|---|---|---|---|
+| OI03-01 Session recorder reconciliation | MOCK_GREEN | see commit | [OI03-01](../reviews/phase3/OI03-01.md) | shared PlaySession marker (reload / logout / interrupted); SessionXP and Ledger segments merge; reload no longer a completed session; xp60 clear archives first |
 
 Phases 4-8 (OI04-OI08): NOT_STARTED.
