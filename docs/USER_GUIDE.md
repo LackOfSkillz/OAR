@@ -152,6 +152,7 @@ With the auction house open, Outrider's shopping window sits beside it: a menu o
 ## Interface and chat
 
 - **What now?.** Next steps for this character right now: errands, quests, gear, dungeons, training, gold. /ride now [level|gold|gear|professions|explore].
+- **Plan (preview).** Home > Plan (preview), off until you switch it on. It turns your goals and everything Outrider knows into a short plan: the step to do next and two after it, each with Go (the way there or the page), Why (the evidence and how the step was scored), Pin (always first) and Skip (leave it out). It plans again when your character changes, never in combat, and says when a plan is out of date. It only suggests: every step is your click.
 - **Find bar.** One search box for everything (key binding Outrider: Find, or /ride find).
 - **Census.** Who's playing on your realm: most common level, class, race and profession, and the highest level seen. Players you see are counted as you play; Search the next group (or its key binding) sends one /who search a press, top level first: 13 presses cover every level, more presses add detail where 50+ players share a level. Professions come only from links in chat. Kept 30 days, on this PC only. /ride census.
 - **Players & guilds.** Find any player Outrider has counted (name, guild, zone, class or level) and click to whisper them (opens the chat box, you send), invite them to your group, or to your guild if your rank can. A catalog of every guild seen with members, levels and where they play. Search a guild or your zone with one /who per press.
@@ -298,7 +299,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride rareroute` | rareroute all\|watched  queue nearest known rare spawns on this map |
 | `/ride recipesources` | recipesources list \| add <recipeID> <kind> <source> |
 | `/ride report` | report a problem or an idea (opens Help, Report or idea) |
-| `/ride reset` | char\|all confirm  wipe settings (needs the word confirm) |
+| `/ride reset` | char\|all confirm  settings back to defaults (collected data and the archive are kept) |
 | `/ride restock` | restock add <itemID> <count> \| remove <itemID> \| reserve <gold> \| list |
 | `/ride role` | list\|auto\|tank\|melee\|ranged\|caster\|healer\|pet  coaching role |
 | `/ride runs` | dungeon lockouts; /ride runs list\|delete <index> |

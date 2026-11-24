@@ -249,6 +249,7 @@ UI\Pages\Gold.lua
 UI\Pages\WhatNow.lua
 UI\Pages\Social.lua
 UI\Pages\Settings.lua
+Intelligence\NexusPage.lua
 
 Core\Slash.lua
 Core\Boot.lua

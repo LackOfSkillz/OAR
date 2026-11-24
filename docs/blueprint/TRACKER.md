@@ -60,8 +60,8 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-08 Dependency graph | MOCK_GREEN | 0a60f76 | [OI02-08](../reviews/phase2/OI02-08.md) | cycles, prerequisites, faction, budget, overlap, travel unknown |
 | OI02-09 Scoring and trade-offs | MOCK_GREEN | 6b37b3f | [OI02-09](../reviews/phase2/OI02-09.md) | versioned utility, hard constraints, reconstructing trace |
 | OI02-10 Bounded sequence planner | MOCK_GREEN | 119b304 | [OI02-10](../reviews/phase2/OI02-10.md) | beam search, work cap, oracle-checked, no fabricated plans |
-| OI02-11 Invalidation and execution boundary | MOCK_GREEN | see commit | [OI02-11](../reviews/phase2/OI02-11.md) | off by default; debounce, combat deferral, stale plans, Act only on click |
-| OI02-12 Radar and WhatNow integration | NOT_STARTED | | | |
+| OI02-11 Invalidation and execution boundary | MOCK_GREEN | 7261b9c | [OI02-11](../reviews/phase2/OI02-11.md) | off by default; debounce, combat deferral, stale plans, Act only on click |
+| OI02-12 Radar and WhatNow integration | MOCK_GREEN | see commit | [OI02-12](../reviews/phase2/OI02-12.md) | Plan (preview) page; off = baseline; progressive Why |
 | OI02-13 Confidence and Troubleshooter core | NOT_STARTED | | | |
 | OI02-14 Cross-language contract tests | NOT_STARTED | | | |
 | OI02-15 Planner benchmark | NOT_STARTED | | | |

@@ -63,7 +63,7 @@ Hub.PLACE = {
 -- One sidebar entry, several pages: { host = { {page id, sub-tab label}, ... } }.
 -- The first page is the host itself.
 Hub.SUBS = {
-  home      = { { "home", "Overview" }, { "whatnow", "Next steps" }, { "errands", "Town errands" } },
+  home      = { { "home", "Overview" }, { "whatnow", "Next steps" }, { "nexusplan", "Plan (preview)" }, { "errands", "Town errands" } },
   waypoints = { { "waypoints", "Places and arrow" }, { "worldmap", "Map and routes" }, { "map", "Map pins" } },
   quests    = { { "quests", "Quest log" }, { "questsnear", "Near me" }, { "questchains", "Chains" }, { "journal", "Diary" } },
   rares     = { { "rares", "Rares" }, { "raremap", "Rare map" }, { "rarealerts", "Watch and alerts" } },
