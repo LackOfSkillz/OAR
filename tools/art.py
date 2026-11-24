@@ -30,7 +30,7 @@ SPECS = {
     # batch 6 (2026-11-19): the Macros page skill tree
     "macro_key_fight": (128, 128), "macro_key_pull": (128, 128), "macro_key_strike": (128, 128), "macro_key_heal": (128, 128), "macro_key_pet": (128, 128), "macro_key_reach": (128, 128),
     "macro_combat": (128, 128), "macro_control": (128, 128), "macro_defensive": (128, 128), "macro_utility": (128, 128), "macro_heal": (128, 128), "macro_pet": (128, 128), "macro_rare": (128, 128), "macro_burst": (128, 128), "macro_break": (128, 128), "macro_recover": (128, 128), "macro_trap": (128, 128),
-    "macro_tree": (1024, 512),
+    "macro_tree": (512, 256),   # 2026-11-23: 2 MB textures draw black on Forever; keep art at 1 MB or less
     "spec_druid_balance": (64, 64), "spec_druid_feral": (64, 64), "spec_druid_resto": (64, 64),
     "spec_hunter_bm": (64, 64), "spec_hunter_mm": (64, 64), "spec_hunter_sv": (64, 64),
     "spec_mage_arcane": (64, 64), "spec_mage_fire": (64, 64), "spec_mage_frost": (64, 64),
