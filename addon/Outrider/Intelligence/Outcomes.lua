@@ -147,8 +147,14 @@ function M:Professions()
   return out
 end
 
+function M:OnDisable()
+  if ns.ActivityTimeline then ns.ActivityTimeline:Stop() end
+end
+
 function M:OnEnable()
   self:Store()
+  -- what the time went to (OI03-03), in the same store and under the same switch
+  if ns.ActivityTimeline then ns.ActivityTimeline:Start(self) ns.ActivityTimeline:Wire(self) end
   -- the player's Go on a plan step (NexusCore:Act), kept in memory only
   self:On("OTR_NEXUS_ACTED", function(mod, _, info)
     if type(info) ~= "table" then return end
