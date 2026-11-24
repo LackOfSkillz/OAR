@@ -137,15 +137,26 @@ end
 
 -- Class colors only with an explicit, readable character GUID. Unknown
 -- classes, NPCs and clickable player hyperlinks are unchanged.
-function M:ColorAuthor(author, guid)
-  if not self:Settings().colorNames or type(author) ~= "string" or
-    type(guid) ~= "string" or C.IsSecret(author) or C.IsSecret(guid) or
-    author:find("|H", 1, true) then return nil end
-  local _, class = C.Call("GetPlayerInfoByGUID", guid)
-  local cc = class and (rawget(_G, "RAID_CLASS_COLORS") or {})[C.Readable(class)]
-  if not cc then return nil end
-  return string.format("|cff%02x%02x%02x%s|r", math.floor(cc.r * 255),
-    math.floor(cc.g * 255), math.floor(cc.b * 255), author)
+-- Class colours on names (Gary, 2026-11-23: a General line showed
+-- "|Hplayer:Mia Starleaf:407:CHANNEL:1[Mia Starleaf]" as raw text). The old
+-- way handed Blizzard a coloured author, and Blizzard builds the clickable
+-- player link from the author, so the colour codes broke the link. Now the
+-- name is never touched: the game's own "colour names by class" chat option
+-- is switched on for each chat type, once per session, while colorNames is on.
+M.CLASS_COLOR_TYPES = { "SAY", "YELL", "EMOTE", "WHISPER", "PARTY", "PARTY_LEADER", "RAID", "RAID_LEADER",
+  "RAID_WARNING", "GUILD", "OFFICER", "INSTANCE_CHAT", "INSTANCE_CHAT_LEADER" }
+function M:ApplyClassColors()
+  if not self:Settings().colorNames then return 0 end
+  local set = C.Resolve("SetChatColorNameByClass")
+  if type(set) ~= "function" then return 0 end
+  local n = 0
+  local types = {}
+  for _, t in ipairs(M.CLASS_COLOR_TYPES) do types[#types + 1] = t end
+  for i = 1, 20 do types[#types + 1] = "CHANNEL" .. i end
+  for _, t in ipairs(types) do
+    if pcall(set, t, true) then n = n + 1 end
+  end
+  return n
 end
 
 -- Returns hide, newText (nil when unchanged), matched keyword
@@ -204,7 +215,7 @@ local function filter(frame, event, ...)
   if not d then
     local ok, hide, text = pcall(M.Process, M, event, msg, author)
     if not ok then hide, text = false, nil end
-    d = { hide = hide, text = text, route = M.Routed(event, msg, base), author = M:ColorAuthor(author, select(12, ...)) }
+    d = { hide = hide, text = text, route = M.Routed(event, msg, base) }
     if type(msg) == "string" and not C.IsSecret(msg) then M:RememberLine(event, msg, author) end
     if lineID then
       M.decided[lineID] = d
@@ -226,9 +237,12 @@ local function filter(frame, event, ...)
   -- left channelIndex and the rest nil, and Blizzard's chat code errored on
   -- every channel line (369 errors and the "large number of errors" pop-up,
   -- 2026-11-19).
-  if d.text or d.author then return false, d.text or msg, d.author or author, select(3, ...) end
+  -- the author is handed back unchanged: Blizzard makes the player link from it
+  if d.text then return false, d.text, author, select(3, ...) end
   return false
 end
+
+M.TestFilter = filter -- for the specs
 
 -- Opens (or finds) the LFG chat tab once, out of combat.
 function M:EnsureTab()
@@ -264,6 +278,9 @@ function M:OnEnable()
   self.hooked = true
   for _, e in ipairs(self.EVENTS) do pcall(add, e, filter) end
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:EnsureTab() end)
+  self:On("PLAYER_ENTERING_WORLD", function(mod)
+    if not mod.colored then mod.colored = true mod:Debug("class colours on names for %d chat types", mod:ApplyClassColors()) end
+  end)
   self:On("PLAYER_REGEN_ENABLED", function(mod) if not mod.lfgFrame then mod:EnsureTab() end end)
   self:On("CHAT_MSG_CHANNEL", self.OnChannel)
   if type(rawget(_G, "SetItemRef")) == "function" then

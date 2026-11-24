@@ -57,19 +57,26 @@ T.describe("persistent chat history", function()
 end)
 
 T.describe("class-aware chat author rendering", function()
-  T.it("only colors known class GUIDs and leaves unknown names unchanged", function()
+  T.it("never changes the author (Blizzard builds the player link from it); turns on the game's own class colours", function()
     local game = mock.new()
+    local seen = {}
+    game.base.SetChatColorNameByClass = function(t, on) seen[t] = on end
+    game.env.SetChatColorNameByClass = game.base.SetChatColorNameByClass
     local ns = game:loadAddon()
     game:login()
-    game.base.GetPlayerInfoByGUID = function(id)
-      if id == "Player-100" then return "Hunter", "HUNTER" end
-    end
+    T.eq(seen.CHANNEL1, true)
+    T.eq(seen.GUILD, true)
+    game.base.GetPlayerInfoByGUID = function() return "Hunter", "HUNTER" end
     game.env.GetPlayerInfoByGUID = game.base.GetPlayerInfoByGUID
-    local colored = ns.Chat:ColorAuthor("Elora", "Player-100")
-    T.contains(colored, "Elora|r")
-    T.contains(colored, "|cff")
-    T.eq(ns.Chat:ColorAuthor("Elora", "NPC-100"), nil)
-    T.eq(ns.Chat:ColorAuthor("Elora", nil), nil)
+    local add = game.env.ChatFrame_AddMessageEventFilter
+    T.ok(ns.Chat.hooked)
+    ns.Chat:Settings().urls = true
+    local out = { ns.Chat.TestFilter(nil, "CHAT_MSG_CHANNEL", "see https://x.example", "Mia Starleaf",
+      "", "1. General", "", "", 1, 1, "General", 0, 407, "Player-100") }
+    T.eq(out[1], false)
+    T.contains(out[2], "Haddon:Outrider:url")
+    T.eq(out[3], "Mia Starleaf", "the author comes back as it was")
+    T.eq(out[12], 407, "and every other argument (the line id)")
   end)
 end)
 
