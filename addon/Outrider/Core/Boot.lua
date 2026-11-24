@@ -17,6 +17,8 @@ end
 function Boot:OnAddonLoaded(_, name)
   if name ~= ADDON then return end
   ns.Events:Off("ADDON_LOADED", Boot)
+  local clock = rawget(_G, "debugprofilestop")
+  local t0 = clock and clock()
   ns.session = newSession()
   ns.bootClock = GetTime and GetTime() or 0
   ns.Log:Attach()
@@ -27,9 +29,13 @@ function Boot:OnAddonLoaded(_, name)
   ns.Log:Info("boot", "session %s start: v%s build %s char %s loads %d sv=%s",
     ns.session, ns.version, ns.build, ns.db.key, loads, sv)
   ns.Modules:InitializeAll()
+  -- OI01-04 runtime baseline: time spent in our own load step (ms)
+  if t0 then ns.bootTimes = { initMs = clock() - t0 } end
 end
 
 function Boot:OnLogin()
+  local clock = rawget(_G, "debugprofilestop")
+  local t0 = clock and clock()
   ns.Errors:HookBugGrabber()
   ns.Errors:HookGlobal()
   ns.Conflicts:Detect()
@@ -43,6 +49,10 @@ function Boot:OnLogin()
   if ns.db.char.hub.shown then ns.Hub:Toggle() end
   local on = 0
   for _, m in ipairs(ns.Modules.list) do if m.enabled then on = on + 1 end end
+  if t0 then
+    ns.bootTimes = ns.bootTimes or {}
+    ns.bootTimes.loginMs = clock() - t0
+  end
   ns.Log:Info("boot", "login complete: %d/%d modules on, %d addons detected", on, #ns.Modules.list, #(ns.Conflicts.found or {}))
   -- One line per login so Gary can see Outrider is alive (setting: loginLine).
   if ns.db.global.loginLine ~= false then

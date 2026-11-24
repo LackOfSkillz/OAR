@@ -20,6 +20,57 @@ function Perf:MemoryKB()
   if ok and type(kb) == "number" then return kb end
 end
 
+-- OI01-04 runtime baseline extras, all read-only and fail-soft:
+--   client      version and build (GetBuildInfo)
+--   boot        ms spent in our own load and login steps (debugprofilestop)
+--   frames      named Outrider_ frames (unnamed ones can't be counted cheaply)
+--   cpuMs       only when the player already has scriptProfile on; Outrider
+--               never switches it on (it slows every addon)
+--   errors      errors and taint reports recorded this session
+function Perf:Runtime()
+  local out = {}
+  local ok, version, build = pcall(rawget(_G, "GetBuildInfo") or function() end)
+  if ok then out.client = { version = version, build = build } end
+  if ns.bootTimes then out.boot = ns.CopyTable(ns.bootTimes) end
+  local frames = 0
+  for k, v in pairs(_G) do
+    if type(k) == "string" and k:sub(1, 9) == "Outrider_" and type(v) == "table" and type(v.GetObjectType) == "function" then frames = frames + 1 end
+  end
+  out.frames = frames
+  local cvar = ns.Compat.Call("C_CVar.GetCVar", "scriptProfile")
+  if cvar == nil then cvar = ns.Compat.Call("GetCVar", "scriptProfile") end
+  if tostring(cvar) == "1" then
+    local update = (C_AddOns and C_AddOns.UpdateAddOnCPUUsage) or rawget(_G, "UpdateAddOnCPUUsage")
+    local get = (C_AddOns and C_AddOns.GetAddOnCPUUsage) or rawget(_G, "GetAddOnCPUUsage")
+    if update then pcall(update) end
+    local okc, ms = pcall(get or function() end, ADDON)
+    out.cpuMs = okc and type(ms) == "number" and ms or nil
+  else
+    out.cpu = "unavailable: scriptProfile is off"
+  end
+  local errs, taint = 0, 0
+  for _, e in ipairs(ns.Errors.list or {}) do
+    if e.session == ns.session then
+      if e.where == "taint" then taint = taint + 1 else errs = errs + 1 end
+    end
+  end
+  out.errors, out.taint = errs, taint
+  return out
+end
+
+-- one row per session, last RUNS kept (ns.db.global.perfRuns), for the live baseline
+Perf.RUNS = 10
+function Perf:Remember(r)
+  local g = ns.db.global
+  g.perfRuns = type(g.perfRuns) == "table" and g.perfRuns or {}
+  local list = g.perfRuns
+  if list[#list] and list[#list].session == ns.session then table.remove(list) end
+  list[#list + 1] = { session = ns.session, build = ns.build, at = r.at, uptime = r.uptime, memoryKB = r.memoryKB,
+    memoryRawKB = r.memoryRawKB, handlers = r.handlers, timers = r.timers, modulesOn = r.modulesOn,
+    secureButtons = r.secureButtons, runtime = r.runtime }
+  while #list > self.RUNS do table.remove(list, 1) end
+end
+
 function Perf:Collect()
   local handlers, events = 0, 0
   for _, list in pairs(ns.Events.handlers) do events = events + 1 handlers = handlers + #list end
@@ -42,6 +93,7 @@ function Perf:Collect()
     secureButtons = secureAll, secureFree = secureFree,
     toasts = ns.Toast and ns.Toast:Count() or 0,
     slow = ns.CopyTable(ns.Events.slow),
+    runtime = self:Runtime(),
   }
   r.overBudget = {}
   if r.memoryKB and r.memoryKB > self.BUDGET_KB then r.overBudget[#r.overBudget + 1] = "memory" end
@@ -63,6 +115,13 @@ function Perf:Report(quiet)
   local r = self:Collect()
   r.memoryRawKB = raw
   ns.db.global.perf = r
+  self:Remember(r)
+  local rt = r.runtime or {}
+  ns.Log:Info("perf", "runtime: client %s build %s, load %s ms, login %s ms, %d named frames, cpu %s, %d errors, %d taint",
+    tostring(rt.client and rt.client.version), tostring(rt.client and rt.client.build),
+    rt.boot and rt.boot.initMs and string.format("%.1f", rt.boot.initMs) or "?",
+    rt.boot and rt.boot.loginMs and string.format("%.1f", rt.boot.loginMs) or "?",
+    rt.frames or 0, rt.cpuMs and string.format("%.1f ms", rt.cpuMs) or tostring(rt.cpu), rt.errors or 0, rt.taint or 0)
   local mem = r.memoryKB and string.format("%.0f KB", r.memoryKB) or "unknown"
   if r.memoryRawKB then mem = mem .. string.format(" live (%.0f KB before garbage collection)", r.memoryRawKB) end
   ns.Log:Info("perf", "mem %s, %d events/%d handlers, timers %d (driver %s), combat queue %d, modules %d/%d, secure %d (%d free), uptime %ss",

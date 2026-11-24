@@ -26,6 +26,27 @@ T.describe("perf", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("logout records a runtime baseline row: client build, boot ms, frames, errors; cpu only if profiling is on", function()
+    local game, ns = session()
+    ns.Perf:Report(true) -- AutoCheck runs this at logout (switched off in this session)
+    local runs = ns.db.global.perfRuns
+    T.eq(#runs, 1)
+    local rt = runs[1].runtime
+    T.eq(rt.client.version, "1.60.1")
+    T.eq(rt.client.build, "70862")
+    T.ok(rt.boot and type(rt.boot.initMs) == "number" and type(rt.boot.loginMs) == "number", "boot timings")
+    T.ok(rt.frames > 0, "named Outrider_ frames counted")
+    T.eq(rt.cpu, "unavailable: scriptProfile is off")
+    T.eq(rt.cpuMs, nil)
+    T.eq(rt.errors, 0)
+    -- the same session overwrites its row; only the last 10 sessions stay
+    ns.Perf:Report(true) -- AutoCheck runs this at logout (switched off in this session)
+    T.eq(#ns.db.global.perfRuns, 1)
+    for i = 1, 12 do ns.session = "s" .. i ns.Perf:Report(true) end
+    T.eq(#ns.db.global.perfRuns, 10)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("flags memory over the 1.5 MB budget", function()
     local game, ns = session({ memoryKB = 4000 })
     game:slash("perf")
