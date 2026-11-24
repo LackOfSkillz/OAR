@@ -57,8 +57,8 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-05 Goal model | MOCK_GREEN | 579a16a | [OI02-05](../reviews/phase2/OI02-05.md) | multi-goal, scopes, archive not delete, explained conflicts |
 | OI02-06 Candidate adapters: progression | MOCK_GREEN | e95b785 | [OI02-06](../reviews/phase2/OI02-06.md) | deterministic ids, reasons, quest de-dup |
 | OI02-07 Candidate adapters: resources | MOCK_GREEN | a2804db | [OI02-07](../reviews/phase2/OI02-07.md) | units and evidence, no scans, independent producers |
-| OI02-08 Dependency graph | MOCK_GREEN | see commit | [OI02-08](../reviews/phase2/OI02-08.md) | cycles, prerequisites, faction, budget, overlap, travel unknown |
-| OI02-09 Scoring and trade-offs | NOT_STARTED | | | |
+| OI02-08 Dependency graph | MOCK_GREEN | 0a60f76 | [OI02-08](../reviews/phase2/OI02-08.md) | cycles, prerequisites, faction, budget, overlap, travel unknown |
+| OI02-09 Scoring and trade-offs | MOCK_GREEN | see commit | [OI02-09](../reviews/phase2/OI02-09.md) | versioned utility, hard constraints, reconstructing trace |
 | OI02-10 Bounded sequence planner | NOT_STARTED | | | |
 | OI02-11 Invalidation and execution boundary | NOT_STARTED | | | |
 | OI02-12 Radar and WhatNow integration | NOT_STARTED | | | |
