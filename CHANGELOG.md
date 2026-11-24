@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Smoother walking with a destination set:** the way-there dots no longer re-plan the whole route every few steps (one re-plan could freeze the game for a third of a second). The route network is searched once per destination, spread over several frames, and each step while walking just picks the best way onto it.
 - **Fishing ring:** while a pole is on, Cast sits in the middle of a ring of Lure, Find Fish, Basic Campfire, Cooking, Weapons back and the Fishing page, each edged green, amber or red, with counts and the lure timer. Hover the lure for every lure in your bags. Circle or bar, drag to move.
 - **Your real fishing skill:** base + pole + gear + lure, compared with the zone you're in.
 - **Fish collection and milestones:** every fish you've caught (this character and the account, common, rare or trophy), when each one bites by server time, and bronze, silver and gold milestones with points, a toast, and a Share line to copy into chat.

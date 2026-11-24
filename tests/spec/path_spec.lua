@@ -165,4 +165,40 @@ T.describe("the way there", function()
     T.ok(#P:Pins(100) > 0)
     T.contains(P:Pins(100)[1].name, "Necklace")
   end)
+
+  T.it("walking re-uses the search: no new graph per step, the same dots", function()
+    local game, ns, P = session()
+    road(ns, 100, 0.1, 0.3)
+    ns.Waypoints:Set(100, 0.3, 0.5, "Tower")
+    local g = P.graph
+    T.ok(g and g.done, "searched once for the destination")
+    local n0 = #P:Pins(100)
+    game.opts.x = 0.15
+    P:Replan("moving")
+    T.ok(P.graph == g, "same search while moving")
+    T.ok(#P:Pins(100) > 0 and #P:Pins(100) <= n0, "dots from the new spot")
+    P:Replan("map pin")
+    T.ok(P.graph ~= g or P.graph.sig == g.sig, "a non-moving reason with unchanged trails may keep it")
+  end)
+
+  T.it("a big network is searched in slices across frames, with the same answer", function()
+    local _, ns, P = session()
+    local nodes = {}
+    for i = 1, 3000 do nodes[i] = { wx = (i % 60) * 20, wy = math.floor(i / 60) * 20, mapID = 100 } end
+    local a, b = { wx = 0, wy = 0 }, { wx = 1180, wy = 980 }
+    local whole = ns.Path.RouteFrom((function() local g = ns.Path.Graph(b, nodes) ns.Path.Step(g) return g end)(), a)
+    local t = 0
+    local g = ns.Path.Graph(b, nodes, 4)
+    local env = getfenv and getfenv(ns.Path.Step) or _G
+    local old = env.debugprofilestop
+    env.debugprofilestop = function() t = t + 1 return t end -- every call costs 1 ms
+    local slices = 0
+    while not ns.Path.Step(g) do slices = slices + 1 end
+    env.debugprofilestop = old
+    T.ok(slices > 1, "it paused and resumed (" .. slices .. " slices)")
+    local sliced = ns.Path.RouteFrom(g, a)
+    T.eq(#sliced, #whole)
+    for k = 1, #whole do T.eq(sliced[k].wx, whole[k].wx) T.eq(sliced[k].wy, whole[k].wy) end
+  end)
 end)
+

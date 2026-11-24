@@ -40,6 +40,8 @@ M.MARGIN = 400     -- yards around you and the destination that count
 M.EVERY = 3        -- seconds between re-plans while moving
 M.MOVED = 12       -- yards you must move before a re-plan
 M.MAX_NODES = 4000
+M.SLICE_MS = 4      -- search work per frame before it waits for the next one
+M.REFRESH = 30      -- seconds: while walking, new breadcrumbs join the search at most this often
 M.END_GAP = 50     -- yards: walked ground must reach this close to the destination
 M.WALKED = { 0.25, 1.00, 0.90 }
 M.GUESS = { 0.85, 0.95, 1.00 }
@@ -64,7 +66,7 @@ local function frame(mapID)
   corners[mapID] = f
   return f
 end
-function M.Forget() corners = {} routeCache = {} end
+function M.Forget() corners = {} routeCache = {} M.graph = nil end
 
 -- World spot -> map spot (x, y in 0..1), or nil when it isn't on this map.
 function M.ToMap(mapID, cont, wx, wy)
@@ -263,68 +265,105 @@ local function pop(h)
   return top
 end
 
--- The way from a to b over walked ground: a list of { wx, wy, walked }
--- (walked = this stretch follows breadcrumbs). Pure apart from reading the
--- nodes given.
-function M.Plan(a, b, nodes)
+-- Planning is split in two so moving costs almost nothing (lag check
+-- 2026-11-24: one re-plan took 355 ms and Path used ~6% of frame time):
+--   M.Graph(b, nodes, budgetMs) searches once per destination, outward from b
+--     over walked links: cost[i] = cheapest way from node i to b, nxt[i] the
+--     next step. Seeded with every node's straight hop to b (OFF per yard), so
+--     the cost model is the same as before. The search runs in slices of
+--     budgetMs and resumes on the next frame (Graph:Step) when it runs out.
+--   M.RouteFrom(g, a) picks the cheapest way onto that tree from where you
+--     stand (one pass over the nodes) and follows nxt to b.
+-- M.Plan(a, b, nodes) does both at once (tests and small trips).
+local function gridKey(p) return math.floor(p.wx / M.LINK) * 1048576 + math.floor(p.wy / M.LINK) end
+
+function M.Graph(b, nodes, budgetMs)
   local n = #nodes
-  local S, E = n + 1, n + 2
-  local pts = {}
-  for i = 1, n do pts[i] = nodes[i] end
-  pts[S], pts[E] = a, b
-  -- walked links between breadcrumbs, found through a grid
-  local cell, grid = M.LINK, {}
-  local function key(p) return math.floor(p.wx / cell) .. ":" .. math.floor(p.wy / cell) end
+  local g = { b = b, pts = nodes, n = n, cost = {}, nxt = {}, walked = {}, done = false, budget = budgetMs }
+  local grid = {}
   for i = 1, n do
-    local k = key(pts[i])
-    grid[k] = grid[k] or {}
-    table.insert(grid[k], i)
+    local k = gridKey(nodes[i])
+    local cellList = grid[k]
+    if not cellList then cellList = {} grid[k] = cellList end
+    cellList[#cellList + 1] = i
   end
-  local function neighbours(i)
-    local p = pts[i]
-    local gx, gy = math.floor(p.wx / cell), math.floor(p.wy / cell)
-    local out = {}
-    for dx = -1, 1 do
-      for dy = -1, 1 do
-        for _, j in ipairs(grid[(gx + dx) .. ":" .. (gy + dy)] or {}) do
-          if j ~= i then
-            local d = dist(p, pts[j])
-            local limit = (p.mapID == pts[j].mapID) and M.LINK or M.LINK_CROSS
-            if d <= limit then out[#out + 1] = { j, d } end
+  g.grid = grid
+  local heap = {}
+  for i = 1, n do
+    local c = dist(nodes[i], b) * M.OFF
+    g.cost[i] = c
+    push(heap, c, i)
+  end
+  g.heap, g.settled = heap, {}
+  return g
+end
+
+-- Advance the search; true once finished. Stops early when budgetMs runs out.
+function M.Step(g)
+  if g.done then return true end
+  local clock = rawget(_G, "debugprofilestop")
+  local t0 = clock and g.budget and clock()
+  local pts, cost, nxt, walked, settled, heap, grid = g.pts, g.cost, g.nxt, g.walked, g.settled, g.heap, g.grid
+  local pops = 0
+  while #heap > 0 do
+    local top = pop(heap)
+    local c, i = top[1], top[2]
+    if not settled[i] and c <= cost[i] then
+      settled[i] = true
+      local p = pts[i]
+      local gx, gy = math.floor(p.wx / M.LINK), math.floor(p.wy / M.LINK)
+      for dx = -1, 1 do
+        for dy = -1, 1 do
+          local cellList = grid[(gx + dx) * 1048576 + (gy + dy)]
+          if cellList then
+            for _, jx in ipairs(cellList) do
+              if jx ~= i and not settled[jx] then
+                local q = pts[jx]
+                local ddx, ddy = p.wx - q.wx, p.wy - q.wy
+                local d = math.sqrt(ddx * ddx + ddy * ddy)
+                local limit = (p.mapID == q.mapID) and M.LINK or M.LINK_CROSS
+                if d <= limit and c + d < cost[jx] then
+                  cost[jx], nxt[jx], walked[jx] = c + d, i, true
+                  push(heap, c + d, jx)
+                end
+              end
+            end
           end
         end
       end
     end
-    return out
+    pops = pops + 1
+    if t0 and pops % 64 == 0 and clock() - t0 > g.budget then return false end
   end
-  local best, from, done, heap = { [S] = 0 }, {}, {}, {}
-  push(heap, 0, S)
-  while #heap > 0 do
-    local top = pop(heap)
-    local cost, i = top[1], top[2]
-    if not done[i] then
-      done[i] = true
-      if i == E then break end
-      local function relax(j, c, walked)
-        local nc = cost + c
-        if not best[j] or nc < best[j] then best[j], from[j] = nc, { i, walked } push(heap, nc, j) end
-      end
-      -- straight to the destination, off the known paths
-      relax(E, dist(pts[i], b) * M.OFF, false)
-      if i == S then
-        for j = 1, n do relax(j, dist(a, pts[j]) * M.OFF, false) end
-      else
-        for _, e in ipairs(neighbours(i)) do relax(e[1], e[2], true) end
-      end
-    end
+  g.done = true
+  return true
+end
+
+-- The way from a over the finished tree: a list of { wx, wy, walked }.
+function M.RouteFrom(g, a)
+  local b, pts, cost = g.b, g.pts, g.cost
+  local bestI, best = nil, dist(a, b) * M.OFF
+  for i = 1, g.n do
+    local p = pts[i]
+    local dx, dy = a.wx - p.wx, a.wy - p.wy
+    local c = math.sqrt(dx * dx + dy * dy) * M.OFF + cost[i]
+    if c < best then best, bestI = c, i end
   end
-  local route, i = {}, E
+  local route = { { wx = a.wx, wy = a.wy, walked = false } }
+  local i, viaWalk = bestI, false
   while i do
-    local f = from[i]
-    table.insert(route, 1, { wx = pts[i].wx, wy = pts[i].wy, walked = f and f[2] or false })
-    i = f and f[1]
+    route[#route + 1] = { wx = pts[i].wx, wy = pts[i].wy, walked = viaWalk }
+    viaWalk = g.walked[i] or false
+    i = g.nxt[i]
   end
+  route[#route + 1] = { wx = b.wx, wy = b.wy, walked = false }
   return route
+end
+
+function M.Plan(a, b, nodes)
+  local g = M.Graph(b, nodes)
+  M.Step(g)
+  return M.RouteFrom(g, a)
 end
 
 -- Dots along the route, every STEP yards (closer on walked ground).
@@ -347,16 +386,48 @@ function M.Dots(route)
 end
 
 function M:Replan(why)
-  self.dots, self.route = nil, nil
-  if not self:Settings().on then return self:Redraw() end
+  if not self:Settings().on then self.dots, self.route = nil, nil return self:Redraw() end
   local target = self:Target()
   local cont, px, py = W.PlayerWorldPos()
-  if not (target and px) then return self:Redraw() end
+  if not (target and px) then self.dots, self.route = nil, nil return self:Redraw() end
   local tc, tx, ty = W.WorldPos(target.mapID, target.x, target.y)
-  if not tx or (tc and cont and tc ~= cont) then return self:Redraw() end -- another continent: Journey plans the legs
+  if not tx or (tc and cont and tc ~= cont) then self.dots, self.route = nil, nil return self:Redraw() end -- another continent: Journey plans the legs
   local a, b = { wx = px, wy = py }, { wx = tx, wy = ty }
-  local nodes = self:Nodes(cont, a, b)
-  local route = M.Plan(a, b, nodes)
+  local g = self.graph
+  local box = g and g.box
+  -- breadcrumbs grow as you walk: while moving the search is re-used and
+  -- refreshed with new crumbs at most every REFRESH seconds; any other reason
+  -- (new destination, new zone, switched on) searches again
+  local sig = 0
+  for _, list in pairs(ns.db.global.trails or {}) do if type(list) == "table" then sig = sig + #list end end
+  local fresh = g and g.cont == cont and g.b.wx == b.wx and g.b.wy == b.wy and box
+    and px >= box[1] and px <= box[2] and py >= box[3] and py <= box[4]
+    and (g.sig == sig or (why == "moving" and time() - (g.made or 0) < M.REFRESH))
+    and (why == "moving" or g.sig == sig)
+  if not fresh then
+    -- a wider box than the trip so walking around inside it re-uses the search
+    local pad = M.MARGIN
+    local lo = { wx = math.min(px, tx) - pad, wy = math.min(py, ty) - pad }
+    local hi = { wx = math.max(px, tx) + pad, wy = math.max(py, ty) + pad }
+    local nodes = self:Nodes(cont, lo, hi)
+    g = M.Graph(b, nodes, M.SLICE_MS)
+    g.cont, g.box, g.nodes, g.sig, g.made = cont, { lo.wx, hi.wx, lo.wy, hi.wy }, #nodes, sig, time()
+    self.graph = g
+  end
+  if not M.Step(g) then
+    -- not finished in this frame's slice: carry on next frame, keep the old dots meanwhile
+    if not self.stepping then
+      self.stepping = true
+      local function again()
+        M.stepping = nil
+        if M.graph == g and M.enabled then M:Replan(why) end
+      end
+      ns.Timer.After(0, again, "path:step")
+    end
+    return
+  end
+  local nodes = g.pts
+  local route = M.RouteFrom(g, a)
   self.route, self.dots, self.cont = route, M.Dots(route), cont
   self.target, self.at = target, { wx = px, wy = py }
   local walked, total = 0, 0
