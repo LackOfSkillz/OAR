@@ -180,6 +180,7 @@ Modules\Advisor.lua
 Intelligence\State.lua
 Intelligence\Goals.lua
 Intelligence\Adapters.lua
+Intelligence\Graph.lua
 Intelligence\Radar.lua
 Intelligence\DealDesk.lua
 Intelligence\SessionXP.lua
