@@ -183,6 +183,11 @@ end
 function M:Act(id)
   local ok, intent, cand = self:CheckAct(id)
   if not ok then return false, intent end
+  -- tell listeners what the player chose (Intelligence/Outcomes.lua uses it
+  -- for attribution); runtime only, never saved
+  local res = self.current.result
+  ns.Events:Fire("OTR_NEXUS_ACTED", { planId = res.plan.planId, stepId = id, at = time(),
+    questID = tonumber(cand.questID), itemID = tonumber(cand.itemID), mapID = tonumber(cand.mapID) })
   if intent == "waypoint" then
     local fine, err = pcall(cand.go)
     if not fine then return false, tostring(err) end

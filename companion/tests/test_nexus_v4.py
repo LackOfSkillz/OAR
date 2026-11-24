@@ -21,7 +21,7 @@ class NexusV4(unittest.TestCase):
     def test_spec_version_and_records(self):
         s = schemas_v4.spec()
         self.assertEqual(s["version"], 4)
-        self.assertEqual(sorted(s["records"]), ["CharacterState", "Evidence", "Goal", "Opportunity", "Outcome", "Plan"])
+        self.assertEqual(sorted(s["records"]), ["CharacterState", "Evidence", "Goal", "Opportunity", "Outcome", "OutcomeEvent", "Plan"])
 
     def test_extra_fields_and_bad_values_are_rejected(self):
         ok, field = schemas_v4.validate("Plan", {"planId": "p", "snapshotRevision": 1, "steps": [], "reasonCodes": [],

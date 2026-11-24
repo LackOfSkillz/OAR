@@ -35,4 +35,10 @@ NexusFixtures = {
   { record = "Outcome", ok = true, data = { eventId = "ev:1", sessionId = "s1", startAt = 1794700000, result = "done",
     attribution = "likely", planId = "plan:1", stepId = "opp:quest:123", endAt = 1794700600, feedback = "useful" } },
   { record = "Outcome", ok = false, error = "sessionId", data = { eventId = "ev:2", startAt = 1, result = "done", attribution = "direct" } },
+  { record = "OutcomeEvent", ok = true, data = { eventId = "out:s:1", kind = "quest_completed", characterKey = "char:1",
+    sessionId = "ps:1", at = 1794700000, attribution = "likely", subject = "quest:123", planId = "plan:1", stepId = "opp:quest:123" } },
+  { record = "OutcomeEvent", ok = true, data = { eventId = "out:s:2", kind = "money_out", characterKey = "char:1",
+    sessionId = "ps:1", at = 1794700000, attribution = "unknown", amount = 250, context = "vendor", unknownFields = { "subject" } } },
+  { record = "OutcomeEvent", ok = false, error = "kind", data = { eventId = "out:s:3", kind = "kill", characterKey = "char:1",
+    sessionId = "ps:1", at = 1, attribution = "unknown" } },
 }

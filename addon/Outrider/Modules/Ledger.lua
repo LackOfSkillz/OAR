@@ -58,6 +58,9 @@ function M:OnMoney()
   self.book[ctx] = b
 end
 
+-- which window is open right now ("vendor", "auction house", ...), or the default
+function M:Context() return self.context or "loot & quests" end
+
 function M:Summary()
   local net = (self.money or 0) - (self.startMoney or 0)
   local hours = math.max((time() - (self.start or time())) / 3600, 1 / 60)

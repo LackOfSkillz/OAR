@@ -30,6 +30,8 @@ NexusSpec = {
     result = { "done", "skipped", "failed", "unknown" },
     attribution = { "direct", "likely", "unknown" },
     feedback = { "useful", "wrong", "dismiss", "none" },
+    outcomeKind = { "quest_accepted", "quest_completed", "quest_abandoned", "xp_gain", "level_up", "money_in", "money_out",
+      "gear_equipped", "profession_skill", "death", "recovery", "zone_entered" },
   },
   records = {
     Evidence = {
@@ -64,6 +66,14 @@ NexusSpec = {
       { "eventId", "id", true }, { "sessionId", "id", true }, { "startAt", "time", true },
       { "result", "enum:result", true }, { "attribution", "enum:attribution", true },
       { "planId", "id", false }, { "stepId", "id", false }, { "endAt", "time", false }, { "feedback", "enum:feedback", false },
+    },
+    -- OI03-02: one observed happening (Intelligence/Outcomes.lua)
+    OutcomeEvent = {
+      { "eventId", "id", true }, { "kind", "enum:outcomeKind", true }, { "characterKey", "id", true },
+      { "sessionId", "id", true }, { "at", "time", true }, { "attribution", "enum:attribution", true },
+      { "subject", "id", false }, { "amount", "copper", false }, { "context", "text", false },
+      { "planId", "id", false }, { "stepId", "id", false }, { "late", "flag", false },
+      { "unknownFields", "list:id:8", false },
     },
   },
 }
