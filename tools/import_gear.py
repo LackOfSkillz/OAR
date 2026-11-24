@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import import_questie as q  # noqa: E402
 import import_dungeons as dg  # noqa: E402
 import import_reagents as rg  # noqa: E402
+import foreverdb as fdb  # noqa: E402
 
 ROOT = q.ROOT
 OUT = os.path.join(ROOT, "private", "Outrider_Data_Gear")
@@ -60,6 +61,104 @@ def questiedb_dir(cfg, args):
                 z.extract(name, tmp)
     print("using saved download", os.path.basename(zips[-1]))
     return os.path.join(tmp, "QuestieDB")
+
+
+GEAR_CLASSES, RARE_RANKS = fdb.GEAR_CLASSES, fdb.RARE_RANKS
+FDB_KEEP = 3          # named sources kept per kind from ForeverDB
+FDB_WORLD_BELOW = 100 # a world drop whose best named dropper is under 1% (per 10000) shows as "world drop"
+
+
+def augment_foreverdb(out, counts):
+    """Forever's own item names and levels, and what QuestieDB lacks: drop
+    chances, world drops, Forever vendors and quest rewards, chests and
+    containers (ForeverDB, GPLv3). Returns the source label or None."""
+    d = fdb.load()
+    if not d:
+        print("no ForeverDB download (py tools/foreverdb.py --fetch): QuestieDB only")
+        return None
+    added = {}
+
+    def note(k):
+        added[k] = added.get(k, 0) + 1
+
+    for key, row in d["item"].items():
+        iid = int(key)
+        info = fdb.item(d, iid)
+        name, quality, req, ilvl, cls, sub = info
+        if cls not in GEAR_CLASSES or quality is None or quality < 1 or req > 60 or (req <= 1 and ilvl > 70):
+            continue
+        old = out.get(iid)
+        srcs = list(old[3]) if old else []
+        whos = {(x[0], str(x[4]).split(" (")[0]) for x in srcs}
+
+        def add(src):
+            k = (src[0], str(src[4]).split(" (")[0])
+            if k in whos:
+                # same source: put the drop chance on the one we have
+                for i, x in enumerate(srcs):
+                    if (x[0], str(x[4]).split(" (")[0]) == k and "%" not in str(x[4]) and "%" in str(src[4]):
+                        srcs[i] = x[:4] + (src[4],) + x[5:]
+                return
+            whos.add(k)
+            srcs.append(src)
+            note(src[0])
+
+        drops = sorted(d["drop"].get(key) or [], key=lambda r: -(r[1] or 0))
+        named = [r for r in drops if (r[1] or 0) >= FDB_WORLD_BELOW] if key in d["world"] else drops[:6]
+        kept = 0
+        for nid, chance in named:
+            if kept >= FDB_KEEP:
+                break
+            n = fdb.npc(d, nid)
+            at = fdb.place(d, "c%d" % nid)
+            if n and at:
+                kind = "rare" if n[3] in RARE_RANKS else "drop"
+                who = n[0] + (" (%s)" % fdb.pct(chance) if chance else "")
+                add((kind, at[0], at[1], at[2], who, None, fdb.faction(d, nid), None))
+                kept += 1
+        if key in d["world"] and kept == 0:
+            add(("world", 0, 0.0, 0.0, "creatures level %d and up" % d["world"][key], None, None, None))
+        for oid, chance in (d["odrop"].get(key) or [])[:FDB_KEEP]:
+            o = d["obj"].get(str(oid))
+            at = fdb.place(d, "o%d" % oid)
+            if o and at and o[0]:
+                add(("chest", at[0], at[1], at[2], o[0] + (" (%s)" % fdb.pct(chance) if chance else ""), None, None, None))
+        # containers: only a real chance from a few (lockboxes and grab bags hold hundreds of items)
+        boxes = d["idrop"].get(key) or []
+        for cid, chance in (boxes if len(boxes) <= 2 else [])[:2]:
+            c = fdb.item(d, cid)
+            if c and (chance or 0) >= 500:
+                add(("container", 0, 0.0, 0.0, c[0] + (" (%s)" % fdb.pct(chance) if chance else ""), None, None, None))
+        vk = 0
+        for nid in d["vend"].get(key) or []:
+            if vk >= FDB_KEEP:
+                break
+            n = fdb.npc(d, nid)
+            at = fdb.place(d, "c%d" % nid)
+            if n and at:
+                add(("vendor", at[0], at[1], at[2], n[0], None, fdb.faction(d, nid), None))
+                vk += 1
+        for qid in (d["rew"].get(key) or [])[:FDB_KEEP]:
+            qt = d["quest"].get(str(qid))
+            givers = d["qg"].get(str(qid)) or []
+            at, gname, gfac = None, None, None
+            for g in givers:
+                at = fdb.place(d, g)
+                if at:
+                    if g.startswith("c"):
+                        n = fdb.npc(d, int(g[1:]))
+                        gname, gfac = (n[0] if n else None), fdb.faction(d, int(g[1:]))
+                    else:
+                        o = d["obj"].get(g[1:])
+                        gname = o[0] if o else None
+                    break
+            if qt and at and not any(x[0] == "quest" and x[7] and x[7][0] == qid for x in srcs):
+                srcs.append(("quest", at[0], at[1], at[2], qt[0], qt[1] or None, gfac, (qid, qt[2] or 1, [], [])))
+                note("quest")
+        if srcs:
+            out[iid] = (name, req, ilvl, srcs)
+    print("ForeverDB added:", ", ".join("%s %d" % kv for kv in sorted(added.items())))
+    return fdb.version(d)
 
 
 def main():
@@ -203,6 +302,11 @@ def main():
             out[iid] = (s.get(1), req, s.get(9), srcs)
             sources += len(srcs)
 
+    fsrc = augment_foreverdb(out, counts)
+    if fsrc:
+        version = version + " + " + fsrc
+        sources = sum(len(v[3]) for v in out.values())
+
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, "Outrider_Data_Gear.toc"), "w", encoding="utf-8", newline="\r\n") as f:
         f.write("## Interface: 16001\n## Title: Outrider Data: Gear sources (private)\n")
@@ -228,7 +332,11 @@ def main():
         f.write("} }\n")
     size = os.path.getsize(os.path.join(OUT, "Data.lua"))
     print("gear items with sources %d, sources %d, Data.lua %d KB" % (len(out), sources, size // 1024))
-    print("items per source kind:", ", ".join("%s %d" % kv for kv in sorted(counts.items())))
+    per = {}
+    for v in out.values():
+        for k in {x[0] for x in v[3]}:
+            per[k] = per.get(k, 0) + 1
+    print("items per source kind:", ", ".join("%s %d" % kv for kv in sorted(per.items())))
     if "--deploy" in sys.argv:
         target = os.path.join(cfg["addonsDir"], "Outrider_Data_Gear")
         if os.path.exists(target):

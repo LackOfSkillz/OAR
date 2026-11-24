@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+- **Herbalism page filled in:** "How to raise it" was empty (two empty lists sat on top of the text). It now says which herbs fit your skill and lists each with its closest spot and a Go button, newest herb first.
 - **Gear page stands on its own without GearQuest:** when your zone has few upgrades, the best one per slot from other zones is added (your continent first), each with where it is and a waypoint. No pop-up for those.
-- **Far more gear knows where it comes from:** 4,811 items (was 2,954). New: dungeon and raid boss drops (the waypoint is the entrance, the card names the boss and dungeon), drops from rare creatures, and chests. Gear you can craft with your own learned recipes is listed too ("you can make it with Tailoring").
+- **Far more gear knows where it comes from:** 7,583 items (was 2,954), from QuestieDB plus ForeverDB (a GPLv3 merge of WoW Forever's own client tables, AllTheThings, VMaNGOS, cMaNGOS and loot counts recorded on Forever). New: dungeon and raid boss drops (the waypoint is the entrance), rare creatures, chests, world drops ("world drop from creatures level 38 and up"), drop chances on the card ("Defias Pillager (2.4%)"), and Forever's own vendors and quest rewards. Gear you can craft with your own learned recipes is listed too ("you can make it with Tailoring").
+- **NPC spots trued up to WoW Forever:** vendors, trainers and quest givers use ForeverDB's Forever positions where they differ (95 moved, 7 added). Checked against 203 spots Outrider recorded in game: 3%+ off went from 4 to 2.
+- **The way-there dots only follow verified ground:** dots are drawn only on ground someone really walked (your trails, shipped trails, creature patrols), and only when it reaches the destination. No more straight lines across hills and cliffs; with no walked way yet there are no dots and the arrow still points. The dots are bigger with a dark rim, so they show on any ground.
 
 ## 0.4.4 (2026-11-23)
 

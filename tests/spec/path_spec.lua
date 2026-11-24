@@ -1,6 +1,7 @@
 -- The way there (Gary, 2026-11-21): dots from you to the destination that
--- follow ground walked before, straight where nobody walked. Test maps: 1
--- map unit = 1000 yards (wowmock).
+-- follow ground walked before. Only verified ground is drawn (2026-11-23):
+-- no straight guesses, and no dots unless walked ground reaches the
+-- destination. Test maps: 1 map unit = 1000 yards (wowmock).
 local T, mock = ...
 
 local function session()
@@ -17,6 +18,13 @@ end
 
 -- a walked path from (0.1, 0.5) up to (0.1, 0.44), across to (0.3, 0.44), down to (0.3, 0.5): around a wall
 -- (320 yards walked against 200 straight: a detour under OFF times the straight line wins)
+-- a straight walked line along y = 0.5 on one map
+local function road(ns, mapID, x1, x2)
+  local dots = {}
+  for i = 0, math.floor((x2 - x1) / 0.01 + 0.5) do dots[#dots + 1] = { x = x1 + i * 0.01, y = 0.5, t = 1 } end
+  ns.db.global.trails[mapID] = dots
+end
+
 local function walkAround(ns)
   local dots = {}
   for i = 0, 6 do dots[#dots + 1] = { x = 0.1, y = 0.5 - i * 0.01, t = 1 } end
@@ -26,14 +34,17 @@ local function walkAround(ns)
 end
 
 T.describe("the way there", function()
-  T.it("no destination, no dots; a waypoint draws dots from you to it", function()
+  T.it("no destination, no dots; nobody walked there: no dots either, and it says so", function()
     local game, ns, P = session()
     T.eq(#P:Pins(100), 0)
     ns.Waypoints:Set(100, 0.3, 0.5, "Tower")
+    T.eq(#P:Pins(100), 0, "a straight guess is never drawn")
+    T.contains(P:Activity(), "nobody has walked there yet")
+    road(ns, 100, 0.1, 0.3)
+    P:Replan("walked")
     local pins = P:Pins(100)
-    T.ok(#pins > 5, "a line of dots")
-    for _, p in ipairs(pins) do T.eq(p.walked, false, "nobody walked here: straight") end
-    T.ok(math.abs(pins[#pins].y - 0.5) < 0.001, "straight across")
+    T.ok(#pins > 5, "a line of dots on the walked road")
+    for _, p in ipairs(pins) do T.eq(p.walked, true) end
     ns.Waypoints:Clear("done")
     T.eq(#P:Pins(100), 0, "cleared with the waypoint")
     T.eq(#ns.Errors.list, 0)
@@ -53,6 +64,14 @@ T.describe("the way there", function()
     T.ok(P.walked > 250, "about 320 yards walked")
   end)
 
+  T.it("walked ground that stops far from the destination draws nothing (it may lead to the wrong side of a cliff)", function()
+    local game, ns, P = session()
+    road(ns, 100, 0.1, 0.3)
+    ns.Waypoints:Set(100, 0.3, 0.6, "Up the hill")
+    T.eq(#P:Pins(100), 0, "100 yards unwalked at the end")
+    T.ok(not P.verified)
+  end)
+
   T.it("a short straight hop beats a long detour", function()
     local game, ns, P = session()
     walkAround(ns)
@@ -63,6 +82,10 @@ T.describe("the way there", function()
   T.it("dots show on the neighbouring map too, and on the minimap", function()
     local game, ns, P = session()
     game.opts.x = 0.9
+    road(ns, 100, 0.9, 1.0)
+    local d2 = {}
+    for i = 0, 10 do d2[#d2 + 1] = { x = i * 0.01, y = 0.5, t = 1 } end
+    ns.db.global.trails[200] = d2
     ns.Waypoints:Set(200, 0.1, 0.5, "Over the border")
     local here, there = P:Pins(100), P:Pins(200)
     T.ok(#here > 0 and #there > 0, "split over both maps")
@@ -75,6 +98,7 @@ T.describe("the way there", function()
 
   T.it("re-plans as you walk, and can be switched off", function()
     local game, ns, P = session()
+    road(ns, 100, 0.1, 0.5)
     ns.Waypoints:Set(100, 0.5, 0.5, "Far")
     local before = #P:Pins(100)
     game.opts.x = 0.3
@@ -117,6 +141,7 @@ T.describe("the way there", function()
 
   T.it("any quest the game tracks gets dots: its own next waypoint first, else the quest data", function()
     local game, ns, P = session()
+    road(ns, 100, 0.1, 0.25)
     game.trackedQuest = 77
     game.env.C_QuestLog.GetNextWaypoint = function(id) if id == 77 then return 100, 0.25, 0.5 end end
     game.env.C_QuestLog.GetNextWaypointText = function() return "Enter the cave" end
@@ -132,6 +157,7 @@ T.describe("the way there", function()
 
   T.it("a quest the game's arrow guides gets the dots too", function()
     local game, ns, P = session()
+    road(ns, 100, 0.1, 0.2)
     local Q = ns.QuestObjectives
     Q.guideQuest = 42
     Q.Nearest = function() return { mapID = 100, x = 0.2, y = 0.5, label = "Necklace" } end

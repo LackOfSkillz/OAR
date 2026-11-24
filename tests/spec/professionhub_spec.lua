@@ -81,3 +81,28 @@ T.describe("your professions", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("gathering professions", function()
+  T.it("Herbalism lists the herbs for your skill with their nearest spot, newest herb first", function()
+    local _, ns, M = start()
+    M:Pack()
+    M.pack.items[2447] = { "Peacebloom", 5, 9, {}, { 1617 }, {} }
+    M.pack.items[765] = { "Silverleaf", 5, 9, {}, { 1618 }, {} }
+    M.pack.objects = { [1617] = { "Peacebloom", { [1412] = { 0.55, 0.5 } } }, [1618] = { "Silverleaf", { [1412] = { 0.45, 0.5 } } } }
+    ns.db.char.professions.Herbalism = { skill = 7, max = 75, recipes = {} }
+    local pick
+    for _, p in ipairs(M:Profs()) do if p.name == "Herbalism" then pick = p end end
+    local rows = M:GatherRows(pick)
+    T.ok(#rows >= 2, "starter herbs listed")
+    T.eq(rows[1].item.name, "Silverleaf", "the later herb in the guide first")
+    T.contains(rows[1].source.text, "Pick Silverleaf")
+    T.ok(rows[1].source.target ~= nil, "Go has somewhere to go")
+    for _, r in ipairs(rows) do T.ok(r.item.name ~= "Earthroot", "Earthroot needs 15") end
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("professions")
+    local panel = ns.Hub.byId.professions.panel
+    M.lastPick = "Herbalism"
+    for _, c in ipairs(panel.cards or {}) do if c.prof == "Herbalism" and c:GetScript("OnClick") then c:GetScript("OnClick")(c) end end
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

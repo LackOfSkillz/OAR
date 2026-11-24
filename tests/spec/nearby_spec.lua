@@ -129,10 +129,11 @@ T.describe("nearby new sources", function()
       [701] = { "Boss Cloak", 20, 25, { { "dungeon", 1412, 0.4, 0.4, "Mutanus the Devourer (Wailing Caverns)", nil, nil } } },
       [702] = { "Rare Cloak", 20, 25, { { "rare", 1412, 0.4, 0.4, "Snort the Heckler", nil, nil } } },
       [703] = { "Chest Cloak", 20, 25, { { "chest", 1412, 0.4, 0.4, "Solid Chest", nil, nil } } },
+      [705] = { "World Cloak", 20, 25, { { "world", 0, 0, 0, "creatures level 18 and up", nil, nil } } },
     } }
     game.items = { [400] = { name = "Old Cloak", equipLoc = "INVTYPE_CLOAK" } }
     game.itemStats = { [400] = { ITEM_MOD_AGILITY_SHORT = 2 } }
-    for id = 701, 704 do
+    for id = 701, 705 do
       game.items[id] = { name = "c" .. id, equipLoc = "INVTYPE_CLOAK" }
       game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 6 }
     end
@@ -148,6 +149,11 @@ T.describe("nearby new sources", function()
     T.contains(by[701], "dropped by Mutanus the Devourer (Wailing Caverns)")
     T.contains(by[702], "dropped by the rare Snort the Heckler")
     T.contains(by[703], "found in a Solid Chest")
+    T.contains(by[705], "world drop from creatures level 18 and up")
+    local cards = ns.Nearby:CardItems()
+    for _, c in ipairs(cards) do
+      if c.itemID == 705 then T.eq(#c.actions, 0, "a world drop has no waypoint") end
+    end
     T.eq(#ns.Errors.list, 0)
   end)
 end)

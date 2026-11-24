@@ -147,7 +147,7 @@ function M.Paint(frame, pin)
     if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
     frame:SetAlpha(pin.walked and 1 or 0.75)
     frame.ring:Show() frame.icon:Show()
-    frame.ring:SetColorTexture(0, 0, 0, 0.7)
+    frame.ring:SetColorTexture(0, 0, 0, 0.95) -- dark rim so the dot stands out on any ground
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1)
     return
   end
@@ -695,7 +695,7 @@ function M:Refresh()
     -- rares are twice the size, with a red halo and their name (Gary, 2026-11-20:
     -- "make it really noticeable")
     local big = data.kind == "rare" and not data.small
-    pin:SetScale((data.small and 0.55 or big and M.RARE_SCALE or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
+    pin:SetScale((data.kind == "path" and 0.8 or data.small and 0.55 or big and M.RARE_SCALE or 1) / (scale > 0 and scale or 1))   -- breadcrumbs are small dots
     M.Paint(pin, data)
     if pin.halo then
       pin.halo:SetShown(big)

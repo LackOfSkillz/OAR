@@ -235,6 +235,42 @@ function M:Make(prof, e)
 end
 
 -- Gathering: what to look for, for your skill, and the nearest spot.
+-- Herbs worth picking at your skill, in the guide's order (Data/Herbs.lua
+-- lists them easiest first): every herb up to the first one whose stated
+-- skill is above yours, the last few of them, each with its nearest spot from
+-- the ingredient pack (Gary, 2026-11-23: the Herbalism page was empty).
+M.HERBS_SHOWN = 4
+function M:GatherRows(p)
+  if p.gather ~= "herb" or not ns.Data then return {} end
+  local pack = self:Pack()
+  local byName = {}
+  for id, e in pairs(pack and pack.items or {}) do
+    if type(e) == "table" and e[1] and not byName[e[1]] and e[5] then byName[e[1]] = id end
+  end
+  local list = {}
+  -- the guide's own order (Data:All is unordered)
+  local guide = ns.Data.packs and ns.Data.packs.herb and ns.Data.packs.herb["forever-guides"] or {}
+  for _, h in ipairs(guide) do
+    if h.skill and p.skill and h.skill > p.skill then break end
+    list[#list + 1] = h
+  end
+  local rows = {}
+  for i = math.max(1, #list - M.HERBS_SHOWN + 1), #list do
+    local h = list[i]
+    local id = byName[h.name]
+    local src
+    if id then
+      for _, s in ipairs(self:Sources(id, 1)) do if s.kind == "node" then src = s break end end
+    end
+    rows[#rows + 1] = { item = { name = h.name, need = 1, itemID = id }, source = src or { kind = "hint",
+      text = h.zones and ("grows in " .. table.concat(h.zones, ", ", 1, math.min(3, #h.zones))) or "no spot known yet" }, herb = true }
+  end
+  -- newest herb first: it gives the most skill
+  local out = {}
+  for i = #rows, 1, -1 do out[#out + 1] = rows[i] end
+  return out
+end
+
 function M:GatherLine(p)
   if p.gather == "herb" and ns.Data then
     local names = {}
@@ -367,6 +403,12 @@ ns.Hub:AddTab("professions", "Professions", function(p)
         row.go:SetText("")
       else
         local s = r.source
+        if r.herb then
+          row.text:SetText(string.format("%s:  %s%s", r.item.name, s and s.text or "?",
+            s and s.seconds and ("  |cff8f96a6(" .. ns.Travel.Minutes(s.seconds) .. " away)|r") or ""))
+          row.go:SetText(s and s.target and "Go  >" or "")
+          return
+        end
         row.text:SetText(string.format("     %s x%d:  %s%s", r.item.name, r.item.need, s and s.text or "?",
           s and s.seconds and ("  |cff8f96a6(" .. ns.Travel.Minutes(s.seconds) .. " away)|r") or ""))
         row.go:SetText(s and (s.target or s.kind == "ah") and "Go  >" or "")
@@ -419,11 +461,18 @@ ns.Hub:AddTab("professions", "Professions", function(p)
     if pick.gather then
       d.best:Hide()
       d.h1:SetText("How to raise it")
-      d.now:SetItems({}) d.none:SetText(M:GatherLine(pick))
-      d.h2:SetText("") d.need:SetItems({}) d.gather:SetText("")
+      -- the empty lists sat on top of the text (Gary, 2026-11-23): hide the make-now list
+      d.now:Hide()
+      d.none:SetText(M:GatherLine(pick))
+      local rows = M:GatherRows(pick)
+      d.h2:SetText(#rows > 0 and "Herbs for your skill: the closest spot of each" or "")
+      d.need:SetShown(#rows > 0)
+      d.need:SetItems(rows)
+      d.gather:SetText("")
       return
     end
     d.best:Show()
+    d.now:Show() d.need:Show()
     d.h1:SetText("Make now, from your bags")
     d.h2:SetText("Next for your skill: what you still need")
     local r = M:Recipes(pick.name)

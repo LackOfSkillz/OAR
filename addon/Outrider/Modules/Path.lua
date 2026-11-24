@@ -14,6 +14,12 @@
 -- before costs 1 and a yard off the known paths costs OFF. Re-planned when
 -- the destination changes and every few seconds while you move.
 -- Data only: it draws dots, it never moves you.
+-- Verified ground only (Gary, 2026-11-23: "only mark paths that you can
+-- verify"; a straight line into the hills sent him at a cliff when the way
+-- in was round the north side): dots are drawn only on walked ground
+-- (your breadcrumbs, shipped trails, creature patrols), and only when that
+-- ground reaches within END_GAP yards of the destination. Otherwise no dots:
+-- the arrow still points, and the map says nobody has walked there yet.
 
 local _, ns = ...
 local C = ns.Compat
@@ -34,7 +40,8 @@ M.MARGIN = 400     -- yards around you and the destination that count
 M.EVERY = 3        -- seconds between re-plans while moving
 M.MOVED = 12       -- yards you must move before a re-plan
 M.MAX_NODES = 4000
-M.WALKED = { 0.30, 1.00, 0.75 }
+M.END_GAP = 50     -- yards: walked ground must reach this close to the destination
+M.WALKED = { 0.25, 1.00, 0.90 }
 M.GUESS = { 0.85, 0.95, 1.00 }
 
 local W -- ns.Waypoints, set at enable
@@ -359,10 +366,15 @@ function M:Replan(why)
     if route[k].walked then walked = walked + d end
   end
   self.walked, self.total = walked, total
+  local last = route[#route]
+  self.endGap = (#route >= 2 and not last.walked) and dist(route[#route - 1], last) or 0
+  self.verified = walked > 0 and self.endGap <= M.END_GAP
+  if not self.verified then self.dots = {} end
   if why ~= "moving" or not self.logged then
     self.logged = true
-    self:Debug("way to %s: %.0f yards, %.0f on paths walked before (%d breadcrumbs nearby, %s)",
-      tostring(target.title), total, walked, #nodes, tostring(why))
+    self:Debug("way to %s: %.0f yards, %.0f on paths walked before, last %.0f yards unwalked: %s (%d breadcrumbs nearby, %s)",
+      tostring(target.title), total, walked, self.endGap, self.verified and "dots drawn" or "no dots, not verified",
+      #nodes, tostring(why))
   end
   self:Redraw()
 end
@@ -373,7 +385,8 @@ function M:Pins(mapID)
   if not (self.dots and mapID) then return out end
   local title = self.target and self.target.title or "your destination"
   for i, d in ipairs(self.dots) do
-    local x, y = M.ToMap(mapID, self.cont, d.wx, d.wy)
+    local x, y
+    if d.walked then x, y = M.ToMap(mapID, self.cont, d.wx, d.wy) end
     if x then
       out[#out + 1] = { id = "path-" .. i, kind = "path", mapID = mapID, x = x, y = y, small = true, walked = d.walked,
         name = "The way to " .. tostring(title),
@@ -424,6 +437,10 @@ end
 
 function M:Activity()
   if not self.dots then return "no destination: pick one and a line of dots shows the way" end
+  if not self.verified then
+    return string.format("the way to %s: nobody has walked there yet, so no dots (the arrow still points); walk it once and the dots learn it",
+      tostring(self.target and self.target.title))
+  end
   return string.format("the way to %s: %.0f yards, %.0f of them on paths walked before",
     tostring(self.target and self.target.title), self.total or 0, self.walked or 0)
 end

@@ -23,9 +23,10 @@ local M = ns:NewModule("Nearby", {
 ns.Nearby = M
 
 M.ADDON = "Outrider_Data_Gear"
-M.EFFORT = { craft = 1, vendor = 1, alt = 2, gearquest = 3, quest = 3, drop = 4, rare = 4, chest = 4, dungeon = 5 }
+M.EFFORT = { craft = 1, vendor = 1, alt = 2, gearquest = 3, quest = 3, drop = 4, rare = 4, chest = 4, container = 4, dungeon = 5, world = 6 }
 M.KIND_LABEL = { vendor = "sold by", quest = "quest", drop = "dropped by", alt = "on", rare = "dropped by the rare",
-  chest = "found in a", dungeon = "dropped by", craft = "you can make it with" }
+  chest = "found in a", dungeon = "dropped by", craft = "you can make it with", world = "world drop from",
+  container = "found in" }
 
 -- Gear this character can craft (Gary, 2026-11-23: "grow it"): learned
 -- recipes from the profession windows you opened, product = item made.
@@ -55,9 +56,11 @@ function M:Load()
     for id, it in pairs(data.items) do
       n = n + 1
       for _, s in ipairs(it[4] or {}) do
-        local list = self.byMap[s[2]]
-        if not list then list = {} self.byMap[s[2]] = list end
-        list[#list + 1] = id
+        -- world drops and containers have no spot on a map (mapID 0 in the pack)
+        if s[2] == 0 then s[2], s[3], s[4] = nil, nil, nil end
+        local list = s[2] and self.byMap[s[2]]
+        if s[2] and not list then list = {} self.byMap[s[2]] = list end
+        if list then list[#list + 1] = id end
       end
     end
     self:Info("gear pack loaded: %d items from %s, memory %+.0f KB", n, tostring(data.source), collectgarbage("count") - before)

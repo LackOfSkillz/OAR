@@ -19,7 +19,7 @@ local M = ns:NewModule("MinimapPins", {
   order = 54,
   defaults = { max = 12, quests = false },
 })
-M.CLEAR, M.SIZE, M.PATH = 11, 10, 6
+M.CLEAR, M.SIZE, M.PATH = 11, 10, 8
 ns.MinimapPins = M
 -- A rare that just showed up (Gary, 2026-11-15: "put a blue box around him",
 -- like the yellow herb boxes): the game gives no NPC positions, so the box

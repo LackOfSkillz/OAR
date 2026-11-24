@@ -219,6 +219,33 @@ def main():
     # don't need it: every NPC has an X-Npc-<id>-S row, so scan the keys.
     npc_ids = sorted({int(m.group(1)) for k in meta for m in [re.match(r"^X-Npc-(\d+)-S$", k)] if m})
 
+    # ForeverDB's Forever positions (hand-fixed spm, then per-map spz) are
+    # closer to what the game shows: against 203 NPC spots Outrider recorded in
+    # game (2026-11-23), QuestieDB was 3%+ off for 4 and missing 17, ForeverDB
+    # was 3%+ off for 1 and missing none. Nearest ForeverDB spot on the same map wins.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import foreverdb as fdb
+    fd = fdb.load()
+    trued = {"moved": 0, "kept": 0, "added": 0}
+
+    def fdb_spots(nid, ui=None):
+        out = {}
+        for t in ("spm", "spz"):
+            for m, pts in ((fd[t].get("c%d" % nid) or {}).items() if fd else []):
+                if m not in out and pts:
+                    out[m] = [(pts[i] / 1000.0, pts[i + 1] / 1000.0) for i in range(0, len(pts) - 1, 2)]
+        return out.get(str(ui)) if ui is not None else out
+
+    def true_up(nid, ui, x, y):
+        pts = fdb_spots(nid, ui)
+        if not pts:
+            trued["kept"] += 1
+            return x, y
+        bx, by = min(pts, key=lambda q: (q[0] - x) ** 2 + (q[1] - y) ** 2)
+        if abs(bx - x) > 0.002 or abs(by - y) > 0.002:
+            trued["moved"] += 1
+        return bx, by
+
     by_map, kept, skipped_area = {}, 0, 0
     for nid in npc_ids:
         row = cbor(get("X-Npc-%d-S" % nid))
@@ -238,6 +265,7 @@ def main():
         name, title = row.get(1), row.get(14)
         faction = FACTION.get(row.get(13))
         quests = quests_started(nid, get) if "quest_giver" in kinds else None
+        placed = False
         for area, points in spawns.items():
             ui = area_map.get(area)
             if not ui:
@@ -252,10 +280,23 @@ def main():
             x, y = p[0] / 100.0, p[1] / 100.0
             if not (0 <= x <= 1 and 0 <= y <= 1):
                 continue
+            x, y = true_up(nid, ui, x, y)
+            placed = True
             for kind in kinds:
                 by_map.setdefault(ui, []).append((nid, kind, x, y, name, title, faction,
                                                   quests if kind == "quest_giver" else None))
                 kept += 1
+        if not placed:
+            # QuestieDB's spawn is in an area it can't put on a map: ForeverDB's spots
+            for m, pts in list(fdb_spots(nid).items())[:2]:
+                trued["added"] += 1
+                for kind in kinds:
+                    by_map.setdefault(int(m), []).append((nid, kind, pts[0][0], pts[0][1], name, title, faction,
+                                                          quests if kind == "quest_giver" else None))
+                    kept += 1
+    print("positions from ForeverDB: moved %(moved)d, no ForeverDB spot (kept QuestieDB) %(kept)d, added %(added)d" % trued)
+    if fd:
+        version = version + " + " + fdb.version(fd)
 
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, "Outrider_Data_NPC.toc"), "w", encoding="utf-8", newline="\r\n") as f:
