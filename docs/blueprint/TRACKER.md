@@ -64,7 +64,7 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-12 Radar and WhatNow integration | MOCK_GREEN | 271469a | [OI02-12](../reviews/phase2/OI02-12.md) | Plan (preview) page; off = baseline; progressive Why |
 | OI02-13 Confidence and Troubleshooter core | MOCK_GREEN | af8b571 | [OI02-13](../reviews/phase2/OI02-13.md) | reason codes; error vs nothing to do; no private details |
 | OI02-14 Cross-language contract tests | MOCK_GREEN | fc14801 (+ CRLF fixes) | [OI02-14](../reviews/phase2/OI02-14.md) | OTR1 both directions, fuzz, no actions via records |
-| OI02-15 Planner benchmark | MOCK_GREEN (live LIVE_PENDING) | see commit | [OI02-15](../reviews/phase2/OI02-15.md) | 6/6 scenarios; WhatNow 4/6; ~0.1 ms mock; live p95/memory pending |
-| OI02-GATE Phase 2 review gate | NOT_STARTED | | | stops for ChatGPT review and Gary's approval |
+| OI02-15 Planner benchmark | MOCK_GREEN (live LIVE_PENDING) | 252d775 | [OI02-15](../reviews/phase2/OI02-15.md) | 6/6 scenarios; WhatNow 4/6; ~0.1 ms mock; live p95/memory pending |
+| OI02-GATE Phase 2 review gate | IN_PROGRESS | see commit | [packet](../reviews/phase2/OI02-GATE.md) | STOPPED: waiting for ChatGPT review and Gary's approval |
 
 Phases 3-8 (OI03-OI08): NOT_STARTED.
