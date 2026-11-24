@@ -103,6 +103,11 @@ function M:Refresh()
           { benefit = c.benefit, confidence = c.confidence, kind = c.kind },
           label)
         local card = O:FromWhatNow(c, profile, ev)
+        -- Radar's own evidence must not outlive the plan step it shows (OI02-R16)
+        if card and c.nexusId then
+          card.nexusId = c.nexusId
+          if c.expiresAt and c.expiresAt < card.expiresAt then card.expiresAt = c.expiresAt end
+        end
         if card then
           local verdict = state()[card.candidateId]
           -- Small local preference bonus only after an explicit useful vote.
@@ -113,7 +118,7 @@ function M:Refresh()
       end
     end
   end
-  self.cardsKey = nexus and ("nexus|" .. N:ContextKey()) or "radar"
+  self.cardsKey = nexus and N:CacheKey() or "radar"
   if nexus then
     for i = #cards, 4, -1 do cards[i] = nil end
     self.cards, self.refreshedAt = cards, now
@@ -126,7 +131,7 @@ function M:Cards()
   if not self.enabled then return {} end
   if ns.Compat.InCombat() then return {} end
   local N = ns.NexusCore
-  local key = (N and N:Ready()) and ("nexus|" .. N:ContextKey()) or "radar"
+  local key = (N and N:Ready()) and N:CacheKey() or "radar"
   if self.dirty or not self.cards or self.cardsKey ~= key or time() - (self.refreshedAt or 0) > 30 then
     self.cardsKey = key
     return self:Refresh()

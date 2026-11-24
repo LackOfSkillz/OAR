@@ -32,10 +32,13 @@ function P.Cards(refresh)
   local scores = {}
   for _, r in ipairs(c.ranked or {}) do scores[r.id] = r end
   local cards = {}
+  local gone = 0
   for i, id in ipairs(res.plan.steps) do
-    if i > 3 then break end
+    if #cards >= 3 then break end
     local node = c.graph and c.graph.nodes[id]
     local o = node and node.opp
+    -- a step that expired or went stale is not shown as current (OI02-R16)
+    if o and not N:StillShown(id) then gone = gone + 1 o = nil end
     if o then
       local tags = { { i == 1 and "Do this next" or ("Then " .. i), i == 1 and "good" or "plain" }, { o.confidence, "plain" }, { minutes(o.costSeconds), "plain" } }
       if o.costCopper and o.costCopper > 0 then tags[#tags + 1] = { ns.Prices and ns.Prices.Money(o.costCopper) or tostring(o.costCopper), "gold" } end
@@ -62,6 +65,7 @@ function P.Cards(refresh)
   end
   local notes = {}
   if N:IsStale() then notes[#notes + 1] = "|cffffc84dYour character changed since this plan: press Re-plan.|r" end
+  if gone > 0 then notes[#notes + 1] = string.format("%d step%s went out of date: press Re-plan.", gone, gone == 1 and "" or "s") end
   if res.truncated then notes[#notes + 1] = "The search stopped at its time limit; this is the best plan found so far." end
   if #(res.alternatives or {}) > 0 then
     local alt = {}

@@ -7,18 +7,18 @@ Runs per scenario: 200. Times are the Nexus pipeline only (adapters, graph, scor
 
 | Scenario | Expected | WhatNow top | Nexus top | WhatNow ok | Nexus ok | mean ms | p95 ms | max ms | work | KB allocated per run |
 |---|---|---|---|---|---|---|---|---|---|---|
-| gold goal | a gold step first | gold:farm | gold:farm | yes | yes | 0.16 | 1.00 | 1.00 | 12 | 41 |
+| gold goal | a gold step first | gold:farm | gold:farm | yes | yes | 0.16 | 1.00 | 1.00 | 12 | 42 |
 | gear goal, low funds | nothing unaffordable first | gear:Axe | gear:Boots | **no** | yes | 0.13 | 1.00 | 1.00 | 4 | 32 |
-| level goal, duplicate quest | one entry per quest | quest:Red Silk | dq:214 | **no** | yes | 0.13 | 1.00 | 1.00 | 4 | 31 |
-| professions goal | a profession step first | profession:Cooking | profession:Cooking | yes | yes | 0.13 | 1.00 | 1.00 | 4 | 33 |
-| explore goal | the rare first | rare:61 | rare:61 | yes | yes | 0.13 | 1.00 | 1.00 | 4 | 32 |
-| mix goal, doubtful source | a well-evidenced step first | quest:Solid | quest:Solid | yes | yes | 0.10 | 1.00 | 1.00 | 4 | 26 |
-| conflicting goals | the top goal leads, the second still gets a step | gold:farm | gold:farm | yes | yes | 0.13 | 1.00 | 1.00 | 4 | 33 |
-| insufficient resources | no purchase above the reserve, unknown prices left out | gear:Axe | quest:Q6 | **no** | yes | 0.11 | 1.00 | 1.00 | 1 | 27 |
-| stale observations | a fresh node over one seen long ago | gather:old | gather:new | **no** | yes | 0.07 | 1.00 | 1.00 | 1 | 18 |
-| unavailable metadata | the step with known map and time first | quest:Vague | quest:Clear | **no** | yes | 0.11 | 1.00 | 1.00 | 4 | 26 |
-| overlapping objectives | one entry for one quest offered twice | quest:The Rake | quest:The Rake | **no** | yes | 0.13 | 1.00 | 1.00 | 4 | 31 |
-| adverse conditions | a plan from what still works | quest:Q7 | quest:Q7 | yes | yes | 0.06 | 1.00 | 1.00 | 1 | 17 |
+| level goal, duplicate quest | one entry per quest | quest:Red Silk | dq:214 | **no** | yes | 0.14 | 1.00 | 1.00 | 4 | 31 |
+| professions goal | a profession step first | profession:Cooking | profession:Cooking | yes | yes | 0.14 | 1.00 | 1.00 | 4 | 33 |
+| explore goal | the rare first | rare:61 | rare:61 | yes | yes | 0.13 | 1.00 | 1.00 | 4 | 33 |
+| mix goal, doubtful source | a well-evidenced step first | quest:Solid | quest:Solid | yes | yes | 0.11 | 1.00 | 1.00 | 4 | 27 |
+| conflicting goals | the top goal leads, the second still gets a step | gold:farm | gold:farm | yes | yes | 0.14 | 1.00 | 1.00 | 4 | 33 |
+| insufficient resources | no purchase above the reserve, unknown prices left out | gear:Axe | quest:Q6 | **no** | yes | 0.12 | 1.00 | 1.00 | 1 | 28 |
+| stale observations | a fresh node over one seen long ago | gather:old | gather:new | **no** | yes | 0.08 | 1.00 | 1.00 | 1 | 19 |
+| unavailable metadata | the step with known map and time first | quest:Vague | quest:Clear | **no** | yes | 0.11 | 1.00 | 1.00 | 4 | 27 |
+| overlapping objectives | one entry for one quest offered twice | quest:The Rake | quest:The Rake | **no** | yes | 0.14 | 1.00 | 1.00 | 4 | 32 |
+| adverse conditions | a plan from what still works | quest:Q7 | quest:Q7 | yes | yes | 0.07 | 1.00 | 1.00 | 1 | 17 |
 
 ## The addon's own producers (mock client)
 

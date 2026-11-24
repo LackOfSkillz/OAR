@@ -66,7 +66,8 @@ Owner authorization: Gary forwarded ChatGPT's Phase 1 acceptance (2026-11-24), w
 | OI02-14 Cross-language contract tests | MOCK_GREEN | fc14801 (+ CRLF fixes) | [OI02-14](../reviews/phase2/OI02-14.md) | OTR1 both directions, fuzz, no actions via records |
 | OI02-15 Planner benchmark | MOCK_GREEN (live LIVE_PENDING) | 252d775 (+ widened in resubmission) | [OI02-15](../reviews/phase2/OI02-15.md) | 12/12 scenarios plus the real producers; WhatNow 6/12; ~0.1 ms mock; live p95/memory pending |
 | OI02-R01..R09 Review corrections | MOCK_GREEN | 6fd4864 (+ benchmark commit) | [packet, Resubmission 1](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES on 2f6e376; 9 findings corrected, 20 regression tests |
-| OI02-R10..R14 Resubmission 1 findings | MOCK_GREEN | see commit | [packet, Resubmission 2](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (limited scope) on 420a9a8; 5 findings corrected, 21 regression tests; R14 cycle detection via requiresAny left as documented debt |
-| OI02-GATE Phase 2 review gate | RESUBMITTED (2) | see commit | [packet](../reviews/phase2/OI02-GATE.md) | STOPPED: waiting for ChatGPT's re-review and Gary's approval |
+| OI02-R10..R14 Resubmission 1 findings | MOCK_GREEN | see commit | [packet, Resubmission 2](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (limited scope) on 420a9a8; 5 findings corrected, 21 regression tests; R14 cycle debt closed by R15 |
+| OI02-R15..R17 Resubmission 2 findings | MOCK_GREEN | see commit | [packet, Resubmission 3](../reviews/phase2/OI02-GATE.md) | ChatGPT REVIEW_CHANGES (narrow scope) on d023478; guarded prerequisite walk (old code overflowed the stack), expiry-aware caches, 10 more invalidation events; 19 regression tests |
+| OI02-GATE Phase 2 review gate | RESUBMITTED (3) | see commit | [packet](../reviews/phase2/OI02-GATE.md) | STOPPED: waiting for ChatGPT's re-review and Gary's approval |
 
 Phases 3-8 (OI03-OI08): NOT_STARTED.

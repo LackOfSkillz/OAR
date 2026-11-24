@@ -38,37 +38,64 @@ local function key(seq) return table.concat(seq, ">") end
 
 -- The candidate steps: the pin (if it can be scored), the best-ranked steps
 -- above zero whose prerequisites can all be planned, and those prerequisites
--- (any score). Returns cands (ids), score ({ [id] = score }), pinInfo.
+-- (any score). Returns cands (ids), score ({ [id] = score }), pinInfo,
+-- unplannable ({ [id] = reason } for good steps left out for their prerequisites).
+-- Cycle-safe and bounded (OI02-R15): the prerequisite walk carries the path it
+-- is on and refuses to re-enter it; a "no" found only because of that cycle
+-- guard depends on the path, so it is never remembered (only path-independent
+-- answers are memoized, which makes the result independent of ranking order);
+-- the walk is capped at DEP_DEPTH levels and DEP_WORK visits per call, and
+-- running out counts as "can't plan it" (safe), never as an error. Expansion
+-- keeps an in-progress set, so a cycle can't recurse.
+P.DEP_DEPTH, P.DEP_WORK = 8, 4000
 function P.Candidates(graph, ranked, done, pinId)
   local function node(id) return graph.nodes[id] end
-  local cands, score, pos, blocked = {}, {}, {}, {}
+  local cands, score, pos, memo, unplannable = {}, {}, {}, {}, {}
   for _, r in ipairs(ranked) do pos[r.id] = r end
-  -- can id and its unfinished prerequisites all be planned? (memoized)
-  local function plannable(id, depth, visiting)
-    if done[id] then return true end
-    if blocked[id] ~= nil then return not blocked[id] end
-    if not pos[id] or depth > P.HORIZON or visiting[id] then return false end
-    visiting[id] = true
+  local work
+  -- returns ok, cyclic (cyclic: the answer relied on the path guard)
+  local function walk(id, depth, onPath)
+    if done[id] then return true, false end
+    if memo[id] ~= nil then return memo[id], false end
+    if onPath[id] then return false, true end
+    if not pos[id] or not node(id) then memo[id] = false return false, false end
+    work = work + 1
+    if depth > P.DEP_DEPTH or work > P.DEP_WORK then return false, true end -- bounded: not remembered
+    onPath[id] = true
+    local ok, cyclic = true, false
     for _, req in ipairs(node(id).meta.requires or {}) do
-      if not plannable(req, depth + 1, visiting) then visiting[id] = nil blocked[id] = true return false end
+      local r, c = walk(req, depth + 1, onPath)
+      cyclic = cyclic or c
+      if not r then ok = false break end
     end
-    local alts = node(id).meta.requiresAny
+    local alts = ok and node(id).meta.requiresAny
     if alts then
       local any = false
-      for _, alt in ipairs(alts) do if plannable(alt, depth + 1, visiting) then any = true break end end
-      if not any then visiting[id] = nil blocked[id] = true return false end
+      for _, alt in ipairs(alts) do
+        local r, c = walk(alt, depth + 1, onPath)
+        if r then any = true break end
+        cyclic = cyclic or c
+      end
+      ok = any
     end
-    visiting[id] = nil
-    blocked[id] = false
-    return true
+    onPath[id] = nil
+    if ok or not cyclic then memo[id] = ok end
+    return ok, cyclic
   end
+  local function plannable(id)
+    work = 0
+    return (walk(id, 1, {}))
+  end
+  local adding = {}
   local function add(id)
-    if done[id] or score[id] or #cands >= P.MAX_CANDIDATES then return end
+    if done[id] or score[id] or adding[id] or #cands >= P.MAX_CANDIDATES then return end
+    adding[id] = true
     for _, req in ipairs(node(id).meta.requires or {}) do add(req) end
     -- one of several: every plannable alternative is a candidate, the search picks
     for _, alt in ipairs(node(id).meta.requiresAny or {}) do
-      if node(alt) and plannable(alt, 1, {}) then add(alt) end
+      if node(alt) and plannable(alt) then add(alt) end
     end
+    adding[id] = nil
     if #cands < P.MAX_CANDIDATES and not score[id] then cands[#cands + 1] = id score[id] = pos[id].score end
   end
   local pinInfo
@@ -80,9 +107,11 @@ function P.Candidates(graph, ranked, done, pinId)
     else score[pinId] = pos[pinId].score cands[#cands + 1] = pinId end
   end
   for _, r in ipairs(ranked) do
-    if r.score > 0 and plannable(r.id, 1, {}) then add(r.id) end
+    if r.score > 0 then
+      if plannable(r.id) then add(r.id) else unplannable[r.id] = "its prerequisites can't be planned (missing, a loop, or too deep)" end
+    end
   end
-  return cands, score, pinInfo
+  return cands, score, pinInfo, unplannable
 end
 
 function P.Plan(graph, ranked, ctx, opts)
@@ -95,8 +124,8 @@ function P.Plan(graph, ranked, ctx, opts)
   local done = ctx.done or {}
   local function node(id) return graph.nodes[id] end
   local pinId = opts.pin
-  local cands, score, pinInfo = P.Candidates(graph, ranked, done, pinId)
-  if #cands == 0 then return { why = "nothing worth doing right now fits your goals", code = "no_candidates", work = 0, pin = pinInfo } end
+  local cands, score, pinInfo, unplannable = P.Candidates(graph, ranked, done, pinId)
+  if #cands == 0 then return { why = "nothing worth doing right now fits your goals", code = "no_candidates", work = 0, pin = pinInfo, unplannable = unplannable } end
 
   local function canAdd(state, id)
     if state.set[id] then return false end
@@ -211,5 +240,5 @@ function P.Plan(graph, ranked, ctx, opts)
   local ok, field = ns.Nexus.Validate("Plan", plan)
   if not ok then return { why = "plan failed validation: " .. tostring(field), code = "invalid_plan", work = work, pin = pinInfo } end
   return { plan = plan, value = best.value, alternatives = alternatives, truncated = truncated, work = work, pin = pinInfo,
-    unconfirmed = unconfirmed, financial = #unconfirmed > 0 and "unconfirmed" or "confirmed" }
+    unconfirmed = unconfirmed, financial = #unconfirmed > 0 and "unconfirmed" or "confirmed", unplannable = unplannable }
 end

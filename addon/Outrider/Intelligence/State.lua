@@ -66,6 +66,23 @@ S.EVENTS = {
   BAG_UPDATE_DELAYED = { "inventory" },
   SKILL_LINES_CHANGED = { "professions" },
   TRADE_SKILL_LIST_UPDATE = { "professions" },
+  -- OI02-R17: what justified a step can change with these too. Quests:
+  -- accepting, turning in or abandoning one changes what is available and
+  -- which prerequisites are done. Talents and specialization. The auction
+  -- house: opening, closing and new search results change which listings
+  -- (Deal Desk lots) exist. An event this client lacks is skipped safely
+  -- (Core/Events.lua registers through pcall).
+  QUEST_ACCEPTED = { "quests" },
+  QUEST_TURNED_IN = { "quests" },
+  QUEST_REMOVED = { "quests" },
+  PLAYER_TALENT_UPDATE = { "talents" },
+  CHARACTER_POINTS_CHANGED = { "talents" },
+  ACTIVE_TALENT_GROUP_CHANGED = { "talents" },
+  PLAYER_SPECIALIZATION_CHANGED = { "talents" },
+  TRAIT_CONFIG_UPDATED = { "talents" },
+  AUCTION_HOUSE_SHOW = { "auction" },
+  AUCTION_HOUSE_CLOSED = { "auction" },
+  ITEM_SEARCH_RESULTS_UPDATED = { "auction" },
 }
 
 -- any event that can change a field moves the revision on, read or not

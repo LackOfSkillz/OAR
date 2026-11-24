@@ -465,8 +465,16 @@ function M:List(force)
   -- the cache belongs to one provider and one planning context (OI02-R12):
   -- switching the planner, or a goal, reserve, pin or skip change, misses it
   local N0 = ns.NexusCore
-  local provKey = (N0 and N0:Ready()) and ("nexus|" .. N0:ContextKey()) or "whatnow"
-  if not force and self.cache and self.cacheKey == provKey and now - self.cacheAt < M.CACHE then return self.cache end
+  local provKey = (N0 and N0:Ready()) and N0:CacheKey() or "whatnow"
+  if not force and self.cache and self.cacheKey == provKey and now - self.cacheAt < M.CACHE then
+    -- plan picks are re-checked on every read: one that expired, or whose
+    -- evidence went stale, inside the cache time drops the cache (OI02-R16)
+    local fine = true
+    if provKey ~= "whatnow" then
+      for _, c in ipairs(self.cache) do if not (c.nexusId and N0:StillShown(c.nexusId, now)) then fine = false break end end
+    end
+    if fine then return self.cache end
+  end
   self.cacheKey = provKey
   local st = self:Store()
   -- the planner, when on, owns the ranking (OI02-R08): its plan already read

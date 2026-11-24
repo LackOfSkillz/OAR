@@ -31,6 +31,8 @@ function O:FromWhatNow(candidate, profile, evidence)
 end
 function O:Valid(card, now)
   if not card or not ns.IntelEvidence:Get(card.evidenceId, now) then return false end
+  -- a card for a plan step lives only as long as the step itself (OI02-R16)
+  if card.nexusId and not (ns.NexusCore and ns.NexusCore:StillShown(card.nexusId, now)) then return false end
   return (now or time()) <= card.expiresAt
 end
 function O:Top(candidates, max)

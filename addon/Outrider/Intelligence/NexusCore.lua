@@ -61,13 +61,24 @@ function M:ContextKey()
   end
   table.sort(goals)
   parts[#parts + 1] = "goals=" .. table.concat(goals, ";")
-  if #goals == 0 then
-    -- no goals: the implicit one (What now?'s goal, through NexusGoals)
-    local implicit = ns.NexusGoals:Active()[1]
-    parts[#parts + 1] = "implicit=" .. tostring(implicit and implicit.objective)
+  -- the goals the planner actually uses: with every saved goal paused or
+  -- archived (or none saved) that is the implicit What now? goal (OI02-R17)
+  local active = {}
+  for _, g in ipairs(ns.NexusGoals:Active()) do
+    active[#active + 1] = (g.implicit and "implicit:" or "") .. tostring(g.objective) .. ":" .. tostring(g.priority)
   end
+  parts[#parts + 1] = "active=" .. table.concat(active, ",")
   return table.concat(parts, "|")
 end
+
+-- The key a page's cache of plan picks must match (OI02-R16): the planning
+-- context plus the plan generation, so a new plan is never hidden by a cache.
+function M:CacheKey() return "nexus|" .. self:ContextKey() .. "|" .. tostring(self.replans or 0) end
+
+-- Is a pick (or a page's copy of one) still usable for display? Checks the
+-- plan step itself: plan current, still in it, not skipped or left out, the
+-- opportunity's own expiry and its evidence (OI02-R16).
+function M:StillShown(id, now) return (self:CheckAct(id, now, { display = true })) end
 
 -- Build a plan now (pure apart from reading state). Returns the stored result.
 function M:Replan(why)
@@ -85,6 +96,7 @@ function M:Replan(why)
   local ranked, rejected = ns.NexusScore.Rank(graph, goals, ctx)
   -- the pin is a planner input that must pass every constraint (OI02-R01)
   local res = ns.NexusPlanner.Plan(graph, ranked, ctx, { pin = self:Settings().pinned })
+  for id, why in pairs(res.unplannable or {}) do if not rejected[id] then rejected[id] = why end end
   self.current = { result = res, revision = ctx.revision, contextKey = contextKey, at = ctx.now, runtime = runtime, graph = graph,
     ranked = ranked, rejected = rejected, excluded = excluded, unavailable = unavailable, why = why }
   self.replans = (self.replans or 0) + 1
@@ -211,6 +223,7 @@ function M:Picks(n)
       for k, v in pairs(cand) do if k ~= "go" and k ~= "alt" then copy[k] = v end end
       copy.go = function() return M:Act(id) end
       copy.score, copy.nexusId, copy.nexusStep, copy.provider = scores[id] or 0, id, i, "nexus"
+      copy.expiresAt = c.graph.nodes[id].opp.expiresAt -- the opportunity's own expiry, for every page
       if unconfirmed[id] then
         copy.priceUnknown = true
         copy.caveat = "Price unknown: check it before you buy. The plan doesn't count it as gold spent."
@@ -237,6 +250,7 @@ local function reasonFor(why)
   if REASON[why] then return REASON[why] end
   if why:find("^faction") then return { "wrong_faction", "is for the other faction", nil } end
   if why:find("^unmet prerequisite") then return { "missing_prerequisite", "needs something you haven't done yet", "do its first step, or skip it" } end
+  if why:find("prerequisites can.t be planned") then return { "prerequisites_unplannable", "needs steps that can't be planned (missing, a loop, or too deep)", "do its first step, or skip it" } end
   if why:find("^needs ") then return { "blocked_by_prerequisite", "depends on a step that can't be done", nil } end
   return { "other", why, nil }
 end
