@@ -68,7 +68,7 @@ function P.Cards(refresh)
   end
   local left = 0
   for _ in pairs(c.rejected or {}) do left = left + 1 end
-  if left > 0 then notes[#notes + 1] = string.format("%d left out (faction, budget, prerequisites...): see Status.", left) end
+  if left > 0 then notes[#notes + 1] = string.format("%d left out: see below why.", left) end
   return cards, table.concat(notes, "\n")
 end
 
@@ -91,6 +91,17 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
       if not ns.NexusCore:Settings().on then return "The planner is off. Outrider's other pages work as always." end
       local _, note = P.Cards(refresh)
       return note
+    end },
+    { "header", "What's holding the plan back" },
+    { "note", function()
+      if not ns.NexusCore:Settings().on then return "" end
+      local lines = {}
+      for i, d in ipairs(ns.NexusCore:Diagnose()) do
+        if i > 8 then break end
+        local mark = d.kind == "error" and "|cffff7f7f" or d.kind == "limit" and "|cffffc84d" or "|cffbbbbbb"
+        lines[#lines + 1] = mark .. d.text .. "|r" .. (d.remedy and ("  " .. d.remedy .. ".") or "")
+      end
+      return #lines > 0 and table.concat(lines, "\n") or "Nothing: the plan uses everything it found."
     end },
   })
 end, 1.5)

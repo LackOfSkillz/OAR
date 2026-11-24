@@ -42,7 +42,7 @@ function P.Plan(graph, ranked, ctx, opts)
     if #cands < P.MAX_CANDIDATES then cands[#cands + 1] = id score[id] = r.score end
   end
   for _, r in ipairs(ranked) do addWithReqs(r.id, 1) end
-  if #cands == 0 then return { why = "nothing worth doing right now fits your goals", work = 0 } end
+  if #cands == 0 then return { why = "nothing worth doing right now fits your goals", code = "no_candidates", work = 0 } end
 
   local function node(id) return graph.nodes[id] end
   local function canAdd(state, id)
@@ -112,7 +112,7 @@ function P.Plan(graph, ranked, ctx, opts)
 
   if #best.seq == 0 then
     return { why = budgetSeconds and "nothing fits the time and gold you have" or "nothing fits the gold you have",
-      work = work, truncated = truncated }
+      code = budgetSeconds and "over_time_or_gold" or "over_gold", work = work, truncated = truncated }
   end
   local alternatives = {}
   for f, v in pairs(firsts) do if f ~= best.seq[1] then alternatives[#alternatives + 1] = { firstStep = f, value = v } end end
@@ -126,6 +126,6 @@ function P.Plan(graph, ranked, ctx, opts)
     steps = best.seq, reasonCodes = reasons, createdAt = ctx.now or time(), version = 1, truncated = truncated,
     budgetSeconds = budgetSeconds }
   local ok, field = ns.Nexus.Validate("Plan", plan)
-  if not ok then return { why = "plan failed validation: " .. tostring(field), work = work } end
+  if not ok then return { why = "plan failed validation: " .. tostring(field), code = "invalid_plan", work = work } end
   return { plan = plan, value = best.value, alternatives = alternatives, truncated = truncated, work = work }
 end

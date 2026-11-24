@@ -126,6 +126,71 @@ function M:Act(id)
   return false, "nothing to open for this step"
 end
 
+-- ------------------------------------------------------------ troubleshooting (OI02-13)
+-- What's holding the plan back: { {code, text, remedy, kind = "error"|"limit"|"info"} }.
+-- "error" means Outrider couldn't read something (a fault), "limit" means the
+-- plan is constrained by real facts (gold, faction, prerequisites), "info" is
+-- context. No character names, realms or exact gold amounts appear here.
+local REASON = {
+  ["over budget"] = { "over_budget", "costs more than you can spend above your gold reserve", "lower the reserve on your goal, or earn gold first" },
+  ["cost with no gold reading"] = { "gold_unknown", "has a cost but your gold isn't known yet", "open your bags once so Outrider reads your gold" },
+  cycle = { "prerequisite_cycle", "its prerequisites loop back on themselves (data problem)", "skip it; please report it" },
+}
+local function reasonFor(why)
+  why = tostring(why)
+  if REASON[why] then return REASON[why] end
+  if why:find("^faction") then return { "wrong_faction", "is for the other faction", nil } end
+  if why:find("^unmet prerequisite") then return { "missing_prerequisite", "needs something you haven't done yet", "do its first step, or skip it" } end
+  if why:find("^needs ") then return { "blocked_by_prerequisite", "depends on a step that can't be done", nil } end
+  return { "other", why, nil }
+end
+
+function M:Diagnose()
+  local out = {}
+  local function add(kind, code, text, remedy) out[#out + 1] = { kind = kind, code = code, text = text, remedy = remedy } end
+  if not self:Settings().on then add("info", "off", "The planner is switched off.", "switch it on on the Plan page") return out end
+  local c = self.current
+  if not c then add("info", "no_plan_yet", "No plan has been made yet.", "press Re-plan") return out end
+  local stale, why = self:IsStale()
+  if stale then add("info", "stale", why .. ".", "press Re-plan") end
+  for _, name in ipairs(c.unavailable or {}) do
+    add("error", "source_unavailable", "Couldn't read suggestions from " .. name .. ".", "it may be switched off on the Modules page")
+  end
+  local total = #(ns.NexusAdapters.PROGRESSION) + #(ns.NexusAdapters.RESOURCES) + 3
+  if #(c.unavailable or {}) >= total then add("error", "all_sources_failed", "No source of suggestions could be read: this is a fault, not a lack of things to do.", "type /ride errors and report it") end
+  local counts = {}
+  for id, why in pairs(c.rejected or {}) do
+    local r = reasonFor(why)
+    local key = r[1]
+    counts[key] = counts[key] or { n = 0, r = r, ex = id }
+    counts[key].n = counts[key].n + 1
+  end
+  local keys = {}
+  for k in pairs(counts) do keys[#keys + 1] = k end
+  table.sort(keys)
+  for _, k in ipairs(keys) do
+    local e = counts[k]
+    add("limit", k, string.format("%d step%s left out: %s.", e.n, e.n == 1 and "" or "s", e.r[2]), e.r[3])
+  end
+  local unsure = 0
+  for _, r in ipairs(c.ranked or {}) do
+    local n = c.graph.nodes[r.id]
+    if n.travelUnknown or not n.opp.costSeconds or n.opp.confidence == "inferred" or n.opp.confidence == "unknown" then unsure = unsure + 1 end
+  end
+  if unsure > 0 then add("info", "uncertain_estimates", string.format("%d step%s rest on guesses (time, travel or a doubtful source); they score lower.", unsure, unsure == 1 and "" or "s"), nil) end
+  for _, p in ipairs(ns.NexusGoals:Check(time(), { copper = (ns.NexusState:Get("gold") or {}).value, level = (ns.NexusState:Get("level") or {}).value })) do
+    add("limit", "goal_" .. p.code, p.text, nil)
+  end
+  local res = c.result
+  if res and not res.plan then
+    local hasError = false
+    for _, d in ipairs(out) do if d.kind == "error" then hasError = true end end
+    add(hasError and "error" or "info", res.code or "no_plan",
+      hasError and "There is no plan because something couldn't be read (see above)." or ("No plan: " .. tostring(res.why) .. "."), nil)
+  end
+  return out
+end
+
 function M:OnEnable()
   for event in pairs(ns.NexusState.EVENTS) do self:On(event, function(mod) mod:Request(event) end) end
   self:On("OTR_NEXUS_GOALS_CHANGED", function(mod) mod:Request("goals") end)
