@@ -22,6 +22,7 @@ Core\Timer.lua
 Core\Perf.lua
 Core\Serialize.lua
 Core\DB.lua
+Core\Archive.lua
 Core\Profiles.lua
 Core\Modules.lua
 Core\Conflicts.lua

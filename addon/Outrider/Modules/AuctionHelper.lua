@@ -115,7 +115,7 @@ function M:RecordOwned()
         local ledger = self:SalesLedger()
         ledger[#ledger + 1] = { auctionID = id, itemID = a.itemID, amount = a.amount,
           t = time(), result = "disappeared (sale/expiry/cancel unverified)" }
-        while #ledger > 100 do table.remove(ledger, 1) end
+        while #ledger > 100 do ns.Archive:Shift("salesLedger", ledger) end
       end
     end
   end

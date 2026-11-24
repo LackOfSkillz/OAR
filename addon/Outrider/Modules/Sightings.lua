@@ -50,7 +50,7 @@ function M:Record(npcID, s)
     end
   end
   list[#list + 1] = s
-  while #list > self.CAP do table.remove(list, 1) end
+  while #list > self.CAP do ns.Archive:Shift("sightings", list) end
   self:Info("sighting npcID=%d %s layer=%s map=%s how=%s", npcID, s.state, tostring(s.layer), tostring(s.mapID), tostring(s.how))
   ns.Events:Fire("OTR_SIGHTING_ADDED", npcID, s)
   return s
@@ -61,7 +61,7 @@ function M:Learn(npcID, gap, layer)
   local o = self.obs[npcID]
   if not o then o = {} self.obs[npcID] = o end
   o[#o + 1] = gap
-  while #o > self.OBS_CAP do table.remove(o, 1) end
+  while #o > self.OBS_CAP do ns.Archive:Shift("sightingObservations", o) end
   self:Info("respawn observed npcID=%d gap=%ds layer=%s (%d observations)", npcID, gap, tostring(layer), #o)
 end
 

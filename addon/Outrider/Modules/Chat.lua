@@ -54,13 +54,13 @@ function M:RememberLine(event, msg, author)
   local item = { t = time(), event = event, author = author, text = msg }
   if s.chatArchive then
     self.archive[#self.archive + 1] = item
-    while #self.archive > M.ARCHIVE_MAX do table.remove(self.archive, 1) end
+    while #self.archive > M.ARCHIVE_MAX do ns.Archive:Shift("chat", self.archive) end
   end
   if s.whisperHistory and (event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM") then
     local who = author:lower()
     local by = self.whispers[who] or {}
     by[#by + 1] = item
-    while #by > M.PER_PERSON_MAX do table.remove(by, 1) end
+    while #by > M.PER_PERSON_MAX do ns.Archive:Shift("chatByPerson", by) end
     self.whispers[who] = by
     local count = 0
     for _ in pairs(self.whispers) do count = count + 1 end

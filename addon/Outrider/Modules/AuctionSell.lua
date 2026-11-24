@@ -344,7 +344,7 @@ function M:Post(g, opts)
   self.lastPost = { g = g, loc = loc, dur = dur, qty = qty, price = p.price, at = time() }
   local h = self:PostHistory(g.itemID)
   h[#h + 1] = { t = time(), unit = p.price, qty = qty }
-  while #h > M.KEEP_POSTS do table.remove(h, 1) end
+  while #h > M.KEEP_POSTS do ns.Archive:Shift("auctionPosts", h) end
   local l = self.live[g.itemID]
   if l then l.mine = math.min(l.mine or p.price, p.price) end
   self:Info("posted %s x%d at %s each (%s, %s)", g.name, qty, money(p.price), p.why or "?", M.DURATIONS[dur] and M.DURATIONS[dur][2] or "?")

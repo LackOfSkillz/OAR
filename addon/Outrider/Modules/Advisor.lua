@@ -117,7 +117,7 @@ function M:Feedback(item, verdict)
   local list = ns.db.char.adviceFeedback
   if type(list) ~= "table" then list = {} ns.db.char.adviceFeedback = list end
   list[#list + 1] = { id = item.candidateId, v = verdict, t = time() }
-  while #list > M.FEEDBACK_KEEP do table.remove(list, 1) end
+  while #list > M.FEEDBACK_KEEP do ns.Archive:Shift("adviceFeedback", list) end
   if (verdict == "wrong" or verdict == "done") and ns.WhatNow then ns.WhatNow:Skip({ key = item.candidateId }) end
   self:Info("advice feedback %s: %s", tostring(item.candidateId), verdict)
   return true, verdict == "useful" and "Noted: useful." or (verdict == "done" and "Marked done; hidden from What now? for a day."

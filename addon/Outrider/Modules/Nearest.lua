@@ -100,7 +100,7 @@ function M:FinishDeathLog()
     ns.db.global.deathHistory = ns.db.global.deathHistory or {}
     local history = ns.db.global.deathHistory
     history[#history + 1] = self.deathLog
-    while #history > 100 do table.remove(history, 1) end
+    while #history > 100 do ns.Archive:Shift("deaths", history) end
   end
   self.deathLog = nil
 end

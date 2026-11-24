@@ -209,7 +209,7 @@ function M:Record(questID, what)
   local list = self:History()
   list[#list + 1] = { t = time(), id = questID, what = what, lvl = readable(C.Call("UnitLevel", "player")),
     zone = readable(C.Call("GetZoneText")), name = self:Name(questID) }
-  while #list > M.HISTORY_CAP do table.remove(list, 1) end
+  while #list > M.HISTORY_CAP do ns.Archive:Shift("questDiary", list) end
 end
 
 function M:OnTurnedIn(_, questID)

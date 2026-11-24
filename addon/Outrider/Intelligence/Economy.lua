@@ -77,7 +77,7 @@ function E.RecordOutcome(char, outcome)
   char.intelEconomyOutcomes = st
   st[#st + 1] = { kind = outcome.kind, itemID = outcome.itemID,
     netCopper = math.floor(outcome.netCopper), at = time(), confirmed = true }
-  while #st > 100 do table.remove(st, 1) end
+  while #st > 100 do ns.Archive:Shift("economyOutcomes", st) end
   return true
 end
 

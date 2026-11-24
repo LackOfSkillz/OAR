@@ -123,7 +123,7 @@ function M:Capture(unit, how, role)
 
   local recent = self.db.recent
   recent[#recent + 1] = { npcID = npcID, name = name, how = how, role = role, mapID = e.mapID, x = e.x, y = e.y, t = now }
-  while #recent > RECENT_MAX do table.remove(recent, 1) end
+  while #recent > RECENT_MAX do ns.Archive:Shift("discoveredRecent", recent) end
 
   if isNew or upgraded or newRole then
     self:Info("captured npcID=%d %s how=%s q=%s map=%s %s%s", npcID, name, how, tostring(e.quality),

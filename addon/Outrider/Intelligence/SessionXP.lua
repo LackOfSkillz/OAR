@@ -113,7 +113,7 @@ function M:Start()
     store.current.flags.incomplete = true
     store.history[#store.history + 1] = store.current
   end
-  while #store.history > M.MAX_HISTORY do table.remove(store.history, 1) end
+  while #store.history > M.MAX_HISTORY do ns.Archive:Shift("xpSessions", store.history) end
   local xp = xpstate()
   local id = tostring(wall()) .. "-" .. tostring(ns.session or "session")
   local s = { schema = M.SCHEMA, sessionId = id, startedAt = wall(),
@@ -149,7 +149,7 @@ function M:Checkpoint(final)
   if not s.final then s.flags.incomplete = true end
   local store = self:Store()
   store.history[#store.history + 1] = s
-  while #store.history > M.MAX_HISTORY do table.remove(store.history, 1) end
+  while #store.history > M.MAX_HISTORY do ns.Archive:Shift("xpSessions", store.history) end
   store.current = nil
   self.current, self.lastXP, self.zoneById, self.zoneId = nil, nil, nil, nil
   return true

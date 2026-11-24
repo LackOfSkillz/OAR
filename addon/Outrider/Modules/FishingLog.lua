@@ -208,7 +208,7 @@ end
 function M:Notable(id, name, why)
   local list = self.data.notable
   table.insert(list, 1, { id = id, name = name, why = why, t = now(), char = ns.db.key })
-  for i = M.KEEP_NOTABLE + 1, #list do list[i] = nil end
+  while #list > M.KEEP_NOTABLE do ns.Archive:Put("fishNotable", table.remove(list)) end
 end
 
 -- ------------------------------------------------------------------ numbers
@@ -280,7 +280,7 @@ function M:Archive(s)
   table.insert(self.data.sessions, 1, { start = s.start, secs = s.secs, catches = s.catches, casts = s.casts,
     vendor = st.vendor, auction = st.auction, gained = st.gained, char = ns.db.key,
     top = st.fish[1] and st.fish[1].name or nil })
-  for i = M.KEEP_SESSIONS + 1, #self.data.sessions do self.data.sessions[i] = nil end
+  while #self.data.sessions > M.KEEP_SESSIONS do ns.Archive:Put("fishSessions", table.remove(self.data.sessions)) end
 end
 
 function M:Reset()

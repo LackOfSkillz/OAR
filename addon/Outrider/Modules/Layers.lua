@@ -81,7 +81,7 @@ function M:Remember(id, confidence)
     end
   end
   history[#history + 1] = { id = id, mapID = self.mapID, at = now, confidence = confidence }
-  while #history > self.HISTORY_MAX do table.remove(history, 1) end
+  while #history > self.HISTORY_MAX do ns.Archive:Shift("layerHistory", history) end
 end
 
 function M:History(mapID, limit)

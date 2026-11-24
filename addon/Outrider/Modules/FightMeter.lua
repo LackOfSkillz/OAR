@@ -64,7 +64,7 @@ function M:Capture()
         row.name = type(name) == "string" and name or ("Fight " .. id)
         local history = self:History()
         history[#history + 1] = row
-        while #history > self.MAX_HISTORY do table.remove(history, 1) end
+        while #history > self.MAX_HISTORY do ns.Archive:Shift("fights", history) end
         if self:Settings().toast and ns.Toast then
           ns.Toast:Show({ title = "Last fight: " .. row.name,
             text = string.format("%d damage, %.1f DPS in %.1fs (Blizzard)", row.total, row.dps, row.duration),

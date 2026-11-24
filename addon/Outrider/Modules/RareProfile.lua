@@ -80,7 +80,7 @@ function M:OnSpell(event, unit, _, spellID)
   s.n = s.n + 1
   if s.lastT and now - s.lastT < 120 then -- same encounter
     s.gaps[#s.gaps + 1] = now - s.lastT
-    while #s.gaps > M.MAX_GAPS do table.remove(s.gaps, 1) end
+    while #s.gaps > M.MAX_GAPS do ns.Archive:Shift("rareCastGaps", s.gaps) end
   end
   s.lastT = now
   self:Debug("%s casts %s", tostring(p.name), name)

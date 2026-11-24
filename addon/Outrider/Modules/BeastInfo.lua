@@ -112,7 +112,7 @@ function M:NotePet(unit, family, level, speed, npcID)
   local e = { npcID = npcID, from = npcID and M.TamedFrom(npcID) or "unknown (hunter pet)", family = family, level = type(level) == "number" and level or nil, speed = speed, mapID = mapID,
     display = type(display) == "number" and display or nil, t = time() }
   table.insert(g.petsSeen, e)
-  while #g.petsSeen > 50 do table.remove(g.petsSeen, 1) end
+  while #g.petsSeen > 50 do ns.Archive:Shift("petsSeen", g.petsSeen) end
   self:Info("hunter pet seen: tamed from %s, %s level %s, attacks every %.2fs%s (map %s)", tostring(e.from), tostring(family), tostring(e.level), speed,
     e.display and (", model " .. e.display) or "", tostring(mapID))
 end

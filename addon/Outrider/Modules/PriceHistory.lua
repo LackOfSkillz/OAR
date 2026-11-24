@@ -136,9 +136,9 @@ function M:Seen(id, copper, qty, t)
   end
   if last and t < last[1] then return false end -- clock went backwards: skip
   rows[#rows + 1] = { t, copper, qty }
-  while #rows > M.MAX_ROWS do table.remove(rows, 1) end
+  while #rows > M.MAX_ROWS do ns.Archive:Put("priceHistory", { id = id, row = table.remove(rows, 1) }) end
   local cut = t - M.KEEP_DAYS * M.DAY
-  while rows[1] and rows[1][1] < cut do table.remove(rows, 1) end
+  while rows[1] and rows[1][1] < cut do ns.Archive:Put("priceHistory", { id = id, row = table.remove(rows, 1) }) end
   self.added = (self.added or 0) + 1
   return true
 end
@@ -149,7 +149,10 @@ function M:Prune(now)
   local cut = now - 30 * M.DAY
   for id, rows in pairs(self.store.items) do
     local last = rows[#rows]
-    if not last or (not self:IsTracked(id) and last[1] < cut) then self.store.items[id] = nil end
+    if not last or (not self:IsTracked(id) and last[1] < cut) then
+      if last then ns.Archive:Put("priceHistoryItems", { id = id, rows = rows }) end
+      self.store.items[id] = nil
+    end
   end
 end
 

@@ -119,7 +119,7 @@ function M:MarkNode(kind, mapID, x, y, state)
   end
   local e = { kind = kind, mapID = mapID, x = x, y = y, state = state, t = now }
   list[#list + 1] = e
-  while #list > M.STATE_MAX do table.remove(list, 1) end
+  while #list > M.STATE_MAX do ns.Archive:Shift("nodeState", list) end
   ns.Events:Fire("OTR_POI_ADDED", nil)
   return e
 end

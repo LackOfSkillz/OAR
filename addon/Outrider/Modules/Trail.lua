@@ -58,7 +58,7 @@ function M:Sample()
     end
   end
   list[#list + 1] = { x = math.floor(x * 10000 + 0.5) / 10000, y = math.floor(y * 10000 + 0.5) / 10000, t = time() }
-  while #list > M.MAX do table.remove(list, 1) end
+  while #list > M.MAX do ns.Archive:Shift("trail", list) end
   self.last = { mapID = mapID, x = x, y = y }
   self.added = (self.added or 0) + 1
   if ns.MapPins and ns.MapPins.cache then ns.MapPins.cache[mapID] = nil end

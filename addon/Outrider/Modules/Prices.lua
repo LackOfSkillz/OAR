@@ -41,7 +41,7 @@ function M:Record(itemID, copper, qty)
   else
     h[#h + 1] = { d, copper }
   end
-  while #h > 0 and h[1][1] < d - self.DAYS do table.remove(h, 1) end
+  while #h > 0 and h[1][1] < d - self.DAYS do ns.Archive:Put("prices", { id = itemID, row = table.remove(h, 1) }) end
   self.seen = (self.seen or 0) + 1
 end
 

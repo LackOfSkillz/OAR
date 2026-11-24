@@ -64,7 +64,7 @@ function M:Note(unit)
     e = { name = C.Readable(C.Call("UnitName", unit)), npcID = npcID, guid = guid, seen = time(), spot = spot,
       deadAtFirst = dead or nil }
     list[#list + 1] = e
-    while #list > M.MAX do table.remove(list, 1) end
+    while #list > M.MAX do ns.Archive:Shift("spawnLog", list) end
     self.byGuid[guid] = e
     self:Debug("spawn log %s: %s first seen%s", tostring(spot), tostring(e.name), dead and " (already dead)" or "")
   end
