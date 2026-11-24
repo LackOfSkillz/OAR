@@ -41,7 +41,7 @@ function M:Starters()
   local npc = rawget(_G, "Outrider_DataNPC")
   for mapID, rows in pairs(type(npc) == "table" and npc.maps or {}) do
     for _, r in ipairs(rows) do
-      for _, q in ipairs(type(r[8]) == "table" and r[8] or {}) do
+      for _, q in ipairs(ns.KeepTable(r[8], "QuestChains:r[8]") or {}) do
         local id = q[1]
         if id and not out[id] then out[id] = { id = r[1], name = r[5], mapID = mapID, x = r[3], y = r[4], faction = r[7] } end
       end

@@ -76,8 +76,8 @@ function DB:Init()
   self.safeMode = nil
   local db, why = self:Migrate(Outrider_DB)
   if db then Outrider_DB = db else db = self:EnterSafeMode(why) end
-  db.global = type(db.global) == "table" and db.global or {}
-  db.chars = type(db.chars) == "table" and db.chars or {}
+  db.global = ns.KeepTable(db.global, "DB:db.global") or {}
+  db.chars = ns.KeepTable(db.chars, "DB:db.chars") or {}
   ns.ApplyDefaults(db.global, self.globalDefaults)
 
   -- SavedVariables round trip (Phase 0, P0-07): if we can see what the last
@@ -87,7 +87,7 @@ function DB:Init()
 
   local key = ns.CharKey()
   self.freshChar = db.chars[key] == nil
-  db.chars[key] = type(db.chars[key]) == "table" and db.chars[key] or {}
+  db.chars[key] = ns.KeepTable(db.chars[key], "DB:db.chars[key]") or {}
   local char = db.chars[key]
   ns.ApplyDefaults(char, self.charDefaults)
   local meta = char.meta
@@ -125,7 +125,7 @@ end
 
 function DB:ModuleSettings(name)
   local m = self:ModuleState(name)
-  m.settings = type(m.settings) == "table" and m.settings or {}
+  m.settings = ns.KeepTable(m.settings, "DB:m.settings") or {}
   ns.ApplyDefaults(m.settings, self.moduleDefaults[name])
   return m.settings
 end

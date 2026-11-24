@@ -88,7 +88,7 @@ end
 -- The AH's GetOwnedAuctions may be absent or restricted; never guess status.
 function M:Owned()
   local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
-  if type(list) ~= "table" then return {} end
+  if type(list) ~= "table" then ns.KeepBad(list, "AuctionHelper:list") return {} end
   local out = {}
   for _, a in ipairs(list) do
     local id = a.itemKey and C.Readable(a.itemKey.itemID)
@@ -102,7 +102,7 @@ function M:Owned()
 end
 
 function M:SalesLedger()
-  ns.db.char.auctionSales = type(ns.db.char.auctionSales) == "table" and ns.db.char.auctionSales or {}
+  ns.db.char.auctionSales = ns.KeepTable(ns.db.char.auctionSales, "AuctionHelper:ns.db.char.auctionSales") or {}
   return ns.db.char.auctionSales
 end
 
@@ -115,7 +115,7 @@ function M:RecordOwned()
         local ledger = self:SalesLedger()
         ledger[#ledger + 1] = { auctionID = id, itemID = a.itemID, amount = a.amount,
           t = time(), result = "disappeared (sale/expiry/cancel unverified)" }
-        while #ledger > 100 do ns.Archive:Shift("salesLedger", ledger) end
+        while #ledger > 100 and ns.Archive:Shift("salesLedger", ledger, { path = "char.auctionSales", scope = "char" }) do end
       end
     end
   end
@@ -181,7 +181,7 @@ function M:Undercut()
   -- Some Forever client revisions provide prices but no auction IDs.
   -- Keep those in the read-only undercut list; cancel is disabled without ID.
   local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
-  for _, a in ipairs(type(list) == "table" and list or {}) do
+  for _, a in ipairs(ns.KeepTable(list, "AuctionHelper:list") or {}) do
     local id = a.itemKey and C.Readable(a.itemKey.itemID)
     local mine = tonumber(C.Readable(a.buyoutAmount))
     local low = id and ns.Prices:History(id)

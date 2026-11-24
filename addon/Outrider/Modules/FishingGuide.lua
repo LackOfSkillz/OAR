@@ -35,14 +35,14 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.fishStats = type(g.fishStats) == "table" and g.fishStats or { casts = 0, catches = 0, escapes = 0, fish = {} }
+  g.fishStats = ns.KeepTable(g.fishStats, "FishingGuide:g.fishStats") or { casts = 0, catches = 0, escapes = 0, fish = {} }
   self.stats = g.fishStats
   self.stats.fish = self.stats.fish or {}
 end
 
 function M:Char()
   local c = ns.db.char
-  c.fishSkill = type(c.fishSkill) == "table" and c.fishSkill or { since = 0, per = {} }
+  c.fishSkill = ns.KeepTable(c.fishSkill, "FishingGuide:c.fishSkill") or { since = 0, per = {} }
   return c.fishSkill
 end
 
@@ -83,7 +83,7 @@ function M:OnSkill(_, msg)
   local s = self:Char()
   if (s.since or 0) > 0 then
     table.insert(s.per, 1, s.since)
-    for i = M.KEEP_POINTS + 1, #s.per do s.per[i] = nil end
+    while #s.per > M.KEEP_POINTS and ns.Archive:Pop("fishCatchesPerPoint", s.per, { path = "char.fishSkill.per", scope = "char" }) do end
   end
   s.since = 0
 end

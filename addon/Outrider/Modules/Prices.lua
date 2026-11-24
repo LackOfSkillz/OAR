@@ -21,7 +21,7 @@ M.DAYS = 14
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.prices = type(g.prices) == "table" and g.prices or {}
+  g.prices = ns.KeepTable(g.prices, "Prices:g.prices") or {}
   self.db = g.prices
 end
 
@@ -41,7 +41,7 @@ function M:Record(itemID, copper, qty)
   else
     h[#h + 1] = { d, copper }
   end
-  while #h > 0 and h[1][1] < d - self.DAYS do ns.Archive:Put("prices", { id = itemID, row = table.remove(h, 1) }) end
+  while #h > 0 and h[1][1] < d - self.DAYS and ns.Archive:Shift("prices", h, { path = "global.prices[itemID]", keys = { itemID = itemID } }) do end
   self.seen = (self.seen or 0) + 1
 end
 
@@ -78,11 +78,11 @@ function M:Statistics(itemID)
 end
 
 function M:ShoppingLists()
-  ns.db.char.shoppingLists = type(ns.db.char.shoppingLists) == "table" and ns.db.char.shoppingLists or {}
+  ns.db.char.shoppingLists = ns.KeepTable(ns.db.char.shoppingLists, "Prices:ns.db.char.shoppingLists") or {}
   return ns.db.char.shoppingLists
 end
 function M:ShoppingGroups()
-  ns.db.char.shoppingGroups = type(ns.db.char.shoppingGroups) == "table" and ns.db.char.shoppingGroups or {}
+  ns.db.char.shoppingGroups = ns.KeepTable(ns.db.char.shoppingGroups, "Prices:ns.db.char.shoppingGroups") or {}
   return ns.db.char.shoppingGroups
 end
 function M:ShoppingAdd(group, itemID, quantity, target)

@@ -1,53 +1,147 @@
 -- Core/Archive.lua
--- Where collected data goes instead of being deleted (owner retention decision
--- 2026-11-24, docs/blueprint/OWNER_DIRECTIVE_DATA_PRESERVATION.md). Stores that
--- keep a working size (prices, sightings, trails, the quest diary, fishing
--- sessions and others) move their oldest rows here; nothing collected on
--- purpose is thrown away. Logs and debug lists keep their own caps.
---   ns.Archive:Put(key, row)        keep one row
---   ns.Archive:Shift(key, list)     move list[1] here, return it
---   ns.Archive:Rows(key)            the archived rows for this character's key
--- Rows land in ns.db.global.archive["<key>@<character>"], oldest first, unchanged.
+-- Where collected data goes instead of being deleted (owner data preservation
+-- override and retention decision 2026-11-24,
+-- docs/blueprint/OWNER_DIRECTIVE_DATA_PRESERVATION.md; review OI01-R01..R04).
+--
+-- Contract (v2):
+--   ns.Archive:Move(dataset, list, index, ctx) -> ok, err
+--       copy list[index] into the archive, confirm the write, and only then
+--       remove it from the working list. On any failure the row stays where it
+--       was and ok is false, so a `while #list > CAP and Archive:Shift(...)`
+--       loop simply stops: no data is lost and nothing loops forever.
+--   ns.Archive:Shift(dataset, list, ctx)  = Move(dataset, list, 1, ctx)   (oldest)
+--   ns.Archive:Pop(dataset, list, ctx)    = Move(dataset, list, #list, ctx)
+--   ns.Archive:Put(dataset, row, ctx)     archive a row that is leaving by
+--       another route (the caller removes it only when ok is true)
+--   ns.Archive:Rows(dataset, char)        archived entries, oldest first (char filter optional)
+--   ns.Archive:Restore(dataset, fn)       calls fn(entry) for each entry, so a
+--       module can put rows back into its own store; the archive keeps its copy
+--   ctx = { path = "<logical saved-data path>", keys = { npcID = 1, ... },
+--           scope = "account" | "char" }
+--
+-- An entry is { id, path, keys, scope, char, at, row }. `row` is the original table,
+-- untouched; path + keys say exactly where it came from, so it can be put back.
+-- Storage: Outrider_DB.global.archive = { v = 2, sets = { [dataset] = { entry, ... } } }.
+-- A saved value of the wrong type is never overwritten: it moves, unchanged, to
+-- Outrider_DB.global.archiveDamaged with the path it was found at.
 
 local _, ns = ...
-local Archive = {}
+local Archive = { V = 2, warned = {} }
 ns.Archive = Archive
 
-function Archive:Key(key)
-  return tostring(key) .. "@" .. tostring(ns.db and ns.db.key or "?")
+local function g() return ns.db and ns.db.global end
+
+-- keep a damaged value, unchanged, with where it was found
+function Archive:KeepDamaged(path, value)
+  local root = g()
+  if not root then return false end
+  -- the same damaged value seen again this session is already kept
+  local sig = tostring(path) .. "|" .. type(value) .. "|" .. tostring(value)
+  Archive.keptThisSession = Archive.keptThisSession or {}
+  if type(value) ~= "table" and Archive.keptThisSession[sig] then return true end
+  Archive.keptThisSession[sig] = true
+  local d = root.archiveDamaged
+  if d ~= nil and type(d) ~= "table" then
+    d = { { path = "archiveDamaged", value = d, at = time() } }
+  end
+  d = d or {}
+  root.archiveDamaged = d
+  d[#d + 1] = { path = path, value = value, at = time() }
+  return true
 end
 
-function Archive:Store(key)
-  local g = ns.db and ns.db.global
-  if not g then return nil end
-  if type(g.archive) ~= "table" then g.archive = {} end
-  local k = self:Key(key)
-  local list = g.archive[k]
-  if type(list) ~= "table" then list = {} g.archive[k] = list end
-  return list
+-- values found damaged before the saved data was ready (ns.KeepBad, Init.lua)
+function Archive:FlushPending()
+  local list = ns.damagedPending
+  if type(list) ~= "table" or #list == 0 or not g() then return 0 end
+  ns.damagedPending = {}
+  for _, d in ipairs(list) do self:KeepDamaged(d.path, d.value) end
+  return #list
 end
 
-function Archive:Put(key, row)
-  if row == nil then return end
-  local list = self:Store(key)
-  if list then list[#list + 1] = row end
+-- the v2 sets table; an older or damaged archive is kept aside, never dropped
+function Archive:Sets()
+  local root = g()
+  if not root then return nil, "no saved data yet" end
+  local a = root.archive
+  if a ~= nil and (type(a) ~= "table" or a.v ~= Archive.V or type(a.sets) ~= "table") then
+    self:KeepDamaged("archive", a)
+    a = nil
+  end
+  if not a then
+    a = { v = Archive.V, sets = {} }
+    root.archive = a
+  end
+  return a.sets
 end
 
-function Archive:Shift(key, list)
-  local row = table.remove(list, 1)
-  self:Put(key, row)
-  return row
+local function report(dataset, err)
+  if Archive.warned[dataset] then return end
+  Archive.warned[dataset] = true
+  if ns.Log then ns.Log:Warn("archive", "%s: row kept in place, archive write failed (%s)", tostring(dataset), tostring(err)) end
 end
 
-function Archive:Rows(key)
-  local g = ns.db and ns.db.global
-  return g and type(g.archive) == "table" and g.archive[self:Key(key)] or {}
+function Archive:Put(dataset, row, ctx)
+  if row == nil then return false, "nothing to archive" end
+  if type(dataset) ~= "string" or dataset == "" then return false, "no dataset name" end
+  local sets, err = self:Sets()
+  if not sets then return false, err end
+  local list = sets[dataset]
+  if list ~= nil and type(list) ~= "table" then
+    self:KeepDamaged("archive.sets." .. dataset, list)
+    list = nil
+  end
+  if not list then list = {} sets[dataset] = list end
+  ctx = type(ctx) == "table" and ctx or {}
+  -- a stable id per entry (session + counter) so a later lossless off-load can
+  -- confirm exactly which entries it copied (docs/ARCHIVE_GROWTH.md)
+  Archive.seq = (Archive.seq or 0) + 1
+  local entry = { id = string.format("%s:%d", tostring(ns.session or "?"), Archive.seq), path = ctx.path, keys = ctx.keys,
+    scope = ctx.scope or "account", char = ns.db and ns.db.key, at = time(), row = row }
+  local n = #list
+  list[n + 1] = entry
+  if list[n + 1] ~= entry then return false, "write not confirmed" end
+  return true
 end
 
--- total archived rows, for the perf report
+function Archive:Move(dataset, list, index, ctx)
+  if type(list) ~= "table" then return false, "not a list" end
+  index = index or 1
+  local row = list[index]
+  if row == nil then return false, "no row at " .. tostring(index) end
+  local okCall, ok, err = pcall(self.Put, self, dataset, row, ctx)
+  if not okCall then ok, err = false, ok end
+  if not ok then report(dataset, err) return false, err end
+  table.remove(list, index)
+  return true
+end
+
+function Archive:Shift(dataset, list, ctx) return self:Move(dataset, list, 1, ctx) end
+function Archive:Pop(dataset, list, ctx) return self:Move(dataset, list, type(list) == "table" and #list or 0, ctx) end
+
+function Archive:Rows(dataset, char)
+  local sets = self:Sets()
+  local list = sets and sets[dataset]
+  if type(list) ~= "table" then return {} end
+  if not char then return list end
+  local out = {}
+  for _, e in ipairs(list) do if e.char == char then out[#out + 1] = e end end
+  return out
+end
+
+function Archive:Restore(dataset, fn)
+  local n = 0
+  for _, e in ipairs(self:Rows(dataset)) do
+    local ok = pcall(fn, e)
+    if ok then n = n + 1 end
+  end
+  return n
+end
+
+-- total archived entries, for the perf report
 function Archive:Count()
   local n = 0
-  local g = ns.db and ns.db.global
-  for _, list in pairs(g and type(g.archive) == "table" and g.archive or {}) do n = n + #list end
+  local sets = self:Sets()
+  for _, list in pairs(sets or {}) do if type(list) == "table" then n = n + #list end end
   return n
 end

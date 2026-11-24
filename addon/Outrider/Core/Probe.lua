@@ -223,7 +223,7 @@ function Probe:RecordUnits(why)
   units.at = time()
   units.why = why
   local g = ns.db.global
-  g.probeUnits = type(g.probeUnits) == "table" and g.probeUnits or {}
+  g.probeUnits = ns.KeepTable(g.probeUnits, "Probe:g.probeUnits") or {}
   table.insert(g.probeUnits, units)
   while #g.probeUnits > 6 do table.remove(g.probeUnits, 1) end
   local n = 0
@@ -284,7 +284,7 @@ end
 -- Read only; nothing here changes the meter.
 function Probe:DamageMeter(why)
   local dm = rawget(_G, "C_DamageMeter")
-  if type(dm) ~= "table" then ns.Log:Info("probe", "damage meter (%s): no C_DamageMeter", tostring(why)) return end
+  if type(dm) ~= "table" then ns.KeepBad(dm, "Probe:dm") ns.Log:Info("probe", "damage meter (%s): no C_DamageMeter", tostring(why)) return end
   local enum = rawget(_G, "Enum") or {}
   local function try(label, fn, ...)
     if type(fn) ~= "function" then ns.Log:Info("probe", "dm %s: missing", label) return end

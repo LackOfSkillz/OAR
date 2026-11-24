@@ -31,8 +31,8 @@ M.HISTORY, M.MAX_LISTS, M.MAX_TERMS, M.WAIT = 15, 40, 100, 4
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.ahSearchHistory = type(g.ahSearchHistory) == "table" and g.ahSearchHistory or {}
-  g.ahLists = type(g.ahLists) == "table" and g.ahLists or {}
+  g.ahSearchHistory = ns.KeepTable(g.ahSearchHistory, "AuctionSearch:g.ahSearchHistory") or {}
+  g.ahLists = ns.KeepTable(g.ahLists, "AuctionSearch:g.ahLists") or {}
 end
 
 local function money(c) return ns.Prices.Money(c) end
@@ -125,7 +125,7 @@ function M:Remember(raw)
   local h = ns.db.global.ahSearchHistory
   for i = #h, 1, -1 do if h[i]:lower() == raw:lower() then table.remove(h, i) end end
   table.insert(h, 1, raw)
-  while #h > M.HISTORY do table.remove(h) end
+  while #h > M.HISTORY and ns.Archive:Pop("ahSearchHistory", h, { path = "global.ahSearchHistory" }) do end
 end
 
 -- Search one or several terms, one after another as the server allows.

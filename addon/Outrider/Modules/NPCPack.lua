@@ -37,7 +37,7 @@ function M:OnEnable()
     if not mod.compacted then
       mod.compacted = true
       local db = rawget(_G, "Outrider_DB")
-      for _, ch in pairs(type(db) == "table" and type(db.chars) == "table" and db.chars or {}) do
+      for _, ch in pairs(type(db) == "table" and ns.KeepTable(db.chars, "NPCPack:db.chars") or {}) do
         local zq = type(ch) == "table" and ch.zoneQuests
         if type(zq) == "table" then
           for k, v in pairs(zq) do zq[k] = M.Compact(v) end
@@ -183,7 +183,7 @@ end
 -- { {id, name, level, diff} } quests this giver offers you now, best first
 function M:QuestsFor(p)
   local out = {}
-  if type(p.quests) ~= "table" then return out end
+  if type(p.quests) ~= "table" then ns.KeepBad(p.quests, "NPCPack:p.quests") return out end
   local level = C.Call("UnitLevel", "player") or 1
   local faction = C.Call("UnitFactionGroup", "player")
   local _, _, classID = C.Call("UnitClass", "player")
@@ -253,11 +253,11 @@ function M:ZoneReport(mapID, nosave)
   local _, _, classID = C.Call("UnitClass", "player")
   local names, seen = {}, {}
   for _, r in ipairs(rows) do
-    for _, q in ipairs(type(r[8]) == "table" and r[8] or {}) do names[q[1]] = q[2] end
+    for _, q in ipairs(ns.KeepTable(r[8], "NPCPack:r[8]") or {}) do names[q[1]] = q[2] end
   end
   local rep = { t = time(), level = level, done = 0, active = {}, available = {}, locked = {} }
   for _, r in ipairs(rows) do
-    for _, q in ipairs(type(r[8]) == "table" and r[8] or {}) do
+    for _, q in ipairs(ns.KeepTable(r[8], "NPCPack:r[8]") or {}) do
       local qid, name, req, qlvl, qfac, cls, preAny, preAll = q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8]
       local mine = (qfac == nil or qfac == faction) and (not cls or cls == 0 or not classID or hasBit(cls, classID))
         and M.RaceOK(q[9])
@@ -290,7 +290,7 @@ function M:ZoneReport(mapID, nosave)
   end
   table.sort(rep.available, function(a, b) return a.level < b.level end)
   if nosave then return rep end
-  ns.db.char.zoneQuests = type(ns.db.char.zoneQuests) == "table" and ns.db.char.zoneQuests or {}
+  ns.db.char.zoneQuests = ns.KeepTable(ns.db.char.zoneQuests, "NPCPack:ns.db.char.zoneQuests") or {}
   ns.db.char.zoneQuests[mapID] = M.Compact(rep)
   M.Prune(ns.db.char.zoneQuests)
   return rep

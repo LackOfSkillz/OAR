@@ -47,7 +47,7 @@ local function readable(v) return C.Readable(v) end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.questHistory = type(g.questHistory) == "table" and g.questHistory or {}
+  g.questHistory = ns.KeepTable(g.questHistory, "QuestInfo:g.questHistory") or {}
   self.warned, self.turnedIn = {}, {}
 end
 
@@ -201,7 +201,7 @@ end
 function M:History()
   local h = ns.db.global.questHistory
   local key = ns.db.key
-  h[key] = type(h[key]) == "table" and h[key] or {}
+  h[key] = ns.KeepTable(h[key], "QuestInfo:h[key]") or {}
   return h[key]
 end
 
@@ -209,7 +209,7 @@ function M:Record(questID, what)
   local list = self:History()
   list[#list + 1] = { t = time(), id = questID, what = what, lvl = readable(C.Call("UnitLevel", "player")),
     zone = readable(C.Call("GetZoneText")), name = self:Name(questID) }
-  while #list > M.HISTORY_CAP do ns.Archive:Shift("questDiary", list) end
+  while #list > M.HISTORY_CAP and ns.Archive:Shift("questDiary", list, { path = "global.questHistory[character]", keys = { character = ns.db.key }, scope = "char" }) do end
 end
 
 function M:OnTurnedIn(_, questID)

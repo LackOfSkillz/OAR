@@ -29,7 +29,7 @@ M.EVERY = 2         -- seconds between samples while moving
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.trails = type(g.trails) == "table" and g.trails or {}
+  g.trails = ns.KeepTable(g.trails, "Trail:g.trails") or {}
   self.db = g.trails
 end
 
@@ -47,7 +47,7 @@ function M:Sample()
   local mapID, x, y = C.PlayerPosition("player")
   if not (mapID and x and y) or (x == 0 and y == 0) then return false end
   local list = self.db[mapID]
-  if type(list) ~= "table" then list = {} self.db[mapID] = list end
+  if type(list) ~= "table" then ns.KeepBad(list, "Trail:list") list = {} self.db[mapID] = list end
   local here = { x = x, y = y }
   local last = self.last
   if last and last.mapID == mapID and yards(mapID, last, here) < M.SPACING then return false end
@@ -58,7 +58,7 @@ function M:Sample()
     end
   end
   list[#list + 1] = { x = math.floor(x * 10000 + 0.5) / 10000, y = math.floor(y * 10000 + 0.5) / 10000, t = time() }
-  while #list > M.MAX do ns.Archive:Shift("trail", list) end
+  while #list > M.MAX and ns.Archive:Shift("trail", list, { path = "global.trails[mapID]", keys = { mapID = mapID } }) do end
   self.last = { mapID = mapID, x = x, y = y }
   self.added = (self.added or 0) + 1
   if ns.MapPins and ns.MapPins.cache then ns.MapPins.cache[mapID] = nil end

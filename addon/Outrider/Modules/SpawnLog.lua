@@ -22,7 +22,7 @@ M.MAX = 200
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.spawnLogs = type(g.spawnLogs) == "table" and g.spawnLogs or {}
+  g.spawnLogs = ns.KeepTable(g.spawnLogs, "SpawnLog:g.spawnLogs") or {}
   self.byGuid = {}
 end
 
@@ -64,7 +64,7 @@ function M:Note(unit)
     e = { name = C.Readable(C.Call("UnitName", unit)), npcID = npcID, guid = guid, seen = time(), spot = spot,
       deadAtFirst = dead or nil }
     list[#list + 1] = e
-    while #list > M.MAX do ns.Archive:Shift("spawnLog", list) end
+    while #list > M.MAX and ns.Archive:Shift("spawnLog", list, { path = "global.spawnLogs[spot]", keys = { spot = spot } }) do end
     self.byGuid[guid] = e
     self:Debug("spawn log %s: %s first seen%s", tostring(spot), tostring(e.name), dead and " (already dead)" or "")
   end

@@ -45,7 +45,7 @@ function Errors:Record(where, err, trace)
 end
 
 function Errors:Save()
-  if type(Outrider_Log) ~= "table" then return end
+  if type(Outrider_Log) ~= "table" then ns.KeepBad(Outrider_Log, "Errors:Outrider_Log") return end
   Outrider_Log.errors = self.list
 end
 

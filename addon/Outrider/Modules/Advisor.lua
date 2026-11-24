@@ -77,7 +77,7 @@ end
 
 function M:IsDone(candidateId)
   if not candidateId then return false end
-  for _, f in ipairs(type(ns.db.char.adviceFeedback) == "table" and ns.db.char.adviceFeedback or {}) do
+  for _, f in ipairs(ns.KeepTable(ns.db.char.adviceFeedback, "Advisor:ns.db.char.adviceFeedback") or {}) do
     if f.id == candidateId and f.v == "done" then return true end
   end
   return false
@@ -115,9 +115,9 @@ M.FEEDBACK_KEEP = 30
 function M:Feedback(item, verdict)
   if type(item) ~= "table" or not item.candidateId then return false, "click a suggestion first" end
   local list = ns.db.char.adviceFeedback
-  if type(list) ~= "table" then list = {} ns.db.char.adviceFeedback = list end
+  if type(list) ~= "table" then ns.KeepBad(list, "Advisor:list") list = {} ns.db.char.adviceFeedback = list end
   list[#list + 1] = { id = item.candidateId, v = verdict, t = time() }
-  while #list > M.FEEDBACK_KEEP do ns.Archive:Shift("adviceFeedback", list) end
+  while #list > M.FEEDBACK_KEEP and ns.Archive:Shift("adviceFeedback", list, { path = "char.adviceFeedback", scope = "char" }) do end
   if (verdict == "wrong" or verdict == "done") and ns.WhatNow then ns.WhatNow:Skip({ key = item.candidateId }) end
   self:Info("advice feedback %s: %s", tostring(item.candidateId), verdict)
   return true, verdict == "useful" and "Noted: useful." or (verdict == "done" and "Marked done; hidden from What now? for a day."

@@ -60,7 +60,7 @@ end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.pois = type(g.pois) == "table" and g.pois or {}
+  g.pois = ns.KeepTable(g.pois, "POICapture:g.pois") or {}
   self.db = g.pois
 end
 

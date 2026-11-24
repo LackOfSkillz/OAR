@@ -14,7 +14,7 @@ M.MAX_NOTES, M.MAX_EVENTS = 60, 30
 
 function M:Notes()
   local s = self:Settings()
-  s.notes = type(s.notes) == "table" and s.notes or {}
+  s.notes = ns.KeepTable(s.notes, "BossTimeline:s.notes") or {}
   return s.notes
 end
 

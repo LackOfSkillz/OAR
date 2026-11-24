@@ -71,7 +71,7 @@ end
 -- advice answers; the automatic logout snapshot refreshes the data but keeps
 -- askedAt, so advice stays valid across /reload until the next /ride ask.
 function Snap:Collect(asked)
-  Outrider_Snapshots = type(Outrider_Snapshots) == "table" and Outrider_Snapshots or {}
+  Outrider_Snapshots = ns.KeepTable(Outrider_Snapshots, "Snapshot:Outrider_Snapshots") or {}
   local meta = ns.db.char.meta
   local prev = Outrider_Snapshots[ns.db.key]
   local now = time()

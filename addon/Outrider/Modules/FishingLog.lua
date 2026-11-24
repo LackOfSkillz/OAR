@@ -43,14 +43,14 @@ local function now() return time() end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.fishLog = type(g.fishLog) == "table" and g.fishLog or {}
+  g.fishLog = ns.KeepTable(g.fishLog, "FishingLog:g.fishLog") or {}
   local d = g.fishLog
-  d.sessions = type(d.sessions) == "table" and d.sessions or {}
-  d.best = type(d.best) == "table" and d.best or {}
-  d.spots = type(d.spots) == "table" and d.spots or {}
-  d.first = type(d.first) == "table" and d.first or {}
-  d.notable = type(d.notable) == "table" and d.notable or {}
-  d.wanted = type(d.wanted) == "table" and d.wanted or {}
+  d.sessions = ns.KeepTable(d.sessions, "FishingLog:d.sessions") or {}
+  d.best = ns.KeepTable(d.best, "FishingLog:d.best") or {}
+  d.spots = ns.KeepTable(d.spots, "FishingLog:d.spots") or {}
+  d.first = ns.KeepTable(d.first, "FishingLog:d.first") or {}
+  d.notable = ns.KeepTable(d.notable, "FishingLog:d.notable") or {}
+  d.wanted = ns.KeepTable(d.wanted, "FishingLog:d.wanted") or {}
   -- fish caught before this module existed aren't "new" (FishingGuide's lifetime list)
   if not d.seeded then
     for id in pairs(g.fishStats and g.fishStats.fish or {}) do d.first[id] = d.first[id] or { t = 0 } end
@@ -208,13 +208,13 @@ end
 function M:Notable(id, name, why)
   local list = self.data.notable
   table.insert(list, 1, { id = id, name = name, why = why, t = now(), char = ns.db.key })
-  while #list > M.KEEP_NOTABLE do ns.Archive:Put("fishNotable", table.remove(list)) end
+  while #list > M.KEEP_NOTABLE and ns.Archive:Pop("fishNotable", list, { path = "global.fishLog.notable" }) do end
 end
 
 -- ------------------------------------------------------------------ numbers
 -- Everything the session page shows, worked out from the raw counts.
 function M.Stats(s)
-  if type(s) ~= "table" then return nil end
+  if type(s) ~= "table" then ns.KeepBad(s, "FishingLog:s") return nil end
   local out = { catches = s.catches, casts = s.casts, escapes = s.escapes, secs = s.secs, vendor = 0, auction = 0, fish = {} }
   for id, f in pairs(s.fish or {}) do
     local v, a = M.Prices(id)
@@ -280,7 +280,7 @@ function M:Archive(s)
   table.insert(self.data.sessions, 1, { start = s.start, secs = s.secs, catches = s.catches, casts = s.casts,
     vendor = st.vendor, auction = st.auction, gained = st.gained, char = ns.db.key,
     top = st.fish[1] and st.fish[1].name or nil })
-  while #self.data.sessions > M.KEEP_SESSIONS do ns.Archive:Put("fishSessions", table.remove(self.data.sessions)) end
+  while #self.data.sessions > M.KEEP_SESSIONS and ns.Archive:Pop("fishSessions", self.data.sessions, { path = "global.fishLog.sessions" }) do end
 end
 
 function M:Reset()

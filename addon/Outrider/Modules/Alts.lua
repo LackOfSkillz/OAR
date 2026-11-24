@@ -30,9 +30,9 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.alts = type(g.alts) == "table" and g.alts or {}
-  g.runs = type(g.runs) == "table" and g.runs or {}
-  g.instances = type(g.instances) == "table" and g.instances or {} -- { {t, map, name, char} }
+  g.alts = ns.KeepTable(g.alts, "Alts:g.alts") or {}
+  g.runs = ns.KeepTable(g.runs, "Alts:g.runs") or {}
+  g.instances = ns.KeepTable(g.instances, "Alts:g.instances") or {} -- { {t, map, name, char} }
   self.alts, self.runs, self.inst = g.alts, g.runs, g.instances
 end
 
@@ -181,7 +181,9 @@ end
 -- ------------------------------------------------------------------ lockouts
 function M:Prune()
   local cut, keep = time() - 86400, {}
-  for _, e in ipairs(self.inst) do if (e.left or e.t) >= cut then keep[#keep + 1] = e end end
+  for _, e in ipairs(self.inst) do
+    if (e.left or e.t) >= cut or not ns.Archive:Put("instances", e, { path = "global.instances" }) then keep[#keep + 1] = e end
+  end
   for i = #self.inst, 1, -1 do self.inst[i] = nil end
   for i, e in ipairs(keep) do self.inst[i] = e end
 end
@@ -244,7 +246,7 @@ function M:EndRun(now)
   if r.entry and r.entry.t == r.start then r.entry.left = r.stop end
   if r.stop - r.start < 60 then return end -- a peek inside, not a run
   table.insert(self.runs, 1, r)
-  for i = M.KEEP_RUNS + 1, #self.runs do self.runs[i] = nil end
+  while #self.runs > M.KEEP_RUNS and ns.Archive:Pop("dungeonRuns", self.runs, { path = "global.runs" }) do end
   self:Info("run done: %s %d min, %d xp, %d kills, %d copper", tostring(r.name), math.floor((r.stop - r.start) / 60), r.xp, r.kills, r.gold)
 end
 

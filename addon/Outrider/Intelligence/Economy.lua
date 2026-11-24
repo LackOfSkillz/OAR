@@ -73,11 +73,11 @@ function E.RecordOutcome(char, outcome)
   if not money(outcome.itemID) or outcome.itemID == 0 or
      type(outcome.netCopper) ~= "number" or outcome.netCopper ~= outcome.netCopper or
      math.abs(outcome.netCopper) >= 1000000000000 then return false end
-  local st = type(char.intelEconomyOutcomes) == "table" and char.intelEconomyOutcomes or {}
+  local st = ns.KeepTable(char.intelEconomyOutcomes, "Economy:char.intelEconomyOutcomes") or {}
   char.intelEconomyOutcomes = st
   st[#st + 1] = { kind = outcome.kind, itemID = outcome.itemID,
     netCopper = math.floor(outcome.netCopper), at = time(), confirmed = true }
-  while #st > 100 do ns.Archive:Shift("economyOutcomes", st) end
+  while #st > 100 and ns.Archive:Shift("economyOutcomes", st, { path = "char.intelEconomyOutcomes", scope = "char" }) do end
   return true
 end
 

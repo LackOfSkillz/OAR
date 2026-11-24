@@ -1,0 +1,3094 @@
+{
+ "version": 1,
+ "generated": "2026-11-24",
+ "directive": "docs/blueprint/OWNER_DIRECTIVE_DATA_PRESERVATION.md",
+ "unauthorized_data_loss": 0,
+ "archive": "Core/Archive.lua v2: copy, confirm, then remove; entry {id, path, keys, scope, char, at, row}; damaged values to global.archiveDamaged",
+ "datasets": [
+  {
+   "dataset": "prices",
+   "saved_path": "global.prices[itemID]",
+   "retention_mechanism": "14-day daily lows",
+   "archive_destination": "global.archive.sets.prices",
+   "tests": [
+    "tests/spec/archive_spec.lua :: prices: daily lows past 14 days, keyed by itemID",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "priceHistory",
+   "saved_path": "global.priceLog.items[itemID]",
+   "retention_mechanism": "120 days / 720 rows",
+   "archive_destination": "global.archive.sets.priceHistory",
+   "tests": [
+    "tests/spec/archive_spec.lua :: price history: rows past the cap and the age limit, and whole untracked items",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "priceHistoryItems",
+   "saved_path": "global.priceLog.items[itemID]",
+   "retention_mechanism": "untracked item pruned after 30 days",
+   "archive_destination": "global.archive.sets.priceHistoryItems",
+   "tests": [
+    "tests/spec/archive_spec.lua :: price history: rows past the cap and the age limit, and whole untracked items",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "priceWatch",
+   "saved_path": "global.priceLog.watch[itemID]",
+   "retention_mechanism": "watch list full (300)",
+   "archive_destination": "global.archive.sets.priceWatch",
+   "tests": [
+    "tests/spec/archive_spec.lua :: price watch eviction and a whole whisper partner are archived before removal",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "sightings",
+   "saved_path": "global.sightings[npcID]",
+   "retention_mechanism": "CAP per rare",
+   "archive_destination": "global.archive.sets.sightings",
+   "tests": [
+    "tests/spec/archive_spec.lua :: sightings and respawn observations, keyed by npcID",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "sightingObservations",
+   "saved_path": "global.respawnObs[npcID]",
+   "retention_mechanism": "OBS_CAP per rare",
+   "archive_destination": "global.archive.sets.sightingObservations",
+   "tests": [
+    "tests/spec/archive_spec.lua :: sightings and respawn observations, keyed by npcID",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "questDiary",
+   "saved_path": "global.questHistory[character]",
+   "retention_mechanism": "HISTORY_CAP",
+   "archive_destination": "global.archive.sets.questDiary",
+   "tests": [
+    "tests/spec/archive_spec.lua :: quest diary, per character",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "chat",
+   "saved_path": "global.chatArchive",
+   "retention_mechanism": "ARCHIVE_MAX (opt-in)",
+   "archive_destination": "global.archive.sets.chat",
+   "tests": [
+    "tests/spec/archive_spec.lua :: chat archive and per-person whispers (only when the player turned them on)",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "chatByPerson",
+   "saved_path": "global.whisperArchive[who]",
+   "retention_mechanism": "PER_PERSON_MAX; oldest partner past 30",
+   "archive_destination": "global.archive.sets.chatByPerson",
+   "tests": [
+    "tests/spec/archive_spec.lua :: price watch eviction and a whole whisper partner are archived before removal",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "feedback",
+   "saved_path": "global.feedback",
+   "retention_mechanism": "MAX",
+   "archive_destination": "global.archive.sets.feedback",
+   "tests": [
+    "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "adviceFeedback",
+   "saved_path": "char.adviceFeedback",
+   "retention_mechanism": "FEEDBACK_KEEP",
+   "archive_destination": "global.archive.sets.adviceFeedback",
+   "tests": [
+    "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "layerHistory",
+   "saved_path": "char.modules.Layers.settings.history",
+   "retention_mechanism": "HISTORY_MAX",
+   "archive_destination": "global.archive.sets.layerHistory",
+   "tests": [
+    "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "nodeState",
+   "saved_path": "global.nodeState",
+   "retention_mechanism": "STATE_MAX",
+   "archive_destination": "global.archive.sets.nodeState",
+   "tests": [
+    "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "deaths",
+   "saved_path": "global.deathHistory",
+   "retention_mechanism": "100",
+   "archive_destination": "global.archive.sets.deaths",
+   "tests": [
+    "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "economyOutcomes",
+   "saved_path": "char.intelEconomyOutcomes",
+   "retention_mechanism": "100",
+   "archive_destination": "global.archive.sets.economyOutcomes",
+   "tests": [
+    "tests/spec/archive_spec.lua :: feedback reports, advisor feedback, layer history, node states, deaths, economy outcomes",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "fishNotable",
+   "saved_path": "global.fishLog.notable",
+   "retention_mechanism": "KEEP_NOTABLE",
+   "archive_destination": "global.archive.sets.fishNotable",
+   "tests": [
+    "tests/spec/archive_spec.lua :: fishing notable catches",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "censusPlayers",
+   "saved_path": "global.census[realm].players[name]",
+   "retention_mechanism": "30 days unseen",
+   "archive_destination": "global.archive.sets.censusPlayers",
+   "tests": [
+    "tests/spec/archive_spec.lua :: census: players and profession sightings past 30 days are archived with realm and name",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "censusProfs",
+   "saved_path": "global.census[realm].profs[name][prof]",
+   "retention_mechanism": "30 days",
+   "archive_destination": "global.archive.sets.censusProfs",
+   "tests": [
+    "tests/spec/archive_spec.lua :: census: players and profession sightings past 30 days are archived with realm and name",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "ahSearchHistory",
+   "saved_path": "global.ahSearchHistory",
+   "retention_mechanism": "HISTORY",
+   "archive_destination": "global.archive.sets.ahSearchHistory",
+   "tests": [
+    "tests/spec/archive_spec.lua :: auction search history, mail recipients: the overflow is archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "mailRecent",
+   "saved_path": "global.mailRecent",
+   "retention_mechanism": "RECENT",
+   "archive_destination": "global.archive.sets.mailRecent",
+   "tests": [
+    "tests/spec/archive_spec.lua :: auction search history, mail recipients: the overflow is archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "xp60OldSchema",
+   "saved_path": "char.xp60",
+   "retention_mechanism": "schema change",
+   "archive_destination": "global.archive.sets.xp60OldSchema",
+   "tests": [
+    "tests/spec/archive_spec.lua :: schema changes keep the old store (XP60, intelligence profile)",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "profileOldSchema",
+   "saved_path": "char.intelligenceProfile",
+   "retention_mechanism": "schema change",
+   "archive_destination": "global.archive.sets.profileOldSchema",
+   "tests": [
+    "tests/spec/archive_spec.lua :: schema changes keep the old store (XP60, intelligence profile)",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "instances",
+   "saved_path": "global.instances",
+   "retention_mechanism": "lockout older than a day",
+   "archive_destination": "global.archive.sets.instances",
+   "tests": [
+    "tests/spec/archive_spec.lua :: lockouts past a day and the map tab's two-click clear are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "clearedPlaces",
+   "saved_path": "global.pois",
+   "retention_mechanism": "player's two-click Clear recorded data",
+   "archive_destination": "global.archive.sets.clearedPlaces",
+   "tests": [
+    "tests/spec/archive_spec.lua :: lockouts past a day and the map tab's two-click clear are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "clearedDiscovered",
+   "saved_path": "global.discovered",
+   "retention_mechanism": "player's two-click Clear recorded data",
+   "archive_destination": "global.archive.sets.clearedDiscovered",
+   "tests": [
+    "tests/spec/archive_spec.lua :: lockouts past a day and the map tab's two-click clear are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "dungeonRuns",
+   "saved_path": "global.runs",
+   "retention_mechanism": "KEEP_RUNS",
+   "archive_destination": "global.archive.sets.dungeonRuns",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "trail",
+   "saved_path": "global.trails[mapID]",
+   "retention_mechanism": "800 dots per map",
+   "archive_destination": "global.archive.sets.trail",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "spawnLog",
+   "saved_path": "global.spawnLogs[spot]",
+   "retention_mechanism": "MAX per spot",
+   "archive_destination": "global.archive.sets.spawnLog",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "fights",
+   "saved_path": "char.fights",
+   "retention_mechanism": "MAX_HISTORY",
+   "archive_destination": "global.archive.sets.fights",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "xpSessions",
+   "saved_path": "char.xp60.history",
+   "retention_mechanism": "MAX_HISTORY",
+   "archive_destination": "global.archive.sets.xpSessions",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "salesLedger",
+   "saved_path": "char.auctionSales",
+   "retention_mechanism": "100",
+   "archive_destination": "global.archive.sets.salesLedger",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "auctionPosts",
+   "saved_path": "global.postHistory[itemID]",
+   "retention_mechanism": "KEEP_POSTS",
+   "archive_destination": "global.archive.sets.auctionPosts",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "petsSeen",
+   "saved_path": "global.petsSeen",
+   "retention_mechanism": "50",
+   "archive_destination": "global.archive.sets.petsSeen",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "discoveredRecent",
+   "saved_path": "global.discovered.recent",
+   "retention_mechanism": "RECENT_MAX",
+   "archive_destination": "global.archive.sets.discoveredRecent",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "goldLedger",
+   "saved_path": "char.ledger",
+   "retention_mechanism": "30",
+   "archive_destination": "global.archive.sets.goldLedger",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "rareCastGaps",
+   "saved_path": "global.rareProfiles[npcID].spells[spell].gaps",
+   "retention_mechanism": "MAX_GAPS",
+   "archive_destination": "global.archive.sets.rareCastGaps",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "fishSessions",
+   "saved_path": "global.fishLog.sessions",
+   "retention_mechanism": "KEEP_SESSIONS",
+   "archive_destination": "global.archive.sets.fishSessions",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "fishCatchesPerPoint",
+   "saved_path": "char.fishSkill.per",
+   "retention_mechanism": "KEEP_POINTS",
+   "archive_destination": "global.archive.sets.fishCatchesPerPoint",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "radarFeedback",
+   "saved_path": "char.radarFeedback[candidateId]",
+   "retention_mechanism": "80",
+   "archive_destination": "global.archive.sets.radarFeedback",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "nextSessionDismissed",
+   "saved_path": "char.modules.NextSession.settings.dismissed",
+   "retention_mechanism": "20",
+   "archive_destination": "global.archive.sets.nextSessionDismissed",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "trainingOldFormat",
+   "saved_path": "global.classTraining[key]",
+   "retention_mechanism": "old row format",
+   "archive_destination": "global.archive.sets.trainingOldFormat",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  },
+  {
+   "dataset": "macroPrevBodies",
+   "saved_path": "settings.installed[name].prev",
+   "retention_mechanism": "KEEP_PREV",
+   "archive_destination": "global.archive.sets.macroPrevBodies",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ]
+  }
+ ],
+ "findings": [
+  {
+   "file": "addon/Outrider/Modules/Alts.lua",
+   "line": 247,
+   "code": "for i = M.KEEP_RUNS + 1, #self.runs do self.runs[i] = nil end",
+   "dataset": "ns.db.global.runs (dungeon run history, newest first)",
+   "parent_keys": "none (list; rows carry char, map/instanceID)",
+   "class": "collected-automatic-loss",
+   "why": "EndRun keeps only the newest 30 runs and nils the rest with no archive.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 459,
+   "code": "for k, p in pairs(r.players) do if (p.t or 0) < cut then r.players[k] = nil n = n + 1 end end",
+   "dataset": "ns.db.global.census[realm].players[fullName]",
+   "parent_keys": "realm, fullName",
+   "class": "collected-automatic-loss",
+   "why": "Prune() runs at every login (PLAYER_ENTERING_WORLD) and deletes players not seen for 30 days.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 462,
+   "code": "for prof, when in pairs(t) do if when < cut then t[prof] = nil else any = true end end",
+   "dataset": "ns.db.global.census[realm].profs[fullName][prof]",
+   "parent_keys": "realm, fullName, prof",
+   "class": "collected-automatic-loss",
+   "why": "Same login Prune() deletes profession sightings older than 30 days.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 463,
+   "code": "if not any then r.profs[k] = nil end",
+   "dataset": "ns.db.global.census[realm].profs[fullName]",
+   "parent_keys": "realm, fullName",
+   "class": "collected-automatic-loss",
+   "why": "Same login Prune() deletes a player's whole profession row once all its entries aged out.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 128,
+   "code": "while #h > M.HISTORY do table.remove(h) end",
+   "dataset": "ns.db.global.ahSearchHistory (recent AH search terms, newest first)",
+   "parent_keys": "none",
+   "class": "collected-automatic-loss",
+   "why": "Remember() trims the saved search history to M.HISTORY by dropping the oldest term.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Mailbox.lua",
+   "line": 141,
+   "code": "for i = M.RECENT + 1, #self.recent do self.recent[i] = nil end",
+   "dataset": "ns.db.global.mailRecent (recent mail recipients, newest first)",
+   "parent_keys": "none",
+   "class": "collected-automatic-loss",
+   "why": "Remember() keeps only the 8 newest recipients and nils the rest.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingGuide.lua",
+   "line": 86,
+   "code": "for i = M.KEEP_POINTS + 1, #s.per do s.per[i] = nil end",
+   "dataset": "ns.db.char.fishSkill.per (catches needed per fishing skill point, newest first)",
+   "parent_keys": "none (per character)",
+   "class": "collected-automatic-loss",
+   "why": "OnSkill keeps only the last 10 measured skill-point counts.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 73,
+   "code": "if oldest then self.whispers[oldest] = nil end",
+   "dataset": "ns.db.global.whisperArchive[who] (whole whisper history with one person)",
+   "parent_keys": "who (lowercased player name)",
+   "class": "collected-automatic-loss",
+   "why": "When more than 30 people are in the whisper archive, the person with the oldest last whisper loses their entire saved history, unarchived.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 109,
+   "code": "w[oldID] = nil",
+   "dataset": "ns.db.global.priceLog.watch[itemID] (auto-tracked item watch entry {at, why})",
+   "parent_keys": "itemID",
+   "class": "collected-automatic-loss",
+   "why": "At MAX_WATCH the oldest non-manual watch entry is evicted automatically (samples stay, the watch record is gone).",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Radar.lua",
+   "line": 28,
+   "code": "store[oldest] = nil",
+   "dataset": "ns.db.char.radarFeedback[candidateId] (player verdicts with reason and time)",
+   "parent_keys": "candidateId",
+   "class": "collected-automatic-loss",
+   "why": "At 80 entries the oldest verdict is evicted automatically; FeedbackHistory() shows this as the player's feedback history.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/NextSession.lua",
+   "line": 35,
+   "code": "if n > 20 then self:Settings().dismissed = { [a.basedOnSessionId] = verdict } end",
+   "dataset": "char.modules.NextSession.settings.dismissed[basedOnSessionId] (player dismiss/wrong/already_know verdicts)",
+   "parent_keys": "basedOnSessionId",
+   "class": "collected-automatic-loss",
+   "why": "Over 20 entries the whole map is replaced by a one-entry table, deleting every earlier verdict.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/SessionXP.lua",
+   "line": 32,
+   "code": "if type(c.xp60) ~= \"table\" or c.xp60.schema ~= M.SCHEMA then",
+   "dataset": "ns.db.char.xp60 (XP-per-session history + current session)",
+   "parent_keys": "none (per character; history rows carry sessionId)",
+   "class": "collected-automatic-loss",
+   "why": "A schema mismatch replaces the whole xp60 table, deleting all saved XP session history without archiving.",
+   "resolution": "fixed: archived before removal (fail-safe)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Profiles.lua",
+   "line": 43,
+   "code": "if state.schema ~= P.SCHEMA then",
+   "dataset": "ns.db.char.intelligenceProfile",
+   "parent_keys": "none (per character)",
+   "class": "unsure",
+   "why": "On schema mismatch the profile is rebuilt keeping only .role; any other saved fields are dropped (likely settings, not collected data).",
+   "resolution": "resolved, see note: old profile archived on schema change"
+  },
+  {
+   "file": "addon/Outrider/Modules/MacroLibrary.lua",
+   "line": 237,
+   "code": "for i = M.KEEP_PREV + 1, #prev do prev[i] = nil end",
+   "dataset": "char.modules.MacroLibrary.settings.installed[macroName].prev (earlier macro bodies Outrider installed)",
+   "parent_keys": "macroName",
+   "class": "unsure",
+   "why": "Keeps the 8 newest previous bodies; these are Outrider's own past outputs used to recognise its macros, closer to bookkeeping/undo than collected data.",
+   "resolution": "resolved, see note: previous bodies archived"
+  },
+  {
+   "file": "addon/Outrider/Modules/MacroLibrary.lua",
+   "line": 159,
+   "code": "if index == 0 then self:Settings().installed[entry.name] = nil",
+   "dataset": "char.modules.MacroLibrary.settings.installed[macroName] (install record incl. body and prev)",
+   "parent_keys": "macroName",
+   "class": "unsure",
+   "why": "When the game no longer has the macro (deleted outside Outrider) the install record is dropped automatically on the next State() check.",
+   "resolution": "resolved, see note: install bookkeeping for a macro the player deleted in game; kept as outdated-replaced"
+  },
+  {
+   "file": "addon/Outrider/Modules/NPCPack.lua",
+   "line": 320,
+   "code": "for i = M.KEEP_ZONES + 1, #keys do zones[keys[i][1]] = nil end",
+   "dataset": "ns.db.char.zoneQuests[mapID] (per-zone quest report)",
+   "parent_keys": "mapID",
+   "class": "unsure",
+   "why": "Keeps only the 8 newest zones; the report is rebuilt from the NPC pack and quest state (a cache for Claude to read), so probably allowed.",
+   "resolution": "resolved, see note: derived report rebuilt from data packs; derived, not collected"
+  },
+  {
+   "file": "addon/Outrider/Modules/NPCPack.lua",
+   "line": 294,
+   "code": "ns.db.char.zoneQuests[mapID] = M.Compact(rep)",
+   "dataset": "ns.db.char.zoneQuests[mapID]",
+   "parent_keys": "mapID",
+   "class": "unsure",
+   "why": "Saved report is stored as a compacted smaller version (20 names, counts only); derived data, so probably allowed.",
+   "resolution": "resolved, see note: derived report rebuilt from data packs; derived, not collected"
+  },
+  {
+   "file": "addon/Outrider/Modules/Spellbook.lua",
+   "line": 136,
+   "code": "if M.STATUS[tostring(r.rank or \"\")] then saved[key] = nil end",
+   "dataset": "ns.db.global.classTraining[...] trainer service rows (TrainingStore)",
+   "parent_keys": "row key (old format 'name:available')",
+   "class": "unsure",
+   "why": "Old-format rows are deleted at each class-trainer visit before the list is rewritten; a format migration that drops rather than converts.",
+   "resolution": "resolved, see note: old-format rows archived"
+  },
+  {
+   "file": "addon/Outrider/Modules/POICapture.lua",
+   "line": 123,
+   "code": "self.db[id] = { id = id, kind = \"flight_master\", mapID = mapID, x = x, y = y, n = 1, name = name,",
+   "dataset": "ns.db.global.pois['taxi-<nodeID>']",
+   "parent_keys": "id (taxi-<nodeID>), mapID",
+   "class": "unsure",
+   "why": "Every client taxi read replaces the whole POI record, so any extra fields on it (firstSeen, n, player notes) would be lost; the facts are refreshed from the client.",
+   "resolution": "resolved, see note: newer taxi read replaces the record (outdated-replaced)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feed.lua",
+   "line": 49,
+   "code": "while #self.list > self.CAP do table.remove(self.list) end",
+   "dataset": "ns.db.global.feed (notification feed, newest first)",
+   "parent_keys": "none",
+   "class": "unsure",
+   "why": "Trims the toast/notice feed to CAP with no archive; it is a notice log built from toasts, so probably log-or-debug.",
+   "resolution": "resolved, see note: notice feed is a log; cap kept"
+  },
+  {
+   "file": "addon/Outrider/Core/DB.lua",
+   "line": 79,
+   "code": "db.global = type(db.global) == \"table\" and db.global or {}",
+   "dataset": "Outrider_DB.global",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (the entire account-wide saved table); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Core/DB.lua",
+   "line": 80,
+   "code": "db.chars = type(db.chars) == \"table\" and db.chars or {}",
+   "dataset": "Outrider_DB.chars",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (every character's saved table); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Core/DB.lua",
+   "line": 90,
+   "code": "db.chars[key] = type(db.chars[key]) == \"table\" and db.chars[key] or {}",
+   "dataset": "Outrider_DB.chars[charKey]",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (this character's saved table); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Core/Init.lua",
+   "line": 99,
+   "code": "if type(dst[k]) ~= \"table\" then dst[k] = {} end",
+   "dataset": "any saved table with a table default (ns.db.global/char defaults, module settings via ApplyDefaults)",
+   "parent_keys": "default key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (any saved value where the defaults expect a table); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 40,
+   "code": "g.census = type(g.census) == \"table\" and g.census or {}",
+   "dataset": "ns.db.global.census",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (census root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 51,
+   "code": "if type(r) ~= \"table\" then r = { players = {}, profs = {} } self.store[k] = r end",
+   "dataset": "ns.db.global.census[realm]",
+   "parent_keys": "realm",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (one realm's census); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Alts.lua",
+   "line": 33,
+   "code": "g.alts = type(g.alts) == \"table\" and g.alts or {}",
+   "dataset": "ns.db.global.alts",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (alt records); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Alts.lua",
+   "line": 34,
+   "code": "g.runs = type(g.runs) == \"table\" and g.runs or {}",
+   "dataset": "ns.db.global.runs",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (dungeon run history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Alts.lua",
+   "line": 35,
+   "code": "g.instances = type(g.instances) == \"table\" and g.instances or {} -- { {t, map, name, char} }",
+   "dataset": "ns.db.global.instances",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (instance lockout list); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionHelper.lua",
+   "line": 105,
+   "code": "ns.db.char.auctionSales = type(ns.db.char.auctionSales) == \"table\" and ns.db.char.auctionSales or {}",
+   "dataset": "ns.db.char.auctionSales",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (sales ledger); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 34,
+   "code": "g.ahSearchHistory = type(g.ahSearchHistory) == \"table\" and g.ahSearchHistory or {}",
+   "dataset": "ns.db.global.ahSearchHistory",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (search history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 35,
+   "code": "g.ahLists = type(g.ahLists) == \"table\" and g.ahLists or {}",
+   "dataset": "ns.db.global.ahLists",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (shopping lists); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 36,
+   "code": "g.postHistory = type(g.postHistory) == \"table\" and g.postHistory or {}",
+   "dataset": "ns.db.global.postHistory",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (post history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 37,
+   "code": "g.sellPrices = type(g.sellPrices) == \"table\" and g.sellPrices or {}",
+   "dataset": "ns.db.global.sellPrices",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (sell prices); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 38,
+   "code": "g.sellHidden = type(g.sellHidden) == \"table\" and g.sellHidden or {}",
+   "dataset": "ns.db.global.sellHidden",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (hidden items); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 302,
+   "code": "h[itemID] = type(h[itemID]) == \"table\" and h[itemID] or {}",
+   "dataset": "ns.db.global.postHistory[itemID]",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (one item's post history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AutoCheck.lua",
+   "line": 47,
+   "code": "g.autocheck = type(g.autocheck) == \"table\" and g.autocheck or {}",
+   "dataset": "ns.db.global.autocheck",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (auto-check results); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/BagExtras.lua",
+   "line": 28,
+   "code": "db.gearWishlist = type(db.gearWishlist) == \"table\" and db.gearWishlist or {}",
+   "dataset": "ns.db.char.gearWishlist",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (gear wishlist); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/BeastInfo.lua",
+   "line": 109,
+   "code": "g.petsSeen = type(g.petsSeen) == \"table\" and g.petsSeen or {}",
+   "dataset": "ns.db.global.petsSeen",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (pets seen); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 43,
+   "code": "g.chatArchive = type(g.chatArchive) == \"table\" and g.chatArchive or {}",
+   "dataset": "ns.db.global.chatArchive",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (chat archive); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 44,
+   "code": "g.whisperArchive = type(g.whisperArchive) == \"table\" and g.whisperArchive or {}",
+   "dataset": "ns.db.global.whisperArchive",
+   "parent_keys": "who",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (whisper archive); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Discovery.lua",
+   "line": 37,
+   "code": "g.discovered = type(g.discovered) == \"table\" and g.discovered or {}",
+   "dataset": "ns.db.global.discovered",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (discovered NPCs root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Discovery.lua",
+   "line": 118,
+   "code": "e.roles = type(e.roles) == \"table\" and e.roles or {}",
+   "dataset": "ns.db.global.discovered.npcs[npcID].roles",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (an NPC's roles); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/DungeonJournal.lua",
+   "line": 271,
+   "code": "g.dungeonRuns = type(g.dungeonRuns) == \"table\" and g.dungeonRuns or {}",
+   "dataset": "ns.db.global.dungeonRuns",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (dungeon journal runs); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Favor.lua",
+   "line": 30,
+   "code": "g.favor = type(g.favor) == \"table\" and g.favor or {}",
+   "dataset": "ns.db.global.favor",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (favor root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Favor.lua",
+   "line": 34,
+   "code": "f.crates = type(f.crates) == \"table\" and f.crates or {}       -- [itemID] = { name, lines, bundles, firstSeen, verified }",
+   "dataset": "ns.db.global.favor.crates",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (crate records); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feed.lua",
+   "line": 22,
+   "code": "g.feed = type(g.feed) == \"table\" and g.feed or {}",
+   "dataset": "ns.db.global.feed",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (notice feed); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feed.lua",
+   "line": 23,
+   "code": "g.feedSeen = tonumber(g.feedSeen) or 0",
+   "dataset": "ns.db.global.feedSeen",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (non-number counter reset to 0); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feed.lua",
+   "line": 24,
+   "code": "g.feedN = tonumber(g.feedN) or 0",
+   "dataset": "ns.db.global.feedN",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (non-number counter reset to 0); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feedback.lua",
+   "line": 42,
+   "code": "g.feedback = type(g.feedback) == \"table\" and g.feedback or {}",
+   "dataset": "ns.db.global.feedback",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (player feedback notes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FightMeter.lua",
+   "line": 17,
+   "code": "ns.db.char.fights = type(ns.db.char.fights) == \"table\" and ns.db.char.fights or {}",
+   "dataset": "ns.db.char.fights",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (fight history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FightPlan.lua",
+   "line": 374,
+   "code": "s.kept = type(s.kept) == \"table\" and s.kept or {}",
+   "dataset": "char.modules.FightPlan.settings.kept",
+   "parent_keys": "macroName",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (kept macros); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishBook.lua",
+   "line": 35,
+   "code": "g.fishBook = type(g.fishBook) == \"table\" and g.fishBook or {}",
+   "dataset": "ns.db.global.fishBook",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (fish book root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishBook.lua",
+   "line": 37,
+   "code": "b.fish = type(b.fish) == \"table\" and b.fish or {}          -- [id] = { first, char, q, name }",
+   "dataset": "ns.db.global.fishBook.fish",
+   "parent_keys": "fish itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (fish firsts); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishBook.lua",
+   "line": 38,
+   "code": "b.hours = type(b.hours) == \"table\" and b.hours or {}        -- [mapID] = { [block] = { t = n, [id] = n } }",
+   "dataset": "ns.db.global.fishBook.hours",
+   "parent_keys": "mapID, hour block",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (catch-by-hour counts); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishBook.lua",
+   "line": 45,
+   "code": "c.fishCaught = type(c.fishCaught) == \"table\" and c.fishCaught or {}",
+   "dataset": "ns.db.char.fishCaught",
+   "parent_keys": "fish itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (per-char catches); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingGuide.lua",
+   "line": 38,
+   "code": "g.fishStats = type(g.fishStats) == \"table\" and g.fishStats or { casts = 0, catches = 0, escapes = 0, fish = {} }",
+   "dataset": "ns.db.global.fishStats",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (fishing stats); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingGuide.lua",
+   "line": 45,
+   "code": "c.fishSkill = type(c.fishSkill) == \"table\" and c.fishSkill or { since = 0, per = {} }",
+   "dataset": "ns.db.char.fishSkill",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (skill-up measurements); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 46,
+   "code": "g.fishLog = type(g.fishLog) == \"table\" and g.fishLog or {}",
+   "dataset": "ns.db.global.fishLog",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (fishing log root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 49,
+   "code": "d.best = type(d.best) == \"table\" and d.best or {}",
+   "dataset": "ns.db.global.fishLog.best",
+   "parent_keys": "fish itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (best catches); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 50,
+   "code": "d.spots = type(d.spots) == \"table\" and d.spots or {}",
+   "dataset": "ns.db.global.fishLog.spots",
+   "parent_keys": "spot key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (spots); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 51,
+   "code": "d.first = type(d.first) == \"table\" and d.first or {}",
+   "dataset": "ns.db.global.fishLog.first",
+   "parent_keys": "fish itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (first catches); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FlightTimes.lua",
+   "line": 25,
+   "code": "g.flightTimes = type(g.flightTimes) == \"table\" and g.flightTimes or {}",
+   "dataset": "ns.db.global.flightTimes",
+   "parent_keys": "from-to node pair",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (flight times); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Handoffs.lua",
+   "line": 26,
+   "code": "g.handoffs = type(g.handoffs) == \"table\" and g.handoffs or {}",
+   "dataset": "ns.db.global.handoffs",
+   "parent_keys": "holder",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (handoffs); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Handoffs.lua",
+   "line": 27,
+   "code": "g.handoffTold = type(g.handoffTold) == \"table\" and g.handoffTold or {}",
+   "dataset": "ns.db.global.handoffTold",
+   "parent_keys": "key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (handoff notices); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Inventory.lua",
+   "line": 23,
+   "code": "g.inventory = type(g.inventory) == \"table\" and g.inventory or {}",
+   "dataset": "ns.db.global.inventory",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (inventory root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Inventory.lua",
+   "line": 30,
+   "code": "if type(me) ~= \"table\" then me = { bags = {}, bank = {}, mail = {}, worn = {} } self.db[key] = me end",
+   "dataset": "ns.db.global.inventory[charKey]",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (this character's bags/bank/mail/worn); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/KitShare.lua",
+   "line": 41,
+   "code": "g.kits = type(g.kits) == \"table\" and g.kits or {}",
+   "dataset": "ns.db.global.kits",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (kits); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/KitShare.lua",
+   "line": 42,
+   "code": "g.kitOffers = type(g.kitOffers) == \"table\" and g.kitOffers or {}",
+   "dataset": "ns.db.global.kitOffers",
+   "parent_keys": "offer key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (kit offers); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Layers.lua",
+   "line": 72,
+   "code": "if type(history) ~= \"table\" then history = {} settings.history = history end",
+   "dataset": "char.modules.Layers.settings.history",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (layer history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Layers.lua",
+   "line": 77,
+   "code": "table.remove(history, i)",
+   "dataset": "char.modules.Layers.settings.history[i]",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (a non-table row deleted from layer history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Ledger.lua",
+   "line": 56,
+   "code": "c.ledger = type(c.ledger) == \"table\" and c.ledger or {}",
+   "dataset": "ns.db.char.ledger",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (gold ledger); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/LootLog.lua",
+   "line": 26,
+   "code": "g.fishing = type(g.fishing) == \"table\" and g.fishing or {}",
+   "dataset": "ns.db.global.fishing",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (fishing loot); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/LootLog.lua",
+   "line": 27,
+   "code": "g.nodes = type(g.nodes) == \"table\" and g.nodes or {}",
+   "dataset": "ns.db.global.nodes",
+   "parent_keys": "node key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (gathering nodes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/LootLog.lua",
+   "line": 28,
+   "code": "g.nodeState = type(g.nodeState) == \"table\" and g.nodeState or {}",
+   "dataset": "ns.db.global.nodeState",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (node state list); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Mailbox.lua",
+   "line": 32,
+   "code": "g.mailExpiry = type(g.mailExpiry) == \"table\" and g.mailExpiry or {}",
+   "dataset": "ns.db.global.mailExpiry",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (mail expiry); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Mailbox.lua",
+   "line": 33,
+   "code": "g.mailRecent = type(g.mailRecent) == \"table\" and g.mailRecent or {}",
+   "dataset": "ns.db.global.mailRecent",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (recent recipients); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/MapReveal.lua",
+   "line": 33,
+   "code": "g.mapReveal = type(g.mapReveal) == \"table\" and g.mapReveal or {}",
+   "dataset": "ns.db.global.mapReveal",
+   "parent_keys": "mapID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (map reveal); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/MapTab.lua",
+   "line": 17,
+   "code": "ns.db.char.mapNotes = type(ns.db.char.mapNotes) == \"table\" and ns.db.char.mapNotes or {}",
+   "dataset": "ns.db.char.mapNotes",
+   "parent_keys": "note id",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (player map notes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/MoneyGuide.lua",
+   "line": 30,
+   "code": "g.moneyLog = type(g.moneyLog) == \"table\" and g.moneyLog or {}",
+   "dataset": "ns.db.global.moneyLog",
+   "parent_keys": "kind",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (money log); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Nearest.lua",
+   "line": 21,
+   "code": "global.graveyards = type(global.graveyards) == \"table\" and global.graveyards or {}",
+   "dataset": "ns.db.global.graveyards",
+   "parent_keys": "graveyard key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (graveyards); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/NetTest.lua",
+   "line": 35,
+   "code": "g.netTest = type(g.netTest) == \"table\" and g.netTest or {}",
+   "dataset": "ns.db.global.netTest",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (net test results); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/NetTest.lua",
+   "line": 120,
+   "code": "r.others = type(r.others) == \"table\" and r.others or {}",
+   "dataset": "ns.db.global.netTest (result).others",
+   "parent_keys": "sender",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (net test peers); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/NPCPack.lua",
+   "line": 293,
+   "code": "ns.db.char.zoneQuests = type(ns.db.char.zoneQuests) == \"table\" and ns.db.char.zoneQuests or {}",
+   "dataset": "ns.db.char.zoneQuests",
+   "parent_keys": "mapID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (zone reports); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PetStatus.lua",
+   "line": 121,
+   "code": "g.petDiet = type(g.petDiet) == \"table\" and g.petDiet or {}",
+   "dataset": "ns.db.global.petDiet",
+   "parent_keys": "family",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (pet diet); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PlayerInfo.lua",
+   "line": 344,
+   "code": "g.duels = type(g.duels) == \"table\" and g.duels or {}",
+   "dataset": "ns.db.global.duels",
+   "parent_keys": "fullName",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (duel record); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PlayerInfo.lua",
+   "line": 403,
+   "code": "g.mobFights = type(g.mobFights) == \"table\" and g.mobFights or {}",
+   "dataset": "ns.db.global.mobFights",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (mob fight record); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/POICapture.lua",
+   "line": 63,
+   "code": "g.pois = type(g.pois) == \"table\" and g.pois or {}",
+   "dataset": "ns.db.global.pois",
+   "parent_keys": "poi id",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (POIs); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 51,
+   "code": "local s = type(g.priceLog) == \"table\" and g.priceLog or {}",
+   "dataset": "ns.db.global.priceLog",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (price log root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 52,
+   "code": "s.items = type(s.items) == \"table\" and s.items or {}",
+   "dataset": "ns.db.global.priceLog.items",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (hourly samples); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 53,
+   "code": "s.watch = type(s.watch) == \"table\" and s.watch or {}",
+   "dataset": "ns.db.global.priceLog.watch",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (watch list); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Prices.lua",
+   "line": 24,
+   "code": "g.prices = type(g.prices) == \"table\" and g.prices or {}",
+   "dataset": "ns.db.global.prices",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (daily prices); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Prices.lua",
+   "line": 81,
+   "code": "ns.db.char.shoppingLists = type(ns.db.char.shoppingLists) == \"table\" and ns.db.char.shoppingLists or {}",
+   "dataset": "ns.db.char.shoppingLists",
+   "parent_keys": "list key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (shopping lists); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Prices.lua",
+   "line": 85,
+   "code": "ns.db.char.shoppingGroups = type(ns.db.char.shoppingGroups) == \"table\" and ns.db.char.shoppingGroups or {}",
+   "dataset": "ns.db.char.shoppingGroups",
+   "parent_keys": "group key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (shopping groups); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Prices.lua",
+   "line": 94,
+   "code": "lists[key] = type(lists[key]) == \"table\" and lists[key] or {}",
+   "dataset": "ns.db.char.shoppingLists[key]",
+   "parent_keys": "list key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (one shopping list); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Professions.lua",
+   "line": 29,
+   "code": "c.professions = type(c.professions) == \"table\" and c.professions or {}",
+   "dataset": "ns.db.char.professions",
+   "parent_keys": "profession name",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (professions); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Professions.lua",
+   "line": 30,
+   "code": "c.professions[\"\"] = nil",
+   "dataset": "ns.db.char.professions[\"\"]",
+   "parent_keys": "profession name",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (a blank-named profession entry, deleted on every Store() call); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/CookTrainer.lua",
+   "line": 296,
+   "code": "if type(ns.db.char.professions) == \"table\" then ns.db.char.professions[\"\"] = nil end",
+   "dataset": "ns.db.char.professions[\"\"]",
+   "parent_keys": "profession name",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (a blank-named profession entry, deleted at enable); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/ProfExtras.lua",
+   "line": 29,
+   "code": "g.craftCooldowns = type(g.craftCooldowns) == \"table\" and g.craftCooldowns or {}",
+   "dataset": "ns.db.global.craftCooldowns",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (craft cooldowns); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/ProfExtras.lua",
+   "line": 70,
+   "code": "ns.db.global.teaches = type(ns.db.global.teaches) == \"table\" and ns.db.global.teaches or {}",
+   "dataset": "ns.db.global.teaches",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (what trainers teach); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/ProfExtras.lua",
+   "line": 104,
+   "code": "ns.db.global.recipeSources = type(ns.db.global.recipeSources) == \"table\" and ns.db.global.recipeSources or {}",
+   "dataset": "ns.db.global.recipeSources",
+   "parent_keys": "recipe",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (recipe sources); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestInfo.lua",
+   "line": 50,
+   "code": "g.questHistory = type(g.questHistory) == \"table\" and g.questHistory or {}",
+   "dataset": "ns.db.global.questHistory",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (quest diary root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestInfo.lua",
+   "line": 204,
+   "code": "h[key] = type(h[key]) == \"table\" and h[key] or {}",
+   "dataset": "ns.db.global.questHistory[charKey]",
+   "parent_keys": "charKey",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (this character's quest diary); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestObjectives.lua",
+   "line": 42,
+   "code": "g.questSpots = type(g.questSpots) == \"table\" and g.questSpots or {} -- [name] = { {mapID, x, y, t} }",
+   "dataset": "ns.db.global.questSpots",
+   "parent_keys": "objective name",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (quest objective spots); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestRewards.lua",
+   "line": 78,
+   "code": "if type(s.toastedUpgrades) ~= \"table\" then s.toastedUpgrades = {} end",
+   "dataset": "char.modules.QuestRewards.settings.toastedUpgrades",
+   "parent_keys": "itemID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (toasted upgrades); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/RareProfile.lua",
+   "line": 28,
+   "code": "g.rareProfiles = type(g.rareProfiles) == \"table\" and g.rareProfiles or {}",
+   "dataset": "ns.db.global.rareProfiles",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (rare profiles); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/RareTimer.lua",
+   "line": 23,
+   "code": "g.rareTimers = type(g.rareTimers) == \"table\" and g.rareTimers or {}",
+   "dataset": "ns.db.global.rareTimers",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (rare timers); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Routes.lua",
+   "line": 57,
+   "code": "g.routes = type(g.routes) == \"table\" and g.routes or {}",
+   "dataset": "ns.db.global.routes",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (routes root); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Routes.lua",
+   "line": 59,
+   "code": "s.list = type(s.list) == \"table\" and s.list or {}",
+   "dataset": "ns.db.global.routes.list",
+   "parent_keys": "route id",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (drawn routes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/SharedData.lua",
+   "line": 75,
+   "code": "if type(g[key]) ~= \"table\" then g[key] = {} end",
+   "dataset": "ns.db.global[key] for each shared-pack key",
+   "parent_keys": "key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (any global store named by a shared pack); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Sightings.lua",
+   "line": 25,
+   "code": "g.sightings = type(g.sightings) == \"table\" and g.sightings or {}",
+   "dataset": "ns.db.global.sightings",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (rare sightings); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Sightings.lua",
+   "line": 26,
+   "code": "g.respawnObs = type(g.respawnObs) == \"table\" and g.respawnObs or {}",
+   "dataset": "ns.db.global.respawnObs",
+   "parent_keys": "npcID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (respawn observations); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/SpawnLog.lua",
+   "line": 25,
+   "code": "g.spawnLogs = type(g.spawnLogs) == \"table\" and g.spawnLogs or {}",
+   "dataset": "ns.db.global.spawnLogs",
+   "parent_keys": "spot",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (spawn logs); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Spellbook.lua",
+   "line": 95,
+   "code": "ns.db.global.classTraining = type(ns.db.global.classTraining) == \"table\" and ns.db.global.classTraining or {}",
+   "dataset": "ns.db.global.classTraining",
+   "parent_keys": "class/key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (class training); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/TalentSim.lua",
+   "line": 213,
+   "code": "ns.db.char.talentDummy = type(ns.db.char.talentDummy) == \"table\" and ns.db.char.talentDummy or {}",
+   "dataset": "ns.db.char.talentDummy",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (talent dummy); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Trail.lua",
+   "line": 32,
+   "code": "g.trails = type(g.trails) == \"table\" and g.trails or {}",
+   "dataset": "ns.db.global.trails",
+   "parent_keys": "mapID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (trails); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Trail.lua",
+   "line": 50,
+   "code": "if type(list) ~= \"table\" then list = {} self.db[mapID] = list end",
+   "dataset": "ns.db.global.trails[mapID]",
+   "parent_keys": "mapID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (one map's trail); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Travel.lua",
+   "line": 75,
+   "code": "g.travelLinks = type(g.travelLinks) == \"table\" and g.travelLinks or {}",
+   "dataset": "ns.db.global.travelLinks",
+   "parent_keys": "link key",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (travel links); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Travel.lua",
+   "line": 76,
+   "code": "g.taxiNodes = type(g.taxiNodes) == \"table\" and g.taxiNodes or {}",
+   "dataset": "ns.db.global.taxiNodes",
+   "parent_keys": "nodeID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (taxi nodes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Travel.lua",
+   "line": 81,
+   "code": "c.taxiKnown = type(c.taxiKnown) == \"table\" and c.taxiKnown or {}",
+   "dataset": "ns.db.char.taxiKnown",
+   "parent_keys": "nodeID",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (known taxi nodes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Waypoints.lua",
+   "line": 204,
+   "code": "s.queue = type(s.queue) == \"table\" and s.queue or {}",
+   "dataset": "char.modules.Waypoints.settings.queue",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (waypoint queue); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Advisor.lua",
+   "line": 118,
+   "code": "if type(list) ~= \"table\" then list = {} ns.db.char.adviceFeedback = list end",
+   "dataset": "ns.db.char.adviceFeedback",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (advice feedback); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Economy.lua",
+   "line": 76,
+   "code": "local st = type(char.intelEconomyOutcomes) == \"table\" and char.intelEconomyOutcomes or {}",
+   "dataset": "ns.db.char.intelEconomyOutcomes",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (economy outcomes); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/NextSession.lua",
+   "line": 29,
+   "code": "if type(d) ~= \"table\" then d = {} self:Settings().dismissed = d end",
+   "dataset": "char.modules.NextSession.settings.dismissed",
+   "parent_keys": "basedOnSessionId",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (dismissals); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/NextSession.lua",
+   "line": 40,
+   "code": "if type(saved) ~= \"table\" then saved = {} ns.db.char.xp60Suppressed = saved end",
+   "dataset": "ns.db.char.xp60Suppressed",
+   "parent_keys": "id",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (suppressed suggestions); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Radar.lua",
+   "line": 12,
+   "code": "if type(c.radarFeedback) ~= \"table\" then c.radarFeedback = {} end",
+   "dataset": "ns.db.char.radarFeedback",
+   "parent_keys": "candidateId",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (radar feedback); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/SessionXP.lua",
+   "line": 35,
+   "code": "if type(c.xp60.history) ~= \"table\" then c.xp60.history = {} end",
+   "dataset": "ns.db.char.xp60.history",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (XP session history); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Profiles.lua",
+   "line": 39,
+   "code": "if type(state) ~= \"table\" then",
+   "dataset": "ns.db.char.intelligenceProfile",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (intelligence profile); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/UI/Hub.lua",
+   "line": 532,
+   "code": "hub.sub = type(hub.sub) == \"table\" and hub.sub or {}",
+   "dataset": "ns.db.char.hub.sub",
+   "parent_keys": "host",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (remembered hub sub-tabs); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/UI/Theme.lua",
+   "line": 132,
+   "code": "c.access = type(c.access) == \"table\" and c.access or {}",
+   "dataset": "ns.db.char accessibility settings",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (accessibility settings); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/UI/Toast.lua",
+   "line": 22,
+   "code": "c.toast = type(c.toast) == \"table\" and c.toast or {}",
+   "dataset": "ns.db.char toast settings",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (toast settings); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/UI/TooltipLines.lua",
+   "line": 25,
+   "code": "db.tooltipExtras = type(db.tooltipExtras) == \"table\" and db.tooltipExtras or {}",
+   "dataset": "tooltipExtras settings",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (tooltip settings); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Core/Log.lua",
+   "line": 35,
+   "code": "Outrider_Log = type(Outrider_Log) == \"table\" and Outrider_Log or {}",
+   "dataset": "Outrider_Log (log SavedVariable)",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (the log); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Core/Perf.lua",
+   "line": 67,
+   "code": "g.perfRuns = type(g.perfRuns) == \"table\" and g.perfRuns or {}",
+   "dataset": "ns.db.global.perfRuns",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (perf runs (debug)); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Core/Probe.lua",
+   "line": 226,
+   "code": "g.probeUnits = type(g.probeUnits) == \"table\" and g.probeUnits or {}",
+   "dataset": "ns.db.global.probeUnits",
+   "parent_keys": "none",
+   "class": "malformed-replaced",
+   "why": "A saved value of the wrong type is overwritten (probe units (debug)); the bad value is not kept.",
+   "resolution": "fixed: ns.KeepTable / ns.KeepBad keep the damaged value in global.archiveDamaged before starting fresh (API-result tables excluded as not saved)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 773,
+   "code": "M.store[M.RealmKey()] = nil",
+   "dataset": "ns.db.global.census[realm]",
+   "parent_keys": "realm",
+   "class": "player-initiated",
+   "why": "/ride census reset",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/MapTab.lua",
+   "line": 91,
+   "code": "g.pois = {}",
+   "dataset": "ns.db.global.pois",
+   "parent_keys": "poi id",
+   "class": "player-initiated",
+   "why": "Map tab clear-all button (T:ClearAll) wipes every POI",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/MapTab.lua",
+   "line": 93,
+   "code": "if g.discovered then g.discovered.npcs, g.discovered.recent = {}, {} end",
+   "dataset": "ns.db.global.discovered.npcs / .recent",
+   "parent_keys": "npcID",
+   "class": "player-initiated",
+   "why": "Same Map tab clear-all wipes all discovered NPCs and the recent list",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/MapTab.lua",
+   "line": 49,
+   "code": "if p.id == tonumber(id) then table.remove(self:Notes(), i) self:ChangedNotes() return true end",
+   "dataset": "ns.db.char.mapNotes[i]",
+   "parent_keys": "note id",
+   "class": "player-initiated",
+   "why": "RemoveNote (player deletes a map note)",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Trail.lua",
+   "line": 110,
+   "code": "if mapID then self.db[mapID] = nil else for k in pairs(self.db) do self.db[k] = nil end end",
+   "dataset": "ns.db.global.trails[mapID] (or all maps)",
+   "parent_keys": "mapID",
+   "class": "player-initiated",
+   "why": "/ride trail clear [here]",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Alts.lua",
+   "line": 254,
+   "code": "table.remove(self.inst, index)",
+   "dataset": "ns.db.global.instances[index]",
+   "parent_keys": "none",
+   "class": "player-initiated",
+   "why": "/ride runs delete <index>",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 251,
+   "code": "for i, l in ipairs(self:Lists()) do if l == list then table.remove(self:Lists(), i) return true end end",
+   "dataset": "ns.db.global.ahLists[i]",
+   "parent_keys": "list name",
+   "class": "player-initiated",
+   "why": "DeleteList",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 336,
+   "code": "for i = #h, 1, -1 do if h[i] == raw then table.remove(h, i) end end",
+   "dataset": "ns.db.global.ahSearchHistory",
+   "parent_keys": "none",
+   "class": "player-initiated",
+   "why": "Right-click removes a recent search",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 351,
+   "code": "for i = #list.terms, 1, -1 do if list.terms[i] == t then table.remove(list.terms, i) end end",
+   "dataset": "ns.db.global.ahLists[list].terms",
+   "parent_keys": "list name",
+   "class": "player-initiated",
+   "why": "Right-click removes a list term",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 712,
+   "code": "ns.db.global.sellHidden = {}",
+   "dataset": "ns.db.global.sellHidden",
+   "parent_keys": "itemID",
+   "class": "player-initiated",
+   "why": "/ride ahsell unhide",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 119,
+   "code": "if id and self.store then self.store.watch[id] = nil end",
+   "dataset": "ns.db.global.priceLog.watch[itemID]",
+   "parent_keys": "itemID",
+   "class": "player-initiated",
+   "why": "Unwatch button on the price page",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Routes.lua",
+   "line": 198,
+   "code": "table.remove(list, at)",
+   "dataset": "ns.db.global.routes.list[id].lines/marks",
+   "parent_keys": "route id",
+   "class": "player-initiated",
+   "why": "Undo last line/marker",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Routes.lua",
+   "line": 230,
+   "code": "table.remove(list, at)",
+   "dataset": "ns.db.global.routes.list[id].lines/marks",
+   "parent_keys": "route id",
+   "class": "player-initiated",
+   "why": "Eraser",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Routes.lua",
+   "line": 248,
+   "code": "s.list[r.id] = nil",
+   "dataset": "ns.db.global.routes.list[id]",
+   "parent_keys": "route id",
+   "class": "player-initiated",
+   "why": "Delete route",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 370,
+   "code": "if w.id == id then table.remove(self.data.wanted, i) return true end",
+   "dataset": "ns.db.global.fishLog.wanted[i]",
+   "parent_keys": "fish itemID",
+   "class": "player-initiated",
+   "why": "Remove button / /ride fishlog unwant",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 289,
+   "code": "ns.db.char.fishLogSession = nil",
+   "dataset": "ns.db.char.fishLogSession",
+   "parent_keys": "none",
+   "class": "player-initiated",
+   "why": "/ride fishlog reset; the session is first folded into fishLog.sessions by self:Archive(s)",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/SpellCheck.lua",
+   "line": 239,
+   "code": "elseif op == \"remove\" then words[norm(w)] = nil ns.Print(\"removed '%s'\", w)",
+   "dataset": "char.modules.SpellCheck.settings.words[word]",
+   "parent_keys": "word",
+   "class": "player-initiated",
+   "why": "/ride spell remove",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Merchant.lua",
+   "line": 251,
+   "code": "opts.alwaysSell[id], opts.sellOnce[id], opts.neverSell[id] = nil, nil, nil",
+   "dataset": "char.modules.Merchant.settings sell marks",
+   "parent_keys": "itemID",
+   "class": "player-initiated",
+   "why": "/ride sell unmark",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Merchant.lua",
+   "line": 290,
+   "code": "settings.restock[id] = nil",
+   "dataset": "char.modules.Merchant.settings.restock[itemID]",
+   "parent_keys": "itemID",
+   "class": "player-initiated",
+   "why": "/ride restock remove",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/BagFood.lua",
+   "line": 144,
+   "code": "else prefs.never[k], prefs.prefer[k] = nil, nil end",
+   "dataset": "BagFood food prefs",
+   "parent_keys": "food key",
+   "class": "player-initiated",
+   "why": "Player toggles a food preference",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 341,
+   "code": "elseif op == \"remove\" and w then s.words[w:lower()] = nil ns.Print(\"no longer highlighting '%s'\", w)",
+   "dataset": "char.modules.Chat.settings.words",
+   "parent_keys": "word",
+   "class": "player-initiated",
+   "why": "/ride chat words remove",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/GearSets.lua",
+   "line": 148,
+   "code": "M:Settings().sets[name:lower()] = nil",
+   "dataset": "char.modules.GearSets.settings.sets[name]",
+   "parent_keys": "set name",
+   "class": "player-initiated",
+   "why": "/ride gearset delete",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/ContextLayouts.lua",
+   "line": 120,
+   "code": "set[ctx] = nil",
+   "dataset": "char.modules.ContextLayouts.settings.layouts[ctx]",
+   "parent_keys": "context",
+   "class": "player-initiated",
+   "why": "/ride layout <ctx> off",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/MacroLibrary.lua",
+   "line": 270,
+   "code": "self:Settings().installed[entry.name] = nil",
+   "dataset": "char.modules.MacroLibrary.settings.installed[macroName]",
+   "parent_keys": "macroName",
+   "class": "player-initiated",
+   "why": "Remove macro button",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/TalentLab.lua",
+   "line": 264,
+   "code": "if ok then r[node] = r[node] - 1 if r[node] == 0 then r[node] = nil end end",
+   "dataset": "talent planner points r[node]",
+   "parent_keys": "node",
+   "class": "player-initiated",
+   "why": "Right-click removes a planned talent point",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/KitShare.lua",
+   "line": 250,
+   "code": "for i = #list, 1, -1 do if list[i]:lower() == name:lower() then table.remove(list, i) end end",
+   "dataset": "char.modules.KitShare.settings.family",
+   "parent_keys": "name",
+   "class": "player-initiated",
+   "why": "SetFamily add/remove",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Radar.lua",
+   "line": 64,
+   "code": "ns.db.char.radarFeedback = {}",
+   "dataset": "ns.db.char.radarFeedback",
+   "parent_keys": "candidateId",
+   "class": "player-initiated",
+   "why": "Clear feedback button",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Core/DB.lua",
+   "line": 158,
+   "code": "ns.db.raw.chars[ns.db.key] = nil",
+   "dataset": "Outrider_DB.chars[charKey]",
+   "parent_keys": "charKey",
+   "class": "player-initiated",
+   "why": "/ride reset (this character)",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Core/DB.lua",
+   "line": 166,
+   "code": "Outrider_DB = nil",
+   "dataset": "Outrider_DB (everything)",
+   "parent_keys": "none",
+   "class": "player-initiated",
+   "why": "/ride reset all",
+   "resolution": "explicit player action (typed command or confirmed click); MapTab two-click clear also archives what it clears"
+  },
+  {
+   "file": "addon/Outrider/Modules/Alts.lua",
+   "line": 185,
+   "code": "for i = #self.inst, 1, -1 do self.inst[i] = nil end",
+   "dataset": "ns.db.global.instances (lockout entries)",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Prune drops entries older than 24 h: an expired lockout.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSearch.lua",
+   "line": 126,
+   "code": "for i = #h, 1, -1 do if h[i]:lower() == raw:lower() then table.remove(h, i) end end",
+   "dataset": "ns.db.global.ahSearchHistory",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Same term searched again is moved to the front (duplicate replaced).",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Mailbox.lua",
+   "line": 139,
+   "code": "for i = #self.recent, 1, -1 do if self.recent[i] == name then table.remove(self.recent, i) end end",
+   "dataset": "ns.db.global.mailRecent",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Same name moved to the front (duplicate).",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Layers.lua",
+   "line": 80,
+   "code": "table.remove(history, i)",
+   "dataset": "char.modules.Layers.settings.history",
+   "parent_keys": "mapID, layer id",
+   "class": "outdated-replaced",
+   "why": "Same map+layer observation refreshed by a newer one.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feed.lua",
+   "line": 41,
+   "code": "table.remove(self.list, i)",
+   "dataset": "ns.db.global.feed",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Repeat notice within 6 h merged into one counted entry and moved to top.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/WhatNow.lua",
+   "line": 528,
+   "code": "for k, t in pairs(st.skip) do if now - t > M.SKIP_FOR then st.skip[k] = nil end end",
+   "dataset": "ns.db.char.whatNow.skip[key]",
+   "parent_keys": "suggestion key",
+   "class": "outdated-replaced",
+   "why": "'Not useful' hide expires after 24 h.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Merchant.lua",
+   "line": 73,
+   "code": "self:Settings().sellOnce[j.id] = nil",
+   "dataset": "char.modules.Merchant.settings.sellOnce[itemID]",
+   "parent_keys": "itemID",
+   "class": "outdated-replaced",
+   "why": "A sell-once mark is consumed when the item is sold.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/KitShare.lua",
+   "line": 218,
+   "code": "if not have[o.itemID] then ns.db.global.kitOffers[key] = nil end",
+   "dataset": "ns.db.global.kitOffers[key]",
+   "parent_keys": "offer key",
+   "class": "outdated-replaced",
+   "why": "Offer removed when the item is no longer in the bags (stale).",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Handoffs.lua",
+   "line": 73,
+   "code": "for i = #list, 1, -1 do if list[i].to == me then table.remove(list, i) end end",
+   "dataset": "ns.db.global.handoffs[holder]",
+   "parent_keys": "holder",
+   "class": "outdated-replaced",
+   "why": "Handoffs addressed to me are rebuilt from a fresh scan.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/ProfExtras.lua",
+   "line": 233,
+   "code": "if list and list[name] and list[name] <= time() then list[name] = nil end",
+   "dataset": "ns.db.global.craftCooldowns[charKey][name]",
+   "parent_keys": "charKey, cooldown name",
+   "class": "outdated-replaced",
+   "why": "Cooldown cleared once ready (expired).",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/ProfExtras.lua",
+   "line": 62,
+   "code": "ns.db.char.trainers[kind] = { trainer = trainer, at = time(), list = list }",
+   "dataset": "ns.db.char.trainers[kind]",
+   "parent_keys": "trainer kind",
+   "class": "outdated-replaced",
+   "why": "Trainer list replaced by the latest visit.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/ProfExtras.lua",
+   "line": 246,
+   "code": "if ok then ns.db.char.undercut = { at = time(), list = list } end",
+   "dataset": "ns.db.char.undercut",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Latest undercut check replaces the previous one.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Spellbook.lua",
+   "line": 81,
+   "code": "ns.db.char.spellbook = { at = time(), source = how, spells = ns.CopyTable(out) }",
+   "dataset": "ns.db.char.spellbook",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Spellbook snapshot replaced by the current read.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingHUD.lua",
+   "line": 367,
+   "code": "if mh then ns.db.char.fishingWeapons = { mh = mh, oh = oh } end",
+   "dataset": "ns.db.char.fishingWeapons",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Remembered weapons replaced by the current pair.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/LagCheck.lua",
+   "line": 103,
+   "code": "ns.db.global.lagCheck = { at = s.at, build = s.build, seconds = s.seconds, pct = s.pct, level = s.level,",
+   "dataset": "ns.db.global.lagCheck",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Last lag check result replaced (debug data).",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Tweaks.lua",
+   "line": 204,
+   "code": "ns.db.char.chatHistory = out",
+   "dataset": "ns.db.char.chatHistory",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Chat-window copy replaced at logout (rebuilt from the chat frame).",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/CraftQueue.lua",
+   "line": 42,
+   "code": "if q[key] <= 0 then q[key] = nil end",
+   "dataset": "char.modules.CraftQueue.settings.queue[recipeKey]",
+   "parent_keys": "recipeKey",
+   "class": "outdated-replaced",
+   "why": "Queue count reached 0.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Waypoints.lua",
+   "line": 123,
+   "code": "table.remove(settings.queue, 1)",
+   "dataset": "char.modules.Waypoints.settings.queue",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Queued stop consumed on arrival.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Waypoints.lua",
+   "line": 226,
+   "code": "table.remove(s.queue, 1)",
+   "dataset": "char.modules.Waypoints.settings.queue",
+   "parent_keys": "none",
+   "class": "outdated-replaced",
+   "why": "Queued stop consumed by Next/skip.",
+   "resolution": "allowed: newer data replaces outdated (owner decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/DB.lua",
+   "line": 136,
+   "code": "while #g.sessions > self.MAX_SESSIONS do table.remove(g.sessions, 1) end",
+   "dataset": "ns.db.global.sessions",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Boot session list (explicitly allowed).",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Log.lua",
+   "line": 47,
+   "code": "for _ = 1, extra do table.remove(buffer, 1) end",
+   "dataset": "Outrider_Log buffer",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Log cap.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Errors.lua",
+   "line": 33,
+   "code": "local old = table.remove(self.list, 1)",
+   "dataset": "error list",
+   "parent_keys": "where|msg",
+   "class": "log-or-debug",
+   "why": "Error list cap.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Errors.lua",
+   "line": 34,
+   "code": "self.byKey[old.where .. \"|\" .. old.msg] = nil",
+   "dataset": "error index",
+   "parent_keys": "where|msg",
+   "class": "log-or-debug",
+   "why": "Index entry of the dropped error.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Perf.lua",
+   "line": 69,
+   "code": "if list[#list] and list[#list].session == ns.session then table.remove(list) end",
+   "dataset": "ns.db.global.perfRuns",
+   "parent_keys": "session",
+   "class": "log-or-debug",
+   "why": "Same-session perf run replaced.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Perf.lua",
+   "line": 73,
+   "code": "while #list > self.RUNS do table.remove(list, 1) end",
+   "dataset": "ns.db.global.perfRuns",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Perf run cap.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Perf.lua",
+   "line": 82,
+   "code": "while #top > 8 do table.remove(top) end",
+   "dataset": "perf top list",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Built per report.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Events.lua",
+   "line": 115,
+   "code": "while #slow > 10 do table.remove(slow) end",
+   "dataset": "slow-handler list",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Slow-handler list cap.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Probe.lua",
+   "line": 228,
+   "code": "while #g.probeUnits > 6 do table.remove(g.probeUnits, 1) end",
+   "dataset": "ns.db.global.probeUnits",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Probe units cap.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Modules/Tweaks.lua",
+   "line": 216,
+   "code": "ns.db.char.chatHistory = nil",
+   "dataset": "ns.db.char.chatHistory",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "Cleared after being replayed into the chat frame; rewritten at logout.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Advisor/Snapshot.lua",
+   "line": 126,
+   "code": "s.modules[biggest] = nil",
+   "dataset": "Outrider_Snapshots[charKey].modules[name]",
+   "parent_keys": "charKey, module",
+   "class": "log-or-debug",
+   "why": "Snapshot is rebuilt from other saved data; parts dropped to fit size.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Advisor/Snapshot.lua",
+   "line": 179,
+   "code": "ns.db.char.askPending = nil",
+   "dataset": "ns.db.char.askPending",
+   "parent_keys": "none",
+   "class": "log-or-debug",
+   "why": "One-shot flag.",
+   "resolution": "allowed cap (owner retention decision)"
+  },
+  {
+   "file": "addon/Outrider/Core/Combat.lua",
+   "line": 29,
+   "code": "local dropped = table.remove(self.queue, 1)",
+   "dataset": "combat queue (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Combat queue.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Core/Combat.lua",
+   "line": 43,
+   "code": "if self.queue[i] == item then table.remove(self.queue, i) end",
+   "dataset": "combat queue",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Combat queue.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Core/Events.lua",
+   "line": 82,
+   "code": "if list[i].owner == owner then list[i].removed = true table.remove(list, i) end",
+   "dataset": "event handlers",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Handler unregister.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Core/Timer.lua",
+   "line": 30,
+   "code": "table.remove(queue, i)",
+   "dataset": "timer queue",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Timers.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/DealDesk.lua",
+   "line": 40,
+   "code": "while #self.lots > self.MAX do table.remove(self.lots) end",
+   "dataset": "DealDesk.lots (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Live AH lots.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Evidence.lua",
+   "line": 55,
+   "code": "if count > self.MAX then self.observations[oldestId] = nil end",
+   "dataset": "Evidence.observations (memory only)",
+   "parent_keys": "id",
+   "class": "transient",
+   "why": "In-memory TTL cache.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Evidence.lua",
+   "line": 61,
+   "code": "if (now or time()) > row.expiresAt then self.observations[id] = nil return nil end",
+   "dataset": "Evidence.observations",
+   "parent_keys": "id",
+   "class": "transient",
+   "why": "TTL expiry, memory only.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Opportunity.lua",
+   "line": 47,
+   "code": "for i = #out, (max or 3) + 1, -1 do out[i] = nil end",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per refresh.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Radar.lua",
+   "line": 54,
+   "code": "for i = #out, 81, -1 do out[i] = nil end",
+   "dataset": "FeedbackHistory() output",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Display copy.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 224,
+   "code": "local b = table.remove(s.queue, 1)",
+   "dataset": "Census sweep queue (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "/who band queue.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Census.lua",
+   "line": 351,
+   "code": "for i = (limit or 200) + 1, #out do out[i] = nil end",
+   "dataset": "Find() results",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Display list.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/AHBuy.lua",
+   "line": 196,
+   "code": "self.known[k] = nil -- that listing is being bought",
+   "dataset": "AHBuy.known (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Live listing cache.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 467,
+   "code": "if ok then self.live[a.itemID] = nil end",
+   "dataset": "AuctionSell.live (memory)",
+   "parent_keys": "itemID",
+   "class": "transient",
+   "why": "Live auctions.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Prices.lua",
+   "line": 312,
+   "code": "if #list > M.KEEP then table.remove(list) end",
+   "dataset": "scan-local cheap listings",
+   "parent_keys": "itemID",
+   "class": "transient",
+   "why": "Built during a scan, memory only.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Layers.lua",
+   "line": 61,
+   "code": "self.seen[old.spawn] = nil",
+   "dataset": "Layers window (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Sliding window.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Journey.lua",
+   "line": 62,
+   "code": "while #out > M.MAX do table.remove(out) end",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per refresh.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Journey.lua",
+   "line": 190,
+   "code": "table.remove(route.steps, 1)",
+   "dataset": "Journey.route (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Route step done.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/WhatNow.lua",
+   "line": 204,
+   "code": "for i = #out, 9, -1 do out[i] = nil end",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per refresh.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/WhatNow.lua",
+   "line": 587,
+   "code": "for i = #list, (n or M.SNAPSHOT_MAX) + 1, -1 do list[i] = nil end",
+   "dataset": "snapshot list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per call.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Sightings.lua",
+   "line": 167,
+   "code": "while #rows > 25 do table.remove(rows) end",
+   "dataset": "Snapshot() rows",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per call.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Nearby.lua",
+   "line": 70,
+   "code": "if s[2] == 0 then s[2], s[3], s[4] = nil, nil, nil end",
+   "dataset": "Outrider_DataGear pack rows (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Data pack normalisation, not saved data.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Nearby.lua",
+   "line": 192,
+   "code": "while #list > M.ELSEWHERE_MAX do table.remove(list) end",
+   "dataset": "elsewhere cache",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Cache.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/KitShare.lua",
+   "line": 233,
+   "code": "for i = #list, 1, -1 do if list[i].tier == \"alt\" then table.remove(list, i) end end",
+   "dataset": "Pending() output",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Display list.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/HunterFight.lua",
+   "line": 491,
+   "code": "if #M.pre >= 5 then table.remove(M.pre, 1) end",
+   "dataset": "M.pre (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Memory.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/LocationShare.lua",
+   "line": 82,
+   "code": "if now - p.t > self.EXPIRE then self.peers[name] = nil gone = true end",
+   "dataset": "LocationShare.peers (memory)",
+   "parent_keys": "sender",
+   "class": "transient",
+   "why": "Peers expire.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Comm.lua",
+   "line": 131,
+   "code": "self.inbox[key] = nil",
+   "dataset": "Comm inbox (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Message reassembly.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 174,
+   "code": "for k, t in pairs(self.recent) do if now - t > self.SPAM_WINDOW then self.recent[k] = nil end end",
+   "dataset": "Chat.recent (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Spam window.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Tweaks.lua",
+   "line": 91,
+   "code": "self.gathered[x.name] = nil",
+   "dataset": "Tweaks.gathered (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Minimap button state.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/LevelRoutes.lua",
+   "line": 105,
+   "code": "while #s.undo > 40 do table.remove(s.undo, 1) end",
+   "dataset": "LevelRoutes store .undo",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Undo stack (explicitly allowed).",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Finder.lua",
+   "line": 352,
+   "code": "while #out > M.CAP do table.remove(out) end",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per call.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Deals.lua",
+   "line": 139,
+   "code": "while #out > M.TOP do table.remove(out) end",
+   "dataset": "deal list (cached in ns.db.global.dealsLast)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Rebuilt from the price scan.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/Deals.lua",
+   "line": 181,
+   "code": "while #out > M.TOP do table.remove(out) end",
+   "dataset": "deal list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Rebuilt from the price scan.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestsNear.lua",
+   "line": 122,
+   "code": "while #out > M.MAX do table.remove(out) end",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per call.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestTracker.lua",
+   "line": 50,
+   "code": "for i = #zones, 1, -1 do if #zones[i].quests == 0 then table.remove(zones, i) end end",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Built per refresh.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/FightMeter.lua",
+   "line": 48,
+   "code": "while #rows > 20 do table.remove(rows) end",
+   "dataset": "fight sources being built",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Only the top 20 are ever saved; nothing saved is removed.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/FightPlan.lua",
+   "line": 376,
+   "code": "for i = #(self.findings or {}), 1, -1 do if self.findings[i].name == name then table.remove(self.findings, i) end end",
+   "dataset": "FightPlan.findings (memory)",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Findings list.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/DungeonGuide.lua",
+   "line": 322,
+   "code": "if now - p.t <= M.PARTY_FOR then names[#names + 1] = name else self.party[name] = nil end",
+   "dataset": "DungeonGuide.party (memory)",
+   "parent_keys": "name",
+   "class": "transient",
+   "why": "Party info expiry.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/GatherShare.lua",
+   "line": 32,
+   "code": "for i = #self.sent, 1, -1 do if now - self.sent[i] >= 60 then table.remove(self.sent, i) end end",
+   "dataset": "send throttle",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Send queue.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/MoneyGuide.lua",
+   "line": 61,
+   "code": "M.pending[itemID] = nil",
+   "dataset": "pending lookups",
+   "parent_keys": "itemID",
+   "class": "transient",
+   "why": "Memory.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/LootRolls.lua",
+   "line": 70,
+   "code": "if rollID then self.rolls[rollID] = nil else self.rolls = {} end",
+   "dataset": "LootRolls.rolls (memory)",
+   "parent_keys": "rollID",
+   "class": "transient",
+   "why": "Memory.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/RareScan.lua",
+   "line": 222,
+   "code": "local p = table.remove(list, best)",
+   "dataset": "local list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "Local.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/UI/Toast.lua",
+   "line": 237,
+   "code": "if v == f then table.remove(self.visible, i) break end",
+   "dataset": "visible toasts",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "UI.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/UI/TooltipLines.lua",
+   "line": 83,
+   "code": "for i, p in ipairs(list) do if p.key == key then table.remove(list, i) break end end",
+   "dataset": "tooltip providers",
+   "parent_keys": "key",
+   "class": "transient",
+   "why": "Re-registration.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingGuide.lua",
+   "line": 512,
+   "code": "if not skill then table.remove(out, 3) end -- no skill-ups to measure yet",
+   "dataset": "display list",
+   "parent_keys": "none",
+   "class": "transient",
+   "why": "UI.",
+   "resolution": "not saved data"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/Economy.lua",
+   "line": 80,
+   "code": "while #st > 100 and ns.Archive:Shift(\"economyOutcomes\", st, { path = \"char.intelEconomyOutcomes\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.intelEconomyOutcomes",
+   "parent_keys": "none (per character list)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/SessionXP.lua",
+   "line": 116,
+   "code": "while #store.history > M.MAX_HISTORY and ns.Archive:Shift(\"xpSessions\", store.history, { path = \"char.xp60.history\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.xp60.history",
+   "parent_keys": "none (per character; rows carry sessionId)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Intelligence/SessionXP.lua",
+   "line": 152,
+   "code": "while #store.history > M.MAX_HISTORY and ns.Archive:Shift(\"xpSessions\", store.history, { path = \"char.xp60.history\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.xp60.history",
+   "parent_keys": "none (per character; rows carry sessionId)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Advisor.lua",
+   "line": 120,
+   "code": "while #list > M.FEEDBACK_KEEP and ns.Archive:Shift(\"adviceFeedback\", list, { path = \"char.adviceFeedback\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.adviceFeedback",
+   "parent_keys": "none (per character)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionHelper.lua",
+   "line": 118,
+   "code": "while #ledger > 100 and ns.Archive:Shift(\"salesLedger\", ledger, { path = \"char.auctionSales\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.auctionSales",
+   "parent_keys": "none (per character)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/AuctionSell.lua",
+   "line": 347,
+   "code": "while #h > M.KEEP_POSTS and ns.Archive:Shift(\"auctionPosts\", h, { path = \"global.postHistory[itemID]\", keys = { itemID = g.itemID } }) do end",
+   "dataset": "ns.db.global.postHistory[itemID]",
+   "parent_keys": "itemID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/BeastInfo.lua",
+   "line": 115,
+   "code": "while #g.petsSeen > 50 and ns.Archive:Shift(\"petsSeen\", g.petsSeen, { path = \"global.petsSeen\" }) do end",
+   "dataset": "ns.db.global.petsSeen",
+   "parent_keys": "none",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 57,
+   "code": "while #self.archive > M.ARCHIVE_MAX and ns.Archive:Shift(\"chat\", self.archive, { path = \"global.chatArchive\" }) do end",
+   "dataset": "ns.db.global.chatArchive",
+   "parent_keys": "none",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Chat.lua",
+   "line": 63,
+   "code": "while #by > M.PER_PERSON_MAX and ns.Archive:Shift(\"chatByPerson\", by, { path = \"global.whisperArchive[who]\", keys = { who = who } }) do end",
+   "dataset": "ns.db.global.whisperArchive[who]",
+   "parent_keys": "who",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Discovery.lua",
+   "line": 126,
+   "code": "while #recent > RECENT_MAX and ns.Archive:Shift(\"discoveredRecent\", recent, { path = \"global.discovered.recent\" }) do end",
+   "dataset": "ns.db.global.discovered.recent",
+   "parent_keys": "none (rows carry npcID)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Feedback.lua",
+   "line": 145,
+   "code": "while #list > M.MAX and ns.Archive:Shift(\"feedback\", list, { path = \"global.feedback\" }) do end",
+   "dataset": "ns.db.global.feedback",
+   "parent_keys": "none",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/FightMeter.lua",
+   "line": 67,
+   "code": "while #history > self.MAX_HISTORY and ns.Archive:Shift(\"fights\", history, { path = \"char.fights\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.fights",
+   "parent_keys": "none (per character)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 211,
+   "code": "while #list > M.KEEP_NOTABLE and ns.Archive:Pop(\"fishNotable\", list, { path = \"global.fishLog.notable\" }) do end",
+   "dataset": "ns.db.global.fishLog.notable",
+   "parent_keys": "none",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/FishingLog.lua",
+   "line": 283,
+   "code": "while #self.data.sessions > M.KEEP_SESSIONS and ns.Archive:Pop(\"fishSessions\", self.data.sessions, { path = \"global.fishLog.sessions\" }) do end",
+   "dataset": "ns.db.global.fishLog.sessions",
+   "parent_keys": "none (rows carry char)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Layers.lua",
+   "line": 84,
+   "code": "while #history > self.HISTORY_MAX and ns.Archive:Shift(\"layerHistory\", history, { path = \"char.modules.Layers.settings.history\", scope = \"char\" }) do end",
+   "dataset": "char.modules.Layers.settings.history",
+   "parent_keys": "none (per character; rows carry mapID)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Ledger.lua",
+   "line": 58,
+   "code": "while #c.ledger > 30 and ns.Archive:Shift(\"goldLedger\", c.ledger, { path = \"char.ledger\", scope = \"char\" }) do end",
+   "dataset": "ns.db.char.ledger",
+   "parent_keys": "none (per character)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/LootLog.lua",
+   "line": 122,
+   "code": "while #list > M.STATE_MAX and ns.Archive:Shift(\"nodeState\", list, { path = \"global.nodeState\" }) do end",
+   "dataset": "ns.db.global.nodeState",
+   "parent_keys": "none",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Nearest.lua",
+   "line": 103,
+   "code": "while #history > 100 and ns.Archive:Shift(\"deaths\", history, { path = \"global.deathHistory\" }) do end",
+   "dataset": "ns.db.global.deathHistory",
+   "parent_keys": "none",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 139,
+   "code": "while #rows > M.MAX_ROWS and ns.Archive:Shift(\"priceHistory\", rows, { path = \"global.priceLog.items[itemID]\", keys = { itemID = id } }) do end",
+   "dataset": "ns.db.global.priceLog.items[itemID]",
+   "parent_keys": "itemID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 141,
+   "code": "while rows[1] and rows[1][1] < cut and ns.Archive:Shift(\"priceHistory\", rows, { path = \"global.priceLog.items[itemID]\", keys = { itemID = id } }) do end",
+   "dataset": "ns.db.global.priceLog.items[itemID]",
+   "parent_keys": "itemID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/PriceHistory.lua",
+   "line": 154,
+   "code": "if not last or ns.Archive:Put(\"priceHistoryItems\", rows, { path = \"global.priceLog.items[itemID]\", keys = { itemID = id } }) then",
+   "dataset": "ns.db.global.priceLog.items[itemID]",
+   "parent_keys": "itemID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Prices.lua",
+   "line": 44,
+   "code": "while #h > 0 and h[1][1] < d - self.DAYS and ns.Archive:Shift(\"prices\", h, { path = \"global.prices[itemID]\", keys = { itemID = itemID } }) do end",
+   "dataset": "ns.db.global.prices[itemID]",
+   "parent_keys": "itemID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/QuestInfo.lua",
+   "line": 212,
+   "code": "while #list > M.HISTORY_CAP and ns.Archive:Shift(\"questDiary\", list, { path = \"global.questHistory[character]\", keys = { character = ns.db.key }, scope = \"char\" }) do end",
+   "dataset": "ns.db.global.questHistory[charKey]",
+   "parent_keys": "charKey",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/RareProfile.lua",
+   "line": 83,
+   "code": "while #s.gaps > M.MAX_GAPS and ns.Archive:Shift(\"rareCastGaps\", s.gaps, { path = \"global.rareProfiles[npcID].spells[spell].gaps\", keys = { npcID = npcID, spell = name } }) do end",
+   "dataset": "ns.db.global.rareProfiles[npcID].spells[spell].gaps",
+   "parent_keys": "npcID, spell",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Sightings.lua",
+   "line": 53,
+   "code": "while #list > self.CAP and ns.Archive:Shift(\"sightings\", list, { path = \"global.sightings[npcID]\", keys = { npcID = npcID } }) do end",
+   "dataset": "ns.db.global.sightings[npcID]",
+   "parent_keys": "npcID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Sightings.lua",
+   "line": 64,
+   "code": "while #o > self.OBS_CAP and ns.Archive:Shift(\"sightingObservations\", o, { path = \"global.respawnObs[npcID]\", keys = { npcID = npcID } }) do end",
+   "dataset": "ns.db.global.respawnObs[npcID]",
+   "parent_keys": "npcID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/SpawnLog.lua",
+   "line": 67,
+   "code": "while #list > M.MAX and ns.Archive:Shift(\"spawnLog\", list, { path = \"global.spawnLogs[spot]\", keys = { spot = spot } }) do end",
+   "dataset": "ns.db.global.spawnLogs[spot]",
+   "parent_keys": "spot (rare npcID)",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  },
+  {
+   "file": "addon/Outrider/Modules/Trail.lua",
+   "line": 61,
+   "code": "while #list > M.MAX and ns.Archive:Shift(\"trail\", list, { path = \"global.trails[mapID]\", keys = { mapID = mapID } }) do end",
+   "dataset": "ns.db.global.trails[mapID]",
+   "parent_keys": "mapID",
+   "class": "already-archived",
+   "why": "Goes through ns.Archive.",
+   "resolution": "archived; v2 contract with path and keys"
+  }
+ ],
+ "finding_counts": {
+  "collected-automatic-loss": 12,
+  "unsure": 8,
+  "malformed-replaced": 115,
+  "player-initiated": 29,
+  "outdated-replaced": 19,
+  "log-or-debug": 12,
+  "transient": 44,
+  "already-archived": 28
+ }
+}

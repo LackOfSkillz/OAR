@@ -30,9 +30,12 @@ end
 function M:Store()
   local c = ns.db.char
   if type(c.xp60) ~= "table" or c.xp60.schema ~= M.SCHEMA then
+    -- an older schema is kept whole in the archive before the new store starts
+    if type(c.xp60) == "table" then local _ = ns.Archive:Put("xp60OldSchema", c.xp60, { path = "char.xp60", scope = "char" }) or ns.Archive:KeepDamaged("char.xp60", c.xp60)
+    else ns.KeepBad(c.xp60, "SessionXP:c.xp60") end
     c.xp60 = { schema = M.SCHEMA, history = {} }
   end
-  if type(c.xp60.history) ~= "table" then c.xp60.history = {} end
+  if type(c.xp60.history) ~= "table" then ns.KeepBad(c.xp60.history, "SessionXP:c.xp60.history") c.xp60.history = {} end
   return c.xp60
 end
 function M:OnInitialize()
@@ -113,7 +116,7 @@ function M:Start()
     store.current.flags.incomplete = true
     store.history[#store.history + 1] = store.current
   end
-  while #store.history > M.MAX_HISTORY do ns.Archive:Shift("xpSessions", store.history) end
+  while #store.history > M.MAX_HISTORY and ns.Archive:Shift("xpSessions", store.history, { path = "char.xp60.history", scope = "char" }) do end
   local xp = xpstate()
   local id = tostring(wall()) .. "-" .. tostring(ns.session or "session")
   local s = { schema = M.SCHEMA, sessionId = id, startedAt = wall(),
@@ -149,7 +152,7 @@ function M:Checkpoint(final)
   if not s.final then s.flags.incomplete = true end
   local store = self:Store()
   store.history[#store.history + 1] = s
-  while #store.history > M.MAX_HISTORY do ns.Archive:Shift("xpSessions", store.history) end
+  while #store.history > M.MAX_HISTORY and ns.Archive:Shift("xpSessions", store.history, { path = "char.xp60.history", scope = "char" }) do end
   store.current = nil
   self.current, self.lastXP, self.zoneById, self.zoneId = nil, nil, nil, nil
   return true

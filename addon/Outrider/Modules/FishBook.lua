@@ -32,17 +32,17 @@ M.MIN_BLOCK = 10   -- catches a time block needs before it's compared
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.fishBook = type(g.fishBook) == "table" and g.fishBook or {}
+  g.fishBook = ns.KeepTable(g.fishBook, "FishBook:g.fishBook") or {}
   local b = g.fishBook
-  b.fish = type(b.fish) == "table" and b.fish or {}          -- [id] = { first, char, q, name }
-  b.hours = type(b.hours) == "table" and b.hours or {}        -- [mapID] = { [block] = { t = n, [id] = n } }
-  b.earned = type(b.earned) == "table" and b.earned or {}     -- [milestone key] = { t, char }
+  b.fish = ns.KeepTable(b.fish, "FishBook:b.fish") or {}          -- [id] = { first, char, q, name }
+  b.hours = ns.KeepTable(b.hours, "FishBook:b.hours") or {}        -- [mapID] = { [block] = { t = n, [id] = n } }
+  b.earned = ns.KeepTable(b.earned, "FishBook:b.earned") or {}     -- [milestone key] = { t, char }
   self.book = b
 end
 
 function M:CharFish()
   local c = ns.db.char
-  c.fishCaught = type(c.fishCaught) == "table" and c.fishCaught or {}
+  c.fishCaught = ns.KeepTable(c.fishCaught, "FishBook:c.fishCaught") or {}
   return c.fishCaught
 end
 

@@ -529,7 +529,7 @@ function Hub:ShowTab(id)
   if self.frame and self.frame.tabBar and self.frame.tabBar.selected ~= nav then self.frame.tabBar:Highlight(nav) end
   if self.SUBS[nav] then
     local hub = ns.db.char.hub
-    hub.sub = type(hub.sub) == "table" and hub.sub or {}
+    hub.sub = ns.KeepTable(hub.sub, "Hub:hub.sub") or {}
     hub.sub[nav] = t.id
   end
   if p.subTabs then for _, c in ipairs(p.subTabs) do c:SetOn(c.page == t.id) end end

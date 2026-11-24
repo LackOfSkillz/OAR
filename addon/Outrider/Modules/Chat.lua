@@ -40,8 +40,8 @@ M.ARCHIVE_MAX, M.PER_PERSON_MAX = 600, 100
 function M:OnInitialize()
   self.recent, self.fed, self.decided, self.decidedN, self.subscribed = {}, {}, {}, 0, {}
   local g = ns.db.global
-  g.chatArchive = type(g.chatArchive) == "table" and g.chatArchive or {}
-  g.whisperArchive = type(g.whisperArchive) == "table" and g.whisperArchive or {}
+  g.chatArchive = ns.KeepTable(g.chatArchive, "Chat:g.chatArchive") or {}
+  g.whisperArchive = ns.KeepTable(g.whisperArchive, "Chat:g.whisperArchive") or {}
   self.archive, self.whispers = g.chatArchive, g.whisperArchive
 end
 
@@ -54,13 +54,13 @@ function M:RememberLine(event, msg, author)
   local item = { t = time(), event = event, author = author, text = msg }
   if s.chatArchive then
     self.archive[#self.archive + 1] = item
-    while #self.archive > M.ARCHIVE_MAX do ns.Archive:Shift("chat", self.archive) end
+    while #self.archive > M.ARCHIVE_MAX and ns.Archive:Shift("chat", self.archive, { path = "global.chatArchive" }) do end
   end
   if s.whisperHistory and (event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM") then
     local who = author:lower()
     local by = self.whispers[who] or {}
     by[#by + 1] = item
-    while #by > M.PER_PERSON_MAX do ns.Archive:Shift("chatByPerson", by) end
+    while #by > M.PER_PERSON_MAX and ns.Archive:Shift("chatByPerson", by, { path = "global.whisperArchive[who]", keys = { who = who } }) do end
     self.whispers[who] = by
     local count = 0
     for _ in pairs(self.whispers) do count = count + 1 end
@@ -70,7 +70,9 @@ function M:RememberLine(event, msg, author)
         local t = records[#records] and records[#records].t or 0
         if not when or t < when then oldest, when = name, t end
       end
-      if oldest then self.whispers[oldest] = nil end
+      if oldest and ns.Archive:Put("chatByPerson", self.whispers[oldest], { path = "global.whisperArchive[who]", keys = { who = oldest, whole = true } }) then
+        self.whispers[oldest] = nil
+      end
     end
   end
 end

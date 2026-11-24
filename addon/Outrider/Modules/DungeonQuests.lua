@@ -63,7 +63,7 @@ function M:Context(key)
     end
   end
   local h = ns.db.global.questHistory
-  for _, e in ipairs(type(h) == "table" and type(h[key]) == "table" and h[key] or {}) do
+  for _, e in ipairs(type(h) == "table" and ns.KeepTable(h[key], "DungeonQuests:h[key]") or {}) do
     if e.what == "handed in" and e.name then ctx.history[e.name] = true end
   end
   if not ctx.me then

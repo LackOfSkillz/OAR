@@ -268,7 +268,7 @@ end
 M.REJOIN = 600
 local function runs()
   local g = ns.db.global
-  g.dungeonRuns = type(g.dungeonRuns) == "table" and g.dungeonRuns or {}
+  g.dungeonRuns = ns.KeepTable(g.dungeonRuns, "DungeonJournal:g.dungeonRuns") or {}
   return g.dungeonRuns
 end
 function M.Clock(sec)

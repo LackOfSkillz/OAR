@@ -371,7 +371,7 @@ end
 -- Changing the macro brings the check back.
 function M:KeepMine(name, body)
   local s = self:Settings()
-  s.kept = type(s.kept) == "table" and s.kept or {}
+  s.kept = ns.KeepTable(s.kept, "FightPlan:s.kept") or {}
   s.kept[name] = body
   for i = #(self.findings or {}), 1, -1 do if self.findings[i].name == name then table.remove(self.findings, i) end end
   self:Info("kept the player's own macro '%s'", tostring(name))

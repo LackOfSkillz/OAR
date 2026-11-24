@@ -115,7 +115,7 @@ end
 
 function M:Assigned()
   local s = self:Settings()
-  s.assigned = type(s.assigned) == "table" and s.assigned or {}
+  s.assigned = ns.KeepTable(s.assigned, "HealPanel:s.assigned") or {}
   return s.assigned
 end
 

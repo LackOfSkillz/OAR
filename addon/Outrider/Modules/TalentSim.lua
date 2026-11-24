@@ -210,7 +210,7 @@ function M.IsDummy(name)
 end
 
 function M:Dummy()
-  ns.db.char.talentDummy = type(ns.db.char.talentDummy) == "table" and ns.db.char.talentDummy or {}
+  ns.db.char.talentDummy = ns.KeepTable(ns.db.char.talentDummy, "TalentSim:ns.db.char.talentDummy") or {}
   return ns.db.char.talentDummy
 end
 

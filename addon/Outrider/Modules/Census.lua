@@ -37,7 +37,7 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.census = type(g.census) == "table" and g.census or {}
+  g.census = ns.KeepTable(g.census, "Census:g.census") or {}
   self.store = g.census
 end
 
@@ -48,7 +48,7 @@ end
 function M:Realm()
   local k = M.RealmKey()
   local r = self.store[k]
-  if type(r) ~= "table" then r = { players = {}, profs = {} } self.store[k] = r end
+  if type(r) ~= "table" then ns.KeepBad(r, "Census:r") r = { players = {}, profs = {} } self.store[k] = r end
   r.players = r.players or {}
   r.profs = r.profs or {}
   return r
@@ -456,10 +456,20 @@ end
 function M:Prune()
   local cut = time() - 86400 * M.KEEP_DAYS
   local r, n = self:Realm(), 0
-  for k, p in pairs(r.players) do if (p.t or 0) < cut then r.players[k] = nil n = n + 1 end end
+  local realm = M.RealmKey()
+  -- aged-out players and profession sightings move to the archive, keyed by realm and name
+  for k, p in pairs(r.players) do
+    if (p.t or 0) < cut and ns.Archive:Put("censusPlayers", p, { path = "global.census[realm].players[name]", keys = { realm = realm, name = k } }) then
+      r.players[k] = nil n = n + 1
+    end
+  end
   for k, t in pairs(r.profs) do
     local any = false
-    for prof, when in pairs(t) do if when < cut then t[prof] = nil else any = true end end
+    for prof, when in pairs(t) do
+      if when < cut and ns.Archive:Put("censusProfs", when, { path = "global.census[realm].profs[name][prof]", keys = { realm = realm, name = k, prof = prof } }) then
+        t[prof] = nil
+      else any = true end
+    end
     if not any then r.profs[k] = nil end
   end
   return n

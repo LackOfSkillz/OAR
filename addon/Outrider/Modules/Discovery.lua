@@ -34,10 +34,10 @@ local ROLE_EVENTS = {
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.discovered = type(g.discovered) == "table" and g.discovered or {}
+  g.discovered = ns.KeepTable(g.discovered, "Discovery:g.discovered") or {}
   local d = g.discovered
-  d.npcs = type(d.npcs) == "table" and d.npcs or {}
-  d.recent = type(d.recent) == "table" and d.recent or {}
+  d.npcs = ns.KeepTable(d.npcs, "Discovery:d.npcs") or {}
+  d.recent = ns.KeepTable(d.recent, "Discovery:d.recent") or {}
   self.db = d
   self.pendingPlates = {}
 end
@@ -123,7 +123,7 @@ function M:Capture(unit, how, role)
 
   local recent = self.db.recent
   recent[#recent + 1] = { npcID = npcID, name = name, how = how, role = role, mapID = e.mapID, x = e.x, y = e.y, t = now }
-  while #recent > RECENT_MAX do ns.Archive:Shift("discoveredRecent", recent) end
+  while #recent > RECENT_MAX and ns.Archive:Shift("discoveredRecent", recent, { path = "global.discovered.recent" }) do end
 
   if isNew or upgraded or newRole then
     self:Info("captured npcID=%d %s how=%s q=%s map=%s %s%s", npcID, name, how, tostring(e.quality),

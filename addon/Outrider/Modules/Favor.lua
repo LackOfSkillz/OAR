@@ -27,12 +27,12 @@ M.FACTIONS = { "Durotar Supply and Logistics", "Azeroth Commerce Authority" }
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.favor = type(g.favor) == "table" and g.favor or {}
+  g.favor = ns.KeepTable(g.favor, "Favor:g.favor") or {}
   local f = g.favor
-  f.balance = type(f.balance) == "table" and f.balance or {}   -- [charKey] = { amount, currencyID, name, at }
-  f.standing = type(f.standing) == "table" and f.standing or {} -- [charKey] = { name, reaction, value, at }
-  f.crates = type(f.crates) == "table" and f.crates or {}       -- [itemID] = { name, lines, bundles, firstSeen, verified }
-  f.vendor = type(f.vendor) == "table" and f.vendor or {}       -- [npcName] = { items = { {name, itemID, costs} }, at }
+  f.balance = ns.KeepTable(f.balance, "Favor:f.balance") or {}   -- [charKey] = { amount, currencyID, name, at }
+  f.standing = ns.KeepTable(f.standing, "Favor:f.standing") or {} -- [charKey] = { name, reaction, value, at }
+  f.crates = ns.KeepTable(f.crates, "Favor:f.crates") or {}       -- [itemID] = { name, lines, bundles, firstSeen, verified }
+  f.vendor = ns.KeepTable(f.vendor, "Favor:f.vendor") or {}       -- [npcName] = { items = { {name, itemID, costs} }, at }
   self.db = f
   self.logged = {}
 end

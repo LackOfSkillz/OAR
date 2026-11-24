@@ -91,12 +91,33 @@ function ns.CopyTable(src, seen)
   return out
 end
 
+-- Saved values of the wrong type are kept, never just overwritten (owner data
+-- preservation override; review OI01-R04). KeepBad(value, path) hands a
+-- non-nil value to ns.Archive:KeepDamaged; before the saved data is ready the
+-- value waits in ns.damagedPending and Boot flushes it after DB:Init.
+-- KeepTable(value, path) returns value when it is a table, else keeps it and
+-- returns nil, so `x = type(x) == "table" and x or {}` starts fresh safely.
+ns.damagedPending = {}
+function ns.KeepBad(value, path)
+  if value == nil then return end
+  if ns.Archive and ns.db and type(ns.db.global) == "table" then
+    ns.Archive:KeepDamaged(path, value)
+  else
+    ns.damagedPending[#ns.damagedPending + 1] = { path = path, value = value }
+  end
+end
+function ns.KeepTable(value, path)
+  if type(value) == "table" then return value end
+  ns.KeepBad(value, path)
+  return nil
+end
+
 -- Fill missing keys in dst from defaults (recursive). Never overwrites.
 function ns.ApplyDefaults(dst, defaults)
   if type(defaults) ~= "table" then return dst end
   for k, v in pairs(defaults) do
     if type(v) == "table" then
-      if type(dst[k]) ~= "table" then dst[k] = {} end
+      if type(dst[k]) ~= "table" then ns.KeepBad(dst[k], "defaults:" .. tostring(k)) dst[k] = {} end
       ns.ApplyDefaults(dst[k], v)
     elseif dst[k] == nil then
       dst[k] = v

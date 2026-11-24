@@ -25,7 +25,7 @@ M.MAX_GAPS = 10
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.rareProfiles = type(g.rareProfiles) == "table" and g.rareProfiles or {}
+  g.rareProfiles = ns.KeepTable(g.rareProfiles, "RareProfile:g.rareProfiles") or {}
   self.units = {}   -- unit token -> npcID currently known to be that rare
 end
 
@@ -80,7 +80,7 @@ function M:OnSpell(event, unit, _, spellID)
   s.n = s.n + 1
   if s.lastT and now - s.lastT < 120 then -- same encounter
     s.gaps[#s.gaps + 1] = now - s.lastT
-    while #s.gaps > M.MAX_GAPS do ns.Archive:Shift("rareCastGaps", s.gaps) end
+    while #s.gaps > M.MAX_GAPS and ns.Archive:Shift("rareCastGaps", s.gaps, { path = "global.rareProfiles[npcID].spells[spell].gaps", keys = { npcID = npcID, spell = name } }) do end
   end
   s.lastT = now
   self:Debug("%s casts %s", tostring(p.name), name)

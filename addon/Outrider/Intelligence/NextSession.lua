@@ -26,18 +26,20 @@ function M:Feedback(verdict)
   local a = self:Plan()
   if not a then return false end
   local d = self:Settings().dismissed
-  if type(d) ~= "table" then d = {} self:Settings().dismissed = d end
+  if type(d) ~= "table" then ns.KeepBad(d, "NextSession:d") d = {} self:Settings().dismissed = d end
   if verdict == "dismiss" or verdict == "wrong" or
      verdict == "already_know" or verdict == "not_interested" then
     d[a.basedOnSessionId] = verdict
     local n = 0
     for _ in pairs(d) do n = n + 1 end
-    if n > 20 then self:Settings().dismissed = { [a.basedOnSessionId] = verdict } end
+    if n > 20 and ns.Archive:Put("nextSessionDismissed", d, { path = "char.modules.NextSession.settings.dismissed", scope = "char" }) then
+      self:Settings().dismissed = { [a.basedOnSessionId] = verdict }
+    end
   end
   if verdict == "already_know" or verdict == "not_interested" or
       verdict == "wrong" then
     local saved = ns.db.char.xp60Suppressed
-    if type(saved) ~= "table" then saved = {} ns.db.char.xp60Suppressed = saved end
+    if type(saved) ~= "table" then ns.KeepBad(saved, "NextSession:saved") saved = {} ns.db.char.xp60Suppressed = saved end
     local level = ns.Compat.Readable(ns.Compat.Call("UnitLevel", "player")) or 0
     local function remember(id)
       if type(id) == "string" and #id > 0 and #id <= 100 then

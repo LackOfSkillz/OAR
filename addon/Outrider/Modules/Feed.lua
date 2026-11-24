@@ -19,7 +19,7 @@ M.CAP = 50
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.feed = type(g.feed) == "table" and g.feed or {}
+  g.feed = ns.KeepTable(g.feed, "Feed:g.feed") or {}
   g.feedSeen = tonumber(g.feedSeen) or 0
   g.feedN = tonumber(g.feedN) or 0
   self.list = g.feed

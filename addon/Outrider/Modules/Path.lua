@@ -145,7 +145,7 @@ function M:Routes()
   if self.routes ~= nil then return self.routes end
   if not rawget(_G, "Outrider_DataPaths") then C.LoadAddOn(M.ROUTES_ADDON) end
   local d = rawget(_G, "Outrider_DataPaths")
-  self.routes = type(d) == "table" and type(d.maps) == "table" and d.maps or false
+  self.routes = type(d) == "table" and ns.KeepTable(d.maps, "Path:d.maps") or false
   self:Info(self.routes and "walked routes loaded from %s" or "no walked routes pack (%s): only your own breadcrumbs",
     self.routes and tostring(d.source) or M.ROUTES_ADDON)
   return self.routes
@@ -189,7 +189,7 @@ function M:Shipped()
   if self.shipped ~= nil then return self.shipped end
   if not rawget(_G, "Outrider_DataTrails") then C.LoadAddOn(M.TRAILS_ADDON) end
   local d = rawget(_G, "Outrider_DataTrails")
-  self.shipped = type(d) == "table" and type(d.maps) == "table" and d.maps or false
+  self.shipped = type(d) == "table" and ns.KeepTable(d.maps, "Path:d.maps") or false
   return self.shipped
 end
 

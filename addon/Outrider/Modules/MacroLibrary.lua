@@ -234,7 +234,7 @@ function M:Install(entry, force)
   local prev = old and old.prev or {}
   if old and old.body and not E.Same(old.body, body) then
     table.insert(prev, 1, old.body)
-    for i = M.KEEP_PREV + 1, #prev do prev[i] = nil end
+    while #prev > M.KEEP_PREV and ns.Archive:Pop("macroPrevBodies", prev, { path = "settings.installed[name].prev", keys = { name = entry.name }, scope = "char" }) do end
   end
   -- Remember what the game actually holds, not what we asked for (bug
   -- 2026-11-23: macros never edited by hand, yet the game's Fight differed from
@@ -293,7 +293,7 @@ function M:Import(text)
   if not p then return nil, err end
   if type(p) ~= "table" or p.kind ~= self.KIND then return nil, "this string is not an Outrider macro export" end
   if type(p.v) ~= "number" or p.v > self.VERSION then return nil, "made by a newer Outrider" end
-  if type(p.ids) ~= "table" then return nil, "no macros in this string" end
+  if type(p.ids) ~= "table" then ns.KeepBad(p.ids, "MacroLibrary:p.ids") return nil, "no macros in this string" end
   -- A copied string is untrusted; never let it cause unbounded CreateMacro
   -- operations even when the player explicitly clicks Import.
   if #p.ids < 1 or #p.ids > 120 then return nil, "macro set size is invalid" end

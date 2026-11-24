@@ -23,6 +23,7 @@ function Boot:OnAddonLoaded(_, name)
   ns.bootClock = GetTime and GetTime() or 0
   ns.Log:Attach()
   ns.DB:Init()
+  ns.Archive:FlushPending()
   ns.Errors:Attach()
   ns.DB:StartSession(ns.session)
   local sv, loads = ns.DB:SavedVariablesStatus()

@@ -26,8 +26,8 @@ end
 
 function M:Store()
   local c = ns.db.char
-  c.professions = type(c.professions) == "table" and c.professions or {}
-  c.professions[""] = nil
+  c.professions = ns.KeepTable(c.professions, "Professions:c.professions") or {}
+  if c.professions[""] ~= nil then ns.KeepBad(c.professions[""], "Professions:char.professions['']") c.professions[""] = nil end
   return c.professions
 end
 

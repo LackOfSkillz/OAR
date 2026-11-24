@@ -341,7 +341,7 @@ function M:OnSystem(_, msg)
       local other = winner == me and loser or winner
       local full = ns.Census and ns.Census.FullName(other) or other
       local g = ns.db.global
-      g.duels = type(g.duels) == "table" and g.duels or {}
+      g.duels = ns.KeepTable(g.duels, "PlayerInfo:g.duels") or {}
       local r = g.duels[full] or { w = 0, l = 0 }
       if winner == me then r.w = r.w + 1 else r.l = r.l + 1 end
       r.t = time()
@@ -400,7 +400,7 @@ end
 
 function M:MobRecord(npcID)
   local g = ns.db.global
-  g.mobFights = type(g.mobFights) == "table" and g.mobFights or {}
+  g.mobFights = ns.KeepTable(g.mobFights, "PlayerInfo:g.mobFights") or {}
   return g.mobFights, npcID and g.mobFights[npcID]
 end
 

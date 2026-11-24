@@ -18,7 +18,7 @@ ns.Nearest = M
 
 function M:OnInitialize()
   local global = ns.db.global
-  global.graveyards = type(global.graveyards) == "table" and global.graveyards or {}
+  global.graveyards = ns.KeepTable(global.graveyards, "Nearest:global.graveyards") or {}
   self.graveyards = global.graveyards
 end
 
@@ -100,7 +100,7 @@ function M:FinishDeathLog()
     ns.db.global.deathHistory = ns.db.global.deathHistory or {}
     local history = ns.db.global.deathHistory
     history[#history + 1] = self.deathLog
-    while #history > 100 do ns.Archive:Shift("deaths", history) end
+    while #history > 100 and ns.Archive:Shift("deaths", history, { path = "global.deathHistory" }) do end
   end
   self.deathLog = nil
 end

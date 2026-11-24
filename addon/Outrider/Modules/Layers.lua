@@ -69,11 +69,12 @@ function M:Remember(id, confidence)
   if not (self.mapID and id) then return end
   local settings = self:Settings()
   local history = settings.history
-  if type(history) ~= "table" then history = {} settings.history = history end
+  if type(history) ~= "table" then ns.KeepBad(history, "Layers:history") history = {} settings.history = history end
   local now = time()
   for i = #history, 1, -1 do
     local h = history[i]
     if type(h) ~= "table" then
+      ns.KeepBad(h, "Layers:settings.history[i]")
       table.remove(history, i)
     elseif h.mapID == self.mapID and h.id == id then
       if now - (tonumber(h.at) or 0) < 30 then return end
@@ -81,7 +82,7 @@ function M:Remember(id, confidence)
     end
   end
   history[#history + 1] = { id = id, mapID = self.mapID, at = now, confidence = confidence }
-  while #history > self.HISTORY_MAX do ns.Archive:Shift("layerHistory", history) end
+  while #history > self.HISTORY_MAX and ns.Archive:Shift("layerHistory", history, { path = "char.modules.Layers.settings.history", scope = "char" }) do end
 end
 
 function M:History(mapID, limit)

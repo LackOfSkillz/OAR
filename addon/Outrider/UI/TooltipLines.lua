@@ -22,11 +22,11 @@ local ENUM = { item = "Enum.TooltipDataType.Item", unit = "Enum.TooltipDataType.
 function TL:Settings()
   if not (ns.db and ns.db.char) then return { shiftOnly = false, limit = 0, hidden = {} } end
   local db = ns.db.char
-  db.tooltipExtras = type(db.tooltipExtras) == "table" and db.tooltipExtras or {}
+  db.tooltipExtras = ns.KeepTable(db.tooltipExtras, "TooltipLines:db.tooltipExtras") or {}
   local s = db.tooltipExtras
   if s.shiftOnly == nil then s.shiftOnly = false end
   if s.limit == nil then s.limit = 0 end -- 0 means unlimited per provider
-  s.hidden = type(s.hidden) == "table" and s.hidden or {}
+  s.hidden = ns.KeepTable(s.hidden, "TooltipLines:s.hidden") or {}
   return s
 end
 

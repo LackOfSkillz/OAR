@@ -201,7 +201,7 @@ function M:QueueAdd(mapID, x, y, title)
   if type(mapID) ~= "number" or type(x) ~= "number" or type(y) ~= "number"
      or x < 0 or x > 1 or y < 0 or y > 1 then return false, "bad queued waypoint" end
   local s = self:Settings()
-  s.queue = type(s.queue) == "table" and s.queue or {}
+  s.queue = ns.KeepTable(s.queue, "Waypoints:s.queue") or {}
   if #s.queue >= M.QUEUE_MAX then return false, "queue is full (30 stops)" end
   s.queue[#s.queue + 1] = { mapID = mapID, x = x, y = y, title = title or "Route stop" }
   return true, #s.queue

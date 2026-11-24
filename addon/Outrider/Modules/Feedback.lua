@@ -39,7 +39,7 @@ M.KINDS = {
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.feedback = type(g.feedback) == "table" and g.feedback or {}
+  g.feedback = ns.KeepTable(g.feedback, "Feedback:g.feedback") or {}
 end
 
 -- ---------------------------------------------------------------- the report
@@ -142,7 +142,7 @@ function M:Make(kind, title, text, withName)
   local url = M.Url(kind, title, text, details, errors)
   local list = ns.db.global.feedback
   list[#list + 1] = { kind = kind, title = title, text = text, t = time(), url = url }
-  while #list > M.MAX do ns.Archive:Shift("feedback", list) end
+  while #list > M.MAX and ns.Archive:Shift("feedback", list, { path = "global.feedback" }) do end
   self:Info("%s report made: %s (%d characters)", kind, title, #url)
   return url
 end

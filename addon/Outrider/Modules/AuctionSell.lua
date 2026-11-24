@@ -33,9 +33,9 @@ M.KEEP_POSTS = 20
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.postHistory = type(g.postHistory) == "table" and g.postHistory or {}
-  g.sellPrices = type(g.sellPrices) == "table" and g.sellPrices or {}
-  g.sellHidden = type(g.sellHidden) == "table" and g.sellHidden or {}
+  g.postHistory = ns.KeepTable(g.postHistory, "AuctionSell:g.postHistory") or {}
+  g.sellPrices = ns.KeepTable(g.sellPrices, "AuctionSell:g.sellPrices") or {}
+  g.sellHidden = ns.KeepTable(g.sellHidden, "AuctionSell:g.sellHidden") or {}
   self.live = {}
 end
 
@@ -299,7 +299,7 @@ end
 -- ------------------------------------------------------------ posting
 function M:PostHistory(itemID)
   local h = ns.db.global.postHistory
-  h[itemID] = type(h[itemID]) == "table" and h[itemID] or {}
+  h[itemID] = ns.KeepTable(h[itemID], "AuctionSell:h[itemID]") or {}
   return h[itemID]
 end
 
@@ -344,7 +344,7 @@ function M:Post(g, opts)
   self.lastPost = { g = g, loc = loc, dur = dur, qty = qty, price = p.price, at = time() }
   local h = self:PostHistory(g.itemID)
   h[#h + 1] = { t = time(), unit = p.price, qty = qty }
-  while #h > M.KEEP_POSTS do ns.Archive:Shift("auctionPosts", h) end
+  while #h > M.KEEP_POSTS and ns.Archive:Shift("auctionPosts", h, { path = "global.postHistory[itemID]", keys = { itemID = g.itemID } }) do end
   local l = self.live[g.itemID]
   if l then l.mine = math.min(l.mine or p.price, p.price) end
   self:Info("posted %s x%d at %s each (%s, %s)", g.name, qty, money(p.price), p.why or "?", M.DURATIONS[dur] and M.DURATIONS[dur][2] or "?")
@@ -414,7 +414,7 @@ end
 function M:Owned()
   local list = C.Call("C_AuctionHouse.GetOwnedAuctions")
   local out = {}
-  for _, a in ipairs(type(list) == "table" and list or {}) do
+  for _, a in ipairs(ns.KeepTable(list, "AuctionSell:list") or {}) do
     local key = a.itemKey
     local id = key and C.Readable(key.itemID)
     local buyout = tonumber(C.Readable(a.buyoutAmount))

@@ -38,8 +38,8 @@ local function short(key) return tostring(key):match("^([^-]+)") or tostring(key
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.kits = type(g.kits) == "table" and g.kits or {}
-  g.kitOffers = type(g.kitOffers) == "table" and g.kitOffers or {}
+  g.kits = ns.KeepTable(g.kits, "KitShare:g.kits") or {}
+  g.kitOffers = ns.KeepTable(g.kitOffers, "KitShare:g.kitOffers") or {}
 end
 
 -- ------------------------------------------------------------ cards

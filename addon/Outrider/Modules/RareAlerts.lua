@@ -142,7 +142,7 @@ end
 function M:KnownLoot(npcID)
   local source = ns.db.global.rareLootSources
   local data = type(source) == "table" and source[npcID]
-  if type(data) ~= "table" then return {} end
+  if type(data) ~= "table" then ns.KeepBad(data, "RareAlerts:data") return {} end
   local out = {}
   for _, row in ipairs(data) do
     if type(row) == "table" and type(row.id) == "number" and row.source then

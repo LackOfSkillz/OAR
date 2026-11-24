@@ -22,8 +22,8 @@ M.CAP, M.OBS_CAP, M.MIN_OBS = 50, 20, 3
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.sightings = type(g.sightings) == "table" and g.sightings or {}
-  g.respawnObs = type(g.respawnObs) == "table" and g.respawnObs or {}
+  g.sightings = ns.KeepTable(g.sightings, "Sightings:g.sightings") or {}
+  g.respawnObs = ns.KeepTable(g.respawnObs, "Sightings:g.respawnObs") or {}
   self.db, self.obs = g.sightings, g.respawnObs
 end
 
@@ -50,7 +50,7 @@ function M:Record(npcID, s)
     end
   end
   list[#list + 1] = s
-  while #list > self.CAP do ns.Archive:Shift("sightings", list) end
+  while #list > self.CAP and ns.Archive:Shift("sightings", list, { path = "global.sightings[npcID]", keys = { npcID = npcID } }) do end
   self:Info("sighting npcID=%d %s layer=%s map=%s how=%s", npcID, s.state, tostring(s.layer), tostring(s.mapID), tostring(s.how))
   ns.Events:Fire("OTR_SIGHTING_ADDED", npcID, s)
   return s
@@ -61,7 +61,7 @@ function M:Learn(npcID, gap, layer)
   local o = self.obs[npcID]
   if not o then o = {} self.obs[npcID] = o end
   o[#o + 1] = gap
-  while #o > self.OBS_CAP do ns.Archive:Shift("sightingObservations", o) end
+  while #o > self.OBS_CAP and ns.Archive:Shift("sightingObservations", o, { path = "global.respawnObs[npcID]", keys = { npcID = npcID } }) do end
   self:Info("respawn observed npcID=%d gap=%ds layer=%s (%d observations)", npcID, gap, tostring(layer), #o)
 end
 

@@ -32,7 +32,7 @@ M.EVERY = 60
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.netTest = type(g.netTest) == "table" and g.netTest or {}
+  g.netTest = ns.KeepTable(g.netTest, "NetTest:g.netTest") or {}
   self.r = g.netTest
   self.tag = string.format("%04x", math.random(0, 65535))
 end
@@ -117,7 +117,7 @@ function M:OnMessage(_, prefix, text, channel, sender)
     return
   end
   r.heardOthers = (r.heardOthers or 0) + 1
-  r.others = type(r.others) == "table" and r.others or {}
+  r.others = ns.KeepTable(r.others, "NetTest:r.others") or {}
   local who = tostring(C.Readable(sender) or "?")
   local first = r.others[who] == nil
   r.others[who] = build

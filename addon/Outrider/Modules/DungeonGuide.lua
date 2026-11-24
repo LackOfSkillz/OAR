@@ -28,7 +28,7 @@ function M:Pack()
   if self.pack ~= nil then return self.pack end
   if not rawget(_G, "Outrider_DataDungeons") then C.LoadAddOn(self.ADDON) end
   local data = rawget(_G, "Outrider_DataDungeons")
-  self.pack = type(data) == "table" and type(data.dungeons) == "table" and data.dungeons or false
+  self.pack = type(data) == "table" and ns.KeepTable(data.dungeons, "DungeonGuide:data.dungeons") or false
   self:Info(self.pack and "dungeon pack loaded (%s)" or "no dungeon pack (%s)", self.pack and tostring(data.source) or self.ADDON)
   return self.pack
 end

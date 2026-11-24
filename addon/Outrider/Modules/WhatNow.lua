@@ -597,7 +597,7 @@ end
 
 function M:BuildSnapshot()
   local out = { goal = self:Goal(), candidates = {}, feedback = {} }
-  local fb = type(ns.db.char.adviceFeedback) == "table" and ns.db.char.adviceFeedback or {}
+  local fb = ns.KeepTable(ns.db.char.adviceFeedback, "WhatNow:ns.db.char.adviceFeedback") or {}
   for i = #fb, math.max(1, #fb - 19), -1 do   -- the 20 newest
     local f = fb[i]
     out.feedback[#out.feedback + 1] = { id = f.id, v = f.v, t = f.t }

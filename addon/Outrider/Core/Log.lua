@@ -32,8 +32,8 @@ local function format(msg, ...)
 end
 
 function Log:Attach()
-  Outrider_Log = type(Outrider_Log) == "table" and Outrider_Log or {}
-  Outrider_Log.lines = type(Outrider_Log.lines) == "table" and Outrider_Log.lines or {}
+  Outrider_Log = ns.KeepTable(Outrider_Log, "Log:Outrider_Log") or {}
+  Outrider_Log.lines = ns.KeepTable(Outrider_Log.lines, "Log:Outrider_Log.lines") or {}
   buffer = Outrider_Log.lines
   for _, line in ipairs(pending) do self:_push(line) end
   pending = {}

@@ -72,13 +72,13 @@ end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.travelLinks = type(g.travelLinks) == "table" and g.travelLinks or {}
-  g.taxiNodes = type(g.taxiNodes) == "table" and g.taxiNodes or {}
+  g.travelLinks = ns.KeepTable(g.travelLinks, "Travel:g.travelLinks") or {}
+  g.taxiNodes = ns.KeepTable(g.taxiNodes, "Travel:g.taxiNodes") or {}
 end
 
 local function charTaxi()
   local c = ns.db.char
-  c.taxiKnown = type(c.taxiKnown) == "table" and c.taxiKnown or {}
+  c.taxiKnown = ns.KeepTable(c.taxiKnown, "Travel:c.taxiKnown") or {}
   return c.taxiKnown
 end
 

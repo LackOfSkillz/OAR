@@ -48,9 +48,9 @@ M.MONTH_DAYS = { "1-10", "11-20", "21-31" }
 
 function M:OnInitialize()
   local g = ns.db.global
-  local s = type(g.priceLog) == "table" and g.priceLog or {}
-  s.items = type(s.items) == "table" and s.items or {}
-  s.watch = type(s.watch) == "table" and s.watch or {}
+  local s = ns.KeepTable(g.priceLog, "PriceHistory:g.priceLog") or {}
+  s.items = ns.KeepTable(s.items, "PriceHistory:s.items") or {}
+  s.watch = ns.KeepTable(s.watch, "PriceHistory:s.watch") or {}
   g.priceLog = s
   self.store = s
 end
@@ -106,6 +106,7 @@ function M:Watch(id, why)
       if e.why ~= "manual" and (not oldAt or (e.at or 0) < oldAt) then oldID, oldAt = k, e.at or 0 end
     end
     if not oldID then return false end
+    if not ns.Archive:Put("priceWatch", w[oldID], { path = "global.priceLog.watch[itemID]", keys = { itemID = oldID } }) then return false end
     w[oldID] = nil
   end
   w[id] = { at = now, why = why or "manual" }
@@ -136,9 +137,9 @@ function M:Seen(id, copper, qty, t)
   end
   if last and t < last[1] then return false end -- clock went backwards: skip
   rows[#rows + 1] = { t, copper, qty }
-  while #rows > M.MAX_ROWS do ns.Archive:Put("priceHistory", { id = id, row = table.remove(rows, 1) }) end
+  while #rows > M.MAX_ROWS and ns.Archive:Shift("priceHistory", rows, { path = "global.priceLog.items[itemID]", keys = { itemID = id } }) do end
   local cut = t - M.KEEP_DAYS * M.DAY
-  while rows[1] and rows[1][1] < cut do ns.Archive:Put("priceHistory", { id = id, row = table.remove(rows, 1) }) end
+  while rows[1] and rows[1][1] < cut and ns.Archive:Shift("priceHistory", rows, { path = "global.priceLog.items[itemID]", keys = { itemID = id } }) do end
   self.added = (self.added or 0) + 1
   return true
 end
@@ -150,8 +151,10 @@ function M:Prune(now)
   for id, rows in pairs(self.store.items) do
     local last = rows[#rows]
     if not last or (not self:IsTracked(id) and last[1] < cut) then
-      if last then ns.Archive:Put("priceHistoryItems", { id = id, rows = rows }) end
-      self.store.items[id] = nil
+      -- the whole list leaves the working store only once the archive holds it
+      if not last or ns.Archive:Put("priceHistoryItems", rows, { path = "global.priceLog.items[itemID]", keys = { itemID = id } }) then
+        self.store.items[id] = nil
+      end
     end
   end
 end

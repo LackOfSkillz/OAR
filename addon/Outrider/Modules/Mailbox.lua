@@ -29,8 +29,8 @@ M.FILTERS = { "all", "sold", "won", "expired" }
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.mailExpiry = type(g.mailExpiry) == "table" and g.mailExpiry or {}
-  g.mailRecent = type(g.mailRecent) == "table" and g.mailRecent or {}
+  g.mailExpiry = ns.KeepTable(g.mailExpiry, "Mailbox:g.mailExpiry") or {}
+  g.mailRecent = ns.KeepTable(g.mailRecent, "Mailbox:g.mailRecent") or {}
   self.expiry, self.recent = g.mailExpiry, g.mailRecent
 end
 
@@ -138,7 +138,7 @@ function M:Remember(name)
   if type(name) ~= "string" or name == "" then return end
   for i = #self.recent, 1, -1 do if self.recent[i] == name then table.remove(self.recent, i) end end
   table.insert(self.recent, 1, name)
-  for i = M.RECENT + 1, #self.recent do self.recent[i] = nil end
+  while #self.recent > M.RECENT and ns.Archive:Pop("mailRecent", self.recent, { path = "global.mailRecent" }) do end
 end
 
 function M:FillTo(name)

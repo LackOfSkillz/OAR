@@ -38,7 +38,7 @@ M.NEEDS = { forge = "stand by a forge", anvil = "stand by an anvil", fire = "sta
 
 function M:Record(prof)
   local p = ns.db.char.professions and ns.db.char.professions[prof]
-  return type(p) == "table" and p or nil
+  return ns.KeepTable(p, "CookTrainer:p") or nil
 end
 
 -- Crafting professions this character has, with recipe records.
@@ -293,7 +293,8 @@ function M:OnEnable()
   -- cheap (a few recipes), and BAG_UPDATE_DELAYED is already batched by the game
   local function later(mod) mod:Evaluate() end
   -- drop the blank-named copy an old scan stored (2026-11-14)
-  if type(ns.db.char.professions) == "table" then ns.db.char.professions[""] = nil end
+  local profs = ns.db.char.professions
+  if type(profs) == "table" and profs[""] ~= nil then ns.KeepBad(profs[""], "CookTrainer:char.professions['']") profs[""] = nil end
   self:On("BAG_UPDATE_DELAYED", later)
   self:On("PLAYER_REGEN_ENABLED", later)
   self:On("PLAYER_REGEN_DISABLED", function(mod) mod:Hide() end)

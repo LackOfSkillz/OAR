@@ -22,7 +22,7 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.flightTimes = type(g.flightTimes) == "table" and g.flightTimes or {}
+  g.flightTimes = ns.KeepTable(g.flightTimes, "FlightTimes:g.flightTimes") or {}
   self.times = g.flightTimes
 end
 

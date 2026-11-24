@@ -14,13 +14,13 @@ M.DAMAGE_DONE = 0 -- Enum.DamageMeterType.DamageDone in Forever probe
 M.MAX_HISTORY = 30
 
 function M:History()
-  ns.db.char.fights = type(ns.db.char.fights) == "table" and ns.db.char.fights or {}
+  ns.db.char.fights = ns.KeepTable(ns.db.char.fights, "FightMeter:ns.db.char.fights") or {}
   return ns.db.char.fights
 end
 
 function M:Sessions()
   local list = C.Call("C_DamageMeter.GetAvailableCombatSessions")
-  return type(list) == "table" and list or {}
+  return ns.KeepTable(list, "FightMeter:list") or {}
 end
 
 -- A summary that is guaranteed not to require protected/secret math.
@@ -64,7 +64,7 @@ function M:Capture()
         row.name = type(name) == "string" and name or ("Fight " .. id)
         local history = self:History()
         history[#history + 1] = row
-        while #history > self.MAX_HISTORY do ns.Archive:Shift("fights", history) end
+        while #history > self.MAX_HISTORY and ns.Archive:Shift("fights", history, { path = "char.fights", scope = "char" }) do end
         if self:Settings().toast and ns.Toast then
           ns.Toast:Show({ title = "Last fight: " .. row.name,
             text = string.format("%d damage, %.1f DPS in %.1fs (Blizzard)", row.total, row.dps, row.duration),

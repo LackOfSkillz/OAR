@@ -44,7 +44,7 @@ function M:OnEnable()
   self:On("PLAYER_LOGOUT", self.OnLogout)
   self:On("OTR_TESTBUTTON_CLICKED", self.OnTestClick)
   local g = ns.db.global
-  g.autocheck = type(g.autocheck) == "table" and g.autocheck or {}
+  g.autocheck = ns.KeepTable(g.autocheck, "AutoCheck:g.autocheck") or {}
   self.state = g.autocheck
 end
 

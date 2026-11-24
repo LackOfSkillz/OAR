@@ -118,7 +118,7 @@ end
 -- ns.db.global.petDiet[family] = { yes = { [food] = true }, no = { [food] = true } }
 function M:Diet(family)
   local g = ns.db.global
-  g.petDiet = type(g.petDiet) == "table" and g.petDiet or {}
+  g.petDiet = ns.KeepTable(g.petDiet, "PetStatus:g.petDiet") or {}
   local key = tostring(family or "?")
   g.petDiet[key] = g.petDiet[key] or { yes = {}, no = {} }
   return g.petDiet[key]

@@ -81,7 +81,7 @@ function M:Range(mapID)
   if c then return c.lo, c.hi, c.source, c.n end
   local seen = {}
   local d = ns.db.global.discovered
-  for _, e in pairs(type(d) == "table" and type(d.npcs) == "table" and d.npcs or {}) do
+  for _, e in pairs(type(d) == "table" and ns.KeepTable(d.npcs, "ZoneLevels:d.npcs") or {}) do
     if e.mapID == mapID and isMob(e) then seen[#seen + 1] = tonumber(e.level) end
   end
   local lo, hi, source, n
@@ -128,7 +128,7 @@ function M:Areas(mapID)
     return c
   end
   local d = ns.db.global.discovered
-  for _, e in pairs(type(d) == "table" and type(d.npcs) == "table" and d.npcs or {}) do
+  for _, e in pairs(type(d) == "table" and ns.KeepTable(d.npcs, "ZoneLevels:d.npcs") or {}) do
     if e.mapID == mapID and isMob(e) then
       local c = cell(e.x, e.y)
       if c then c.seen[#c.seen + 1] = tonumber(e.level) end

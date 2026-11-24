@@ -129,7 +129,7 @@ Theme.ACCESS_DEFAULTS = { fontScale = 1, uiScale = 1, colorblind = false, highCo
 function Theme:Access()
   local c = ns.db and ns.db.char
   if not c then return self.ACCESS_DEFAULTS end
-  c.access = type(c.access) == "table" and c.access or {}
+  c.access = ns.KeepTable(c.access, "Theme:c.access") or {}
   for k, v in pairs(self.ACCESS_DEFAULTS) do if c.access[k] == nil then c.access[k] = v end end
   return c.access
 end

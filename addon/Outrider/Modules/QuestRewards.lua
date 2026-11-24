@@ -75,7 +75,7 @@ function M:ScanBags()
   -- Each upgrade is announced once per character, across reloads and logins
   -- (bug 2026-11-18: the same items popped up after every /reload).
   local s = self:Settings()
-  if type(s.toastedUpgrades) ~= "table" then s.toastedUpgrades = {} end
+  if type(s.toastedUpgrades) ~= "table" then ns.KeepBad(s.toastedUpgrades, "QuestRewards:s.toastedUpgrades") s.toastedUpgrades = {} end
   self.toasted = s.toastedUpgrades
   for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
     for slot = 1, C.NumSlots(bag) do

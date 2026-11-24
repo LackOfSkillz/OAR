@@ -25,7 +25,7 @@ function M:Load()
   if self.maps ~= nil then return self.maps end
   if not rawget(_G, "Outrider_DataNodes") then C.LoadAddOn(self.ADDON) end
   local data = rawget(_G, "Outrider_DataNodes")
-  self.maps = type(data) == "table" and type(data.maps) == "table" and data.maps or false
+  self.maps = type(data) == "table" and ns.KeepTable(data.maps, "NodePack:data.maps") or false
   self:Info(self.maps and "node pack loaded from %s" or "no node pack (%s): only nodes you gathered show",
     self.maps and tostring(data.source) or self.ADDON)
   return self.maps

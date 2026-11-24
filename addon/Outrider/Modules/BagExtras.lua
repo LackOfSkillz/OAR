@@ -25,7 +25,7 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 -- DEEP-23: personal, per-character gear wish list.
 function M:Wishlist()
   local db = ns.db.char
-  db.gearWishlist = type(db.gearWishlist) == "table" and db.gearWishlist or {}
+  db.gearWishlist = ns.KeepTable(db.gearWishlist, "BagExtras:db.gearWishlist") or {}
   return db.gearWishlist
 end
 

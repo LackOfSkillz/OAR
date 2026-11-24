@@ -14,7 +14,7 @@ ns.MapTab = T
 
 -- Personal map notes, player-authored and retained in character settings.
 function T:Notes()
-  ns.db.char.mapNotes = type(ns.db.char.mapNotes) == "table" and ns.db.char.mapNotes or {}
+  ns.db.char.mapNotes = ns.KeepTable(ns.db.char.mapNotes, "MapTab:ns.db.char.mapNotes") or {}
   return ns.db.char.mapNotes
 end
 function T:ChangedNotes()
@@ -88,6 +88,9 @@ function T:ClearAll()
   local g = ns.db.global
   local n = 0
   for _ in pairs(g.pois or {}) do n = n + 1 end
+  -- the player's two-click clear; what it clears is archived so a mistake can be undone
+  if g.pois and next(g.pois) ~= nil and not ns.Archive:Put("clearedPlaces", g.pois, { path = "global.pois" }) then return 0 end
+  if g.discovered and not ns.Archive:Put("clearedDiscovered", { npcs = g.discovered.npcs, recent = g.discovered.recent }, { path = "global.discovered" }) then return 0 end
   g.pois = {}
   if ns.POI then ns.POI.db = g.pois end
   if g.discovered then g.discovered.npcs, g.discovered.recent = {}, {} end

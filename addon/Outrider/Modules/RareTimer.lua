@@ -20,7 +20,7 @@ ns.RareTimer = M
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.rareTimers = type(g.rareTimers) == "table" and g.rareTimers or {}
+  g.rareTimers = ns.KeepTable(g.rareTimers, "RareTimer:g.rareTimers") or {}
   -- Field report 2026-11-13: server restart 15:00 EST (20:00 UTC), Mystmane every 3 h (unverified)
   if not g.rareTimers[259388] and not g.mystmaneTimerSeeded then
     g.mystmaneTimerSeeded = true

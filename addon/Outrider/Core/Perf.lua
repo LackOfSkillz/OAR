@@ -64,7 +64,7 @@ end
 Perf.RUNS = 10
 function Perf:Remember(r)
   local g = ns.db.global
-  g.perfRuns = type(g.perfRuns) == "table" and g.perfRuns or {}
+  g.perfRuns = ns.KeepTable(g.perfRuns, "Perf:g.perfRuns") or {}
   local list = g.perfRuns
   if list[#list] and list[#list].session == ns.session then table.remove(list) end
   list[#list + 1] = { session = ns.session, build = ns.build, at = r.at, uptime = r.uptime, memoryKB = r.memoryKB,

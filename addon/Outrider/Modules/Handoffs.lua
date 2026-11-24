@@ -23,8 +23,8 @@ local BOE = 2
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.handoffs = type(g.handoffs) == "table" and g.handoffs or {}
-  g.handoffTold = type(g.handoffTold) == "table" and g.handoffTold or {}
+  g.handoffs = ns.KeepTable(g.handoffs, "Handoffs:g.handoffs") or {}
+  g.handoffTold = ns.KeepTable(g.handoffTold, "Handoffs:g.handoffTold") or {}
   self.db, self.told = g.handoffs, g.handoffTold
 end
 

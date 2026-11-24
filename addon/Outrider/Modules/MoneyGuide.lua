@@ -27,7 +27,7 @@ M.KIND_LABEL = { skin = "Skinning", herb = "Herbs", ore = "Mining", fish = "Fish
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.moneyLog = type(g.moneyLog) == "table" and g.moneyLog or {}
+  g.moneyLog = ns.KeepTable(g.moneyLog, "MoneyGuide:g.moneyLog") or {}
 end
 
 function M:OnEnable()

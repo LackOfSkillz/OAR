@@ -83,3 +83,23 @@ Decision: `REVIEW_CHANGES` / `REVIEW_ACCEPTED` (scope stated) / `BLOCKED`.
 - Policy decisions (D25 hidden channel; Luacheck and Ruff downloads; PartyQuests default):
 - Approve Phase 2 / request revisions / defer with the feature disabled:
 - Push and CI approval:
+
+---
+
+## Resubmission 1: response to ChatGPT review REVIEW_CHANGES (reviewed candidate 8a61733)
+
+The earlier review record above is kept unchanged. Phase 2 has not started; nothing is merged or published.
+
+| Finding | Severity | Correction | Evidence |
+|---|---|---|---|
+| OI01-R01 identity | High | Archive contract v2: an entry is `{id, path, keys, scope, char, at, row}`. Every call site passes its logical saved path and parent keys: itemID (prices, price history, watch, auction posts), npcID (sightings, respawn obs, rare casts with spell), mapID (trail), spot (spawn log), who (whispers), realm and name (census), character (quest diary), candidateId, macro name, and so on. `row` is the original table. `Archive:Restore` hands entries back for rebuilding. | `archive_spec`: identity checked per dataset; Restore rebuilds all 5 sightings in order |
+| OI01-R02 fail-safe | High | `Move/Shift/Pop`: Put, then confirm the write, and only then `table.remove`. Errors are caught. On failure the row stays, it is reported once per dataset, and the result is false. Every trim is `while #x > CAP and Archive:Shift(...) do end` or `if ... and Archive:Put(...) then remove`, so a failure stops the loop. | Failure injection: Put returning false and Put throwing both keep all rows; a real store (Prices) under failure keeps its rows; a static test checks that every call site is fail-safe and names a path |
+| OI01-R03 audit | High | A repo-wide audit (267 findings in 8 classes) covers the reviewer's Alts runs case and 11 more automatic losses, all now archived: census players and professions, AH search history, mail recipients, catches per skill point, whole whisper partners, price watch eviction, radar feedback, next-session dismissals, XP60 schema reset, plus judgment calls (profile schema, old trainer rows, previous macro bodies, lockouts). | `docs/quality/data_preservation_audit.json` (42 datasets, each with mechanism, destination and tests; 267 findings with a resolution each); `archive_spec` "retention audit fixes" |
+| OI01-R04 malformed | Moderate | `ns.KeepBad` / `ns.KeepTable` (Core/Init.lua) keep any damaged saved value, unchanged, with where it was found, in `global.archiveDamaged` before a fresh table is used. Values met before the saved data is ready are buffered and flushed after DB init. This is applied at 156 saved-data sites, including the DB roots, ApplyDefaults and every module store. Sites holding fresh API results were left alone. A damaged archive, a damaged archive set and even a damaged damaged-list are all kept. The old test that expected replacement now expects preservation. | `archive_spec` damaged-archive cases; "damaged saved values are kept" (DB root "oops", chars 5, a bad layer row) |
+| OI01-R05 tests | High | `archive_spec` went from 6 to 20 cases, plus a static contract: every archive call site is fail-safe and names a path, and every dataset in code is listed in the audit JSON. Covered: identity per dataset, failure injection, malformed recovery, logout and reload persistence with a second character (isolation filter), counts (working + archived = recorded), Restore reconstruction, the player's two-click clear now archived. Existing `safety_spec` covers migration rollback (failing or missing step leaves the original untouched). | Full suite 1036 passed, 0 failed |
+| OI01-R06 growth | Moderate | [docs/ARCHIVE_GROWTH.md](../../ARCHIVE_GROWTH.md): estimated growth per dataset (full-scan daily auction lows are the largest, up to ~0.75 MB per scanning day after day 14), memory and load-time effects, self-collected measurement (`perfRuns[].runtime.archiveRows`, boot ms, SV size), a proposed warn-only budget, and a lossless off-load design (companion copies, verifies, acknowledges through the D16 data file; Outrider removes only acknowledged ids). Not built; needs owner approval. Stable entry ids were added now for it. | doc |
+
+Limits that remain:
+- **Behaviour drivers:** 17 of the 42 datasets are covered by the static contract and code review instead of a per-dataset behaviour test, because their recorders need live unit, auction or instance state: dungeon runs, trail, spawn log, fights, XP sessions, ledgers, posts, pets, discoveries, rare cast gaps, fish sessions, catches per point, radar, next session, trainer rows, macro bodies.
+- **Backup restore:** `tools/backup-sv.ps1 -Restore` needs the game closed and was not exercised in CI.
+- **Live client:** all live checks are still outstanding.

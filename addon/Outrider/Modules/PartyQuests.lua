@@ -232,8 +232,8 @@ function M:OnComm(_, kind, data, sender, channel)
   if kind ~= "QSTAT" or channel ~= "PARTY" or type(data) ~= "table" then return end
   local m = self:Member(M.Short(sender))
   m.done, m.outrider = {}, true
-  m.prog = type(data.prog) == "table" and data.prog or nil
-  for _, id in ipairs(type(data.done) == "table" and data.done or {}) do
+  m.prog = ns.KeepTable(data.prog, "PartyQuests:data.prog") or nil
+  for _, id in ipairs(ns.KeepTable(data.done, "PartyQuests:data.done") or {}) do
     if type(id) == "number" then m.done[id] = true end
   end
   self:CheckEveryone()

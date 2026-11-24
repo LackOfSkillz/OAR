@@ -26,7 +26,7 @@ local function readable(v) return v ~= nil and C.Readable(v) and v or nil end
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.craftCooldowns = type(g.craftCooldowns) == "table" and g.craftCooldowns or {}
+  g.craftCooldowns = ns.KeepTable(g.craftCooldowns, "ProfExtras:g.craftCooldowns") or {}
   self.cds = g.craftCooldowns
 end
 
@@ -67,7 +67,7 @@ function M:ReadTrainer()
   if npcID and #list > 0 then
     local what = kind == "class" and tostring(readable(C.Call("UnitClass", "player")) or ""):lower() or tostring(kind):lower()
     if what ~= "" then
-      ns.db.global.teaches = type(ns.db.global.teaches) == "table" and ns.db.global.teaches or {}
+      ns.db.global.teaches = ns.KeepTable(ns.db.global.teaches, "ProfExtras:ns.db.global.teaches") or {}
       ns.db.global.teaches[npcID] = what
     end
   end
@@ -101,7 +101,7 @@ end
 -- DEEP-29: sourced-only unlearned recipe registry. Full independent
 -- trainer/vendor/drop/quest coverage requires an attributed data pack.
 function M:RecipeSources()
-  ns.db.global.recipeSources = type(ns.db.global.recipeSources) == "table" and ns.db.global.recipeSources or {}
+  ns.db.global.recipeSources = ns.KeepTable(ns.db.global.recipeSources, "ProfExtras:ns.db.global.recipeSources") or {}
   return ns.db.global.recipeSources
 end
 function M:RecordRecipeSource(recipeID, name, kind, who, skill)

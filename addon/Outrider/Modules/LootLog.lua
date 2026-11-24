@@ -23,9 +23,9 @@ M.MERGE = 0.006
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.fishing = type(g.fishing) == "table" and g.fishing or {}
-  g.nodes = type(g.nodes) == "table" and g.nodes or {}
-  g.nodeState = type(g.nodeState) == "table" and g.nodeState or {}
+  g.fishing = ns.KeepTable(g.fishing, "LootLog:g.fishing") or {}
+  g.nodes = ns.KeepTable(g.nodes, "LootLog:g.nodes") or {}
+  g.nodeState = ns.KeepTable(g.nodeState, "LootLog:g.nodeState") or {}
   self.session = {}
 end
 
@@ -119,7 +119,7 @@ function M:MarkNode(kind, mapID, x, y, state)
   end
   local e = { kind = kind, mapID = mapID, x = x, y = y, state = state, t = now }
   list[#list + 1] = e
-  while #list > M.STATE_MAX do ns.Archive:Shift("nodeState", list) end
+  while #list > M.STATE_MAX and ns.Archive:Shift("nodeState", list, { path = "global.nodeState" }) do end
   ns.Events:Fire("OTR_POI_ADDED", nil)
   return e
 end

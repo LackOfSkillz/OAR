@@ -54,9 +54,9 @@ end
 
 function M:Store()
   local g = ns.db.global
-  g.routes = type(g.routes) == "table" and g.routes or {}
+  g.routes = ns.KeepTable(g.routes, "Routes:g.routes") or {}
   local s = g.routes
-  s.list = type(s.list) == "table" and s.list or {}
+  s.list = ns.KeepTable(s.list, "Routes:s.list") or {}
   s.next = tonumber(s.next) or 0
   return s
 end

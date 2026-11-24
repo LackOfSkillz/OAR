@@ -9,7 +9,7 @@ ns.OpportunityRadar = M
 local E, O = ns.IntelEvidence, ns.IntelOpportunity
 local function state()
   local c = ns.db.char
-  if type(c.radarFeedback) ~= "table" then c.radarFeedback = {} end
+  if type(c.radarFeedback) ~= "table" then ns.KeepBad(c.radarFeedback, "Radar:c.radarFeedback") c.radarFeedback = {} end
   return c.radarFeedback
 end
 local function visible(c, now)
@@ -25,6 +25,7 @@ function M:Feedback(card, verdict, reason)
     for k, v in pairs(store) do
       if not stamp or v.t < stamp then oldest, stamp = k, v.t end
     end
+    if not ns.Archive:Put("radarFeedback", store[oldest], { path = "char.radarFeedback[candidateId]", keys = { candidateId = oldest }, scope = "char" }) then return false end
     store[oldest] = nil
   end
   reason = type(reason) == "string" and reason:gsub("|", ""):gsub("[%z\1-\31]", " "):sub(1, 120) or nil

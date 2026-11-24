@@ -37,12 +37,14 @@ function P.State()
   local char = ns.db.char
   local state = char.intelligenceProfile
   if type(state) ~= "table" then
+    ns.KeepBad(state, "Profiles:char.intelligenceProfile")
     state = {}
     char.intelligenceProfile = state
   end
   if state.schema ~= P.SCHEMA then
     -- Preserve explicit player preferences. Never infer an old role token.
     local oldRole = state.role
+    if next(state) ~= nil then local _ = ns.Archive:Put("profileOldSchema", state, { path = "char.intelligenceProfile", scope = "char" }) or ns.Archive:KeepDamaged("char.intelligenceProfile", state) end
     state = { schema = P.SCHEMA, role = oldRole }
     char.intelligenceProfile = state
   end

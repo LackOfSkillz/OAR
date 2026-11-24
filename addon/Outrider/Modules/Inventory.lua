@@ -20,14 +20,14 @@ M.BANK_BAGS = { -1, 5, 6, 7, 8, 9, 10, 11 }
 
 function M:OnInitialize()
   local g = ns.db.global
-  g.inventory = type(g.inventory) == "table" and g.inventory or {}
+  g.inventory = ns.KeepTable(g.inventory, "Inventory:g.inventory") or {}
   self.db = g.inventory
 end
 
 function M:Mine()
   local key = ns.db.key
   local me = self.db[key]
-  if type(me) ~= "table" then me = { bags = {}, bank = {}, mail = {}, worn = {} } self.db[key] = me end
+  if type(me) ~= "table" then ns.KeepBad(me, "Inventory:me") me = { bags = {}, bank = {}, mail = {}, worn = {} } self.db[key] = me end
   return me
 end
 

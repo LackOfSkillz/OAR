@@ -19,7 +19,7 @@ local L = {
 
 local function settings()
   local c = ns.db.char
-  c.toast = type(c.toast) == "table" and c.toast or {}
+  c.toast = ns.KeepTable(c.toast, "Toast:c.toast") or {}
   ns.ApplyDefaults(c.toast, { point = "TOP", x = 0, y = -140 })
   return c.toast
 end

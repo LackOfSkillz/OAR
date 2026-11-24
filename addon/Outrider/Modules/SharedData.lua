@@ -72,7 +72,7 @@ function M:Import()
   local added = 0
   for key, v in pairs(data.data) do
     if type(v) == "table" then
-      if type(g[key]) ~= "table" then g[key] = {} end
+      if type(g[key]) ~= "table" then ns.KeepBad(g[key], "SharedData:g[key]") g[key] = {} end
       added = added + M.Merge(g[key], v)
     end
   end

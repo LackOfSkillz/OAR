@@ -92,7 +92,7 @@ end
 -- This supports advance planning AFTER observation, but full independent
 -- 1-60 coverage is a separate cited-data task.
 function M:TrainingStore()
-  ns.db.global.classTraining = type(ns.db.global.classTraining) == "table" and ns.db.global.classTraining or {}
+  ns.db.global.classTraining = ns.KeepTable(ns.db.global.classTraining, "Spellbook:ns.db.global.classTraining") or {}
   local class = ns.PlayerClass()
   ns.db.global.classTraining[class] = ns.db.global.classTraining[class] or {}
   return ns.db.global.classTraining[class]
@@ -133,7 +133,7 @@ function M:ObserveTrainer()
   local saved, n = self:TrainingStore(), 0
   for key, r in pairs(saved) do
     -- older saves keyed by "name:available": drop them, this visit rewrites the list
-    if M.STATUS[tostring(r.rank or "")] then saved[key] = nil end
+    if M.STATUS[tostring(r.rank or "")] and ns.Archive:Put("trainingOldFormat", r, { path = "global.classTraining[key]", keys = { key = key } }) then saved[key] = nil end
   end
   for i = 1, math.min(300, num) do
     local packed = { pcall(info, i) }

@@ -53,9 +53,9 @@ end
 function M:OnLogout()
   local net, perHour = self:Summary()
   local c = ns.db.char
-  c.ledger = type(c.ledger) == "table" and c.ledger or {}
+  c.ledger = ns.KeepTable(c.ledger, "Ledger:c.ledger") or {}
   table.insert(c.ledger, { start = self.start, stop = time(), net = net, book = self.book })
-  while #c.ledger > 30 do ns.Archive:Shift("goldLedger", c.ledger) end
+  while #c.ledger > 30 and ns.Archive:Shift("goldLedger", c.ledger, { path = "char.ledger", scope = "char" }) do end
   local parts = {}
   for ctx, b in pairs(self.book) do
     parts[#parts + 1] = string.format("%s +%s -%s", ctx, ns.Prices.Money(b.gain), ns.Prices.Money(b.spend))
