@@ -55,11 +55,11 @@ T.describe("outcome events (OI03-02)", function()
     game:fire("MERCHANT_SHOW")
     m = 700
     game:fire("PLAYER_MONEY")
-    T.eq(last(O).kind, "money_out") T.eq(last(O).amount, 300) T.eq(last(O).context, "vendor")
+    T.eq(last(O).kind, "money_out") T.eq(last(O).amount, 300) T.eq(last(O).context, "vendor spend")
     game:fire("MERCHANT_CLOSED")
     m = 900
     game:fire("PLAYER_MONEY")
-    T.eq(last(O).kind, "money_in") T.eq(last(O).amount, 200) T.eq(last(O).context, "loot & quests")
+    T.eq(last(O).kind, "money_in") T.eq(last(O).amount, 200) T.eq(last(O).context, "loot and quests")
   end)
 
   T.it("missing or secret values are left out and named, never guessed", function()

@@ -158,6 +158,8 @@ function M:OnEnable()
   if ns.ActivityTimeline then ns.ActivityTimeline:Start(self) ns.ActivityTimeline:Wire(self) end
   -- real trip times to the destinations you set (OI03-05)
   if ns.TravelTimes then ns.TravelTimes:Wire(self) end
+  -- confirmed sales, transfers, deposits (OI03-06)
+  if ns.EconomyOutcomes then ns.EconomyOutcomes:Wire(self) end
   -- the player's Go on a plan step (NexusCore:Act), kept in memory only
   self:On("OTR_NEXUS_ACTED", function(mod, _, info)
     if type(info) ~= "table" then return end
@@ -197,9 +199,11 @@ function M:OnEnable()
     local delta = now - mod.money
     mod.money = now
     if delta == 0 then return end
+    -- the category of this change (OI03-06): what the gold actually did
     local L = ns.Ledger
-    mod:Record(delta > 0 and "money_in" or "money_out", { amount = math.abs(delta),
-      context = L and L.Context and L:Context() or nil })
+    local ctx = L and L.Context and L:Context() or nil
+    local cat = ns.EconomyOutcomes and ns.EconomyOutcomes:Classify(delta, ctx) or ctx
+    mod:Record(delta > 0 and "money_in" or "money_out", { amount = math.abs(delta), context = cat })
   end)
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod, _, slot, empty)
     local s = tonumber(readable(slot))

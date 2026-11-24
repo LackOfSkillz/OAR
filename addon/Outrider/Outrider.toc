@@ -191,6 +191,7 @@ Intelligence\SessionXP.lua
 Intelligence\QuestTimes.lua
 Intelligence\ActivityTimeline.lua
 Intelligence\TravelTimes.lua
+Intelligence\EconomyOutcomes.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua

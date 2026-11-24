@@ -614,6 +614,18 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "confirmedSales",
+   "saved_path": "char.outcomes.sales",
+   "retention_mechanism": "MAX_SALES (200), oldest archived",
+   "archive_destination": "global.archive.sets.confirmedSales",
+   "tests": [
+    "tests/spec/economyoutcomes_spec.lua :: the 201st sale archives the oldest",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

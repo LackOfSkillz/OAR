@@ -96,6 +96,7 @@ ChatGPT's conditions for Phase 3:
 | OI03-02 Outcome event schema | MOCK_GREEN | 89885ea | [OI03-02](../reviews/phase3/OI03-02.md) | v4 OutcomeEvent; opt-in recorder of 12 observed kinds; dedup by meaning, unknown fields named, other character refused, late marked; attribution likely or unknown, never direct |
 | OI03-03 Activity timing | MOCK_GREEN | 2057aee | [OI03-03](../reviews/phase3/OI03-03.md) | contiguous observable labels (recovery, dungeon, crafting, travel, quest, inactive, unclassified); add up to wall time; no combat log |
 | OI03-04 Quest time observations | MOCK_GREEN | b375fdf | [OI03-04](../reviews/phase3/OI03-04.md) | derived from the existing quest diary (adds session, group, build to new rows); complete / multi / abandoned / open / censored; strata; Journey 300 s comparison only with enough samples |
-| OI03-05 Travel time observations | MOCK_GREEN | see commit | [OI03-05](../reviews/phase3/OI03-05.md) | planned trip (estimate) to arrival (actual); modes interrupted / unknown_map / teleport / flight / transport / ground; only clean ground trips are walking samples |
+| OI03-05 Travel time observations | MOCK_GREEN | b9a9515 | [OI03-05](../reviews/phase3/OI03-05.md) | planned trip (estimate) to arrival (actual); modes interrupted / unknown_map / teleport / flight / transport / ground; only clean ground trips are walking samples |
+| OI03-06 Economy outcome capture | MOCK_GREEN | see commit | [OI03-06](../reviews/phase3/OI03-06.md) | money changes categorized (confirmed sale, transfer, deposit, purchase, vendor...); invoices kept with fee or feeUnknown; disappeared auctions unverified; estimates apart. Also fixed Compat.Call 5-value cap (4 modules) |
 
 Phases 4-8 (OI04-OI08): NOT_STARTED.
