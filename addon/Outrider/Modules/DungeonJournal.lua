@@ -128,6 +128,16 @@ function M:Build()
   end)
   go:SetPoint("BOTTOMRIGHT", -2, 4)
   UI.Tip(go, "Dungeon entrance", "Set a waypoint to the entrance recorded in the installed dungeon pack.")
+  local mapBtn = UI:Button(f.content, "Dungeon map", 120, function()
+    local name = M.selected
+    if not ns.MapPages then return end
+    ns.MapPages.Open("dungeonmap", function()
+      local t = ns.Hub.byId.dungeonmap
+      if name and t and t.panel then ns.MapPages.ShowDungeon(t.panel, name) end
+    end)
+  end)
+  mapBtn:SetPoint("BOTTOMLEFT", 2, 4)
+  UI.Tip(mapBtn, "Dungeon map", "Open this dungeon's own map with its bosses, and draw your route through it.")
   local all = UI:Button(f.content, "All bosses and quests", 170, function() M.bossFilter = nil M:Refresh() end)
   all:SetPoint("RIGHT", go, "LEFT", -8, 0)
   UI.Tip(all, "Show all bosses", "Clear the selected boss filter to display all recorded loot and related quests.")

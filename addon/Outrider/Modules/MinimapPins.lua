@@ -160,6 +160,16 @@ function M:Update()
       end
     end
   end
+  -- routes you drew and switched on: dots along the lines and the markers
+  if ns.Routes and ns.Routes.enabled and ns.Routes:Settings().minimap then
+    for _, pin in ipairs(ns.Routes:Pins(mapID)) do
+      local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
+      local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
+      if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
+        live[#live + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast, path = pin.kind == "route" }
+      end
+    end
+  end
   for _, pin in ipairs(ns.MapPins:PinsFor(mapID)) do
     -- breadcrumbs stay on the world map: on the minimap they would crowd out the 12 nearest places
     if (s.quests or pin.kind ~= "quest_giver") and pin.kind ~= "trail" then

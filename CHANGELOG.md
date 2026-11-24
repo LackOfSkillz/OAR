@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **A live map inside Outrider:** the game's own map art drawn in Outrider's windows, with zoom (mouse wheel), drag to move, click a zone to open it, right-click to go up, Outrider's pins (places, rares, quest givers, bosses) and your arrow.
+- **Draw routes:** Map and places > Map and routes. Draw freehand lines in seven colors, drop raid-icon markers and type labels, with undo and erase. Shown routes appear on the world map and as dots on the minimap.
+- **Share routes:** send one to your party or guild with a button (they need Outrider), or copy it as text. Routes from friends arrive switched off.
+- **Dungeon maps:** Dungeons > Dungeon maps shows each dungeon's own map with its bosses, a floor button for dungeons with several levels, and your routes for it. The dungeon journal has a Dungeon map button.
+- **Rare map:** Rares > Rare map shows the zone you're in with every rare spot.
+- **Panel beside the world map:** shows the dungeons, bosses, rares and routes of the map you're looking at; click a dungeon for its map, click a route to show or hide it, or "Draw on this map". /ride mapdock hides or shows it.
+
 ## 0.4.8 (2026-11-23)
 
 - **Bosses on dungeon maps:** inside a dungeon (or looking at its map), each boss that drops blue or better gear has a skull pin; hover it for its loot with drop chances, and wish-list items are marked. The game places the pins from each boss's spot inside the instance (230 bosses in 23 dungeons, from ForeverDB).

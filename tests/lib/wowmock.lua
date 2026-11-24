@@ -207,6 +207,7 @@ local function buildMethods(game)
   m.SetFormattedText = function(self, fmt, ...) self.__text = string.format(fmt, ...) end
   m.CreateFontString = function(self, name) return newRegion(game, "FontString", name, self) end
   m.CreateTexture = function(self, name) return newRegion(game, "Texture", name, self) end
+  m.CreateLine = function(self, name) return newRegion(game, "Line", name, self) end
   m.GetObjectType = function(self) return self.__kind end
   m.IsForbidden = function() return false end
   m.SetAlpha = function(self, a) self.__alpha = a end
@@ -1003,7 +1004,7 @@ function M.new(opts)
       local out = {}
       local function under(m, top) for _ = 1, 10 do if not m or not game.maps[m] then return false end
         if game.maps[m].parent == top then return true end m = game.maps[m].parent end return false end
-      for mid, m in pairs(game.maps or {}) do if under(mid, id) then out[#out + 1] = { mapID = mid, name = m.name } end end
+      for mid, m in pairs(game.maps or {}) do if under(mid, id) then out[#out + 1] = { mapID = mid, name = m.name, mapType = m.mapType } end end
       return out
     end,
   }
@@ -1011,6 +1012,37 @@ function M.new(opts)
   base.C_Map.GetMapRectOnMap = function(id, top)
     local m = game.maps and game.maps[id]
     if m and m.rect and m.parent == top then return m.rect[1], m.rect[2], m.rect[3], m.rect[4] end
+  end
+  -- map art: game.mapArt[id] = { lw, lh } (default 1002 x 668 in 256 tiles); false = none
+  base.C_Map.GetMapArtLayers = function(id)
+    local a = game.mapArt and game.mapArt[id]
+    if a == false then return nil end
+    a = a or { 1002, 668 }
+    return { { layerWidth = a[1], layerHeight = a[2], tileWidth = 256, tileHeight = 256 } }
+  end
+  base.C_Map.GetMapArtLayerTextures = function(id)
+    local a = game.mapArt and game.mapArt[id]
+    if a == false then return nil end
+    a = a or { 1002, 668 }
+    local out = {}
+    for i = 1, math.ceil(a[1] / 256) * math.ceil(a[2] / 256) do out[i] = 100000 + i end
+    return out
+  end
+  -- game.maps[id].rect on its parent: the child map under (x, y)
+  base.C_Map.GetMapInfoAtPosition = function(id, x, y)
+    for mid, m in pairs(game.maps or {}) do
+      local r = m.rect
+      if m.parent == id and r and x >= r[1] and x <= r[2] and y >= r[3] and y <= r[4] then
+        return { mapID = mid, name = m.name, parentMapID = id, mapType = m.mapType }
+      end
+    end
+    return { mapID = id }
+  end
+  base.C_Map.GetMapGroupID = function(id) local m = game.maps and game.maps[id] return m and m.group end
+  base.C_Map.GetMapGroupMembersInfo = function(group)
+    local out = {}
+    for mid, m in pairs(game.maps or {}) do if m.group == group then out[#out + 1] = { mapID = mid, name = m.name, relativeHeightIndex = m.floor or 0 } end end
+    return out
   end
   base.C_Map.SetUserWaypoint = function(p) game.userWaypoint = p end
   base.C_Map.ClearUserWaypoint = function() game.userWaypoint = nil end

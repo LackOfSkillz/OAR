@@ -64,9 +64,9 @@ Hub.PLACE = {
 -- The first page is the host itself.
 Hub.SUBS = {
   home      = { { "home", "Overview" }, { "whatnow", "Next steps" }, { "errands", "Town errands" } },
-  waypoints = { { "waypoints", "Places and arrow" }, { "map", "Map pins" } },
+  waypoints = { { "waypoints", "Places and arrow" }, { "worldmap", "Map and routes" }, { "map", "Map pins" } },
   quests    = { { "quests", "Quest log" }, { "questsnear", "Near me" }, { "questchains", "Chains" }, { "journal", "Diary" } },
-  rares     = { { "rares", "Rares" }, { "rarealerts", "Watch and alerts" } },
+  rares     = { { "rares", "Rares" }, { "raremap", "Rare map" }, { "rarealerts", "Watch and alerts" } },
   class     = { { "class", "Your class" }, { "talentlab", "Talents" } },
   gear      = { { "gear", "Wearing and upgrades" }, { "gearsets", "Sets and scoring" } },
   alts      = { { "alts", "Characters" }, { "characters", "Copy settings" } },
@@ -74,7 +74,7 @@ Hub.SUBS = {
   people    = { { "people", "Players and guilds" }, { "census", "Census" } },
   settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
   help      = { { "help", "Help" }, { "feedback", "Report or idea" }, { "commands", "All commands" } },
-  dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" } },
+  dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" }, { "dungeonmap", "Dungeon maps" } },
   -- one Professions page (Gary, 2026-11-21: "combine the professions"):
   -- what to make and where to get it first, then the planner, fishing, tools
   professions = { { "professions", "Your professions" }, { "crafting", "Shopping list" }, { "fishing", "Fishing" }, { "profdetails", "Trainers and tools" } },

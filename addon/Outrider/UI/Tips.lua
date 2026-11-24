@@ -8,6 +8,9 @@
 local _, ns = ...
 
 local pages = {
+  worldmap = "A live map inside Outrider: zoom, move, open any zone, and draw routes with lines, markers and labels to keep or share.",
+  dungeonmap = "Every dungeon's own map with its bosses and loot, and your routes through it. Draw the way you like to run it.",
+  raremap = "The zone you're in with every rare spot on it. Click a rare for when it was last seen and the arrow.",
   profdetails = "Profession trainers, cooldowns, profit crafts, the one-press craft key and the training button.",
   questsnear = "The quests worth doing next from where you stand: XP and gold for the time, your level, gear upgrades. Click one to go.",
   feedback = "Tell us about a problem or an idea: Outrider makes the report, you copy the link and post it on GitHub.",
@@ -51,6 +54,29 @@ local pages = {
 }
 
 local controls = {
+  -- the map inside Outrider (UI/MapView.lua) and routes (Modules/MapPages.lua)
+  ["+"] = "Zoom the map in.",
+  ["-"] = "Zoom the map out.",
+  ["Fit"] = "Show the whole map.",
+  ["Up"] = "Go up one map: dungeon to zone, zone to continent.",
+  ["Here"] = "Show the map you're on.",
+  ["World map"] = "Open the game's world map on this map.",
+  ["Move"] = "Drag to move the map; click a zone to open it.",
+  ["Draw"] = "Hold the left button and drag on the map to draw a line.",
+  ["Marker"] = "Click the map to drop the marker icon shown in the toolbar.",
+  ["Text"] = "Click the map where a label goes, then type it.",
+  ["Erase"] = "Click a line or marker to remove it.",
+  ["Undo"] = "Take back the last line or marker.",
+  ["New route on this map"] = "Start an empty route on the map shown, then draw on it.",
+  ["Show / hide"] = "Show or hide the selected route on the world map, the minimap and here.",
+  ["Rename"] = "Give the selected route a new name.",
+  ["Paste"] = "Add a route someone copied for you.",
+  ["Party"] = "Send the selected route to your party or raid (they need Outrider).",
+  ["Guild"] = "Send the selected route to your guild (they need Outrider).",
+  ["Next floor"] = "Step through the dungeon's levels when it has more than one.",
+  ["Map and routes"] = "A live map inside Outrider where you draw and share routes.",
+  ["Dungeon maps"] = "Every dungeon's own map with its bosses and your routes.",
+  ["Rare map"] = "The zone you're in with every rare spot on it.",
   -- help and navigation
   ["?"] = "Opens Help on this page.",
   ["< Previous"] = "The topic above this one in the list.",

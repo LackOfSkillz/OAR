@@ -81,6 +81,9 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 
 ## Maps and travel
 
+- **Map and routes.** A live map inside Outrider: mouse wheel zooms, drag moves it, click a zone to open it, right-click goes up one map. Press New route on this map, pick Draw and drag to draw a line; Marker drops a raid icon, Text adds a label, Erase and Undo take things back. Shown routes also appear on the world map and as dots on the minimap. Party and Guild send the selected route to friends with Outrider (theirs arrive switched off); Copy and Paste move a route as text.
+- **Dungeon maps.** Dungeons > Dungeon maps: each dungeon's own map with its bosses (hover a skull for its loot), a floor button for dungeons with several levels, and your routes through it.
+- **Panel beside the world map.** When the world map is open, a panel on its right lists the dungeons, bosses, rares and routes of the map you're looking at. Click a dungeon for its map, a route to show or hide it, or Draw on this map. /ride mapdock hides or shows it.
 - **Map pins.** Vendors, trainers, flight masters, repair, mailboxes and rares on the world map and minimap, recorded as you meet them. Map pins tab on Map and places: which pins show.
 - **Zone levels.** Level ranges over each zone on the world map and over areas inside a zone map: from the creatures you met there, else from the WoW Forever leveling guides (Riverglades 36-44, Zephras Isle 1-12, Mount Hyjal 60), else from Classic data. /ride zonelevels on|off.
 - **Leveling knowledge.** Outrider knows what the WoW Forever leveling guides say: every Zephras Isle class and profession trainer, the Riverglades flight masters, breadcrumb quests, the Blood Master's Ring and Krol'dok Stronghold, the skyboat and Riverglades boat docks, and talent builds for Fury warriors and Elemental and Enhancement shamans. They show on the map and in Your trainers; what you see yourself always wins.
@@ -260,10 +263,12 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride lag` | [stop]  one-minute lag check: how much of the game's time Outrider uses |
 | `/ride layout` | [<situation> <layout name>\|off]  Edit Mode layout per situation |
 | `/ride levelroute` | levelroute seed [level]\|list\|start <name>\|next\|skip\|undo\|guide\|stop |
+| `/ride lock` | hide the move outlines again |
 | `/ride log` | [n]  show the last n log lines (default 10) |
 | `/ride macrocheck` | your own macros: old spell names and exact copies |
 | `/ride mail` | mail all\|sold\|won\|expired \| free <slots> |
 | `/ride make` | [Profession]  make what you have ingredients for (no name: create the Cook / Brew / Herb macros) |
+| `/ride mapdock` | mapdock  show or hide the Outrider panel beside the world map |
 | `/ride mapextras` | mapextras missing\|fishing\|faire |
 | `/ride mark` | <text>  write a marker line so Claude can find this point in the log |
 | `/ride market` | market <itemID> \| add <group> <id> <qty> [targetCopper] \| list <group> \| groups |
@@ -314,6 +319,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride trail` | [clear\|clear here]  breadcrumbs: the paths you walked, on the map |
 | `/ride training` | training [level]  spells observed at your class trainer |
 | `/ride undercut` | <N%> \| <copper>c  how much under the market to suggest |
+| `/ride unlock` | show every Outrider piece you can move, to drag it |
 | `/ride unwatch` | <name or npcID>  stop watching |
 | `/ride vendor` | at a merchant: sell grey junk and repair |
 | `/ride version` | addon version, build stamp and client build |

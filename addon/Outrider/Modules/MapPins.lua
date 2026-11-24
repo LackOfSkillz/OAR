@@ -152,6 +152,16 @@ function M.Paint(frame, pin)
     frame.icon:SetColorTexture(c[1], c[2], c[3], 1)
     return
   end
+  -- a route you drew (Routes): a small dot in the route's color
+  if pin.kind == "route" then
+    local c = pin.color or { 1, 1, 1 }
+    if frame.edges then for _, t in ipairs(frame.edges) do t:Hide() end end
+    frame:SetAlpha(1)
+    frame.ring:Show() frame.icon:Show()
+    frame.ring:SetColorTexture(0, 0, 0, 0.9)
+    frame.icon:SetColorTexture(c[1], c[2], c[3], 1)
+    return
+  end
   local hollow = M.GATHER[pin.kind] or pin.box
   if hollow then
     local st = not pin.box and ns.LootLog and ns.LootLog.enabled and ns.LootLog:NodeState(pin.mapID, pin.x, pin.y)
