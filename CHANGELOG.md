@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.8 (2026-11-23)
 
 - **Bosses on dungeon maps:** inside a dungeon (or looking at its map), each boss that drops blue or better gear has a skull pin; hover it for its loot with drop chances, and wish-list items are marked. The game places the pins from each boss's spot inside the instance (230 bosses in 23 dungeons, from ForeverDB).
 - **Wish list alerts:** a pop-up when an item on your wish list is up for a roll, in a loot window, or dropped for someone; getting it is noted on the list.
