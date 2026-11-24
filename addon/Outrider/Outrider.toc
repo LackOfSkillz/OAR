@@ -95,6 +95,8 @@ Modules\HunterFight.lua
 Modules\ClassFight.lua
 Modules\FightPlan.lua
 Modules\MacroTree.lua
+Modules\MacroTreeModel.lua
+Modules\MacroTreePage.lua
 Modules\BuffRow.lua
 Modules\HandyKeys.lua
 Modules\BagSwap.lua
