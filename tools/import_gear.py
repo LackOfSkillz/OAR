@@ -7,7 +7,11 @@ private/Outrider_Data_Gear/: every weapon or armor item up to required level
   quest  - quests that reward it (quest level, faction from the race mask,
            position of the quest giver)
   vendor - NPCs that sell it (position)
-  drop   - NPCs that drop it, only when 3 or fewer do (named drops)
+  drop   - NPCs that drop it, only when 5 or fewer do (named drops)
+  rare   - rare creatures that drop it, even when many others do too
+  dungeon - dungeon and raid bosses (the entrance is the waypoint; the boss
+           name says where inside), when most droppers live in one instance
+  chest  - objects (chests, crates) that hold it, when 5 or fewer do
 Item stats are NOT copied: Outrider scores items in game with
 C_Item.GetItemStats. Everything is verified = false (community data).
 Private like the NPC pack: GPLv3 Questie data, git-ignored, not for release.
@@ -18,11 +22,16 @@ import json, os, re, shutil, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import import_questie as q  # noqa: E402
+import import_dungeons as dg  # noqa: E402
+import import_reagents as rg  # noqa: E402
 
 ROOT = q.ROOT
 OUT = os.path.join(ROOT, "private", "Outrider_Data_Gear")
 HORDE, ALLIANCE = 2 | 16 | 32 | 128, 1 | 4 | 8 | 64
-MAX_DROPPERS = 3
+MAX_DROPPERS = 5      # named drops: kept when this few creatures drop it
+KEEP_DROPPERS = 3     # how many of them are listed
+MAX_OBJECTS = 5
+RARE_RANKS = (2, 4)   # rare elite, rare
 
 
 def faction_of(mask):
@@ -88,6 +97,43 @@ def main():
         npc_cache[nid] = place
         return place
 
+    # creatures by the dungeon they live in (same rule as import_dungeons.py)
+    dungeons = dg.read_dungeons(qdb)
+    area_to_dungeon = {a: did for did, d in dungeons.items() for a in d["areas"]}
+    entrance = {}
+    for did, d in dungeons.items():
+        loc = d["locs"][0] if d["locs"] else None
+        ui = loc and area_map.get(loc[0])
+        if ui:
+            entrance[did] = (ui, loc[1] / 100.0, loc[2] / 100.0)
+    home_cache = {}
+
+    def npc_home(nid):
+        if nid not in home_cache:
+            spawns = row("Npc", nid, "7")
+            homes = {area_to_dungeon[a] for a in spawns if a in area_to_dungeon} if isinstance(spawns, dict) else set()
+            home_cache[nid] = homes.pop() if len(homes) == 1 else None
+        return home_cache[nid]
+
+    def npc_rank(nid):
+        s = row("Npc", nid)
+        return (s.get(6) or 0) if isinstance(s, dict) else 0
+
+    obj_cache = {}
+
+    def object_place(oid):
+        if oid not in obj_cache:
+            s = row("Object", oid)
+            sp = rg.spawns_of(get("X-Object-%d-4" % oid), area_map) if isinstance(s, dict) else {}
+            place = None
+            for ui, pts in sp.items():
+                if pts:
+                    place = (ui, pts[0][0], pts[0][1], s.get(1))
+                    break
+            obj_cache[oid] = place
+        return obj_cache[oid]
+
+    counts = {}
     item_ids = sorted({int(m.group(1)) for k in meta for m in [re.match(r"^X-Item-(\d+)-S$", k)] if m})
     out, sources = {}, 0
     for iid in item_ids:
@@ -115,12 +161,44 @@ def main():
             place = npc_place(nid)
             if place:
                 srcs.append(("vendor", place[0], place[1], place[2], place[3], None, place[4], None))
-        droppers = q.lua_array(row("Item", iid, "2"))
-        if 0 < len(droppers) <= MAX_DROPPERS:
+        droppers = [n for n in q.lua_array(row("Item", iid, "2")) if isinstance(n, int)]
+        inside = [n for n in droppers if npc_home(n)]
+        if inside and len(inside) / len(droppers) >= dg.INSIDE_SHARE:
+            for nid in inside[:KEEP_DROPPERS]:
+                did = npc_home(nid)
+                ent = entrance.get(did)
+                ns_ = row("Npc", nid)
+                if ent and isinstance(ns_, dict):
+                    who = "%s (%s)" % (ns_.get(1), dungeons[did]["name"])
+                    srcs.append(("dungeon", ent[0], ent[1], ent[2], who, None, None, None))
+        elif droppers:
+            listed = set()
+            if len(droppers) <= MAX_DROPPERS:
+                for nid in droppers:
+                    if len(listed) >= KEEP_DROPPERS:
+                        break
+                    place = npc_place(nid)
+                    if place:
+                        listed.add(nid)
+                        kind = "rare" if npc_rank(nid) in RARE_RANKS else "drop"
+                        srcs.append((kind, place[0], place[1], place[2], place[3], None, place[4], None))
+            rares = 0
             for nid in droppers:
-                place = npc_place(nid)
-                if place:
-                    srcs.append(("drop", place[0], place[1], place[2], place[3], None, place[4], None))
+                if rares >= 2:
+                    break
+                if nid not in listed and npc_rank(nid) in RARE_RANKS:
+                    place = npc_place(nid)
+                    if place:
+                        rares += 1
+                        srcs.append(("rare", place[0], place[1], place[2], place[3], None, place[4], None))
+        objects = [o for o in q.lua_array(row("Item", iid, "3")) if isinstance(o, int)]
+        if 0 < len(objects) <= MAX_OBJECTS:
+            for oid in objects[:2]:
+                place = object_place(oid)
+                if place and place[3]:
+                    srcs.append(("chest", place[0], place[1], place[2], place[3], None, None, None))
+        for k in {x[0] for x in srcs}:
+            counts[k] = counts.get(k, 0) + 1
         if srcs:
             out[iid] = (s.get(1), req, s.get(9), srcs)
             sources += len(srcs)
@@ -150,6 +228,7 @@ def main():
         f.write("} }\n")
     size = os.path.getsize(os.path.join(OUT, "Data.lua"))
     print("gear items with sources %d, sources %d, Data.lua %d KB" % (len(out), sources, size // 1024))
+    print("items per source kind:", ", ".join("%s %d" % kv for kv in sorted(counts.items())))
     if "--deploy" in sys.argv:
         target = os.path.join(cfg["addonsDir"], "Outrider_Data_Gear")
         if os.path.exists(target):

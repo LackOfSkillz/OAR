@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Gear page stands on its own without GearQuest:** when your zone has few upgrades, the best one per slot from other zones is added (your continent first), each with where it is and a waypoint. No pop-up for those.
+- **Far more gear knows where it comes from:** 4,811 items (was 2,954). New: dungeon and raid boss drops (the waypoint is the entrance, the card names the boss and dungeon), drops from rare creatures, and chests. Gear you can craft with your own learned recipes is listed too ("you can make it with Tailoring").
+
 ## 0.4.4 (2026-11-23)
 
 - **Unexplored map areas** show with a faint blue-grey tint, so you can tell them from land you've explored (they looked the same).

@@ -23,8 +23,25 @@ local M = ns:NewModule("Nearby", {
 ns.Nearby = M
 
 M.ADDON = "Outrider_Data_Gear"
-M.EFFORT = { vendor = 1, alt = 2, gearquest = 3, quest = 3, drop = 4 }
-M.KIND_LABEL = { vendor = "sold by", quest = "quest", drop = "dropped by", alt = "on" }
+M.EFFORT = { craft = 1, vendor = 1, alt = 2, gearquest = 3, quest = 3, drop = 4, rare = 4, chest = 4, dungeon = 5 }
+M.KIND_LABEL = { vendor = "sold by", quest = "quest", drop = "dropped by", alt = "on", rare = "dropped by the rare",
+  chest = "found in a", dungeon = "dropped by", craft = "you can make it with" }
+
+-- Gear this character can craft (Gary, 2026-11-23: "grow it"): learned
+-- recipes from the profession windows you opened, product = item made.
+function M.Crafted()
+  local out = {}
+  for prof, p in pairs(ns.db and ns.db.char and ns.db.char.professions or {}) do
+    if type(p) == "table" and prof ~= "" then
+      for _, r in pairs(p.recipes or {}) do
+        if type(r) == "table" and type(r.product) == "number" and r.learned ~= false then
+          out[#out + 1] = { itemID = r.product, name = r.name, prof = prof }
+        end
+      end
+    end
+  end
+  return out
+end
 
 function M:Load()
   if self.pack ~= nil then return self.pack end
@@ -231,6 +248,14 @@ function M:Candidates(opts)
       end
     end
     missing = missing + (self.elsewhereCache and self.elsewhereCache.missing or 0)
+  end
+  -- what you can make yourself
+  for _, r in ipairs(world and {} or M.Crafted()) do
+    if not seen[r.itemID] then
+      local before = #out
+      add(r.itemID, r.name, "craft", { who = r.prof }, 0)
+      if #out > before then out[#out].prof = r.prof end
+    end
   end
   -- GearQuest's own best pick per slot (P6-07), scored with Outrider weights
   if ns.GearQuestBridge and ns.GearQuestBridge.enabled and not world then

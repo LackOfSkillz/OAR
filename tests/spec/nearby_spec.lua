@@ -121,3 +121,33 @@ T.describe("nearby quest availability", function()
     T.contains(ns.Nearby.Describe(list[2]), "from level 5, after 1 earlier quest")
   end)
 end)
+
+T.describe("nearby new sources", function()
+  T.it("dungeon, rare and chest sources read plainly; gear you can craft is listed first", function()
+    local game = mock.new({ mapID = 1412, x = 0.5, y = 0.5, level = 20 })
+    game.env.Outrider_DataGear = { source = "test", items = {
+      [701] = { "Boss Cloak", 20, 25, { { "dungeon", 1412, 0.4, 0.4, "Mutanus the Devourer (Wailing Caverns)", nil, nil } } },
+      [702] = { "Rare Cloak", 20, 25, { { "rare", 1412, 0.4, 0.4, "Snort the Heckler", nil, nil } } },
+      [703] = { "Chest Cloak", 20, 25, { { "chest", 1412, 0.4, 0.4, "Solid Chest", nil, nil } } },
+    } }
+    game.items = { [400] = { name = "Old Cloak", equipLoc = "INVTYPE_CLOAK" } }
+    game.itemStats = { [400] = { ITEM_MOD_AGILITY_SHORT = 2 } }
+    for id = 701, 704 do
+      game.items[id] = { name = "c" .. id, equipLoc = "INVTYPE_CLOAK" }
+      game.itemStats[id] = { ITEM_MOD_AGILITY_SHORT = 6 }
+    end
+    game.worn = { [15] = 400 }
+    local ns = game:loadAddon()
+    game:login()
+    ns.db.char.professions = { Tailoring = { recipes = { [9001] = { name = "Made Cloak", learned = true, product = 704 } } } }
+    local list = ns.Nearby:Candidates()
+    local by = {}
+    for _, c in ipairs(list) do by[c.itemID] = ns.Nearby.Describe(c) end
+    T.eq(list[1].itemID, 704, "crafting is the least effort at equal gain")
+    T.contains(by[704], "you can make it with Tailoring")
+    T.contains(by[701], "dropped by Mutanus the Devourer (Wailing Caverns)")
+    T.contains(by[702], "dropped by the rare Snort the Heckler")
+    T.contains(by[703], "found in a Solid Chest")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
