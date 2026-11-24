@@ -64,6 +64,22 @@ for _, dir in ipairs({ "addon", "tests", "tools" }) do
 end
 if syntaxErrors == 0 then io.write("  ok   all files parse\n") end
 
+-- OI01-06 line coverage: OTR_COVERAGE=<file> records every executed addon line
+-- (tools/quality.py --coverage <file> turns it into the report). Off by default: slow.
+local covFile = os and os.getenv and os.getenv("OTR_COVERAGE")
+local covHits
+if covFile and covFile ~= "" and debug and debug.sethook then
+  covHits = {}
+  debug.sethook(function(_, line)
+    local src = debug.getinfo(2, "S").source
+    if src:find("addon", 1, true) then
+      local f = covHits[src]
+      if not f then f = {} covHits[src] = f end
+      f[line] = true
+    end
+  end, "l")
+end
+
 io.write("== specs\n")
 local specs = {}
 for _, file in ipairs(listLua("tests/spec")) do
@@ -89,6 +105,16 @@ end
 io.write("\n")
 for _, f in ipairs(T.failures) do
   io.write("FAILED: ", f.name, "\n", tostring(f.err), "\n\n")
+end
+if covHits then
+  debug.sethook()
+  local fh = io.open(covFile, "w")
+  if fh then
+    for src, lines in pairs(covHits) do
+      for line in pairs(lines) do fh:write(src, "\t", line, "\n") end
+    end
+    fh:close()
+  end
 end
 local total = T.passed + T.failed
 io.write(string.format("%d passed, %d failed, %d syntax errors (%d tests)\n", T.passed, T.failed, syntaxErrors, total))

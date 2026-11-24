@@ -1,0 +1,28 @@
+{
+ "note": "Existing findings accepted as the OI01-06 baseline; new code must not add any.",
+ "accepted": [
+  "lua-file-size:addon/Outrider/UI/Pages.lua",
+  "lua-func-size:addon/Outrider/Modules/Advisor.lua:203",
+  "lua-func-size:addon/Outrider/Modules/DungeonQuests.lua:183",
+  "lua-func-size:addon/Outrider/Modules/FishingGuide.lua:350",
+  "lua-func-size:addon/Outrider/Modules/GearShop.lua:551",
+  "lua-func-size:addon/Outrider/Modules/Journey.lua:442",
+  "lua-func-size:addon/Outrider/Modules/MacroTree.lua:658",
+  "lua-func-size:addon/Outrider/Modules/MacroTree.lua:956",
+  "lua-func-size:addon/Outrider/Modules/MapPins.lua:295",
+  "lua-func-size:addon/Outrider/Modules/ProfessionHub.lua:383",
+  "lua-func-size:addon/Outrider/Modules/RaresTab.lua:103",
+  "lua-func-size:addon/Outrider/Modules/TalentLab.lua:749",
+  "lua-func-size:addon/Outrider/Modules/TalentLab.lua:817",
+  "lua-func-size:addon/Outrider/UI/Form.lua:21",
+  "lua-func-size:addon/Outrider/UI/MapView.lua:129",
+  "lua-func-size:addon/Outrider/UI/Pages.lua:114",
+  "lua-func-size:addon/Outrider/UI/Pages.lua:1426",
+  "lua-func-size:addon/Outrider/UI/Pages.lua:396",
+  "py-unused-import:companion/outrider_companion/intelligence/next_session_delivery.py:os",
+  "py-unused-import:companion/outrider_companion/intelligence/session_reader.py:os",
+  "py-unused-import:companion/tests/test_contract_golden.py:planner",
+  "py-unused-import:tools/import_crafting.py:json",
+  "py-unused-import:tools/publish_public_packs.py:shutil"
+ ]
+}

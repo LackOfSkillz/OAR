@@ -32,6 +32,12 @@ if ($code -eq 0 -and -not $Filter) {
     }
     if ($pyFailed) { Write-Host "Companion tests failed." -ForegroundColor Red; $code = 1 }
     else { Write-Host "companion tests passed" }
+    # OI01-06 code health gate: no finding outside docs/quality/baseline.json
+    $q = Join-Path (Join-Path $script:RepoRoot 'tools') 'quality.py'
+    $qOut = cmd /c "`"$($py.Source)`" -I `"$q`" --selftest 2>&1 && `"$($py.Source)`" -I `"$q`" --check 2>&1"
+    $qExit = $LASTEXITCODE
+    $qOut | Out-Host
+    if ($qExit -ne 0) { Write-Host "Code health gate failed (new findings above)." -ForegroundColor Red; $code = 1 }
   } elseif ($RequirePython) { Write-Host "No Python found: companion tests are required here." -ForegroundColor Red; $code = 1
   } else { Write-Host "No Python found: companion tests skipped." -ForegroundColor Yellow }
 }
