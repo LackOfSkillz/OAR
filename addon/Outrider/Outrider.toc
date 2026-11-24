@@ -123,6 +123,8 @@ Modules\AuctionHelper.lua
 Modules\AHBuy.lua
 Modules\TrainShop.lua
 Modules\GearShop.lua
+Modules\GearShopRank.lua
+Modules\GearShopView.lua
 Modules\Deals.lua
 Modules\AuctionSell.lua
 Modules\AuctionSearch.lua

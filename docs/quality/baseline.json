@@ -4,7 +4,7 @@
   "lua-func-size:addon/Outrider/Modules/Advisor.lua:203",
   "lua-func-size:addon/Outrider/Modules/DungeonQuests.lua:183",
   "lua-func-size:addon/Outrider/Modules/FishingGuide.lua:350",
-  "lua-func-size:addon/Outrider/Modules/GearShop.lua:551",
+  "lua-func-size:addon/Outrider/Modules/GearShopView.lua:191",
   "lua-func-size:addon/Outrider/Modules/Journey.lua:442",
   "lua-func-size:addon/Outrider/Modules/MacroTreePage.lua:363",
   "lua-func-size:addon/Outrider/Modules/MacroTreePage.lua:65",

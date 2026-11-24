@@ -27,8 +27,8 @@ it is never live or review acceptance.
 | OI01-06 Code health toolchain | MOCK_GREEN | bf3fe83 | [OI01-06](../reviews/phase1/OI01-06.md) | quality gate + 90.7% measured Lua line coverage; Luacheck/Ruff wait on Gary's OK to download |
 | OI01-07 Technical comments cleanup | MOCK_GREEN | d4bcaa7 | [OI01-07](../reviews/phase1/OI01-07.md) | 120 files comment-only, proven by tools/comment_only.py |
 | OI01-08 UI Pages decomposition | MOCK_GREEN | 40ef15b | [OI01-08](../reviews/phase1/OI01-08.md) | 8 files; tab ids/order byte-identical; in-game look pending |
-| OI01-09 MacroTree decomposition | MOCK_GREEN | see commit | [OI01-09](../reviews/phase1/OI01-09.md) | model and page split from module; page builder still one big function |
-| OI01-10 GearShop decomposition | NOT_STARTED | | | |
+| OI01-09 MacroTree decomposition | MOCK_GREEN | bc0c647 | [OI01-09](../reviews/phase1/OI01-09.md) | model and page split from module; page builder still one big function |
+| OI01-10 GearShop decomposition | MOCK_GREEN | see commit | [OI01-10](../reviews/phase1/OI01-10.md) | query / rank / view split; buy confirm path unchanged |
 | OI01-11 Error and event semantics | NOT_STARTED | | | |
 | OI01-12 Dependency and duplication audit | NOT_STARTED | | | |
 | OI01-13 Security checks upgrade | NOT_STARTED | | | |
