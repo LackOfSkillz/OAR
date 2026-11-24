@@ -27,24 +27,38 @@ local function plain(v, depth)
   end
   return out
 end
-function E:Register(id, capability)
+-- OI02-02: a source says what it is (sourceType: module, pack, player or client)
+-- and whether it may mark facts "verified" (canVerify). Verified status is never
+-- inferred from a source's name: a source registered without canVerify that
+-- passes "verified" is rejected.
+local SOURCE_TYPES = { module = true, pack = true, player = true, client = true }
+function E:Register(id, capability, opts)
   if ns.Compat.IsSecret(id) or type(id) ~= "string" or not id:match("^[%w_%-]+$") or #id > 48 then return false end
-  self.sources[id] = { status = capability or "ready", updated = time() }
+  opts = type(opts) == "table" and opts or {}
+  local st = opts.sourceType or "module"
+  if not SOURCE_TYPES[st] then return false end
+  self.sources[id] = { status = capability or "ready", updated = time(), sourceType = st, canVerify = opts.canVerify == true }
   return true
+end
+local function scope()
+  return tostring(ns.db and ns.db.key or "?"), tostring(ns.build or "unknown")
 end
 function E:Record(source, key, category, value, label, ttl)
   if type(source) ~= "string" or not self.sources[source] then return nil end
   if ns.Compat.IsSecret(key) or type(key) ~= "string" or #key < 1 or #key > 120 or key:find("[%c|]") or not key:find("%S") then return nil end
   if not self.TTL[category] then return nil end
   if label ~= "observed" and label ~= "verified" and label ~= "community" and label ~= "inferred" then return nil end
+  if label == "verified" and not self.sources[source].canVerify then return nil end
   local safe = plain(value, 0)
   if type(safe) ~= "table" then return nil end
   local seconds = ttl or self.TTL[category]
   if not finite(seconds) or seconds < 0 or seconds > 86400 then return nil end
   self.serial = self.serial + 1
+  local char, build = scope()
   local record = { id = source .. ":" .. key, source = source, category = category,
     observedAt = time(), expiresAt = time() + seconds, label = label,
-    build = tostring(ns.build or "unknown"), value = safe, revision = self.serial }
+    build = build, char = char, sourceType = self.sources[source].sourceType, privacy = "local",
+    value = safe, revision = self.serial }
   -- Evict oldest by revision without unbounded retention.
   self.observations[record.id] = record
   local count, oldestId, oldestRev = 0, nil, math.huge
@@ -55,11 +69,31 @@ function E:Record(source, key, category, value, label, ttl)
   if count > self.MAX then self.observations[oldestId] = nil end
   return record
 end
+-- A fact is usable only for the character and addon build that observed it,
+-- not from the future, and not after it expires (OI02-02). The second return
+-- says why, so the planner can explain an unknown.
 function E:Get(id, now)
   local row = self.observations[id]
-  if not row then return nil end
-  if (now or time()) > row.expiresAt then self.observations[id] = nil return nil end
+  if not row then return nil, "missing" end
+  now = now or time()
+  if now > row.expiresAt then self.observations[id] = nil return nil, "stale" end
+  if row.observedAt > now + 5 then return nil, "future" end
+  local char, build = scope()
+  if row.char ~= char then return nil, "other character" end
+  if row.build ~= build then return nil, "other build" end
   return row
+end
+
+-- the v4 Evidence record for a stored fact (Intelligence/Contracts.lua), or nil, why
+function E:AsV4(id, now)
+  local row, why = self:Get(id, now)
+  if not row then return nil, why end
+  local rec = { evidenceId = row.id:gsub("[^%w_:%.@%-]", "_"):sub(1, 120), kind = row.category,
+    sourceId = row.source, sourceType = row.sourceType or "module", observedAt = row.observedAt,
+    expiresAt = row.expiresAt, confidence = row.label, privacy = row.privacy or "local", clientBuild = row.build }
+  local ok, field = ns.Nexus.Validate("Evidence", rec)
+  if not ok then return nil, "invalid " .. tostring(field) end
+  return rec
 end
 function E:Invalidate(category)
   for id, row in pairs(self.observations) do
