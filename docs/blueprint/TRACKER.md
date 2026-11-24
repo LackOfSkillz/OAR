@@ -34,6 +34,6 @@ it is never live or review acceptance.
 | OI01-13 Security checks upgrade | MOCK_GREEN | dc6f373 | [OI01-13](../reviews/phase1/OI01-13.md) | token/AST/secret gate; fixed FishBook chat bypass; PartyQuests auto party lines noted for owner |
 | OI01-14 Migration and recovery foundation | MOCK_GREEN | 81d14ac | [OI01-14](../reviews/phase1/OI01-14.md) | Core/Archive: 27 collected-data drops now archive; log caps kept; SV backup taken |
 | OI01-15 Release regression baseline | MOCK_GREEN | 8de1ffa | [OI01-15](../reviews/phase1/OI01-15.md) | journeys green in mock; live list for Gary; fishing ring now yields to fishing addons |
-| OI01-GATE Phase 1 review gate | IN_PROGRESS | see commit | [packet](../reviews/phase1/OI01-GATE.md) | STOPPED: waiting for push OK, ChatGPT review, OI01-04 live data and Gary's decisions |
+| OI01-GATE Phase 1 review gate | REVIEW_CHANGES -> resubmitted | d84fbe3 | [packet](../reviews/phase1/OI01-GATE.md) | ChatGPT R01-R06 addressed; CI 45415088583 green; awaiting re-review, OI01-04 live data, owner decisions |
 
 Phases 2-8 (OI02-OI08): NOT_STARTED; they start only after the previous gate is accepted.
