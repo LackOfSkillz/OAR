@@ -251,7 +251,7 @@ end
 function M:Abilities()
   local out = {}
   for i = 1, (rawget(_G, "NUM_PET_ACTION_SLOTS") or 10) do
-    local name, _, isToken, _, autoAllowed, autoOn = C.Call("GetPetActionInfo", i)
+    local name, _, isToken, _, autoAllowed, autoOn = C.CallAll("GetPetActionInfo", i)
     name = C.Readable(name)
     if type(name) == "string" and not isToken then
       out[#out + 1] = name .. ((autoAllowed and autoOn) and " (auto)" or "")

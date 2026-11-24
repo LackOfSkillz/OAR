@@ -73,7 +73,7 @@ end
 local function factionAt(i)
   local d = C.Call("C_Reputation.GetFactionDataByIndex", i)
   if type(d) == "table" then return d.name, d.reaction, d.currentStanding end
-  local name, _, standing, _, _, value = C.Call("GetFactionInfo", i)
+  local name, _, standing, _, _, value = C.CallAll("GetFactionInfo", i)
   return name, standing, value
 end
 

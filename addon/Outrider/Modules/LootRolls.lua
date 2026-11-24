@@ -56,7 +56,7 @@ function M:OnStart(_, rollID)
   if not rollID then return end
   local link = C.Call("GetLootRollItemLink", rollID)
   if not link then return end
-  local _, name, _, quality, bop, canNeed, canGreed = C.Call("GetLootRollItemInfo", rollID)
+  local _, name, _, quality, bop, canNeed, canGreed = C.CallAll("GetLootRollItemInfo", rollID)
   local info = { link = link, bop = bop and true or false, canNeed = canNeed, canGreed = canGreed }
   local roll, why, color = self:Advice(info)
   if not roll then return end

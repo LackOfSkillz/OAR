@@ -29,6 +29,16 @@ function C.Call(path, ...)
   if ok then return a, b, c, d, e end
 end
 
+-- Like Call, but keeps every return value (Call stops at five, which is fine
+-- for most APIs and costs no table). Use it for APIs with more, such as
+-- GetInboxInvoiceInfo (seven) or GetInboxHeaderInfo (days left is the seventh).
+function C.CallAll(path, ...)
+  local fn = C.Resolve(path)
+  if type(fn) ~= "function" then return nil end
+  local r = { pcall(fn, ...) }
+  if r[1] then return unpack(r, 2, table.maxn(r)) end
+end
+
 -- Secret values (Midnight-era clients): displayable, not computable, in some
 -- restricted contexts. Treat a secret as "unknown" in our logic.
 function C.IsSecret(v)

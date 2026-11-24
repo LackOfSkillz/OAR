@@ -142,7 +142,7 @@ function M:OnChat(_, msg, author, ...)
     if link.guid == senderGUID and author then
       who = M.FullName(author)
     else
-      local _, _, _, _, _, name, realm = C.Call("GetPlayerInfoByGUID", link.guid)
+      local _, _, _, _, _, name, realm = C.CallAll("GetPlayerInfoByGUID", link.guid)
       who = readable(name) and M.FullName(name, readable(realm))
     end
     if who and not self:IsMe(who) then
