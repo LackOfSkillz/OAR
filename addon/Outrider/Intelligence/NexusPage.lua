@@ -154,6 +154,21 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
       local _, note = P.Cards(refresh)
       return note
     end },
+    -- after time away: what changed, and your choice (OI03-13)
+    { "cards", function()
+      local N = ns.NexusCore
+      local rec = N and N.recovery
+      if not rec then return {} end
+      return { { pic = "Interface\\Icons\\INV_Misc_PocketWatch_01", title = "Welcome back: your last plan",
+        tags = { { rec.long and "a long time away" or "since you left", rec.long and "warn" or "plain" } },
+        line = table.concat(rec.lines, "  "),
+        actions = {
+          { "Resume where I left off", function() ns.NexusRecovery.Resume(N) refresh() end,
+            "Plan again, starting with the first step from last time that is still good." },
+          { "Start a new plan", function() ns.NexusRecovery.NewPlan(N) refresh() end,
+            "Forget last time's plan and plan from what is true now." },
+        } } }
+    end },
     { "header", "My goals" },
     { "note", function()
       local n = #P.GoalCards()

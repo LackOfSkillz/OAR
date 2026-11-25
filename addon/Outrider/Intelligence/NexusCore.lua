@@ -335,7 +335,14 @@ function M:OnEnable()
   self:On("PLAYER_REGEN_ENABLED", function(mod)
     if mod.wanted then local w = mod.wanted mod.wanted = nil mod:Request(w) end
   end)
-  self:On("PLAYER_LOGOUT", function(mod) mod.current, mod.wanted = nil, nil end)
+  self:On("PLAYER_LOGOUT", function(mod)
+    -- keep a summary to check against when you come back (OI03-13)
+    if ns.NexusRecovery then ns.NexusRecovery.Save(mod) end
+    mod.current, mod.wanted = nil, nil
+  end)
+  self:On("OTR_PLAYSESSION", function(mod, _, kind)
+    if ns.NexusRecovery then ns.NexusRecovery.OnLogin(mod, kind) end
+  end)
 end
 
 function M:OnDisable()
