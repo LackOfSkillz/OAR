@@ -512,10 +512,11 @@ ns.Hub:AddTab("gear", "Gear", function(p)
     end },
     { "cards", function() return M:CardItems() end },
     { "note", function() return #M:Candidates() == 0 and "No upgrades found here yet (item data may still be loading)." or "" end },
-    -- is it worth getting? (OI04-09, Intelligence/GearROI.lua)
+    -- sections other parts of Outrider add to this page (Hub:Sections("gear");
+    -- GearROI's "Worth getting?", OI04-09), drawn without knowing them
     { "header", "Worth getting?", icon = "INV_Misc_Coin_02" },
-    { "note", "What each upgrade costs in time and gold, the chance of getting it, and how long you'd use it." },
-    { "cards", function() return ns.GearROI and ns.GearROI.Cards(ns.GearROI:Mine(), function() p:Refresh() end) or {} end },
+    { "note", function() local s = ns.Hub:Sections("gear")[1] return s and s.note or "" end },
+    { "cards", function() local s = ns.Hub:Sections("gear")[1] return s and s.cards(function() p:Refresh() end) or {} end },
   })
   local refresh = p.Refresh
   function p:Refresh() refresh(self) M.filter = nil end

@@ -129,6 +129,14 @@ Owner authorization: on 2026-11-24 Gary chose "Start Phase 4 now" while the Phas
 | OI04-12 Guardian travel advice | MOCK_GREEN | a9190b9 | [OI04-12](../reviews/phase4/OI04-12.md) | safe / fair / risky / dangerous from zone level ranges (source named) and your deaths there; unknown without data; safer alternative named; plan never changed |
 | OI04-13 Pathfinder measured routes | MOCK_GREEN | 0cf5efe | [OI04-13](../reviews/phase4/OI04-13.md) | Travel:TimeTo corrected by your walking (route, then general, current build only), source named; long unwalked straight legs marked; slow mode; unknown stays unknown |
 | OI04-14 Dungeon decision improvements | MOCK_GREEN | c220d71 | [OI04-14](../reviews/phase4/OI04-14.md) | ranks fitting dungeons by quests to do, possible (not guaranteed) gear and level fit; solo last; group and reputation unknown said so; existing UI intact |
-| OI04-15 Foresight quiet UX | MOCK_GREEN | see commit | [OI04-15](../reviews/phase4/OI04-15.md) | Coming up: one primary + two; categories, threshold, Not interested, Later; nudges opt-in, important only, once per 6 h, never in combat or quiet, re-checked after combat |
+| OI04-15 Foresight quiet UX | MOCK_GREEN | edc9334 | [OI04-15](../reviews/phase4/OI04-15.md) | Coming up: one primary + two; categories, threshold, Not interested, Later; nudges opt-in, important only, once per 6 h, never in combat or quiet, re-checked after combat |
+| OI04-GATE Phase 4 gate | PACKET WRITTEN | see commit | [packet](../reviews/phase4/OI04-GATE.md) | owner: no stop; ChatGPT reviews all phases at the end; full suite 1372 green |
 
-Phases 5-8 (OI05-OI08): NOT_STARTED.
+## Phase 5: Predictive intelligence (Oracle, Forge, Quartermaster, Treasurer)
+
+Running straight on from Phase 4 (owner: no stops, one review at the end).
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+
+Phases 6-8 (OI06-OI08): NOT_STARTED.

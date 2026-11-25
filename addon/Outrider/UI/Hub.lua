@@ -107,6 +107,16 @@ function Hub.LastSub(host)
   return (def and Hub.byId[def]) and def or host
 end
 
+-- Sections other files add to a page they don't own (the Gear page shows
+-- GearROI's "Worth getting?"): Hub:AddSection(pageId, { note, cards = fn(refresh) })
+-- and the page draws Hub:Sections(pageId); neither knows the other.
+Hub.sections = Hub.sections or {}
+function Hub:AddSection(page, section)
+  self.sections[page] = self.sections[page] or {}
+  table.insert(self.sections[page], section)
+end
+function Hub:Sections(page) return self.sections[page] or {} end
+
 function Hub:AddTab(id, title, build, order, opts)
   if self.byId[id] then return self.byId[id] end
   local place = self.PLACE[id]

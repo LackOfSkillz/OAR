@@ -244,3 +244,8 @@ function R.Cards(list, refresh)
   end
   return out
 end
+
+-- the Gear page section (drawn by Modules/Nearby.lua through Hub:Sections)
+ns.Hub:AddSection("gear", {
+  note = "What each upgrade costs in time and gold, the chance of getting it, and how long you'd use it.",
+  cards = function(refresh) return R.Cards(R:Mine(), refresh) end })
