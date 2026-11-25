@@ -209,8 +209,14 @@ end
 --   opts.keys   only entries whose keys match ({ character = ... })
 --   opts.where  function(row) -> bool, applied to both parts
 --   opts.max    keep only the newest max rows (default MAX_HISTORY)
--- Archive files moved off the saved variables (docs/ARCHIVE_GROWTH.md) are
--- not read here.
+-- Limits (review OI-FR16), on purpose: this is a bounded working view, not a
+-- history index. Archive files moved off the saved variables
+-- (docs/ARCHIVE_GROWTH.md) are not read; long-term indexed history belongs
+-- to the desktop Knowledge Vault (planned). A report about one play session
+-- passes opts.where, so it gets that session's rows wherever they are,
+-- before the bound applies; whole-history readers get the newest MAX_HISTORY
+-- rows. Every call scans the archived list once; results without a where are
+-- cached until either list changes length. Nothing is ever dropped here.
 Archive.MAX_HISTORY = 5000
 function Archive:WithActive(dataset, active, opts)
   opts = opts or {}

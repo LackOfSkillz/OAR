@@ -36,8 +36,11 @@ function M:OnPlaySession(_, kind, prev)
   if self.current then M.Stamp(self.current) end
 end
 M.MERGE = { sum = { "durationSeconds", "xpEarned" }, last = { "levelEnd", "endedAt", "final", "endReason" } }
-function M:Merged()
+-- psId (optional): only that play session, archived segments included, so a
+-- report on an older session finds its XP (review OI-FR16)
+function M:Merged(psId)
   local hist = self:Store().history
+  if psId then hist = ns.Archive:WithActive("xpSessions", hist, { where = function(r) return r.playSessionId == psId end }) end
   local merged = ns.PlaySession.Merge(hist, M.MERGE)
   -- verified only if every segment was; flags are the union of the segments'
   -- (in a new table: the saved records are never changed)

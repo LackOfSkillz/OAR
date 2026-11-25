@@ -72,4 +72,24 @@ T.describe("archive-aware history (review OI-FR02)", function()
       T.eq(n, 1, "preferences see it")
     end
   end)
+
+  T.it("review OI-FR16: a report on an older session finds its rows past the working bound", function()
+    local _, ns = session()
+    ns.Modules:SetEnabled("Outcomes", true)
+    local A = ns.Archive
+    local keep = A.MAX_HISTORY
+    A.MAX_HISTORY = 3
+    local store = ns.Outcomes:Store()
+    store.activity = { { playSessionId = "old", totals = { quest = 600 } } }
+    A:Shift("activitySessions", store.activity, { path = "char.outcomes.activity", scope = "char" })
+    for i = 1, 5 do store.activity[#store.activity + 1] = { playSessionId = "new" .. i, totals = { travel = 60 } } end
+    T.eq(#A:WithActive("activitySessions", store.activity), 3, "the whole-history view is bounded")
+    local xs = ns.SessionXP:Store()
+    xs.history[#xs.history + 1] = { playSessionId = "old", xpEarned = 900, durationSeconds = 600, startedAt = 1, endedAt = 601, final = true, xpVerified = true }
+    A:Shift("xpSessions", xs.history, { path = "char.xp60.history", scope = "char" })
+    local rep = ns.AfterAction.Report("old")
+    A.MAX_HISTORY = keep
+    T.eq(rep.activity.quest, 600, "the old session's activity")
+    T.eq(rep.xp.xp, 900, "the old session's XP, from the archive")
+  end)
 end)

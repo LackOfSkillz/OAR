@@ -61,7 +61,7 @@ end
 function P.Report(psId)
   local rep = { sessionId = psId }
   local X = ns.SessionXP
-  rep.xp = P.XP(psId, X and X.Merged and X:Merged() or {})
+  rep.xp = P.XP(psId, X and X.Merged and X:Merged(psId) or {})
   local O = ns.Outcomes
   local store = O and O:Store() or {}
   -- archived records count too (review OI-FR02): a session's rows may have
@@ -75,7 +75,8 @@ function P.Report(psId)
   local A = ns.ActivityTimeline
   local live
   if current and A and A.rec then local t = A:Totals() live = { rec = A.rec, totals = t } end
-  rep.activity, rep.played = P.Activity(psId, AR:WithActive("activitySessions", store.activity), live)
+  rep.activity, rep.played = P.Activity(psId, AR:WithActive("activitySessions", store.activity,
+    { where = function(r) return r.playSessionId == psId end }), live)
   rep.deaths = 0
   for _, e in ipairs(events) do if e.kind == "death" then rep.deaths = rep.deaths + 1 end end
   -- milestones in this session
