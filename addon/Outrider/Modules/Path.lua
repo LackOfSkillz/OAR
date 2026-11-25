@@ -447,6 +447,25 @@ function M.Dots(route)
   return out
 end
 
+-- The trail data's revision as one string. Built from every map's list, so it
+-- is kept for SIG_S: a search in progress calls Replan every frame, and while
+-- moving every few seconds (the session's 2nd biggest maker of short-lived
+-- memory, 2026-11-25). Trails change by a dot every few yards at most.
+M.SIG_S = 1
+function M.TrailSig(fresh)
+  local now = (GetTime and GetTime()) or 0
+  local c = M.sigCache
+  if not fresh and c and c.rev == ns.trailRev and now - c.at < M.SIG_S then return c.sig end
+  local parts = { tostring(ns.trailRev or 0) }
+  for mapID, list in pairs(ns.db.global.trails or {}) do
+    if type(list) == "table" then parts[#parts + 1] = mapID .. ":" .. #list .. ":" .. tostring(list[#list]) .. tostring(list[1]) end
+  end
+  table.sort(parts)
+  local sig = table.concat(parts, "|")
+  M.sigCache = { rev = ns.trailRev, at = now, sig = sig }
+  return sig
+end
+
 function M:Replan(why)
   if not self:Settings().on then self.dots, self.route = nil, nil return self:Redraw() end
   local target = self:Target()
@@ -463,12 +482,8 @@ function M:Replan(why)
   -- a revision of the trail data (OI01-R13): the trail module's counter plus each
   -- map's size and newest dot, so a change at the per-map cap (count unchanged,
   -- oldest dot archived, newest added) or data replaced by an import is seen
-  local parts = { tostring(ns.trailRev or 0) }
-  for mapID, list in pairs(ns.db.global.trails or {}) do
-    if type(list) == "table" then parts[#parts + 1] = mapID .. ":" .. #list .. ":" .. tostring(list[#list]) .. tostring(list[1]) end
-  end
-  table.sort(parts)
-  local sig = table.concat(parts, "|")
+  -- re-plans while moving may use a signature up to SIG_S old; any other reason reads it fresh
+  local sig = M.TrailSig(why ~= "moving")
   local fresh = g and g.cont == cont and g.b.wx == b.wx and g.b.wy == b.wy and box
     and px >= box[1] and px <= box[2] and py >= box[3] and py <= box[4]
     and (g.sig == sig or (why == "moving" and time() - (g.made or 0) < M.REFRESH))
@@ -522,11 +537,23 @@ function M:Replan(why)
   self:Redraw()
 end
 
--- Pins for one map: the dots that fall on it.
+-- Pins for one map: the dots that fall on it. The minimap asks five times a
+-- second while you move; the list is kept until the dots or the destination
+-- change (a new search makes a new dots list), not rebuilt each time
+-- (209 MB of short-lived memory in one session; always-on watch, 2026-11-25).
+local NO_PINS = {}
 function M:Pins(mapID)
-  local out = {}
-  if not (self.dots and mapID) then return out end
+  if not (self.dots and mapID) then return NO_PINS end
   local title = self.target and self.target.title or "your destination"
+  local pc = self.pinCache
+  if not pc or pc.dots ~= self.dots or pc.title ~= title then
+    pc = { dots = self.dots, title = title, by = {} }
+    self.pinCache = pc
+  end
+  local hit = pc.by[mapID]
+  if hit then return hit end
+  local out = {}
+  pc.by[mapID] = out
   for i, d in ipairs(self.dots) do
     local x, y
     if d.walked then x, y = M.ToMap(mapID, self.cont, d.wx, d.wy) end

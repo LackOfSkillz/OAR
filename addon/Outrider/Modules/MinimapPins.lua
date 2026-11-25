@@ -121,16 +121,31 @@ function M:Dot(i)
   return d
 end
 
+-- Update runs five times a second while you move. Its working lists and the
+-- per-dot entries are reused, not made anew each time (219 MB of short-lived
+-- memory in one session; always-on watch, 2026-11-25).
+local pool, poolN = {}, 0
+local shownL, liveL, listL = {}, {}, {}
+local function wipe(t) for i = #t, 1, -1 do t[i] = nil end end
+local function entry(pin, x, y, dist, dSouth, dEast, path)
+  poolN = poolN + 1
+  local e = pool[poolN]
+  if not e then e = {} pool[poolN] = e end
+  e.pin, e.x, e.y, e.dist, e.dSouth, e.dEast, e.path = pin, x, y, dist, dSouth, dEast, path
+  return e
+end
+local function nearer(a, b) return a.dist < b.dist end
+
 function M:Update()
   if not Minimap or not ns.MapPins then return end
+  poolN = 0
   local W = ns.Waypoints
   -- Offsets come from map coordinates (x grows east, y grows south on every
   -- map) times the map's size in yards; no world-axis guessing.
   local mapID, px, py = C.PlayerPosition("player")
   local mapW, mapH
   if mapID then mapW, mapH = W.MapSize(mapID) end
-  for _, d in ipairs(self.used) do d:Hide() end
-  self.used = {}
+  for i = #self.used, 1, -1 do self.used[i]:Hide() self.used[i] = nil end
   if not (mapID and px and mapW and mapH) then return end
   local radius = C.Call("C_Minimap.GetViewRadius")
   local half = (Minimap:GetWidth() or 140) / 2
@@ -140,14 +155,14 @@ function M:Update()
   local n = 0
   local nearest
   local s = self:Settings()
-  local shown = {}
+  local shown, live, list = shownL, liveL, listL
+  wipe(shown) wipe(live) wipe(list)
   local now = GetTime and GetTime() or time()
-  local live = {}
   for _, pin in ipairs(self.live or {}) do
     if pin.untilT > now and pin.mapID == mapID then
       local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
       local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
-      if x then live[#live + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast } end
+      if x then live[#live + 1] = entry(pin, x, y, dist, dSouth, dEast) end
     end
   end
   -- the way to your destination: every dot in view, not counted in the 12
@@ -156,7 +171,7 @@ function M:Update()
       local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
       local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
       if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
-        table.insert(live, 1, { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast, path = true })
+        table.insert(live, 1, entry(pin, x, y, dist, dSouth, dEast, true))
       end
     end
   end
@@ -166,7 +181,7 @@ function M:Update()
       local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
       local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
       if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
-        live[#live + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast, path = pin.kind == "route" }
+        live[#live + 1] = entry(pin, x, y, dist, dSouth, dEast, pin.kind == "route")
       end
     end
   end
@@ -176,12 +191,11 @@ function M:Update()
       local dEast, dSouth = (pin.x - px) * mapW, (pin.y - py) * mapH
       local x, y, dist = M.Offset(-dSouth, -dEast, radius, half, facing)
       if x and (x * x + y * y) >= M.CLEAR * M.CLEAR then
-        shown[#shown + 1] = { pin = pin, x = x, y = y, dist = dist, dSouth = dSouth, dEast = dEast }
+        shown[#shown + 1] = entry(pin, x, y, dist, dSouth, dEast)
       end
     end
   end
-  table.sort(shown, function(a, b) return a.dist < b.dist end)
-  local list = {}
+  table.sort(shown, nearer)
   for i = 1, math.min(#shown, s.max or 12) do list[#list + 1] = shown[i] end
   for _, e in ipairs(live) do list[#list + 1] = e end   -- drawn last: on top
   for i = 1, #list do

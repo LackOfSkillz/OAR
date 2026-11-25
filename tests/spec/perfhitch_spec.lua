@@ -75,3 +75,41 @@ T.describe("minimap while moving", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("moving makes little garbage", function()
+  T.it("a minimap update reuses its working tables", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    for i = 1, 20 do
+      ns.db.global.pois["npc-" .. i .. "-vendor"] = { id = "npc-" .. i .. "-vendor", kind = "vendor", mapID = 1412,
+        x = 0.50 + i * 0.001, y = 0.37, name = "Smith " .. i, verified = false }
+    end
+    ns.MapPins:Invalidate()
+    local M = ns.Modules:Get("MinimapPins")
+    M:Update() M:Update() -- dots and pools made once
+    collectgarbage("collect")
+    collectgarbage("stop")
+    local k0 = collectgarbage("count")
+    for _ = 1, 50 do M:Update() end
+    local perUpdate = (collectgarbage("count") - k0) / 50
+    collectgarbage("restart")
+    T.ok(#M.used > 5, "dots are shown")
+    -- 12 KB an update before; part of what is left is the mock frames recording points
+    T.ok(perUpdate < 5, string.format("%.2f KB made per update", perUpdate))
+  end)
+
+  T.it("the route's pins are kept until the route changes", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local P = ns.Path
+    P.dots = { { walked = true, wx = 1, wy = 1 } }
+    P.target = { title = "Tower" }
+    local a = P:Pins(100)
+    T.eq(P:Pins(100), a, "same dots: the same list")
+    P.dots = { { walked = true, wx = 2, wy = 2 } }
+    T.ok(P:Pins(100) ~= a, "a new search: rebuilt")
+  end)
+end)
