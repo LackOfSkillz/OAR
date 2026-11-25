@@ -207,6 +207,7 @@ Intelligence\Pathfinder.lua
 Intelligence\DungeonDecision.lua
 Intelligence\Scenario.lua
 Intelligence\Oracle.lua
+Intelligence\Forge.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua

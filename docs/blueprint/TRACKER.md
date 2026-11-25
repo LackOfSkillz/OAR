@@ -140,5 +140,12 @@ Running straight on from Phase 4 (owner: no stops, one review at the end).
 |---|---|---|---|---|
 | OI05-01 Scenario contract | MOCK_GREEN | see commit | [OI05-01_02](../reviews/phase5/OI05-01_02.md) | frozen branch of a live copy; overrides checked with reasons; live hash unchanged; version, base hash, assumptions |
 | OI05-02 Oracle deterministic comparisons | MOCK_GREEN | see commit | [OI05-01_02](../reviews/phase5/OI05-01_02.md) | known dimensions with deltas (gold, gear role score, level, role, professions, zone risk, plan value); unknowns listed; stale asks for refresh; offline |
+| OI05-03 Forge combat data model | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | abilities from tooltips with source; not-modelled list |
+| OI05-04 Forge resources and timing | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | GCD, casts, cooldowns, DoT ticks; mana only when pool and regen known |
+| OI05-05 Forge damage mechanics | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | client crit; unknown hit and armour widen the range; resistance named |
+| OI05-06 Forge heal, tank, survival | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | separate results; assumed incoming damage shown |
+| OI05-07 Forge runner | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | deterministic, bounded, out of combat only, partial report |
+| OI05-08 Forge equipment and build comparison | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | eligibility, ownership, respec cost apart; nothing spent |
+| OI05-09 Forge dummy calibration | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | like for like; under 3 fights not judged |
 
 Phases 6-8 (OI06-OI08): NOT_STARTED.
