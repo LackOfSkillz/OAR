@@ -306,6 +306,13 @@ local function dungeonRows()
 end
 
 ns.Hub:AddTab("dungeons", "Dungeons", function(p)
-  UI:FormPage(p, dungeonRows())
+  local rows = dungeonRows()
+  -- which dungeon, and why (Intelligence/DungeonDecision.lua, OI04-14): a
+  -- section on top; the existing rows below are unchanged
+  if ns.DungeonDecision then
+    table.insert(rows, 2, { "header", "Which dungeon, and why", icon = "INV_Misc_Key_14" })
+    table.insert(rows, 3, { "cards", function() return ns.DungeonDecision.Cards() end })
+  end
+  UI:FormPage(p, rows)
 end)
 

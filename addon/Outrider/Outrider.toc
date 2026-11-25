@@ -204,6 +204,7 @@ Intelligence\Foresight.lua
 Intelligence\Quartermaster.lua
 Intelligence\Guardian.lua
 Intelligence\Pathfinder.lua
+Intelligence\DungeonDecision.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua
