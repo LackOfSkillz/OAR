@@ -177,3 +177,64 @@ T.describe("pull key and auto attack", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+-- Gary, 2026-11-25 (level 2 shaman): "if you press fight and your buffs are
+-- not up, it buffs you then pulls or casts", for every class. The Fight key
+-- comes from the research plans (FightPlan on), which left some buffs out.
+T.describe("fight key buffs first, with the class plans on", function()
+  local function planned(class, level, spells, opts)
+    local game = mock.new({ class = class, level = level })
+    game.spells = spells
+    game.worn = (opts and opts.worn) or {}
+    local ns = game:loadAddon()
+    game:login()
+    ns.Modules:SetEnabled("AutoCheck", false)
+    game:advance(3)
+    game:slash("fight")
+    game:advance(3)
+    return game, ns
+  end
+  local function count(body, s)
+    local n, i = 0, 1
+    while true do
+      local a = body:find(s, i, true)
+      if not a then return n end
+      n, i = n + 1, a + 1
+    end
+  end
+
+  T.it("a level 2 shaman's Fight imbues the weapon first, then pulls; imbued, it just pulls", function()
+    local game, ns = planned("SHAMAN", 2, sp("Lightning Bolt", "Rockbiter Weapon", "Healing Wave"))
+    T.ok(ns.FightPlan.enabled, "the plans are on, as in game")
+    local f = macro(game, "Fight")
+    T.contains(f, "/cast [nocombat] Rockbiter Weapon")
+    T.ok(before(f, "Rockbiter Weapon", "Lightning Bolt"), "buff before the pull: " .. f)
+    T.ok(before(f, "/targetenemy", "Rockbiter Weapon"), "targeting stays first")
+    game.mhEnchant = true
+    game.units = game.units or {}
+    game.units.player = { auras = {} }
+    game:fire("UNIT_AURA", "player")
+    game:advance(3)
+    T.ok(not macro(game, "Fight"):find("Rockbiter", 1, true), "imbued: no wasted press")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("every class with a self-buff gets it on Fight while missing, once, before the first cast", function()
+    local cases = {
+      { "SHAMAN", 10, { "Lightning Bolt", "Earth Shock", "Lightning Shield", "Healing Wave" }, "Lightning Shield" },
+      { "WARLOCK", 6, { "Shadow Bolt", "Immolate", "Demon Skin", "Corruption" }, "Demon Skin" },
+      { "PALADIN", 10, { "Seal of Righteousness", "Judgement", "Blessing of Might", "Devotion Aura", "Holy Light" }, "Blessing of Might" },
+      { "DRUID", 10, { "Wrath", "Moonfire", "Mark of the Wild", "Thorns", "Healing Touch" }, "Mark of the Wild" },
+      { "MAGE", 6, { "Fireball", "Frostbolt", "Arcane Intellect", "Frost Armor" }, "Arcane Intellect" },
+      { "PRIEST", 6, { "Smite", "Shadow Word: Pain", "Power Word: Fortitude", "Lesser Heal" }, "Power Word: Fortitude" },
+    }
+    for _, c in ipairs(cases) do
+      local game, ns = planned(c[1], c[2], sp(unpack(c[3])))
+      local f = macro(game, "Fight")
+      T.eq(count(f, c[4]), 1, c[1] .. ": " .. c[4] .. " once in " .. f)
+      T.contains(f, "nocombat", c[1] .. ": buffs only out of combat")
+      T.ok(#f <= 255, c[1] .. ": fits a macro")
+      T.eq(#ns.Errors.list, 0, c[1])
+    end
+  end)
+end)

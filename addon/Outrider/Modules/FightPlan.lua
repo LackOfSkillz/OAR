@@ -164,6 +164,27 @@ function M:Lines(kind, add)
   local slots = self:Slots(kind)
   if not slots or #slots == 0 then return false end
   local casts = 0
+  -- the Fight key puts this class's missing self-buffs first, after the
+  -- targeting lines, unless the plan casts that spell itself (ClassFight.lua)
+  local extra = {}
+  if kind == "ranged" and F.SelfBuffs then
+    local planned = {}
+    for _, sl in ipairs(slots) do
+      for _, sp in ipairs(sl.spells or {}) do planned[(sp:gsub("^!", ""))] = true end
+      if sl.line then for sp in sl.line:gmatch("%] ([^;]+)$") do planned[sp] = true end end
+    end
+    for _, b in ipairs(F.SelfBuffs(ns.PlayerClass())) do
+      if b.spell and not planned[b.spell] then extra[#extra + 1] = b end
+    end
+  end
+  local function flushExtra()
+    for _, b in ipairs(extra) do
+      local text = ns.PlayerClass() == "DRUID" and M.DruidForms(b.text) or b.text
+      add(7, text, b.why)
+      casts = casts + 1
+    end
+    extra = {}
+  end
   for _, sl in ipairs(slots) do
     local skip = false
     if sl.kind == "buff" then
@@ -175,11 +196,14 @@ function M:Lines(kind, add)
     local text = not skip and M.KnownLine(sl.line)
     if not text then skip = true end
     if text and ns.PlayerClass() == "DRUID" then text = M.DruidForms(text) end
+    -- self-buffs go in before the first line that isn't targeting or swinging
+    if #extra > 0 and not (sl.line or ""):find("^/targetenemy") and not (sl.line or ""):find("^/startattack") then flushExtra() end
     if not skip then
       add(sl.keep or 5, text, sl.why)
       if not text:find("^/targetenemy") and not text:find("^/startattack") and not text:find("^/petattack") then casts = casts + 1 end
     end
   end
+  flushExtra()
   return casts > 0
 end
 

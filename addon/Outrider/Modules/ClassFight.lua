@@ -76,6 +76,28 @@ local function mainHandEnchanted()
   local has = C.Call("GetWeaponEnchantInfo")
   return C.Readable(has) == true
 end
+local function imbueName()
+  return (level() >= 30 and twoHander() and first("Windfury Weapon")) or first("Rockbiter Weapon", "Flametongue Weapon")
+end
+
+-- The self-buffs missing right now, for the Fight key of every class (Gary,
+-- 2026-11-25: "if you press fight and your buffs are not up, it buffs you
+-- then pulls"). FightPlan puts them first when its plan doesn't cast them
+-- already. One spell per press: a press with a buff missing casts the buff,
+-- the next one pulls. { { text, why, spell }, ... }
+function F.SelfBuffs(cls)
+  local out = {}
+  if cls == "SHAMAN" then
+    local imbue = imbueName()
+    if imbue and not mainHandEnchanted() then
+      out[#out + 1] = { text = "/cast [nocombat] " .. imbue, why = "before the pull, while the weapon has no imbue", spell = imbue }
+    end
+  end
+  buffLines(cls, function(_, text, why)
+    out[#out + 1] = { text = text, why = why, spell = text:match("%] (.+)$") }
+  end)
+  return out
+end
 F.WatchExtra = function()
   if ns.PlayerClass() == "SHAMAN" then return mainHandEnchanted() and "imbue on" or "imbue off" end
   return nil
@@ -286,7 +308,7 @@ function CASTER.SHAMAN(kind, add)
   end
   add(1, "/targetenemy [noharm][dead]", "picks the nearest enemy when you have none")
   add(1, "/startattack", "keeps swinging")
-  local imbue = (level() >= 30 and twoHander() and first("Windfury Weapon")) or first("Rockbiter Weapon", "Flametongue Weapon")
+  local imbue = imbueName()
   if imbue and not mainHandEnchanted() then add(6, "/cast [nocombat] " .. imbue, "before the pull, while the weapon has no imbue") end
   buffLines("SHAMAN", add)
   if known("Lightning Bolt") then add(5, "/cast [nocombat] Lightning Bolt", "pulls from range") end
