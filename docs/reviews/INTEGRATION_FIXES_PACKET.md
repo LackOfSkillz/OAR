@@ -65,6 +65,32 @@ An earlier clean run at `420ab83` failed the quality gate on two new findings: a
 - Forge stays experimental.
 - No merge, no publish, no new features.
 
+## Round 2: FR14 to FR16 (ChatGPT review of `0c661fd`)
+
+**Candidate SHA:** `8b47eb6` (fixes), plus this packet commit.
+
+| ID | Fix | Files | Regression test |
+|---|---|---|---|
+| FR14 content-level preservation | `tools/preservation_flatten.lua` runs each data file in a sandbox (FightPlans loaders included) and lists every value. `preservation_check.py` fails when a base value is missing or changed. Records are keyed by identity, so inserting one doesn't shift the rest, and duplicates are counted. A deliberate correction passes only when `docs/quality/preservation_revisions.json` records the old value. A file the sandbox can't run is reported as UNVERIFIED and falls back to the record-id check. | `tools/preservation_flatten.lua`, `tools/preservation_check.py`, `docs/quality/preservation_revisions.json` | `companion/tests/test_preservation.py`: an id kept with its contents emptied fails; the old id-only check passed it. A changed value, a lost source and a lost duplicate also fail; a recorded revision passes; an unrunnable file is reported. **Result:** all 30 data files match `7f4ab21` value for value, with 0 unverified. |
+| FR14 follow-up: gate really runs | The first clean run at `c2ea776` showed the gate falling back ("lupa not installed") and 7 preservation tests skipped: `test.ps1` used `py -I`, which hides a user-installed lupa. Both now use the Lua runner's Python. With `-RequirePython`, a missing lupa fails (`--require-content`, `OTR_REQUIRE_LUPA`). | `tools/test.ps1`, `tools/preservation_check.py`, `test_preservation.py` | The clean run at `8b47eb6`: 8 preservation tests run, 0 skipped; the gate reports 0 unverified. |
+| FR15 recovery-mode records | `Archive:MigrateStore` keeps the old store saved as it was and puts new rows in a **saved** staging store (`outcomesStaging`, `xp60Staging`, `intelligenceProfileStaging`). Once the old store is archived, the staged rows move into the new store, and only then is the staging dropped. Outcomes, SessionXP and Profiles use it. The audit has new rows for the staging stores. | `Core/Archive.lua`, `Outcomes.lua`, `SessionXP.lua`, `Profiles.lua` | `outcomes_spec.lua`: recovery, a reload with the same staging, then the merge. The record made in recovery is in the new store, the old store is in the archive, and a role picked in recovery wins. |
+| FR16 session history | The session report filters by play session before the bound applies, for activity and XP; `SessionXP:Merged(psId)` includes archived segments. The bounded, cached working view and the deferral of indexed history to the planned Knowledge Vault are documented on `Archive:WithActive`. | `AfterAction.lua`, `SessionXP.lua`, `Core/Archive.lua` | `archivehistory_spec.lua`: an old session past the bound still reports its activity and XP. Fails on the old code. |
+
+**Full suite from a fresh clone at `8b47eb6`** (exit 0):
+
+- **Lua specs:** 1,472 passed, 0 failed.
+- **Companion tests:** passed (the 1 skip is the existing cloud test).
+- **Quality:** 0 new findings.
+- **Dependencies:** 0 new.
+- **Security:** 0 violations.
+- **Preservation:** all 30 data files keep every value from `7f4ab21`, with 0 unverified.
+
+**Still open:**
+
+- **CI:** blocked by GitHub billing.
+- **Owner checks:** live, two-client, clean-machine and provider tests.
+- **Command Center planning:** waiting for the owner to confirm the direction.
+
 ## Independent review (ChatGPT fills)
 
 | Finding ID | Severity | Evidence | Status |
