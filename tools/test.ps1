@@ -40,6 +40,12 @@ if ($code -eq 0 -and -not $Filter) {
     $qExit = $LASTEXITCODE
     $qOut | Out-Host
     if ($qExit -ne 0) { Write-Host "Code health gate failed (new findings above)." -ForegroundColor Red; $code = 1 }
+    # OI-FR01: every data record at the preservation base is still shipped
+    $pc = Join-Path (Join-Path $script:RepoRoot 'tools') 'preservation_check.py'
+    $pOut = cmd /c "`"$($py.Source)`" -I `"$pc`" 2>&1"
+    $pExit = $LASTEXITCODE
+    $pOut | Out-Host
+    if ($pExit -ne 0) { Write-Host "Data preservation gate failed (missing data above)." -ForegroundColor Red; $code = 1 }
   } elseif ($RequirePython) { Write-Host "No Python found: companion tests are required here." -ForegroundColor Red; $code = 1
   } else { Write-Host "No Python found: companion tests skipped." -ForegroundColor Yellow }
 }

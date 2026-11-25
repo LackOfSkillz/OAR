@@ -2,48 +2,100 @@
 -- Gary's walked paths, shipped with Outrider for every player (Gary,
 -- 2026-11-21: "Yes, ship them"). Reads a COPY of his SavedVariables (never
 -- the live file: tools/export_trails.ps1 copies it first) and writes the
--- breadcrumbs of all his characters (Outrider_DB.global.trails) into
--- addon/Outrider_Data_Trails, a load-on-demand data addon the way-there dots
--- use as walked ground (Modules/Path.lua). Positions only: times, character
--- names and everything else are left out. Points are rounded to 0.1% of the
--- map and duplicates dropped.
---   python tools/lua.py tools/export_trails.lua <Outrider.lua copy> <outDir> <stamp>
+-- breadcrumbs of all his characters into addon/Outrider_Data_Trails, a
+-- load-on-demand data addon the way-there dots use as walked ground
+-- (Modules/Path.lua). Positions only: times, character names and everything
+-- else are left out. Points are rounded to 0.1% of the map and duplicates dropped.
+--
+-- OI-FR01 (review 2026-11-25): the game keeps 800 points per map and moves the
+-- older ones into the archive (Modules/Trail.lua), so reading only the live
+-- trails dropped points shipped earlier. The export is now a MERGE, never a
+-- replace: every point already in the shipped Data.lua (and in any extra base
+-- file given) is kept first, in its original order, then archived points
+-- ("trail" rows and "trailCleared" lists), then the live trails. A point is
+-- only ever added. Pass "-" as the SavedVariables path to merge base files only.
+--   python tools/lua.py tools/export_trails.lua <Outrider.lua copy|-> <outDir> <stamp> [base Data.lua ...]
 
 local svPath, outDir, stamp = arg[1], arg[2], arg[3] or "unknown"
-assert(svPath and outDir, "usage: export_trails.lua <Outrider.lua> <outDir> [stamp]")
+assert(svPath and outDir, "usage: export_trails.lua <Outrider.lua|-> <outDir> [stamp] [base Data.lua ...]")
 
-local env = {}
-local chunk = assert(loadfile(svPath))
-setfenv(chunk, env)
-chunk()
-local g = assert(env.Outrider_DB and env.Outrider_DB.global, "no Outrider_DB.global in " .. svPath)
-local trails = type(g.trails) == "table" and g.trails or {}
-
-local maps, total = {}, 0
-for mapID, list in pairs(trails) do
-  if type(mapID) == "number" and type(list) == "table" then
-    local seen, pts = {}, {}
-    for _, d in ipairs(list) do
-      if type(d) == "table" and type(d.x) == "number" and type(d.y) == "number" and d.x > 0 and d.y > 0 and d.x < 1 and d.y < 1 then
-        local x, y = math.floor(d.x * 1000 + 0.5), math.floor(d.y * 1000 + 0.5)
-        local k = x * 10000 + y
-        if not seen[k] then
-          seen[k] = true
-          pts[#pts + 1] = string.format("%.3f,%.3f", x / 1000, y / 1000)
-        end
-      end
-    end
-    if #pts > 0 then maps[#maps + 1] = { mapID, pts } total = total + #pts end
+local maps, order = {}, {}
+local function bucket(mapID)
+  local b = maps[mapID]
+  if not b then b = { seen = {}, pts = {} } maps[mapID] = b order[#order + 1] = mapID end
+  return b
+end
+local function add(mapID, x, y)
+  if type(mapID) ~= "number" or type(x) ~= "number" or type(y) ~= "number" then return end
+  if not (x > 0 and y > 0 and x < 1 and y < 1) then return end
+  local ix, iy = math.floor(x * 1000 + 0.5), math.floor(y * 1000 + 0.5)
+  local b, k = bucket(mapID), ix * 10000 + iy
+  if not b.seen[k] then
+    b.seen[k] = true
+    b.pts[#b.pts + 1] = string.format("%.3f,%.3f", ix / 1000, iy / 1000)
   end
 end
-table.sort(maps, function(a, b) return a[1] < b[1] end)
 
+-- 1. the shipped data (and extra bases): kept first, in their order
+local function loadBase(path)
+  local f = io.open(path, "rb")
+  if not f then return 0 end
+  f:close()
+  local env = {}
+  local chunk = assert(loadfile(path))
+  setfenv(chunk, env)
+  chunk()
+  local d = env.Outrider_DataTrails
+  local n = 0
+  if type(d) == "table" and type(d.maps) == "table" then
+    local ids = {}
+    for id in pairs(d.maps) do if type(id) == "number" then ids[#ids + 1] = id end end
+    table.sort(ids)
+    for _, id in ipairs(ids) do
+      local flat = d.maps[id]
+      for i = 1, #flat - 1, 2 do add(id, flat[i], flat[i + 1]) n = n + 1 end
+    end
+  end
+  return n
+end
+local based = loadBase(outDir .. "/Data.lua")
+for i = 4, #arg do based = based + loadBase(arg[i]) end
+
+-- 2. archived and 3. live points from the SavedVariables copy
+local fromSV = 0
+if svPath ~= "-" then
+  local env = {}
+  local chunk = assert(loadfile(svPath))
+  setfenv(chunk, env)
+  chunk()
+  local g = assert(env.Outrider_DB and env.Outrider_DB.global, "no Outrider_DB.global in " .. svPath)
+  local function point(mapID, d)
+    if type(d) == "table" then add(tonumber(mapID), d.x, d.y) fromSV = fromSV + 1 end
+  end
+  local arch = type(g.archive) == "table" and type(g.archive.sets) == "table" and g.archive.sets or {}
+  for _, e in ipairs(type(arch.trail) == "table" and arch.trail or {}) do
+    if type(e) == "table" and type(e.keys) == "table" then point(e.keys.mapID, e.row) end
+  end
+  for _, e in ipairs(type(arch.trailCleared) == "table" and arch.trailCleared or {}) do
+    if type(e) == "table" and type(e.keys) == "table" and type(e.row) == "table" then
+      for _, d in ipairs(e.row) do point(e.keys.mapID, d) end
+    end
+  end
+  for mapID, list in pairs(type(g.trails) == "table" and g.trails or {}) do
+    if type(list) == "table" then for _, d in ipairs(list) do point(mapID, d) end end
+  end
+end
+
+table.sort(order)
+local total = 0
 local data = { "-- GENERATED by tools/export_trails.lua (" .. stamp .. "): paths walked by Gary Mix's characters,",
   "-- positions only (no times, no names). Part of Outrider, GPL-3.0-only.",
-  "-- maps[uiMapID] = { x,y, x,y, ... } map fractions.",
+  "-- maps[uiMapID] = { x,y, x,y, ... } map fractions. Merged: earlier points are never dropped (OI-FR01).",
   "Outrider_DataTrails = { source = " .. string.format("%q", "walked by Outrider's creator, " .. stamp) .. ", maps = {" }
-for _, m in ipairs(maps) do
-  data[#data + 1] = string.format("[%d]={%s},", m[1], table.concat(m[2], ","))
+for _, id in ipairs(order) do
+  local pts = maps[id].pts
+  total = total + #pts
+  data[#data + 1] = string.format("[%d]={%s},", id, table.concat(pts, ","))
 end
 data[#data + 1] = "} }"
 
@@ -62,4 +114,4 @@ write(outDir .. "/Outrider_Data_Trails.toc", table.concat({
   "",
   "Data.lua",
   "" }, "\r\n"))
-print(string.format("walked paths: %d points on %d maps", total, #maps))
+print(string.format("walked paths: %d points on %d maps (%d read from earlier data, %d from saved variables)", total, #order, based, fromSV))
