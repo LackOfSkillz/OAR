@@ -166,8 +166,8 @@ function R:Mine()
   local maxXP = tonumber(C.Readable(C.Call("UnitXPMax", "player")))
   local pace = R.Pace(ns.SessionXP and ns.SessionXP.Merged and ns.SessionXP:Merged() or {}, maxXP)
   local copper = tonumber(C.Readable(C.Call("GetMoney"))) or 0
-  local reserve = 0
-  for _, g in ipairs(ns.NexusGoals and ns.NexusGoals:Active() or {}) do reserve = math.max(reserve, g.reserveCopper or 0) end
+  -- gold held for goals and on purpose isn't spendable (Quartermaster, OI04-11)
+  local reserve = ns.Quartermaster and ns.Quartermaster.GoldHeld() or 0
   local goldRate
   local L = ns.Ledger
   if L and L.Merged and ns.Forecasts and ns.Forecasts.Gold then

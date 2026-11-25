@@ -108,6 +108,8 @@ end
 function M:TooltipLines(itemID, shift)
   local total, per = self:Count(itemID)
   if total == 0 then return {} end
+  -- what you're keeping it for (Intelligence/Quartermaster.lua, OI04-11)
+  local held = ns.Quartermaster and ns.Quartermaster.Line(itemID)
   local parts = {}
   for _, p in ipairs(per) do
     local name = p.char:match("^([^-]+)") or p.char
@@ -124,9 +126,10 @@ function M:TooltipLines(itemID, shift)
   if shift then
     local out = { "You have " .. total }
     for _, s in ipairs(parts) do out[#out + 1] = "  " .. s end
+    if held then out[#out + 1] = held end
     return out
   end
-  return { string.format("You have %d (%s)", total, table.concat(parts, ", ")) }
+  return { string.format("You have %d (%s)", total, table.concat(parts, ", ")), held }
 end
 
 function M:OnEnable()
