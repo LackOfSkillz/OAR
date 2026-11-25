@@ -369,6 +369,41 @@ function M.Sessions()
   return out
 end
 
+-- Memory by part (Modules/PerfMemory.lua): the latest estimate, biggest first,
+-- then what the walk can't see (code, frames, textures).
+local KIND_COLOR = { saved = "gold", module = "good", core = "warn" }
+function M.MemoryParts()
+  local P = ns.PerfMemory
+  local r = P and P:Latest()
+  if not r then return {} end
+  local out, max = {}, 1
+  for _, p in ipairs(r.parts or {}) do if p.kb > max then max = p.kb end end
+  for i = 1, math.min(15, #(r.parts or {})) do
+    local p = r.parts[i]
+    out[#out + 1] = { label = p.name, fill = p.kb / max, color = rgb(KIND_COLOR[p.kind] or "gold"),
+      text = string.format("%.1f MB (%s)", p.kb / 1024, p.kind == "saved" and "saved data" or p.kind == "module" and "feature" or "core") }
+  end
+  if r.totalKB and r.measuredKB and r.totalKB > r.measuredKB then
+    local rest = r.totalKB - r.measuredKB
+    out[#out + 1] = { label = "Code, frames and the rest", fill = math.min(1, rest / max), color = rgb("muted"),
+      text = string.format("%.1f MB (the game's figure minus the tables found)", rest / 1024) }
+  end
+  return out
+end
+
+-- every loaded add-on's memory, from the same estimate run (the game's figure)
+function M.AddOnBars()
+  local P = ns.PerfMemory
+  local r = P and P:Latest()
+  local list = r and r.addons or {}
+  local out, max = {}, (list[1] and list[1].kb) or 1
+  for _, a in ipairs(list) do
+    out[#out + 1] = { label = a.name, fill = a.kb / max, text = string.format("%.1f MB", a.kb / 1024),
+      color = rgb(a.name == "Outrider" and "gold" or "muted") }
+  end
+  return out
+end
+
 function M.Checks()
   local out = {}
   local list = ns.db.global.lagChecks or {}
@@ -540,6 +575,20 @@ ns.Hub:AddTab("performance", "Performance", function(p)
       { "Run a lag check (1 min)", function() if ns.LagCheck then ns.LagCheck:Start() end end },
       { "Copy for a post", function() ns.UI:TextDialog("Outrider performance", M:ShareText(), "copy") end },
     } },
+    { "header", "Memory by part (estimate)", icon = "INV_Misc_Gem_Pearl_04" },
+    { "note", function()
+      local P = ns.PerfMemory
+      if P and P:Running() then return "Measuring now, a little each frame (paused in combat)..." end
+      local r = P and P:Latest()
+      if not r then return "Measured by itself 2 minutes after you log in, or press Measure memory now." end
+      return string.format("Measured %s: the game says Outrider uses %s; its tables add up to %.1f MB, %.1f MB of that your saved data. Gold = saved data, blue = a feature, yellow = core.",
+        date("%H:%M", r.at), r.totalKB and string.format("%.1f MB", r.totalKB / 1024) or "?", (r.measuredKB or 0) / 1024, (r.savedKB or 0) / 1024)
+    end },
+    { "bars", function() return M.MemoryParts() end },
+    { "buttons", { { "Measure memory now", function() if ns.PerfMemory then ns.PerfMemory:Start("button") p:Refresh() end end } } },
+    { "header", "Your add-ons by memory", icon = "INV_Misc_Bag_10" },
+    { "note", "Every add-on you have loaded, as the game counts it, from the same measurement." },
+    { "bars", function() return M.AddOnBars() end },
     { "header", "Slow moments", icon = "Spell_Nature_Slow" },
     { "note", function()
       return #M.SlowRows() > 0 and "Every time Outrider took 20 ms or more at once, or the game froze for a quarter second or more (loading screens left out), with what you were doing. Newest first."

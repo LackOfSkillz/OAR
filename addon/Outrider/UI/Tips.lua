@@ -396,6 +396,7 @@ local controls = {
   ["All commands"] = "Every /ride command, with a Run button.",
   ["Report or idea"] = "Tell us about a problem or an idea, in three steps.",
   ["Watch performance all the time"] = "Times everything Outrider does while you play and keeps every slow moment, so a lag that only happens in one place gets caught. Costs two clock reads per event.",
+  ["Measure memory now"] = "Estimates how much memory each part of Outrider holds, a little each frame so the game doesn't stutter. Paused in combat.",
   ["Run a lag check (1 min)"] = "Times everything Outrider does for one minute while you play, then shows how much of the game's time it used.",
   ["Copy for a post"] = "Copies the numbers on this page as plain text, with no character name, realm or gold, to paste in a post.",
   ["Check for lag (1 minute)"] = "Measures for one minute how much of your game's time Outrider uses, and which part. Play as usual meanwhile.",
