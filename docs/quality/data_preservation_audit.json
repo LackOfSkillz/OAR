@@ -650,6 +650,18 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "xp60Suppressed",
+   "saved_path": "char.xp60Suppressed",
+   "retention_mechanism": "more than 80 suppressed candidates: archived, then a new list",
+   "archive_destination": "global.archive.sets.xp60Suppressed",
+   "tests": [
+    "tests/spec/nextsession_reuse_spec.lua :: a full suppression list is archived before a new one starts",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

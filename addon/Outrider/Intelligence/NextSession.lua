@@ -7,6 +7,61 @@ local M = ns:NewModule("NextSession", {
 })
 ns.NextSession = M
 
+-- OI03-12: an offline plan meets what Outrider knows now. Steps the planner
+-- can see are not doable now (other faction, a prerequisite missing, over
+-- budget...) are marked and kept out of the time line; your own quest times
+-- (Estimator) add a note when the plan looks optimistic for you. Read only:
+-- the plan itself was already checked by the advice loader (policy, character,
+-- session, build, level, expiry, time budget, no actions).
+local function sanitize(s) return (tostring(s):gsub("[^%w_:%.@%-]", "_")) end
+function M.Annotate(answer)
+  local N = ns.NexusCore
+  local cur = N and N.current
+  if cur and cur.graph then
+    local byLegacy = {}
+    for id, node in pairs(cur.graph.nodes) do byLegacy[node.opp.legacyCandidateId] = id end
+    local inPlan = {}
+    for _, s in ipairs(cur.result and cur.result.plan and cur.result.plan.steps or {}) do inPlan[s] = true end
+    local kept = {}
+    for _, step in ipairs(answer.plan or {}) do
+      local id = byLegacy[sanitize(step.candidateId)]
+      local why = id and (cur.graph.invalid[id] or (cur.rejected and cur.rejected[id]))
+      if why then
+        answer.limits[#answer.limits + 1] = string.format("%s can't be done now: %s.", tostring(step.title), tostring(why))
+      else
+        step.inYourPlan = id and inPlan[id] or nil
+        kept[#kept + 1] = step
+      end
+    end
+    answer.plan = kept
+  end
+  local E, Q = ns.Estimator, ns.QuestTimes
+  if E and Q then
+    local level = tonumber(ns.Compat.Readable(ns.Compat.Call("UnitLevel", "player"))) or 1
+    local key = "L" .. (math.floor((level - 1) / 5) * 5 + 1) .. "|solo"
+    local m = E.Fit(E.QuestSamples(Q:Mine()), {})[key]
+    if m and m.basis == "observed" and m.value then
+      answer.limits[#answer.limits + 1] = string.format("Your quests take about %d min (%d done).", math.floor(m.value / 60 + 0.5), m.n)
+      local total, n = 0, 0
+      for _, s in ipairs(answer.plan or {}) do total, n = total + (s.minutes or 0), n + 1 end
+      if n > 0 and (total / n) * 60 < m.value * 0.67 then
+        answer.limits[#answer.limits + 1] = "This plan may be optimistic for you: you may finish fewer steps."
+      end
+    end
+  end
+  return answer
+end
+
+-- with no offline plan: a few ideas from Outrider itself (the planner when it
+-- is on, else What now?), labelled as ideas
+function M.LocalIdeas()
+  local N = ns.NexusCore
+  local picks = N and N.Ready and N:Ready() and N:Picks(3) or (ns.WhatNow and ns.WhatNow.enabled and ns.WhatNow:List()) or {}
+  local out = {}
+  for i, p in ipairs(picks) do if i <= 3 then out[#out + 1] = tostring(p.title) end end
+  return out
+end
+
 function M:Plan()
   local _, reason, answer = ns.Advice:Load()
   if reason == "ok" and answer and answer.nextSession then
@@ -14,7 +69,8 @@ function M:Plan()
     if type(dismissed) == "table" and dismissed[answer.basedOnSessionId] then
       return nil, "dismissed"
     end
-    return answer, "ok"
+    answer.limits = answer.limits or {}
+    return M.Annotate(answer), "ok"
   end
   return nil, reason or "no next-session plan"
 end
@@ -51,8 +107,11 @@ function M:Feedback(verdict)
     local count = 0
     for _ in pairs(saved) do count = count + 1 end
     if count > 80 then
-      -- Strictly bounded and per-character, never global blacklisting.
-      ns.db.char.xp60Suppressed = {}
+      -- Strictly bounded and per-character, never global blacklisting. The
+      -- old list is archived first (owner data preservation), else kept.
+      if ns.Archive:Put("xp60Suppressed", saved, { path = "char.xp60Suppressed", scope = "char" }) then
+        ns.db.char.xp60Suppressed = {}
+      end
     end
   end
   if verdict == "useful" then
@@ -105,7 +164,9 @@ function M:Render(answer, reason)
   if not answer then answer, reason = self:Plan() end
   if not answer then
     self.window.head:SetText("No fresh XP plan")
-    self.window.details:SetText("Keep your current route. " .. tostring(reason or "No offline analysis yet."))
+    local ideas = M.LocalIdeas()
+    self.window.details:SetText("Keep your current route. " .. tostring(reason or "No offline analysis yet.") ..
+      (#ideas > 0 and ("\nIdeas from Outrider (not a plan): " .. table.concat(ideas, "; ") .. ".") or ""))
     self.window.dismiss:SetShown(false)
     self.window.known:SetShown(false)
     self.window.notInterested:SetShown(false)

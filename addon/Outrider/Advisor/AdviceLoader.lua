@@ -162,9 +162,19 @@ function Advice:CheckNextSession(a)
   if type(a.createdAt) ~= "number" or type(a.expiresAt) ~= "number" or
      a.createdAt > time() + 300 or a.expiresAt < time() or
      a.expiresAt - a.createdAt > 86400 then return {}, "next-session plan expired" end
-  local state = ns.db.char.xp60
-  local history = type(state) == "table" and state.history
-  local source = type(history) == "table" and history[#history] or nil
+  -- OI03-12: the source is the last play session with its /reload segments
+  -- joined (SessionXP:Merged, OI03-01), the same way the companion reads it
+  local source
+  local X = ns.SessionXP
+  if X and X.Merged then
+    local ok, merged = pcall(X.Merged, X)
+    if ok and type(merged) == "table" then source = merged[#merged] end
+  end
+  if not source then
+    local state = ns.db.char.xp60
+    local history = type(state) == "table" and state.history
+    source = type(history) == "table" and history[#history] or nil
+  end
   if type(source) ~= "table" or source.sessionId ~= a.basedOnSessionId or
      source.final ~= true or (source.flags and source.flags.incomplete) then
     return {}, "source session has changed"
@@ -200,6 +210,8 @@ function Advice:CheckNextSession(a)
     end
   end
   local seen, steps, last = {}, {}, 0
+  local seenQuest, merged = {}, 0
+  local QK = ns.NexusAdapters and ns.NexusAdapters.QuestKey
   for _, raw in ipairs(a.steps) do
     if type(raw) ~= "table" or type(raw.candidateId) ~= "string" or
        seen[raw.candidateId] or not (candidates and candidates[raw.candidateId]) or
@@ -211,11 +223,16 @@ function Advice:CheckNextSession(a)
     end
     seen[raw.candidateId] = true
     local orig = candidates[raw.candidateId]
+    -- the same quest under two ids (quest:<name>, dq:<id>) is shown once
+    local qk = QK and QK({ key = raw.candidateId, questID = orig.questID })
+    if qk and seenQuest[qk] then merged = merged + 1 else
+    if qk then seenQuest[qk] = true end
     steps[#steps + 1] = {
       candidateId = raw.candidateId, title = plain(orig.title, 120) or "Quest objective",
       minutes = math.ceil((raw.endsAt - raw.startsAt) / 60),
       startsAt = raw.startsAt, endsAt = raw.endsAt,
     }
+    end
     last = raw.endsAt
   end
   local limits = {}
@@ -226,6 +243,7 @@ function Advice:CheckNextSession(a)
       if safe then limits[#limits + 1] = safe end
     end
   end
+  if merged > 0 then limits[#limits + 1] = string.format("%d quest%s listed twice shown once.", merged, merged == 1 and "" or "s") end
   local answer = { headline = plain(a.headline, 120) or "Your next 60 minutes",
     summary = plain(a.summary, 600) or "Continue your current route.",
     plan = steps, budget = 60, planMinutes = math.ceil(last/60),
