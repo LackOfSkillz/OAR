@@ -199,3 +199,24 @@ Running straight on (owner: no stops, one review at the end).
 | OI07-11 Navigation and UI quality | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | all pages at size extremes; two clicks; Esc; texture limits |
 | OI07-12 Documentation and help completeness | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | README, help, guide, flags, errors, lessons, privacy |
 | OI07-GATE Phase 7 review gate | MOCK_GREEN | see commit | [OI07-GATE](../reviews/phase7/OI07-GATE.md) | 1446 passed plus boot fixed; companion OK; quality, deps, security clean |
+
+## Phase 8: Desktop companion and release
+
+Running straight on (owner: no stops, one review at the end).
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+| OI08-01 Companion contract inventory | DONE | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | components, schemas, limits mapped; nothing new duplicated |
+| OI08-02 Passport snapshot | MOCK_GREEN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | opaque id; sensitive off; stale, other character, build refused |
+| OI08-03 Offline companion experience | MOCK_GREEN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | read-only CLI; damaged files safe; no WoW writes |
+| OI08-04 Manual OTR1 transport UX | MOCK_GREEN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | 64 KB paste cap; staleness and expiry; real round trip pending |
+| OI08-05 XP60 offline delivery policy gate | MOCK_GREEN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | install refused without owner policy file; off by default |
+| OI08-06 Provider adapters | MOCK_GREEN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | existing adapters reused; owner provider test pending |
+| OI08-07 AI grounded explanations | MOCK_GREEN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | caveats never cut (fixed); bad JSON falls back; unknown ids dropped |
+| OI08-08 Provider security and privacy | DONE | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | review mapped to tests |
+| OI08-09 Optional voice UX gate | BLOCKED | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | not approved; typed alternative |
+| OI08-10 Companion packaging | PLAN | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | standard library; manual updates; rollback; clean machine pending |
+| OI08-11 Competitive usefulness evaluation | PARTIAL | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | 25 questions: 22 useful, 3 unanswered, 0 incorrect; competitors not scored |
+| OI08-12 Universal live beta | BLOCKED | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | owner: real clients for all classes and roles |
+| OI08-13 Release privacy and license audit | OWNER | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | checks done; name and legal scope need the owner |
+| OI08-14 Release test and rollback | see gate | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | exact-SHA suite, package hashes, rollback steps |

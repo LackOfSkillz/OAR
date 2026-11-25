@@ -121,7 +121,9 @@ def validate(reply, env):
         t = ctx.clean_text(l, 160)
         if t:
             limits.append(t)
-    limits = (limits + _auto_limits(picked))[:MAX_LIMITS]
+    # OI08-07: Outrider's own caveats come first and are never cut for the model's
+    auto = _auto_limits(picked)
+    limits = auto + [l for l in limits if l not in auto][:max(0, MAX_LIMITS - len(auto))]
     answer = {"headline": ctx.clean_text(reply.get("headline"), 120),
               "summary": ctx.clean_text(reply.get("summary"), 600),
               "limits": limits,
@@ -208,8 +210,10 @@ def ask(question, env, binding, provider):
         if budget:
             answer["budget"] = budget
         titles = {c["candidateId"]: c["title"] for c in env["candidates"]}
-        answer["limits"] = (planner.limits_for(p, titles) + [l for l in answer["limits"]
-                            if not l.startswith("Times are estimates")])[:MAX_LIMITS + 1]
+        critical = _auto_limits(picked)
+        rest = [l for l in planner.limits_for(p, titles) + [l for l in answer["limits"] if not l.startswith("Times are estimates")]
+                if l not in critical]
+        answer["limits"] = critical + rest[:max(0, MAX_LIMITS + 1 - len(critical))]
         report["plan"] = p
     # compare: two steps side by side when the question asks to choose
     if is_compare(question) and report.get("mode") == "model" and isinstance(reply, dict):

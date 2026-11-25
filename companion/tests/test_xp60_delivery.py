@@ -83,13 +83,41 @@ class Delivery(unittest.TestCase):
                     "gameBuild": "test", "levelAtPlan": 20, "baselineXPPerHour": None,
                     "estimatedEarnedXP": None, "steps": [], "limitations": [],
                     "actions": []}
+            policy = Path(d) / "policy.json"
+            policy.write_text('{"xp60AutoInstall": {"approved": true, "by": "Gary", "date": "2026-11-24"}}', encoding="utf-8")
             with self.assertRaises(D.DeliveryError):
-                D.write_after_exit(plan, addon, checker=lambda: False)
+                D.write_after_exit(plan, addon, checker=lambda: False, policy=policy)
             self.assertEqual(advice_file.read_text(), "Outrider_Advice = nil\n")
-            D.write_after_exit(plan, addon, checker=lambda: True)
+            D.write_after_exit(plan, addon, checker=lambda: True, policy=policy)
             data = luadata.parse(advice_file.read_text())
             self.assertEqual(data["Outrider_Advice"]["basedOnSessionId"], "session-1")
             self.assertEqual(data["Outrider_Advice"]["actions"], {})
+
+    def test_install_needs_the_owners_policy_approval(self):
+        """OI08-05: no policy file, or anything but exactly approved true, refuses even with the game closed."""
+        with tempfile.TemporaryDirectory() as d:
+            addon = Path(d) / "Outrider"
+            (addon / "Advisor").mkdir(parents=True)
+            advice_file = addon / "Advisor" / "Advice.lua"
+            advice_file.write_text("Outrider_Advice = nil", encoding="utf-8")
+            plan = {"schema": 4, "kind": "nextSessionPlan", "forCharacter": "Test-Realm", "basedOnSessionId": "s",
+                    "sourceDigest": "a" * 64, "createdAt": 1, "expiresAt": 2, "goal": "xp", "budgetSeconds": 3600,
+                    "actions": [], "steps": []}
+            policy = Path(d) / "policy.json"
+            for text in (None, "not json", '{"xp60AutoInstall": {"approved": "yes", "by": "x", "date": "d"}}',
+                         '{"xp60AutoInstall": {"approved": true}}'):
+                if text is None:
+                    if policy.exists():
+                        policy.unlink()
+                else:
+                    policy.write_text(text, encoding="utf-8")
+                with self.assertRaises(D.DeliveryError) as ctx:
+                    D.write_after_exit(plan, addon, checker=lambda: True, policy=policy)
+                self.assertIn("policy", str(ctx.exception))
+            self.assertEqual(advice_file.read_text(), "Outrider_Advice = nil")
+            self.assertFalse(D.policy_approved(Path(d) / "missing.json"))
+            # the shipped companion has no policy file: install stays off by default
+            self.assertFalse(D.POLICY_PATH.exists())
 
     def test_rejects_extra_fields_and_overlong_schedule(self):
         plan = {"schema": 4, "kind": "nextSessionPlan", "forCharacter": "Test-Realm",

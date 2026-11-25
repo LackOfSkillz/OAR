@@ -18,7 +18,7 @@
 -- }
 
 local _, ns = ...
-local Advice = { name = "advice", SCHEMA = 1, MAX_ITEMS = 12 }
+local Advice = { name = "advice", SCHEMA = 1, MAX_ITEMS = 12, MAX_PASTE = 64 * 1024 }
 -- Schema 2 (Outrider Intelligence, AI02-05): adds answer = { headline,
 -- summary, limits = {..}, sources = {..} } and items may name the WhatNow
 -- candidate they act on (candidateId). Everything in schema 1 still works.
@@ -365,6 +365,8 @@ end
 
 -- Accept an advice code pasted from the companion; returns count, reason.
 function Advice:Paste(text)
+  -- OI08-04: the companion never makes advice over 64 KB; anything bigger is refused before decoding
+  if type(text) == "string" and #text > self.MAX_PASTE then return 0, "that code is too big (over 64 KB): ask again" end
   local data, err = ns.Serialize.Import(text)
   if type(data) ~= "table" then return 0, err or "not an Outrider code" end
   if data.kind ~= "advice" then return 0, "that code is not advice" end

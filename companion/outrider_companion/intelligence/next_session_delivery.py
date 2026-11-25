@@ -254,8 +254,30 @@ def validate_payload(plan):
     return plan
 
 
-def write_after_exit(plan, addon_dir, *, checker=None):
+POLICY_PATH = Path(__file__).resolve().parents[2] / "policy.json"
+
+
+def policy_approved(path=None):
+    """OI08-05: automatic install needs the owner's written approval.
+
+    companion/policy.json: {"xp60AutoInstall": {"approved": true, "by": "...", "date": "YYYY-MM-DD"}}.
+    Missing, unreadable or anything but exactly true means not approved.
+    """
+    import json
+    p = Path(path) if path else POLICY_PATH
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    entry = data.get("xp60AutoInstall") if isinstance(data, dict) else None
+    return isinstance(entry, dict) and entry.get("approved") is True and bool(entry.get("by")) and bool(entry.get("date"))
+
+
+def write_after_exit(plan, addon_dir, *, checker=None, policy=None):
     validate_payload(plan)
+    if not policy_approved(policy):
+        raise DeliveryError("automatic install needs the owner's policy approval (docs/companion/XP60_POLICY.md); "
+                            "the plan was made but not installed")
     is_closed = checker or game_closed
     if is_closed() is not True:
         raise DeliveryError("game is still running or process status is unknown")

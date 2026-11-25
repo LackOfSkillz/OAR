@@ -107,3 +107,15 @@ Each code you copy is one model call (the daily cap still applies). Preview show
 what a model would receive; Status shows the setup; Stop waiting lets go of
 a slow model. It never touches the game.
 
+## Offline reports (no MCP client needed)
+
+```
+py -I -m outrider_companion.cli sessions --savedvariables "<WoW>\WTF\Account\<account>\SavedVariables\Outrider.lua"
+py -I -m outrider_companion.cli report   --savedvariables ...
+py -I -m outrider_companion.cli passport --text "OTRP1:..."
+py -I -m outrider_companion.cli export   --savedvariables ... --out report.json
+```
+
+Run them from the `companion` folder. They are read-only: finished sessions only, nothing written inside the WoW folder, and no network.
+
+**XP60 auto install** (`xp60_cli --install`) is off until the owner approves it in `companion/policy.json`. See `docs/companion/XP60_POLICY.md`.

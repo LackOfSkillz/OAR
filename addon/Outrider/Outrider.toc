@@ -222,6 +222,7 @@ Intelligence\Confidence.lua
 Intelligence\Expedition.lua
 Intelligence\Challenges.lua
 Intelligence\Troubleshooter.lua
+Intelligence\Passport.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua

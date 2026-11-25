@@ -785,6 +785,17 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "passportSalt",
+   "saved_path": "global.passport.salt",
+   "retention_mechanism": "one random salt per account for opaque character ids; made once, never changed or removed",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/passport_spec.lua :: the same character gets the same id"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [
