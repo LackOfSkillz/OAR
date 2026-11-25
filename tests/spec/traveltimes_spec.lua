@@ -8,6 +8,7 @@ local function session(opts)
   ns.Modules:SetEnabled("Outcomes", true)
   -- a fixed planner estimate, so detours are predictable
   ns.Travel.TimeTo = function() return 100 end
+  ns.Travel.TimeToRaw = ns.Travel.TimeTo -- trips record the raw estimate (Pathfinder, OI04-13)
   return game, ns, ns.TravelTimes
 end
 local function trips(ns) return ns.TravelTimes:List(ns.Outcomes:Store()) end

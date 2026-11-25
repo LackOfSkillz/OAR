@@ -63,7 +63,9 @@ function R:Begin(mod, w, now)
   local estimate
   local T = ns.Travel
   if T and T.Prepare and T.TimeTo and T.Point then
-    local ok, secs = pcall(function() return T:TimeTo(T:Prepare(), T.Point(w.mapID, w.x, w.y, w.title)) end)
+    -- the raw estimate (Pathfinder corrects TimeTo with these very trips)
+    local tt = T.TimeToRaw or T.TimeTo
+    local ok, secs = pcall(function() return tt(T, T:Prepare(), T.Point(w.mapID, w.x, w.y, w.title)) end)
     if ok and tonumber(secs) then estimate = math.floor(tonumber(secs)) end
   end
   local _, gameBuild = C.Call("GetBuildInfo")
