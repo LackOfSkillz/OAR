@@ -113,3 +113,22 @@ T.describe("moving makes little garbage", function()
     T.ok(P:Pins(100) ~= a, "a new search: rebuilt")
   end)
 end)
+
+T.describe("map pin lists rebuild only when their map changed", function()
+  T.it("a node on one map leaves other maps' lists; an unchanged quest log rebuilds nothing", function()
+    local game, ns = session("WARRIOR")
+    local P = ns.MapPins
+    P:Invalidate()
+    local a, b = P:PinsFor(1412), P:PinsFor(1411)
+    ns.LootLog:AddNode("herb", 1412, 0.5, 0.5, "Peacebloom")
+    T.eq(P:PinsFor(1411), b, "another map keeps its list")
+    T.ok(P:PinsFor(1412) ~= a, "the node's map is rebuilt")
+    game:fire("QUEST_LOG_UPDATE") game:advance(2.1) -- the first update records the quest log
+    local before = P.builds
+    local c = P:PinsFor(1412)
+    for _ = 1, 5 do game:fire("QUEST_LOG_UPDATE") game:advance(2.1) end
+    T.eq(P:PinsFor(1412), c, "quest log updates with nothing changed")
+    T.eq(P.builds - before, 1, "only the one rebuild above")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

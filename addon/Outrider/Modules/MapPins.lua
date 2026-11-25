@@ -224,9 +224,16 @@ end
 -- per map and dropped when a place, sighting, filter or rare pack changes.
 M.cache = {}
 M.COUNT_S = 10
-function M:Invalidate() self.cache = {} self.poiCountAt = nil end
+-- mapID: only that map's list (a fish caught, a node picked: 36 rebuilds of
+-- the current map in 9 minutes when every catch dropped every map's list,
+-- 2026-11-25); none: every map
+function M:Invalidate(mapID)
+  if mapID then self.cache[mapID] = nil return end
+  self.cache = {}
+  self.poiCountAt = nil
+end
 
-ns.Events:On("OTR_POI_ADDED", M, function() M:Invalidate() end)
+ns.Events:On("OTR_POI_ADDED", M, function(_, p) M:Invalidate(type(p) == "table" and p.mapID or nil) end)
 ns.Events:On("OTR_SIGHTING_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_DATA_CHANGED", M, function() M:Invalidate() end)
 

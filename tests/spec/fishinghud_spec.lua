@@ -115,4 +115,22 @@ T.describe("fishing session", function()
     ns.FishingHUD:Start()
     T.eq(ns.FishingHUD.session.catches, 0, "new session")
   end)
+
+  T.it("the box redoes its slow parts every few seconds, not every second; a catch shows at once", function()
+    local game, ns = session()
+    local H = ns.FishingHUD
+    game.pole = true
+    H:Update()
+    local orig, n = H.SlowLines, 0
+    H.SlowLines = function(...) n = n + 1 return orig(...) end
+    game:advance(4.5)
+    T.ok(n <= 1, "at most once in 4 seconds of ticks: " .. n)
+    local before = n
+    H.dirty = true
+    H:Refresh()
+    T.eq(n, before + 1, "a catch (dirty) recomputes at once")
+    H.SlowLines = orig
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
+

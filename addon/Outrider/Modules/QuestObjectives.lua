@@ -84,6 +84,17 @@ local function counts(e, text)
   return nil -- no counts known (talk to, explore...)
 end
 
+-- your quests as one string: each quest, done or not, and its objectives'
+-- text (which carries the count, "Wolf slain: 3/8") and state
+function M.LogSig()
+  local t = {}
+  for _, q in ipairs(M.Log()) do
+    t[#t + 1] = tostring(q.questID) .. (q.complete and "+" or "-")
+    for _, o in ipairs(q.objectives or {}) do t[#t + 1] = o.text .. (o.finished and "+" or "-") end
+  end
+  return table.concat(t, "|")
+end
+
 function M.Objectives(questID)
   local list = {}
   local objs = C.Resolve("C_QuestLog.GetQuestObjectives")
@@ -556,8 +567,15 @@ end
 function M:OnEnable()
   self:On("QUEST_LOG_UPDATE", function()
     ns.Throttle("questobjectives:ready", 0.3, function() M:CheckReady() end)
+    -- the quest log fires this for many reasons; the map's pins are rebuilt
+    -- only when your quests changed (one added, done, an objective moved),
+    -- not every 2 s of fighting (2026-11-25)
     ns.Throttle("questobjectives:refresh", 2, function()
-      if ns.MapPins and ns.MapPins.Invalidate then ns.MapPins:Invalidate() end
+      local sig = M.LogSig()
+      if sig ~= M.lastSig then
+        M.lastSig = sig
+        if ns.MapPins and ns.MapPins.Invalidate then ns.MapPins:Invalidate() end
+      end
     end)
   end)
   local tt = rawget(_G, "GameTooltip")

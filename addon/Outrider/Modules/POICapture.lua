@@ -158,6 +158,7 @@ function M:OnNpcPlaced(_, npcID, e)
     if id:sub(1, #prefix) == prefix then
       found = true
       if p.mapID ~= e.mapID or p.x ~= e.x or p.y ~= e.y then
+        if p.mapID ~= e.mapID then ns.Events:Fire("OTR_POI_ADDED", { mapID = p.mapID }) end
         p.mapID, p.x, p.y, p.n, p.lastSeen = e.mapID, e.x, e.y, 1, time()
         self:Info("poi moved %s %s to map=%d %.1f,%.1f", p.kind, tostring(p.name), e.mapID, e.x * 100, e.y * 100)
         ns.Events:Fire("OTR_POI_ADDED", p)
@@ -250,6 +251,8 @@ function M:Add(id, kind, extra)
     self:Info("poi new %s %s map=%d %.1f,%.1f", kind, tostring(extra.name), mapID, x * 100, y * 100)
   elseif p.mapID ~= mapID or math.abs(p.x - x) > 0.03 or math.abs(p.y - y) > 0.03 then
     -- talking to it far from the stored spot: it moved, or the spot was wrong
+    -- (the map it left redraws too: map pins clear per map)
+    if p.mapID ~= mapID then ns.Events:Fire("OTR_POI_ADDED", { mapID = p.mapID }) end
     p.mapID, p.x, p.y, p.n = mapID, x, y, 1
     self:Info("poi moved %s %s to map=%d %.1f,%.1f", kind, tostring(extra.name), mapID, x * 100, y * 100)
   else

@@ -169,6 +169,7 @@ function M:OnLoot(_, kind, items)
       self:Info("rare catch %s", tostring(info.name or it.name))
     end
   end
+  self.dirty = true
   self:Refresh()
 end
 
@@ -195,6 +196,7 @@ function M:OnError(_, _, message)
     ns.Print("fishing: %s", hard)
     self:Info("too hard here: %s", hard)
   end
+  self.dirty = true
   self:Refresh()
 end
 
@@ -222,16 +224,35 @@ function M:Summary()
 end
 
 -- ------------------------------------------------------------ the box
+-- The box refreshes every second for the lure countdown. Everything else
+-- (skill, lures in the bags, what bites here, the session, the goal) changes
+-- only with a catch, a bag change or a move, so it is worked out at most
+-- every SLOW_S or right after a catch (93 MB of short-lived memory from the
+-- fishing timers in one session, 2026-11-25).
+M.SLOW_S = 5
 function M:Lines()
+  local now = (GetTime and GetTime()) or 0
+  local c = self.slow
+  if not c or self.dirty or now - c.at >= M.SLOW_S then
+    c = self:SlowLines()
+    c.at = now
+    self.slow, self.dirty = c, nil
+  end
+  local lure = self:LureLeft()
+  local l1 = c.head .. "   " .. (lure and string.format("%sLure %d:%02d|r", lure < 60 and "|cffff8040" or "|cffffffff", math.floor(lure / 60), lure % 60) or "|cffff5050No lure|r")
+    .. c.stock
+  return { l1, c.l2, c.l3, c.goal }
+end
+
+function M:SlowLines()
   local s = self.session
   local skill, max, mod = self:Skill()
-  local lure = self:LureLeft()
-  local l1 = string.format("Fishing %s/%s%s   %s", tostring(skill or "?"), tostring(max or "?"),
-    (type(mod) == "number" and mod > 0) and string.format(" (+%d)", mod) or "",
-    lure and string.format("%sLure %d:%02d|r", lure < 60 and "|cffff8040" or "|cffffffff", math.floor(lure / 60), lure % 60) or "|cffff5050No lure|r")
+  local head = string.format("Fishing %s/%s%s", tostring(skill or "?"), tostring(max or "?"),
+    (type(mod) == "number" and mod > 0) and string.format(" (+%d)", mod) or "")
   -- lures left in the bags, red under 5 (OneCast's tackle-box nudge)
+  local stockText = ""
   local stock = ns.FishingLog and ns.FishingLog.Lures and ns.FishingLog:Lures()
-  if stock then l1 = l1 .. string.format(stock.low and " |cffff5050(%d left)|r" or " (%d left)", stock.count) end
+  if stock then stockText = string.format(stock.low and " |cffff5050(%d left)|r" or " (%d left)", stock.count) end
   local mapID = C.PlayerPosition("player")
   local here = self:Here(mapID)
   local parts = {}
@@ -252,7 +273,7 @@ function M:Lines()
   end
   local tasty, need = ns.FishingLog and ns.FishingLog.Tastyfish and ns.FishingLog:Tastyfish()
   local goal = tasty and string.format("Goal: Speckled Tastyfish %d/%d (Riggle Bassbait, Booty Bay)", tasty, need) or self:Goal()
-  return { l1, l2, l3, goal }
+  return { head = head, stock = stockText, l2 = l2, l3 = l3, goal = goal }
 end
 
 function M:Build()
@@ -333,6 +354,7 @@ function M:Update()
   if on then
     if not self.session then self:Start() end
     self.frame:Show()
+    self.dirty = true
     self:Refresh()
     if not self.ticker then self.ticker = ns.Timer.Ticker(1, function() M:Refresh() end, "fishinghud") end
     self:WeaponsButton()
@@ -411,6 +433,8 @@ end
 
 function M:OnEnable()
   self:On("OTR_LOOT", self.OnLoot)
+  -- a bag change (a lure used, fish sold) shows at the next second, not after SLOW_S
+  self:On("BAG_UPDATE_DELAYED", function(mod) mod.dirty = true end)
   self:On("UNIT_SPELLCAST_CHANNEL_START", function(mod, _, unit, _, spellID) mod:OnCast(unit, spellID) end)
   self:On("UI_ERROR_MESSAGE", self.OnError)
   self:On("UNIT_INVENTORY_CHANGED", self.OnInventory)

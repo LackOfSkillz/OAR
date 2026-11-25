@@ -158,7 +158,8 @@ function M:AddNode(kind, mapID, x, y, name, by)
         n.name = name or n.name
         n.sharedBy = nil
       end
-      ns.Events:Fire("OTR_POI_ADDED", nil)
+      -- only this node's map changes (MapPins:Invalidate(mapID))
+      ns.Events:Fire("OTR_POI_ADDED", n)
       return n, false
     end
   end
@@ -167,7 +168,7 @@ function M:AddNode(kind, mapID, x, y, name, by)
   table.insert(ns.db.global.nodes, n)
   self:Info("new %s node %s at map %d %.1f,%.1f%s", kind, tostring(name), mapID, x * 100, y * 100,
     by and (" (shared by " .. tostring(by) .. ")") or "")
-  ns.Events:Fire("OTR_POI_ADDED", nil)
+  ns.Events:Fire("OTR_POI_ADDED", n)
   if not by then ns.Events:Fire("OTR_NODE_FOUND", n) end
   return n, true
 end
