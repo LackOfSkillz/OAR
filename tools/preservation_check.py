@@ -16,11 +16,18 @@ anything present at the base is missing now:
   reported as UNVERIFIED and falls back to the record-id check; parts it
   can't read (functions) are counted and reported, never silently passed.
 
+--require-content is strict and fails closed (review OI-FR17): a missing
+lupa, a file either version of which can't run in the sandbox, or any part
+of the base or the candidate that couldn't be compared makes the gate fail.
+The record-id fallback is never accepted as content verification there.
+
 A data file that was removed on purpose must be moved, not deleted: list its new
 path in docs/quality/preservation_moves.json ({"old": "new"}).
 
     python tools/preservation_check.py [--base SHA] [--require-content]
-Exit 0 when nothing is missing, 1 when something is, 2 when the base can't be read.
+Exit 0 when nothing is missing, 1 when something is (or, with
+--require-content, when anything couldn't be verified), 2 when the base
+can't be read.
 """
 import json
 import os
@@ -126,7 +133,9 @@ def compare_file(path, old, cur, cur_path, flat, revisions, problems, unverified
                     sample = "; ".join(x.replace(chr(9), " = ")[:120] for x in lost[:5])
                     problems.append(f"{path}: {len(lost)} value(s) changed or missing ({sample})")
                 if why_a:
-                    unverified.append(f"{path}: {len(why_a)} part(s) not comparable: {', '.join(why_a[:3])}")
+                    unverified.append(f"{path}: {len(why_a)} base part(s) not comparable: {', '.join(why_a[:3])}")
+                if why_b:
+                    unverified.append(f"{path}: {len(why_b)} current part(s) not comparable: {', '.join(why_b[:3])}")
         if not content:
             miss = ids(old) - ids(cur)
             if miss:
@@ -173,6 +182,9 @@ def main(argv):
         compare_file(path, old, cur, cur_path, flat, revisions, problems, unverified)
     for u in unverified:
         print("  UNVERIFIED " + u)
+    strict = "--require-content" in argv
+    if strict and unverified:
+        problems.append(f"{len(unverified)} file(s) or part(s) unverified; --require-content accepts only content-level checks")
     if problems:
         print(f"preservation: {len(problems)} problem(s) against {base[:7]}")
         for p in problems:

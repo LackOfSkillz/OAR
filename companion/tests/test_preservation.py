@@ -133,5 +133,55 @@ class ContentLevel(unittest.TestCase):
         self.assertEqual(problems, [], "falls back to the id check, which this passes")
 
 
+class StrictFailsClosed(unittest.TestCase):
+    """review OI-FR17: --require-content fails whenever content isn't verified"""
+
+    def run_main(self, flat, *argv):
+        keep = PC.flattener
+        PC.flattener = lambda: flat
+        try:
+            return PC.main(list(argv))
+        finally:
+            PC.flattener = keep
+
+    @staticmethod
+    def failing_on(target, base_side):
+        """a flattener whose sandbox run fails for one file (base or candidate)"""
+        state = {}
+
+        def run(text, name):
+            if name == target:
+                n = state[name] = state.get(name, 0) + 1
+                if (n == 1) == base_side:
+                    return None, "sandbox error (test)"
+            return {"x" + chr(9) + "1"}, []
+        return run
+
+    def test_missing_lupa_fails_strict_only(self):
+        self.assertEqual(self.run_main(None, "--require-content"), 1)
+        self.assertEqual(self.run_main(None), 0, "the non-strict gate falls back to ids")
+
+    def test_sandbox_failure_on_either_side_fails_strict(self):
+        target = "addon/Outrider/Data/Rares.lua"
+        self.assertTrue(os.path.exists(os.path.join(ROOT, target)), target)
+        for base_side in (True, False):
+            self.assertEqual(self.run_main(self.failing_on(target, base_side), "--require-content"), 1, base_side)
+            self.assertEqual(self.run_main(self.failing_on(target, base_side)), 0, "id fallback passes non-strict")
+
+    def test_uncomparable_parts_fail_strict(self):
+        def partial(text, name):
+            return {"x" + chr(9) + "1"}, ["loaders.broken"]
+        self.assertEqual(self.run_main(partial, "--require-content"), 1)
+        self.assertEqual(self.run_main(partial), 0)
+
+    def test_strict_cli_exit_code(self):
+        if not have_lupa():
+            self.skipTest("lupa not installed")
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "preservation_check.py"), "--require-content"],
+                           cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn("0 unverified", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
