@@ -179,10 +179,12 @@ end
 -- { label, ok (true/false/nil = not measured), value text, why }
 function M:Budgets()
   local out = {}
-  local mem = self:Memory()
-  local kb = mem and mem.mine
-  out[#out + 1] = { "Memory under " .. math.floor(ns.Perf.BUDGET_KB / 1024) .. " MB", judge(kb, kb and kb <= ns.Perf.BUDGET_KB),
-    kb and string.format("%.1f MB", kb / 1024) or "not readable", "data packs load as their own add-ons, only when needed" }
+  -- judged on the figure after a garbage collection (the last logout's):
+  -- the live figure also counts short-lived memory not cleaned up yet
+  local last = ns.db.global.perf
+  local kb = type(last) == "table" and last.memoryKB or nil
+  out[#out + 1] = { "Memory under " .. math.floor(ns.Perf.BUDGET_KB / 1024) .. " MB (after cleanup)", judge(kb, kb and kb <= ns.Perf.BUDGET_KB),
+    kb and string.format("%.1f MB at your last logout", kb / 1024) or "measured at your first logout", "your saved data included; data packs load as their own add-ons" }
   local l = M.Load()
   out[#out + 1] = { "Nothing runs every frame while idle", not (l.driver and l.timers == 0),
     l.driver and string.format("%d timers waiting", l.timers) or "timer driver asleep", "no OnUpdate unless a timer is due" }
@@ -251,8 +253,8 @@ function M:Stats()
       note = p and (p.shareAddons and string.format("%.1f%% of all add-ons", p.shareAddons) or "per frame, recent") or "see below" },
     { cap = "Outrider memory", value = mem and mem.mine and string.format("%.1f MB", mem.mine / 1024) or "—",
       fill = mem and mem.mine and math.min(1, mem.mine / ns.Perf.BUDGET_KB),
-      color = mem and mem.mine and mem.mine > ns.Perf.BUDGET_KB and "bad" or "good",
-      note = mem and mem.all and string.format("%.0f%% of %d add-ons", mem.mine / mem.all * 100, mem.addons) or "" },
+      color = mem and mem.mine and mem.mine > ns.Perf.BUDGET_KB and "warn" or "good",
+      note = "live, before cleanup" .. (mem and mem.all and string.format("; %.0f%% of %d add-ons", mem.mine / mem.all * 100, mem.addons) or "") },
   }
   local W = ns.PerfWatch
   local w = W and W:IsWatching() and W:Summary()

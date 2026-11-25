@@ -5,10 +5,14 @@
 -- 10000). Results go to the log and ns.db.global.perf for Claude to read.
 
 local ADDON, ns = ...
--- Memory budget for Outrider itself (data packs are their own addons). Raised
--- from 1.5 MB on 2026-11-11: core measured 1.3 MB with 45 modules, plus map
--- places built on demand (~130 KB per visited map).
-local Perf = { name = "perf", BUDGET_KB = 3072, TIMER_CAP = 500 }
+-- Memory budget for Outrider itself (data packs are their own addons),
+-- judged AFTER a garbage collection (the logout report collects first).
+-- 2026-11-25 baseline: 3 MB was set on 2026-11-11 with 45 modules; with 135
+-- modules and the player's saved data (about 13 MB of it) Outrider measured
+-- 36 MB just after login, rising to a plateau of about 65 MB as caches fill
+-- (27- and 9-minute sessions both ended at 65 MB). 80 MB leaves headroom;
+-- going past it means a cache without a limit (DECISIONS.md D26).
+local Perf = { name = "perf", BUDGET_KB = 80 * 1024, TIMER_CAP = 500 }
 ns.Perf = Perf
 
 -- Timing sinks (Modules/LagCheck.lua, Modules/PerfWatch.lua): while any

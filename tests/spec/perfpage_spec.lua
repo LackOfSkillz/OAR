@@ -81,8 +81,12 @@ T.describe("performance page", function()
   end)
 
   T.it("budgets pass or fail from real readings, and unmeasured ones say so", function()
-    local _, _, M = session({ profiler = true, memoryKB = 99999 })
+    local _, ns, M = session({ profiler = true, memoryKB = 99999 })
     local by = {}
+    for _, b in ipairs(M:Budgets()) do by[b[1]:match("^(%a+)")] = b end
+    T.eq(by.Memory[2], nil, "memory is judged on the last logout's after-cleanup figure: none yet")
+    ns.Perf:Report(true) -- what a logout does: collect, then measure
+    by = {}
     for _, b in ipairs(M:Budgets()) do by[b[1]:match("^(%a+)")] = b end
     T.eq(by.Memory[2], false, "over the memory budget fails")
     T.eq(by.Under[2], true, "0.05 ms per frame passes")
