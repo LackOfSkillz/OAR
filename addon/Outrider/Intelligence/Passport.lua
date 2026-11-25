@@ -12,10 +12,15 @@
 -- at most MAX_BYTES. Read(text, expect) checks version, size, age (MAX_AGE),
 -- build and the character id: stale or another character's passport is
 -- refused as current.
+-- Review OI-FR12: Read and the companion's passport.read follow one contract
+-- (companion/tests/fixtures/passport_contract.json, run by both test suites):
+-- the task, a well-formed id ("c" + 8 hex) and build, no time in the future
+-- beyond FUTURE_SKEW, and fields kept only when allowed and of the right type
+-- and size (FIELD_CHECKS); the rest are listed in data.dropped.
 
 local _, ns = ...
 local C = ns.Compat
-local P = { VERSION = 1, TAG = "OTRP1", MAX_BYTES = 16 * 1024, MAX_AGE = 6 * 3600 }
+local P = { VERSION = 1, TAG = "OTRP1", MAX_BYTES = 16 * 1024, MAX_AGE = 6 * 3600, FUTURE_SKEW = 300 }
 ns.Passport = P
 
 P.FIELDS = {
@@ -103,17 +108,64 @@ function P.Export(pv, token)
   return pv.text
 end
 
+-- field checks (the same as CHECKS in the companion's passport.py)
+local function isInt(v, lo, hi) return type(v) == "number" and v == math.floor(v) and v >= lo and v <= hi end
+local function isText(n) return function(v) return type(v) == "string" and #v > 0 and #v <= n end end
+local function count(t) local n = 0 for _ in pairs(t) do n = n + 1 end return n end
+local function isList(t) return type(t) == "table" and count(t) == #t end
+local function ids(n)
+  return function(v)
+    if not isList(v) or #v > n then return false end
+    for _, x in ipairs(v) do if type(x) ~= "string" or #x == 0 or #x > 40 then return false end end
+    return true
+  end
+end
+P.FIELD_CHECKS = {
+  level = function(v) return isInt(v, 1, 60) end,
+  class = isText(16),
+  role = isText(16),
+  zone = function(v) return isInt(v, 1, 100000) end,
+  goals = ids(5),
+  plan = ids(10),
+  gearSlots = function(v)
+    if type(v) ~= "table" or count(v) > 19 then return false end
+    for k, x in pairs(v) do if not isInt(k, 1, 19) or not isInt(x, 1, math.huge) then return false end end
+    return true
+  end,
+  professions = function(v) return type(v) == "table" and count(v) <= 20 end,
+  goldBand = isText(16),
+  gold = function(v) return type(v) == "number" and v >= 0 end,
+  realm = isText(64),
+  guild = isText(64),
+}
+
 -- read a passport back (the companion does the same in Python): nil, why when it can't be used as current
 function P.Read(text, expect, now)
   now = now or time()
-  if type(text) ~= "string" or #text > P.MAX_BYTES then return nil, "missing or too big" end
+  if type(text) ~= "string" then return nil, "missing or too big" end
+  text = text:match("^%s*(.-)%s*$")
+  if #text > P.MAX_BYTES then return nil, "missing or too big" end
   if text:sub(1, #P.TAG + 1) ~= P.TAG .. ":" then return nil, "not a passport" end
   local data, err = ns.Serialize.Import(ns.Serialize.EXPORT_TAG .. text:sub(#P.TAG + 1))
   if type(data) ~= "table" then return nil, err or "not readable" end
   if data.v ~= P.VERSION then return nil, "another passport version" end
+  if not P.TASKS[data.task] then return nil, "unknown task" end
+  if type(data.id) ~= "string" or not data.id:find("^c[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]$") then
+    return nil, "bad character id"
+  end
   expect = expect or {}
   if expect.id and data.id ~= expect.id then return nil, "another character's passport" end
-  if type(data.takenAt) ~= "number" or now - data.takenAt > (expect.maxAge or P.MAX_AGE) then return nil, "stale: take a new one" end
+  if type(data.takenAt) ~= "number" then return nil, "stale: take a new one" end
+  if data.takenAt > now + P.FUTURE_SKEW then return nil, "taken in the future" end
+  if now - data.takenAt > (expect.maxAge or P.MAX_AGE) then return nil, "stale: take a new one" end
+  if data.build ~= nil and not (type(data.build) == "string" and #data.build > 0 and #data.build <= 32) then return nil, "bad build" end
   if expect.build and data.build ~= expect.build then return nil, "made on another game build" end
+  local kept, dropped = {}, {}
+  for k, v in pairs(type(data.fields) == "table" and data.fields or {}) do
+    local check = P.FIELD_CHECKS[k]
+    if check and check(v) then kept[k] = v else dropped[#dropped + 1] = tostring(k) end
+  end
+  table.sort(dropped)
+  data.fields, data.dropped = kept, dropped
   return data
 end

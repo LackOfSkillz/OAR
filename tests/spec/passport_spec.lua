@@ -62,3 +62,39 @@ T.describe("advice transport (OI08-04)", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("one Passport contract with the companion (review OI-FR12)", function()
+  T.it("every shared fixture gives the same answer as the Python reader", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    game:login()
+    local P = ns.Passport
+    local J = dofile("tests/lib/json.lua")
+    local C = J.file("companion/tests/fixtures/passport_contract.json")
+    local function copy(t) if type(t) ~= "table" then return t end local o = {} for k, v in pairs(t) do o[k] = copy(v) end return o end
+    for _, case in ipairs(C.cases) do
+      local body = copy(C.base)
+      for k, v in pairs(case.body or {}) do body[k] = copy(v) end
+      local text = ns.Serialize.Export(body):gsub("^" .. ns.Serialize.EXPORT_TAG, P.TAG)
+      local o, want = case.opts or {}, case.expect
+      local d, why = P.Read(text, { id = o.id, build = o.build }, o.now)
+      if want.ok then
+        T.ok(d, case.name .. ": accepted (" .. tostring(why) .. ")")
+        if d then
+          local keys = {}
+          for k in pairs(d.fields) do keys[#keys + 1] = k end
+          table.sort(keys)
+          T.same(keys, want.fields, case.name .. " fields")
+          T.same(d.dropped, want.dropped, case.name .. " dropped")
+        end
+      else
+        T.eq(d, nil, case.name .. ": refused")
+        T.eq(why, want.why, case.name)
+      end
+    end
+    for _, t in ipairs(C.texts) do
+      local text = t.text or string.rep(t["repeat"], t.count)
+      T.eq(select(2, P.Read(text, {}, 2000)), t.why, t.name)
+    end
+  end)
+end)

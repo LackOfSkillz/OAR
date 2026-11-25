@@ -1,0 +1,35 @@
+{
+  "about": "OI-FR12: one Passport contract. tests/spec/passport_spec.lua (Lua) and companion/tests/test_passport_contract.py (Python) both encode each body with their own encoder, read it with the same options and must give the same answer: ok with the same kept and dropped fields, or the same reason.",
+  "base": {"v": 1, "task": "plan", "id": "c1234abcd", "takenAt": 1000, "build": "1.60.1.70862",
+           "fields": {"level": 20, "class": "HUNTER", "goldBand": "10-100g"}},
+  "cases": [
+    {"name": "current", "opts": {"now": 2000, "id": "c1234abcd", "build": "1.60.1.70862"},
+     "expect": {"ok": true, "fields": ["class", "goldBand", "level"], "dropped": []}},
+    {"name": "every allowed field", "body": {"fields": {"level": 60, "class": "MAGE", "role": "dps", "zone": 1411,
+       "goals": ["level:30", "gold"], "plan": ["opp:quest:1"], "gearSlots": [1001, 1002], "professions": ["Mining"],
+       "goldBand": "1000g+", "gold": 12345, "realm": "Forever", "guild": "Some Guild"}}, "opts": {"now": 2000},
+     "expect": {"ok": true, "fields": ["class", "gearSlots", "goals", "gold", "goldBand", "guild", "level", "plan", "professions", "realm", "role", "zone"], "dropped": []}},
+    {"name": "unknown fields dropped", "body": {"fields": {"level": 1, "chatLog": "secret", "accountName": "x", "trail": [1]}},
+     "opts": {"now": 2000}, "expect": {"ok": true, "fields": ["level"], "dropped": ["accountName", "chatLog", "trail"]}},
+    {"name": "wrong field types dropped", "body": {"fields": {"level": 99, "class": 5, "goals": ["a", "b", "c", "d", "e", "f"],
+       "gold": -5, "zone": "Mulgore", "gearSlots": ["x"], "realm": "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR"}},
+     "opts": {"now": 2000}, "expect": {"ok": true, "fields": [], "dropped": ["class", "gearSlots", "goals", "gold", "level", "realm", "zone"]}},
+    {"name": "fields not a table", "body": {"fields": "level=20"}, "opts": {"now": 2000},
+     "expect": {"ok": true, "fields": [], "dropped": []}},
+    {"name": "stale", "opts": {"now": 22601}, "expect": {"ok": false, "why": "stale: take a new one"}},
+    {"name": "from the future", "body": {"takenAt": 5000}, "opts": {"now": 2000}, "expect": {"ok": false, "why": "taken in the future"}},
+    {"name": "small clock skew is fine", "body": {"takenAt": 2200}, "opts": {"now": 2000},
+     "expect": {"ok": true, "fields": ["class", "goldBand", "level"], "dropped": []}},
+    {"name": "no time", "body": {"takenAt": "yesterday"}, "opts": {"now": 2000}, "expect": {"ok": false, "why": "stale: take a new one"}},
+    {"name": "another character", "opts": {"now": 2000, "id": "cdeadbeef"}, "expect": {"ok": false, "why": "another character's passport"}},
+    {"name": "malformed character id", "body": {"id": "Torrant-Forever"}, "opts": {"now": 2000}, "expect": {"ok": false, "why": "bad character id"}},
+    {"name": "another build", "opts": {"now": 2000, "build": "1.61.0"}, "expect": {"ok": false, "why": "made on another game build"}},
+    {"name": "malformed build", "body": {"build": 1601}, "opts": {"now": 2000}, "expect": {"ok": false, "why": "bad build"}},
+    {"name": "unknown task", "body": {"task": "raid"}, "opts": {"now": 2000}, "expect": {"ok": false, "why": "unknown task"}},
+    {"name": "another version", "body": {"v": 2}, "opts": {"now": 2000}, "expect": {"ok": false, "why": "another passport version"}}
+  ],
+  "texts": [
+    {"name": "not a passport", "text": "OTR1:00:AA", "why": "not a passport"},
+    {"name": "too big", "repeat": "x", "count": 16385, "why": "missing or too big"}
+  ]
+}
