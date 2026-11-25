@@ -69,6 +69,69 @@ local function key(seq) return table.concat(seq, ">") end
 -- the walk is capped at DEP_DEPTH levels and DEP_WORK visits per call, and
 -- running out counts as "can't plan it" (safe), never as an error. Expansion
 -- keeps an in-progress set, so a cycle can't recurse.
+-- OI-FR06: add a state to its (steps, map) bucket, keeping up to PARETO
+-- states no other one beats on value, time and gold together
+local function beats(a, b) return a.value >= b.value and a.seconds <= b.seconds and a.copper <= b.copper end
+function P.Keep(states, seen, k, nx)
+  local bucket = seen[k]
+  if not bucket then
+    states[#states + 1] = nx
+    seen[k] = { #states }
+    return
+  end
+  for _, j in ipairs(bucket) do
+    local o = states[j]
+    if o and beats(o, nx) then return end
+  end
+  local placed = false
+  for _, j in ipairs(bucket) do
+    local o = states[j]
+    if o and beats(nx, o) then
+      if placed then states[j] = false else states[j] = nx placed = true end
+    end
+  end
+  if placed then return end
+  if #bucket < P.PARETO then
+    states[#states + 1] = nx
+    bucket[#bucket + 1] = #states
+    return
+  end
+  -- full: replace the lowest value if this one is higher
+  local wj
+  for _, j in ipairs(bucket) do
+    local o = states[j]
+    if o and (not wj or o.value < states[wj].value) then wj = j end
+  end
+  if wj and nx.value > states[wj].value then states[wj] = nx end
+end
+
+-- the beam: the best by value, and under a time budget FAST_SHARE of it for
+-- the quickest states the value cut would drop (sorted list in, list out)
+local function byValue(a, b)
+  if a.value ~= b.value then return a.value > b.value end
+  if a.seconds ~= b.seconds then return a.seconds < b.seconds end
+  return key(a.seq) < key(b.seq)
+end
+P.ByValue = byValue
+function P.Select(states, beam, budgetSeconds)
+  if #states <= beam then return states end
+  local fast = budgetSeconds and math.floor(beam * P.FAST_SHARE) or 0
+  local keep = {}
+  for i = 1, beam - fast do keep[i] = states[i] end
+  if fast > 0 then
+    local rest = {}
+    for i = beam - fast + 1, #states do rest[#rest + 1] = states[i] end
+    table.sort(rest, function(a, b)
+      if a.seconds ~= b.seconds then return a.seconds < b.seconds end
+      if a.value ~= b.value then return a.value > b.value end
+      return key(a.seq) < key(b.seq)
+    end)
+    for i = 1, math.min(fast, #rest) do keep[#keep + 1] = rest[i] end
+    table.sort(keep, byValue)
+  end
+  return keep
+end
+
 P.DEP_DEPTH, P.DEP_WORK = 8, 4000
 function P.Candidates(graph, ranked, done, pinId)
   local function node(id) return graph.nodes[id] end
@@ -214,41 +277,7 @@ function P.Plan(graph, ranked, ctx, opts)
           for i, s in ipairs(nx.seq) do sorted[i] = s end
           table.sort(sorted)
           local k = key(sorted) .. "@" .. tostring(nx.map)
-          local bucket = seen[k]
-          if not bucket then
-            nextStates[#nextStates + 1] = nx
-            seen[k] = { #nextStates }
-          else
-            local function beats(a, b) return a.value >= b.value and a.seconds <= b.seconds and a.copper <= b.copper end
-            local dominated = false
-            for _, j in ipairs(bucket) do
-              local o = nextStates[j]
-              if o and beats(o, nx) then dominated = true break end
-            end
-            if not dominated then
-              local placed = false
-              for _, j in ipairs(bucket) do
-                local o = nextStates[j]
-                if o and beats(nx, o) then
-                  if placed then nextStates[j] = false else nextStates[j] = nx placed = true end
-                end
-              end
-              if not placed then
-                if #bucket < P.PARETO then
-                  nextStates[#nextStates + 1] = nx
-                  bucket[#bucket + 1] = #nextStates
-                else
-                  -- full: replace the lowest value if this one is higher
-                  local wj
-                  for _, j in ipairs(bucket) do
-                    local o = nextStates[j]
-                    if o and (not wj or o.value < nextStates[wj].value) then wj = j end
-                  end
-                  if wj and nx.value > nextStates[wj].value then nextStates[wj] = nx end
-                end
-              end
-            end
-          end
+          P.Keep(nextStates, seen, k, nx)
           local f = nx.seq[1]
           if not firsts[f] or nx.value > firsts[f] then firsts[f] = nx.value end
         end
@@ -259,32 +288,8 @@ function P.Plan(graph, ranked, ctx, opts)
     for _, st in ipairs(nextStates) do if st then live[#live + 1] = st end end
     nextStates = live
     if #nextStates == 0 then break end
-    table.sort(nextStates, function(a, b)
-      if a.value ~= b.value then return a.value > b.value end
-      if a.seconds ~= b.seconds then return a.seconds < b.seconds end
-      return key(a.seq) < key(b.seq)
-    end)
-    if #nextStates > beam then
-      local fast = budgetSeconds and math.floor(beam * P.FAST_SHARE) or 0
-      local keep = {}
-      for i = 1, beam - fast do keep[i] = nextStates[i] end
-      if fast > 0 then
-        local rest = {}
-        for i = beam - fast + 1, #nextStates do rest[#rest + 1] = nextStates[i] end
-        table.sort(rest, function(a, b)
-          if a.seconds ~= b.seconds then return a.seconds < b.seconds end
-          if a.value ~= b.value then return a.value > b.value end
-          return key(a.seq) < key(b.seq)
-        end)
-        for i = 1, math.min(fast, #rest) do keep[#keep + 1] = rest[i] end
-        table.sort(keep, function(a, b)
-          if a.value ~= b.value then return a.value > b.value end
-          if a.seconds ~= b.seconds then return a.seconds < b.seconds end
-          return key(a.seq) < key(b.seq)
-        end)
-      end
-      nextStates = keep
-    end
+    table.sort(nextStates, byValue)
+    nextStates = P.Select(nextStates, beam, budgetSeconds)
     if nextStates[1].value > best.value then best = nextStates[1] end
     frontier = nextStates
     if truncated then break end

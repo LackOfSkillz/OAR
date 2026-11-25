@@ -18,11 +18,8 @@ EXPORT = os.path.join(ROOT, "tools", "export_trails.lua")
 
 
 def have_lupa():
-    try:
-        import lupa  # noqa: F401
-        return True
-    except Exception:
-        return False
+    import importlib.util
+    return importlib.util.find_spec("lupa") is not None
 
 
 def points(text, mapid):
