@@ -55,18 +55,14 @@ M.KINDS = { quest_accepted = true, quest_completed = true, quest_abandoned = tru
 
 function M:Store()
   local c = ns.db.char
-  local s = ns.KeepTable(c.outcomes, "Outcomes:char.outcomes")
-  if type(s) ~= "table" or s.schema ~= M.SCHEMA then
-    -- OI-FR03: replace the old store only once it is safely kept; if it can't
-    -- be kept, leave it saved as it is and work on a copy that isn't saved
-    if type(s) == "table" and not ns.Archive:Preserve("outcomeEvents", s, { path = "char.outcomes", scope = "char" }) then
-      M.recovery = "old outcome records could not be archived; they are left as they were"
-      M.scratch = M.scratch or { schema = M.SCHEMA, events = {}, serial = 0, recovery = true }
-      return M.scratch
-    end
-    s = { schema = M.SCHEMA, events = {}, serial = 0 }
-    c.outcomes = s
-  end
+  c.outcomes = ns.KeepTable(c.outcomes, "Outcomes:char.outcomes")
+  -- OI-FR03/FR15: the old store is replaced only once it is archived; until
+  -- then it stays saved as it was and new records go to a saved staging store
+  -- that is merged in afterwards (Archive:MigrateStore)
+  local s, staged = ns.Archive:MigrateStore(c, "outcomes", { dataset = "outcomeEvents", path = "char.outcomes",
+    valid = function(x) return type(x) == "table" and x.schema == M.SCHEMA end,
+    fresh = function() return { schema = M.SCHEMA, events = {}, serial = 0 } end })
+  M.recovery = staged and "old outcome records could not be archived yet: they are left as they were, and new ones are kept apart until they can be" or nil
   s.events = ns.KeepTable(s.events, "Outcomes:char.outcomes.events") or {}
   s.serial = tonumber(s.serial) or 0
   return s

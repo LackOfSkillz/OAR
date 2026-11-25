@@ -44,13 +44,18 @@ function P.State()
   if state.schema ~= P.SCHEMA then
     -- Preserve explicit player preferences. Never infer an old role token.
     local oldRole = state.role
-    -- OI-FR03: keep the original saved when it can't be archived first
-    if next(state) ~= nil and not ns.Archive:Preserve("profileOldSchema", state, { path = "char.intelligenceProfile", scope = "char" }) then
-      P.recovery = "old profile could not be archived; left as it was"
-      return { schema = P.SCHEMA, role = oldRole, recovery = true }
-    end
-    state = { schema = P.SCHEMA, role = oldRole }
-    char.intelligenceProfile = state
+    if next(state) == nil then char.intelligenceProfile = nil end
+    -- OI-FR03/FR15: the old profile is replaced only once archived; until
+    -- then a role you pick is kept in a saved staging profile
+    local s, staged = ns.Archive:MigrateStore(char, "intelligenceProfile", { dataset = "profileOldSchema", path = "char.intelligenceProfile",
+      valid = function(x) return type(x) == "table" and x.schema == P.SCHEMA end,
+      fresh = function() return { schema = P.SCHEMA, role = oldRole } end })
+    P.recovery = staged and "old profile could not be archived yet: left as it was" or nil
+    return s
+  end
+  if type(char.intelligenceProfileStaging) == "table" then
+    ns.Archive.MergeStaged(state, char.intelligenceProfileStaging)
+    char.intelligenceProfileStaging = nil
   end
   return state
 end

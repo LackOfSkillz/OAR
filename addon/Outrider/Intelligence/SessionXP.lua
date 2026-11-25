@@ -80,20 +80,16 @@ local function zone()
 end
 function M:Store()
   local c = ns.db.char
-  if type(c.xp60) ~= "table" or c.xp60.schema ~= M.SCHEMA then
-    -- an older schema is kept whole in the archive before the new store starts
-    -- OI-FR03: keep the original saved when it can't be archived first
-    if type(c.xp60) == "table" then
-      if not ns.Archive:Preserve("xp60OldSchema", c.xp60, { path = "char.xp60", scope = "char" }) then
-        M.recovery = "old XP records could not be archived; left as they were"
-        M.scratch = M.scratch or { schema = M.SCHEMA, history = {}, recovery = true }
-        return M.scratch
-      end
-    else ns.KeepBad(c.xp60, "SessionXP:c.xp60") end
-    c.xp60 = { schema = M.SCHEMA, history = {} }
-  end
-  if type(c.xp60.history) ~= "table" then ns.KeepBad(c.xp60.history, "SessionXP:c.xp60.history") c.xp60.history = {} end
-  return c.xp60
+  if c.xp60 ~= nil and type(c.xp60) ~= "table" then ns.KeepBad(c.xp60, "SessionXP:c.xp60") c.xp60 = nil end
+  -- an older schema is kept whole in the archive before the new store starts;
+  -- until it can be, it stays saved and new history goes to a saved staging
+  -- store that is merged in afterwards (OI-FR03/FR15)
+  local s, staged = ns.Archive:MigrateStore(c, "xp60", { dataset = "xp60OldSchema", path = "char.xp60",
+    valid = function(x) return type(x) == "table" and x.schema == M.SCHEMA end,
+    fresh = function() return { schema = M.SCHEMA, history = {} } end })
+  M.recovery = staged and "old XP records could not be archived yet: left as they were, new ones kept apart" or nil
+  if type(s.history) ~= "table" then ns.KeepBad(s.history, "SessionXP:c.xp60.history") s.history = {} end
+  return s
 end
 function M:OnInitialize()
   self:Store()

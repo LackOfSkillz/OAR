@@ -144,7 +144,7 @@ T.describe("outcome events (OI03-02)", function()
   end)
 end)
 
-T.describe("fail-safe schema migration (review OI-FR03)", function()
+T.describe("fail-safe schema migration (review OI-FR03, FR15)", function()
   local function broken(ns)
     local put, keep = ns.Archive.Put, ns.Archive.KeepDamaged
     ns.Archive.Put = function() return false, "injected" end
@@ -152,38 +152,54 @@ T.describe("fail-safe schema migration (review OI-FR03)", function()
     return function() ns.Archive.Put, ns.Archive.KeepDamaged = put, keep end
   end
 
-  T.it("outcomes: when the old store can't be kept, it stays saved untouched", function()
-    local _, ns, O = session()
+  T.it("outcomes: the old store stays saved; new records are saved apart and merged once it is archived", function()
+    local game, ns, O = session()
     local old = { schema = 0, events = { { kind = "quest_completed", subject = "quest:1" } } }
     ns.db.char.outcomes = old
     local undo = broken(ns)
     local s = O:Store()
     T.eq(ns.db.char.outcomes, old, "original still saved")
     T.eq(old.schema, 0) T.eq(#old.events, 1)
-    T.ok(s.recovery, "working on an unsaved copy")
+    T.ok(s.recovery and s == ns.db.char.outcomesStaging, "a SAVED staging store")
     T.ok(O:Activity():find("could not be archived", 1, true))
+    game:fire("QUEST_ACCEPTED", 42)
+    T.eq(#ns.db.char.outcomesStaging.events, 1, "the new record is saved")
+    -- a logout and /reload: memory goes, the saved tables stay
+    T.eq(O:Store(), ns.db.char.outcomesStaging, "still recovering after a reload, same staging")
     undo()
-    O.scratch = nil
     local s2 = O:Store()
     T.ok(ns.db.char.outcomes ~= old and s2.schema == O.SCHEMA, "replaced once it can be kept")
+    T.eq(ns.db.char.outcomesStaging, nil, "staging moved in")
+    T.eq(s2.events[1] and s2.events[1].subject, "quest:42", "the record made during recovery is in the new store")
+    T.eq(O.recovery, nil)
     local found = false
     for _, e in ipairs(ns.Archive:Rows("outcomeEvents")) do if e.row and e.row.schema == 0 then found = true end end
     T.ok(found, "old store in the archive")
   end)
 
-  T.it("XP history and the class profile follow the same rule", function()
+  T.it("XP history and the class profile follow the same rule, with saved staging", function()
     local _, ns = session()
     local oldXp = { schema = 0, history = { { xp = 5 } } }
     ns.db.char.xp60 = oldXp
     local oldProf = { schema = -1, role = "dps", note = "keep me" }
     ns.db.char.intelligenceProfile = oldProf
     local undo = broken(ns)
-    T.ok(ns.SessionXP:Store().recovery)
-    T.eq(ns.db.char.xp60, oldXp)
+    local xs = ns.SessionXP:Store()
+    T.ok(xs.recovery) T.eq(ns.db.char.xp60, oldXp)
+    xs.history[#xs.history + 1] = { xp = 9 }
     local P = ns.ClassProfiles
-    local st = P.State and P.State() or nil
+    local st = P.State()
     T.eq(ns.db.char.intelligenceProfile, oldProf, "profile left as it was")
-    if st then T.ok(st.recovery) T.eq(st.role, "dps") end
+    T.ok(st.recovery) T.eq(st.role, "dps")
+    st.role = "tank"
+    T.eq(ns.db.char.intelligenceProfileStaging.role, "tank", "a choice made in recovery is saved")
     undo()
+    local x2 = ns.SessionXP:Store()
+    T.eq(x2.schema, ns.SessionXP.SCHEMA)
+    T.eq(x2.history[1].xp, 9, "staged XP history merged")
+    T.eq(ns.db.char.xp60Staging, nil)
+    local st2 = P.State()
+    T.eq(st2.role, "tank", "the role picked during recovery wins")
+    T.eq(ns.db.char.intelligenceProfileStaging, nil)
   end)
 end)

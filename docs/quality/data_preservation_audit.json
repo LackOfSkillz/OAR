@@ -818,6 +818,39 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "outcomesStaging",
+   "saved_path": "char.outcomesStaging",
+   "retention_mechanism": "saved only while the old store can't be archived (review OI-FR15); its rows are moved into the new store once the old one is archived, then the staging is dropped (moved, never deleted)",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/outcomes_spec.lua :: fail-safe schema migration (review OI-FR03, FR15)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "xp60Staging",
+   "saved_path": "char.xp60Staging",
+   "retention_mechanism": "saved only while the old store can't be archived (review OI-FR15); its rows are moved into the new store once the old one is archived, then the staging is dropped (moved, never deleted)",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/outcomes_spec.lua :: fail-safe schema migration (review OI-FR03, FR15)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "intelligenceProfileStaging",
+   "saved_path": "char.intelligenceProfileStaging",
+   "retention_mechanism": "saved only while the old store can't be archived (review OI-FR15); its rows are moved into the new store once the old one is archived, then the staging is dropped (moved, never deleted)",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/outcomes_spec.lua :: fail-safe schema migration (review OI-FR03, FR15)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

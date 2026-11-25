@@ -278,7 +278,9 @@ T.describe("every collected store archives with identity (nothing lost)", functi
           if line:find("ns%.Archive:[SPM]%a+%(") and not line:find("^%s*%-%-") then
             sites = sites + 1
             if not line:find("path%s*=") then bad[#bad + 1] = rel .. ":" .. n .. " no path" end
-            if not (line:find("while .* and ns%.Archive") or line:find("if .*ns%.Archive")) then bad[#bad + 1] = rel .. ":" .. n .. " not fail-safe" end
+            -- MigrateStore keeps the old store and stages new rows when the
+            -- archive write fails (review OI-FR15): fail-safe by construction
+            if not (line:find("while .* and ns%.Archive") or line:find("if .*ns%.Archive") or line:find("ns%.Archive:MigrateStore%(")) then bad[#bad + 1] = rel .. ":" .. n .. " not fail-safe" end
           end
         end
         fh:close()

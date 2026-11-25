@@ -142,6 +142,53 @@ function Archive:Preserve(dataset, value, ctx)
   return false
 end
 
+-- Review OI-FR15: what a store collects while its old version can't be
+-- archived. Staged rows are SAVED (parent[field .. "Staging"]), so a logout or
+-- /reload loses nothing; once the old version is archived they are moved into
+-- the new store (lists appended in order, counters kept at the larger value,
+-- other values from the staging), and only then is the staging dropped.
+local function mergeStaged(into, staged)
+  for k, v in pairs(staged) do
+    if k ~= "schema" and k ~= "recovery" then
+      if type(v) == "table" and #v > 0 then
+        into[k] = type(into[k]) == "table" and into[k] or {}
+        for _, row in ipairs(v) do into[k][#into[k] + 1] = row end
+      elseif type(v) == "number" and type(into[k]) == "number" then
+        into[k] = math.max(into[k], v)
+      elseif into[k] == nil or type(v) ~= "table" then
+        into[k] = v
+      end
+    end
+  end
+  return into
+end
+Archive.MergeStaged = mergeStaged
+
+-- parent[field] is the saved store; opts = { dataset, path, valid(s) -> bool,
+-- fresh() -> a new store, merge(into, staged)? }. Returns the store to use and
+-- whether it is the staging one (recovery).
+function Archive:MigrateStore(parent, field, opts)
+  local stageKey = field .. "Staging"
+  local merge = opts.merge or mergeStaged
+  local s = parent[field]
+  local staged = type(parent[stageKey]) == "table" and parent[stageKey] or nil
+  if opts.valid(s) then
+    if staged then merge(s, staged) parent[stageKey] = nil end
+    return s, false
+  end
+  if s ~= nil and not self:Preserve(opts.dataset, s, { path = opts.path, scope = "char" }) then
+    -- the old store stays saved as it was; new rows go to the saved staging
+    if not staged then staged = opts.fresh() parent[stageKey] = staged end
+    staged.recovery = true
+    return staged, true
+  end
+  local new = opts.fresh()
+  if staged then merge(new, staged) end
+  parent[field] = new
+  if parent[field] == new then parent[stageKey] = nil end
+  return new, false
+end
+
 function Archive:Shift(dataset, list, ctx) return self:Move(dataset, list, 1, ctx) end
 function Archive:Pop(dataset, list, ctx) return self:Move(dataset, list, type(list) == "table" and #list or 0, ctx) end
 
