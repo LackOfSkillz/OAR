@@ -198,3 +198,4 @@ Running straight on (owner: no stops, one review at the end).
 | OI07-10 Explorer challenges | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | unknown visit never done; dismiss and reset; no timers |
 | OI07-11 Navigation and UI quality | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | all pages at size extremes; two clicks; Esc; texture limits |
 | OI07-12 Documentation and help completeness | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | README, help, guide, flags, errors, lessons, privacy |
+| OI07-GATE Phase 7 review gate | MOCK_GREEN | see commit | [OI07-GATE](../reviews/phase7/OI07-GATE.md) | 1446 passed plus boot fixed; companion OK; quality, deps, security clean |

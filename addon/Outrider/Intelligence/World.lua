@@ -127,6 +127,12 @@ end
 -- register an outside pack: quarantined or outdated packs are kept apart
 -- (W.quarantine[name], entries untouched), never indexed for use
 W.quarantine = {}
+-- the packs set aside, for other parts of Outrider: { name = why }
+function W.Quarantined()
+  local out = {}
+  for name, q in pairs(W.quarantine) do out[name] = q.why end
+  return out
+end
 function W.RegisterPack(kind, name, manifest, entries, rules)
   W.Manifest(name, manifest)
   local cls = W.Classify(name, rules)

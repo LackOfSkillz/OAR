@@ -79,8 +79,8 @@ check("missing_pack", function(add)
   for _, e in ipairs(ns.Data:All("macro")) do if e.class == class then n = n + 1 end end
   if n == 0 then add("No macro pack for your class is loaded.", "reinstall Outrider; the macro files may be missing") end
   if #ns.Data:All("rare") == 0 then add("No rare data is loaded.", "reinstall Outrider; Data/Rares.lua may be missing") end
-  for name, q in pairs(ns.World and ns.World.quarantine or {}) do
-    add("Data pack " .. name .. " was set aside: " .. tostring(q.why) .. ".", "use a pack with a license and an evidence class")
+  for name, why in pairs(ns.World and ns.World.Quarantined and ns.World.Quarantined() or {}) do
+    add("Data pack " .. name .. " was set aside: " .. tostring(why) .. ".", "use a pack with a license and an evidence class")
   end
 end)
 
