@@ -183,6 +183,9 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
             "Forget last time's plan and plan from what is true now." },
         } } }
     end },
+    -- coming up (Foresight, OI04-10/15): quiet notes, one primary and two more
+    { "header", "Coming up" },
+    { "cards", function() return ns.Foresight and ns.Foresight.Cards(refresh) or {} end },
     -- the session you plan for (OI04-01)
     { "header", "This session" },
     { "note", function() return "Planning for: " .. ns.NexusHorizon.Label(ns.NexusHorizon.Get(ns.NexusCore)) .. "." end },

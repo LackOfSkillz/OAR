@@ -150,3 +150,83 @@ function F.Facts()
   end
   return f
 end
+
+-- ------------------------------------------------------------ quiet UX (OI04-15)
+-- Shown quietly: the Plan page's "Coming up" lists one primary and up to two
+-- secondary notes (passive cards, nothing pops up). Per character:
+--   cats        categories you switched off are left out (all on by default)
+--   threshold   notes below this importance are left out (MIN_IMPORTANCE)
+--   dismissed   "Not interested": that note never comes back
+--   snoozed     "Later": back after SNOOZE seconds
+--   notify      optional nudges in the Feed (off by default): only important
+--               notes (NUDGE_AT), each at most once per COOLDOWN, never in
+--               combat or quiet mode; checked again after combat ends
+F.MIN_IMPORTANCE, F.SNOOZE, F.COOLDOWN, F.NUDGE_AT = 0.45, 86400, 6 * 3600, 0.7
+F.CATEGORIES = { "trainer", "quest", "mount", "material", "dungeon", "alt" }
+
+function F.Settings()
+  local c = ns.db.char
+  local s = ns.KeepTable(c.foresight, "Foresight:char.foresight") or {}
+  c.foresight = s
+  s.cats = type(s.cats) == "table" and s.cats or {}
+  s.dismissed = type(s.dismissed) == "table" and s.dismissed or {}
+  s.snoozed = type(s.snoozed) == "table" and s.snoozed or {}
+  s.nudged = type(s.nudged) == "table" and s.nudged or {}
+  return s
+end
+
+-- pure apart from the settings: the notes to show, primary first (max 3)
+function F.Visible(list, s, now)
+  now = now or time()
+  local out = {}
+  for _, t in ipairs(list or {}) do
+    local snooze = s.snoozed[t.id]
+    if s.cats[t.kind] ~= false and t.importance >= (s.threshold or F.MIN_IMPORTANCE) and not s.dismissed[t.id]
+        and not (snooze and now < snooze) then
+      out[#out + 1] = t
+      if #out >= 3 then break end
+    end
+  end
+  return out
+end
+
+function F.Dismiss(id) F.Settings().dismissed[id] = time() end
+function F.Snooze(id) F.Settings().snoozed[id] = time() + F.SNOOZE end
+
+-- the optional nudge: returns the notes nudged now
+function F.Check(list, now)
+  now = now or time()
+  local s = F.Settings()
+  if not s.notify or s.quiet or C.InCombat() then return {} end
+  local sent = {}
+  for _, t in ipairs(F.Visible(list, s, now)) do
+    local last = s.nudged[t.id]
+    if t.importance >= F.NUDGE_AT and not (last and now - last < F.COOLDOWN) then
+      s.nudged[t.id] = now
+      if ns.Feed then ns.Feed:Add(nil, { title = t.title, text = t.why, color = "accent" }) end
+      sent[#sent + 1] = t
+    end
+  end
+  return sent
+end
+
+function F.Cards(refresh)
+  local out = {}
+  for i, t in ipairs(F.Visible((F.Evaluate(F.Facts())), F.Settings())) do
+    local id = t.id
+    out[#out + 1] = { pic = "Interface\\Icons\\INV_Misc_Spyglass_03", title = t.title,
+      tags = { { i == 1 and "coming up" or "also", i == 1 and "good" or "plain" } }, line = t.why or "",
+      actions = {
+        { "Later", function() F.Snooze(id) if refresh then refresh() end end, "Hide this for a day." },
+        { "Not interested", function() F.Dismiss(id) if refresh then refresh() end end, "Don't show this note again." },
+      } }
+  end
+  return out
+end
+
+-- re-check after combat, on a level-up and on a new zone (nudges only)
+for _, e in ipairs({ "PLAYER_REGEN_ENABLED", "PLAYER_LEVEL_UP", "ZONE_CHANGED_NEW_AREA" }) do
+  ns.Events:On(e, "Foresight", function()
+    if ns.db and ns.db.char and F.Settings().notify then F.Check((F.Evaluate(F.Facts()))) end
+  end)
+end

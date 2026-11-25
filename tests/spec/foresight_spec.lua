@@ -68,3 +68,60 @@ T.describe("Foresight triggers (OI04-10)", function()
     for _, bad in ipairs({ "AcceptQuest", "CompleteQuest", "BuyMerchantItem", "CastSpell", "PlaceAuctionBid" }) do T.ok(not code:find(bad), bad) end
   end)
 end)
+
+T.describe("Foresight quiet UX (OI04-15)", function()
+  local function notes()
+    return {
+      { id = "a", kind = "trainer", importance = 0.9, title = "A", why = "a" },
+      { id = "b", kind = "quest", importance = 0.6, title = "B", why = "b" },
+      { id = "c", kind = "mount", importance = 0.5, title = "C", why = "c" },
+      { id = "d", kind = "dungeon", importance = 0.5, title = "D", why = "d" },
+      { id = "e", kind = "alt", importance = 0.3, title = "E", why = "e" },
+    }
+  end
+  T.it("one primary plus two secondary; below the threshold and switched-off categories left out", function()
+    local _, ns, F = session()
+    local s = F.Settings()
+    local v = F.Visible(notes(), s)
+    T.eq(#v, 3) T.eq(v[1].id, "a")
+    s.cats.quest = false
+    v = F.Visible(notes(), s)
+    T.eq(v[2].id, "c", "quest category off")
+    for _, x in ipairs(F.Visible(notes(), s)) do T.ok(x.id ~= "e", "below the threshold") end
+  end)
+  T.it("dismiss and snooze persist; a snooze comes back after a day", function()
+    local game, ns, F = session()
+    F.Dismiss("a") F.Snooze("b")
+    local v = F.Visible(notes(), F.Settings(), game.now)
+    for _, x in ipairs(v) do T.ok(x.id ~= "a" and x.id ~= "b") end
+    T.ok(ns.db.char.foresight.dismissed.a, "saved")
+    v = F.Visible(notes(), F.Settings(), game.now + F.SNOOZE + 1)
+    local back = false
+    for _, x in ipairs(v) do if x.id == "b" then back = true end end
+    T.ok(back)
+  end)
+  T.it("nudges: off by default; when on, only important ones, once per cooldown, never in combat or quiet mode", function()
+    local game, ns, F = session()
+    T.eq(#F.Check(notes()), 0, "off by default")
+    F.Settings().notify = true
+    T.eq(#F.Check(notes()), 1, "only the important one")
+    T.eq(#F.Check(notes()), 0, "no repeat inside the cooldown")
+    game:advance(F.COOLDOWN + 1)
+    game.combat = true
+    T.eq(#F.Check(notes()), 0, "never in combat")
+    game.combat = false
+    F.Settings().quiet = true
+    T.eq(#F.Check(notes()), 0, "quiet mode")
+    F.Settings().quiet = false
+    T.eq(#F.Check(notes()), 1, "after combat: checked again")
+  end)
+  T.it("the Plan page shows Coming up with tooltipped buttons", function()
+    local _, ns = session()
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("nexusplan")
+    T.eq(#ns.Errors.list, 0)
+    local missing = {}
+    for label in pairs(ns.UI.untipped or {}) do missing[#missing + 1] = label end
+    T.eq(#missing, 0, table.concat(missing, ", "))
+  end)
+end)

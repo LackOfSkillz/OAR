@@ -128,6 +128,7 @@ Owner authorization: on 2026-11-24 Gary chose "Start Phase 4 now" while the Phas
 | OI04-11 Quartermaster early reservations | MOCK_GREEN | 9ab8ffd | [OI04-11](../reviews/phase4/OI04-11.md) | item and gold holds (explicit, craft queue, goal reserve); each unit counted once, own stock first, stale alts flagged; tooltip line; nothing blocked |
 | OI04-12 Guardian travel advice | MOCK_GREEN | a9190b9 | [OI04-12](../reviews/phase4/OI04-12.md) | safe / fair / risky / dangerous from zone level ranges (source named) and your deaths there; unknown without data; safer alternative named; plan never changed |
 | OI04-13 Pathfinder measured routes | MOCK_GREEN | 0cf5efe | [OI04-13](../reviews/phase4/OI04-13.md) | Travel:TimeTo corrected by your walking (route, then general, current build only), source named; long unwalked straight legs marked; slow mode; unknown stays unknown |
-| OI04-14 Dungeon decision improvements | MOCK_GREEN | see commit | [OI04-14](../reviews/phase4/OI04-14.md) | ranks fitting dungeons by quests to do, possible (not guaranteed) gear and level fit; solo last; group and reputation unknown said so; existing UI intact |
+| OI04-14 Dungeon decision improvements | MOCK_GREEN | c220d71 | [OI04-14](../reviews/phase4/OI04-14.md) | ranks fitting dungeons by quests to do, possible (not guaranteed) gear and level fit; solo last; group and reputation unknown said so; existing UI intact |
+| OI04-15 Foresight quiet UX | MOCK_GREEN | see commit | [OI04-15](../reviews/phase4/OI04-15.md) | Coming up: one primary + two; categories, threshold, Not interested, Later; nudges opt-in, important only, once per 6 h, never in combat or quiet, re-checked after combat |
 
 Phases 5-8 (OI05-OI08): NOT_STARTED.
