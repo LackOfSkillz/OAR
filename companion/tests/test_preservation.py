@@ -19,7 +19,11 @@ EXPORT = os.path.join(ROOT, "tools", "export_trails.lua")
 
 def have_lupa():
     import importlib.util
-    return importlib.util.find_spec("lupa") is not None
+    found = importlib.util.find_spec("lupa") is not None
+    # under tools/test.ps1 -RequirePython (CI) these tests must run, not skip
+    if not found and os.environ.get("OTR_REQUIRE_LUPA") == "1":
+        raise RuntimeError("lupa is required here (OTR_REQUIRE_LUPA=1): pip install lupa")
+    return found
 
 
 def points(text, mapid):

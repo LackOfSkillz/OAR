@@ -19,7 +19,7 @@ anything present at the base is missing now:
 A data file that was removed on purpose must be moved, not deleted: list its new
 path in docs/quality/preservation_moves.json ({"old": "new"}).
 
-    py -I tools/preservation_check.py [--base SHA]
+    python tools/preservation_check.py [--base SHA] [--require-content]
 Exit 0 when nothing is missing, 1 when something is, 2 when the base can't be read.
 """
 import json
@@ -156,6 +156,9 @@ def main(argv):
     flat = flattener()
     revisions = load_revisions()
     if not flat:
+        if "--require-content" in argv:
+            print("preservation: lupa is not installed, so content can't be compared (--require-content)")
+            return 1
         unverified.append("lupa not installed: content not compared, record ids only")
     for path in data_files(listing.splitlines()):
         old = git("show", f"{base}:{path}")

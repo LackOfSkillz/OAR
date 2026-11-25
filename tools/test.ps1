@@ -16,9 +16,15 @@ if ($code -eq 0 -and -not $Filter) {
     # every companion test file (test_companion.py, test_intelligence.py, ...)
     $testDir = Join-Path (Join-Path $script:RepoRoot 'companion') 'tests'
     $pyFailed = $false
+    # the Python that has lupa (the Lua runner's): tests that drive Lua need it,
+    # and -I would hide a user-installed lupa (review OI-FR14)
+    $luaCmd = Get-LuaCommand
+    $lupaPy = if ($luaCmd -and $luaCmd.Count -gt 1) { $luaCmd[0] } else { $null }
+    if ($RequirePython) { $env:OTR_REQUIRE_LUPA = '1' }
     foreach ($testFile in (Get-ChildItem -Path $testDir -Filter 'test_*.py' | Sort-Object Name)) {
       # unittest reports on stderr; run through cmd so Windows PowerShell does not turn that into errors
-      $out = cmd /c "`"$($py.Source)`" -I `"$($testFile.FullName)`" 2>&1"
+      if ($testFile.Name -eq 'test_preservation.py' -and $lupaPy) { $out = cmd /c "`"$lupaPy`" `"$($testFile.FullName)`" 2>&1" }
+      else { $out = cmd /c "`"$($py.Source)`" -I `"$($testFile.FullName)`" 2>&1" }
       $testExit = $LASTEXITCODE
       if ($testExit -ne 0) { $pyFailed = $true }
       Write-Host ("{0}: " -f $testFile.Name) -NoNewline
@@ -40,9 +46,14 @@ if ($code -eq 0 -and -not $Filter) {
     $qExit = $LASTEXITCODE
     $qOut | Out-Host
     if ($qExit -ne 0) { Write-Host "Code health gate failed (new findings above)." -ForegroundColor Red; $code = 1 }
-    # OI-FR01: every data record at the preservation base is still shipped
+    # OI-FR01/FR14: every data value at the preservation base is still shipped.
+    # Run with the Python that has lupa (the Lua runner's), not -I: the
+    # content comparison needs lupa, and -I hides user-installed packages.
+    # With -RequirePython a missing lupa fails instead of falling back to ids.
     $pc = Join-Path (Join-Path $script:RepoRoot 'tools') 'preservation_check.py'
-    $pOut = cmd /c "`"$($py.Source)`" -I `"$pc`" 2>&1"
+    $pPy = if ($luaCmd -and $luaCmd.Count -gt 1) { $luaCmd[0] } else { $py.Source }
+    $pFlag = if ($RequirePython) { '--require-content' } else { '' }
+    $pOut = cmd /c "`"$pPy`" `"$pc`" $pFlag 2>&1"
     $pExit = $LASTEXITCODE
     $pOut | Out-Host
     if ($pExit -ne 0) { Write-Host "Data preservation gate failed (missing data above)." -ForegroundColor Red; $code = 1 }
