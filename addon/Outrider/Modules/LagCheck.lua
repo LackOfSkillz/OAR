@@ -31,6 +31,9 @@ M.STUTTER_MS = 16         -- one handler this long drops a frame at 60 FPS
 M.LEVELS = { { 0.5, "fine" }, { 2, "small" } } -- % of the game's time; above: heavy
 
 function M:OnInitialize() self.on = false end
+
+-- a timing sink (Core/Perf.lua): timed while a check runs
+ns.Perf:AddSink(M)
 -- a running check stops with the module (OI01-11: no sampler left behind)
 function M:OnDisable() if self.on then self:Stop("module off") end end
 function M:OnEnable()
@@ -42,11 +45,8 @@ end
 local function closeMinute(d)
   local b = d.minute
   if not b or b.n == 0 then return end
-  local P
-  if ns.PerfPage and ns.PerfPage.Profiler then
-    local okp, pr = pcall(ns.PerfPage.Profiler)
-    P = okp and pr or nil
-  end
+  local okp, P = pcall(ns.Perf.Profiler)
+  if not okp then P = nil end
   d.minutes[#d.minutes + 1] = { fps = b.fpsSum / b.n, low = b.low, world = b.world, ms = d.total - b.total0,
     secs = b.n * M.SAMPLE, cpu = P and P.recentMs or nil }
 end
@@ -70,6 +70,7 @@ function M:Start(seconds)
   self.data = { by = {}, total = 0, worst = { where = "-", ms = 0 }, fpsSum = 0, fpsN = 0, seconds = seconds,
     open = open, minutes = {}, started = C.Call("GetTime") or 0 }
   self.on = true
+  ns.Perf:UpdateTiming()
   self.sampler = ns.Timer.Ticker(M.SAMPLE, function()
     local d = self.data
     if not d then return end
@@ -98,9 +99,7 @@ function M:Start(seconds)
 end
 
 -- Part of Outrider a timing belongs to: "MinimapPins:PLAYER_STARTED_MOVING" -> MinimapPins.
-function M.Part(where)
-  return tostring(where):match("^([^:]+)") or tostring(where)
-end
+M.Part = function(where) return ns.Perf.Part(where) end
 
 -- The finished result (also used while running, for a progress line).
 function M:Summary()
@@ -130,6 +129,7 @@ end
 function M:Stop(why)
   if not self.on then return nil end
   self.on = false
+  ns.Perf:UpdateTiming()
   if self.sampler then self.sampler:Cancel() self.sampler = nil end
   if self.timer then self.timer:Cancel() self.timer = nil end
   closeMinute(self.data)
@@ -195,14 +195,9 @@ function M:Activity()
   return M.Verdict(ns.db.global.lagCheck)
 end
 
-ns.AddCommand("lag", "[watch|stop]  one-minute lag check, or watch: monitor until you stop it", function(arg)
+ns.AddCommand("lag", "[stop]  one-minute lag check: how much of the game's time Outrider uses", function(arg)
   arg = (arg or ""):lower()
   if arg == "stop" then M:Stop("stopped") return end
-  if arg == "watch" or arg == "monitor" then
-    local ok, why = M:Start(0)
-    ns.Print(ok and "Monitoring Outrider's performance until you stop it (/ride lag stop, or Stop on the Performance page)." or why)
-    return
-  end
   local ok, why = M:Start()
   ns.Print(ok and "Lag check running for 1 minute: play as usual (move, fight, open the map). The result shows here." or why)
 end)

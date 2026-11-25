@@ -863,6 +863,30 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "perfSlow",
+   "saved_path": "global.perfSlow",
+   "retention_mechanism": "300 slow moments in view (Performance page)",
+   "archive_destination": "global.archive.sets.perfSlow",
+   "tests": [
+    "tests/spec/perfwatch_spec.lua :: a slow moment while moving is kept with what ran and where (the minimap dots case)",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "perfWatch",
+   "saved_path": "global.perfWatch",
+   "retention_mechanism": "30 sessions in view (Performance page)",
+   "archive_destination": "global.archive.sets.perfWatch",
+   "tests": [
+    "tests/spec/perfwatch_spec.lua :: logout saves the session once, minute rows included; past the cap old ones are archived",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

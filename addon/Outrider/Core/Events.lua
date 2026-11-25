@@ -25,8 +25,10 @@ local function dispatch(event, ...)
   for i = 1, #list do snapshot[i] = list[i] end
   Events.stats[event] = (Events.stats[event] or 0) + 1
   -- Per-handler timing only in debug mode (debugprofilestop has a cost).
-  local lag = ns.LagCheck and ns.LagCheck.on
-  local timed = ((ns.db and ns.db.global.debug) or lag) and debugprofilestop
+  -- ns.timing: a lag check or the always-on watch (Modules/PerfWatch.lua)
+  local lag = ns.timing
+  local debugOn = ns.db and ns.db.global.debug
+  local timed = (debugOn or lag) and debugprofilestop
   for i = 1, #snapshot do
     local h = snapshot[i]
     if not h.removed then
@@ -35,8 +37,9 @@ local function dispatch(event, ...)
         local t0 = debugprofilestop()
         ns.Safe(where, h.fn, event, ...)
         local ms = debugprofilestop() - t0
-        Events:NoteTiming(where, ms)
-        if lag then ns.LagCheck:Note(where, ms) end
+        -- the slowest-handlers list stays a debug-mode tool (/ride perf)
+        if debugOn then Events:NoteTiming(where, ms) end
+        if lag then ns.NoteTiming(where, ms) end
       else
         ns.Safe(where, h.fn, event, ...)
       end

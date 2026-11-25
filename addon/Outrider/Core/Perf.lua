@@ -11,6 +11,62 @@ local ADDON, ns = ...
 local Perf = { name = "perf", BUDGET_KB = 3072, TIMER_CAP = 500 }
 ns.Perf = Perf
 
+-- Timing sinks (Modules/LagCheck.lua, Modules/PerfWatch.lua): while any
+-- sink is on, Core/Events.lua and Core/Timer.lua time every handler and timer
+-- run (ns.timing) and hand each timing to every sink that is on.
+Perf.sinks = {}
+function Perf:AddSink(sink) self.sinks[#self.sinks + 1] = sink self:UpdateTiming() end
+function Perf:UpdateTiming()
+  local on = nil
+  for _, s in ipairs(self.sinks) do if s.on then on = true end end
+  ns.timing = on
+end
+function ns.NoteTiming(where, ms)
+  for _, s in ipairs(Perf.sinks) do if s.on then s:Note(where, ms) end end
+end
+-- the part of Outrider a timing belongs to: "MinimapPins:PLAYER_STARTED_MOVING" -> MinimapPins
+function Perf.Part(where)
+  return tostring(where):match("^([^:]+)") or tostring(where)
+end
+
+-- The game's add-on profiler, when the client has it and it is on.
+-- Returns nil, why when it can't be read.
+local function metricEnum(name)
+  local E = rawget(_G, "Enum")
+  local t = type(E) == "table" and E.AddOnProfilerMetric
+  return type(t) == "table" and t[name] or nil
+end
+function Perf.Profiler()
+  local P = rawget(_G, "C_AddOnProfiler")
+  if type(P) ~= "table" or type(P.GetAddOnMetric) ~= "function" then return nil, "this client has no add-on profiler" end
+  if type(P.IsEnabled) == "function" then
+    local ok, on = pcall(P.IsEnabled)
+    if ok and on == false then return nil, "the game's add-on profiler is off" end
+  end
+  local function get(fn, name)
+    local m = metricEnum(name)
+    if m == nil or type(P[fn]) ~= "function" then return nil end
+    local ok, v
+    if fn == "GetAddOnMetric" then ok, v = pcall(P[fn], ADDON, m) else ok, v = pcall(P[fn], m) end
+    v = ok and ns.Compat.Readable(v) or nil
+    return type(v) == "number" and v or nil
+  end
+  local out = {
+    recentMs = get("GetAddOnMetric", "RecentAverageTime"),
+    sessionMs = get("GetAddOnMetric", "SessionAverageTime"),
+    peakMs = get("GetAddOnMetric", "PeakTime"),
+    over5 = get("GetAddOnMetric", "CountTimeOver5Ms"),
+    over50 = get("GetAddOnMetric", "CountTimeOver50Ms"),
+    allAddonsMs = get("GetOverallMetric", "RecentAverageTime"),
+    gameMs = get("GetApplicationMetric", "RecentAverageTime"),
+  }
+  if not out.recentMs and not out.sessionMs then return nil, "the profiler gave no numbers for Outrider" end
+  if out.recentMs and out.allAddonsMs and out.allAddonsMs > 0 then out.shareAddons = out.recentMs / out.allAddonsMs * 100 end
+  if out.recentMs and out.gameMs and out.gameMs > 0 then out.shareGame = out.recentMs / out.gameMs * 100 end
+  return out
+end
+
+
 function Perf:MemoryKB()
   local update = (C_AddOns and C_AddOns.UpdateAddOnMemoryUsage) or rawget(_G, "UpdateAddOnMemoryUsage")
   local get = (C_AddOns and C_AddOns.GetAddOnMemoryUsage) or rawget(_G, "GetAddOnMemoryUsage")
@@ -56,8 +112,8 @@ function Perf:Runtime()
   end
   out.errors, out.taint = errs, taint
   -- the game's add-on profiler, when present (Modules/PerfPage.lua)
-  if ns.PerfPage and ns.PerfPage.Profiler then
-    local okp, pr = pcall(ns.PerfPage.Profiler)
+  do
+    local okp, pr = pcall(Perf.Profiler)
     if okp and pr then out.profiler = { recentMs = pr.recentMs, sessionMs = pr.sessionMs, peakMs = pr.peakMs, over5 = pr.over5,
       shareAddons = pr.shareAddons } end
   end

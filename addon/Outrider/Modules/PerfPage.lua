@@ -15,8 +15,9 @@
 --     loaded add-ons;
 --   * Outrider's own load: event handlers, timers pending, the timer driver
 --     idle or not (no OnUpdate while idle), modules on, login time;
---   * Monitor: one press starts measuring until Stop (page open or closed),
---     with one row per minute (LagCheck:Start(0));
+--   * the always-on watch (Modules/PerfWatch.lua): this session minute by
+--     minute, its slow moments (spikes and freezes, with what ran and where),
+--     Outrider's heaviest parts, and past sessions; a switch turns it off;
 --   * budgets with a pass or fail, past sessions (Perf.perfRuns) and past
 --     lag checks, and a "Copy for a post" text with no name, realm or gold.
 -- Sampling runs only while this page is open (a 1 s ticker, cancelled when
@@ -52,42 +53,8 @@ function M.Net()
 end
 function M.FPS() return tonumber(C.Readable(C.Call("GetFramerate"))) end
 
--- The game's add-on profiler, when the client has it and it is on.
--- Returns nil, why when it can't be read.
-local function metricEnum(name)
-  local E = rawget(_G, "Enum")
-  local t = type(E) == "table" and E.AddOnProfilerMetric
-  return type(t) == "table" and t[name] or nil
-end
-function M.Profiler()
-  local P = rawget(_G, "C_AddOnProfiler")
-  if type(P) ~= "table" or type(P.GetAddOnMetric) ~= "function" then return nil, "this client has no add-on profiler" end
-  if type(P.IsEnabled) == "function" then
-    local ok, on = pcall(P.IsEnabled)
-    if ok and on == false then return nil, "the game's add-on profiler is off" end
-  end
-  local function get(fn, name)
-    local m = metricEnum(name)
-    if m == nil or type(P[fn]) ~= "function" then return nil end
-    local ok, v
-    if fn == "GetAddOnMetric" then ok, v = pcall(P[fn], ADDON, m) else ok, v = pcall(P[fn], m) end
-    v = ok and C.Readable(v) or nil
-    return type(v) == "number" and v or nil
-  end
-  local out = {
-    recentMs = get("GetAddOnMetric", "RecentAverageTime"),
-    sessionMs = get("GetAddOnMetric", "SessionAverageTime"),
-    peakMs = get("GetAddOnMetric", "PeakTime"),
-    over5 = get("GetAddOnMetric", "CountTimeOver5Ms"),
-    over50 = get("GetAddOnMetric", "CountTimeOver50Ms"),
-    allAddonsMs = get("GetOverallMetric", "RecentAverageTime"),
-    gameMs = get("GetApplicationMetric", "RecentAverageTime"),
-  }
-  if not out.recentMs and not out.sessionMs then return nil, "the profiler gave no numbers for Outrider" end
-  if out.recentMs and out.allAddonsMs and out.allAddonsMs > 0 then out.shareAddons = out.recentMs / out.allAddonsMs * 100 end
-  if out.recentMs and out.gameMs and out.gameMs > 0 then out.shareGame = out.recentMs / out.gameMs * 100 end
-  return out
-end
+-- The game's add-on profiler lives in Core/Perf.lua (Perf.Profiler).
+M.Profiler = function() return ns.Perf.Profiler() end
 
 -- Outrider's memory and all loaded add-ons' (updated at most every 10 s).
 function M:Memory(force)
@@ -240,6 +207,10 @@ function M:ShareText()
   if mem and mem.mine then
     add("Memory: %.1f MB%s", mem.mine / 1024, mem.all and string.format(" of %.1f MB for %d add-ons", mem.all / 1024, mem.addons) or "")
   end
+  local W = ns.PerfWatch
+  local w = W and W.on and W:Summary()
+  if w then add("Always-on watch this session: %.3f%% of the game's time over %d min, %d spikes, %d game freezes (%d mostly Outrider's)",
+    w.pct, math.floor(w.seconds / 60), w.spikes, w.hitches, w.ours) end
   local lc = ns.db.global.lagCheck
   if lc and lc.pct then add("Lag check: %.2f%% of the game's time over %d s, slowest moment %.1f ms", lc.pct, lc.seconds or 60, lc.worst and lc.worst.ms or 0) end
   for _, b in ipairs(self:Budgets()) do
@@ -265,12 +236,12 @@ function M:Stats()
       color = mem and mem.mine and mem.mine > ns.Perf.BUDGET_KB and "bad" or "good",
       note = mem and mem.all and string.format("%.0f%% of %d add-ons", mem.mine / mem.all * 100, mem.addons) or "" },
   }
-  local L = ns.LagCheck
-  if L and L.on and L.data then
-    local sm = L:Summary()
-    out[#out + 1] = { cap = L.data.open and "Monitoring" or "Lag check", color = "gold",
-      value = string.format("%d:%02d", math.floor(sm.seconds / 60), sm.seconds % 60),
-      note = string.format("Outrider %.2f%% of the game's time", sm.pct) }
+  local W = ns.PerfWatch
+  local w = W and W.on and W:Summary()
+  if w then
+    out[#out + 1] = { cap = "Watching this session", color = w.pct < M.BUDGETS.lagPct and "good" or "warn",
+      value = string.format("%.2f%%", w.pct),
+      note = string.format("of the game's time over %d min; %d spikes, %d freezes", math.floor(w.seconds / 60), w.spikes, w.hitches) }
   end
   out[#out + 1] = { cap = "Events / second", value = live.eventsPerSec and string.format("%.1f", live.eventsPerSec) or "—",
     note = l.handlers .. " handlers on " .. l.events .. " events" }
@@ -317,14 +288,14 @@ function M.History()
   return out
 end
 
--- One row per minute: the run going on now, else the last monitoring run.
+-- One row per minute: this session (the always-on watch), else the last saved one.
 function M.Minutes()
-  local L = ns.LagCheck
+  local W = ns.PerfWatch
   local rows, live = nil, false
-  if L and L.on and L.data and L.data.open then rows, live = L.data.minutes, true
+  if W and W.on and W.cur then rows, live = W.cur.minutes, true
   else
-    local list = ns.db.global.lagChecks or {}
-    for i = #list, 1, -1 do if list[i].monitor then rows = list[i].minutes break end end
+    local list = ns.db.global.perfWatch or {}
+    rows = list[#list] and list[#list].minutes
   end
   local out = {}
   rows = rows or {}
@@ -335,6 +306,58 @@ function M.Minutes()
       text = string.format("FPS %.0f (low %.0f), Outrider %.2f%%%s%s", r.fps or 0, r.low or r.fps or 0, pct,
         r.world and (", world " .. r.world .. " ms") or "", r.cpu and string.format(", %.3f ms/frame", r.cpu) or ""),
       color = pct < 0.5 and "good" or pct < 2 and "warn" or "bad" }
+  end
+  return out
+end
+
+-- Slow moments, newest first: Outrider's spikes and the game's freezes.
+function M.SlowRows()
+  local out = {}
+  local list = ns.db.global.perfSlow or {}
+  local W = ns.PerfWatch
+  for i = #list, math.max(1, #list - 24), -1 do
+    local r = list[i]
+    local what
+    if r.kind == "hitch" then
+      local ours = r.ours or 0
+      what = string.format("Game froze %.1f s: Outrider %.0f ms of it (%s)", r.ms / 1000, ours,
+        ours >= r.ms / 2 and "ours" or "not Outrider")
+    else
+      what = string.format("Outrider %s: %.0f ms", tostring(r.where), r.ms)
+    end
+    if (r.n or 1) > 1 then what = what .. string.format(", %d times", r.n) end
+    out[#out + 1] = { label = r.at and date("%b %d %H:%M", r.at) or "?",
+      fill = math.min(1, r.ms / 1000), color = (r.kind == "spike" or (r.ours or 0) >= r.ms / 2) and "bad" or "warn",
+      text = what .. " - " .. (W and W.Describe(r) or "") }
+  end
+  return out
+end
+
+-- Outrider's heaviest parts this session (the always-on watch)
+function M.Parts()
+  local W = ns.PerfWatch
+  local w = W and W.on and W:Summary()
+  if not w then return {} end
+  local out, top = {}, w.parts[1] and w.parts[1].ms or 1
+  for i = 1, math.min(8, #w.parts) do
+    local p = w.parts[i]
+    out[#out + 1] = { label = p.name, fill = top > 0 and p.ms / top or 0,
+      text = string.format("%.0f ms in %d runs, slowest %.1f ms", p.ms, p.n, p.max),
+      color = p.max >= W.SPIKE_MS and "warn" or "good" }
+  end
+  return out
+end
+
+-- past sessions from the always-on watch
+function M.Sessions()
+  local out = {}
+  local list = ns.db.global.perfWatch or {}
+  for i = #list, math.max(1, #list - 9), -1 do
+    local r = list[i]
+    out[#out + 1] = { label = r.startedAt and date("%b %d %H:%M", r.startedAt) or "?", fill = math.min(1, (r.pct or 0) / 2),
+      text = string.format("%.2f%% over %d min, %d spikes, %d freezes (%d ours)%s", r.pct or 0, math.floor((r.seconds or 0) / 60),
+        r.spikes or 0, r.hitches or 0, r.ours or 0, r.fpsAvg and string.format(", FPS %.0f", r.fpsAvg) or ""),
+      color = (r.ours or 0) > 0 and "bad" or (r.pct or 0) < 0.5 and "good" or "warn" }
   end
   return out
 end
@@ -361,23 +384,34 @@ ns.Hub:AddTab("performance", "Performance", function(p)
     { "cards", function() return M:CpuLines() end },
     { "header", "Promises we keep", icon = "Ability_Warrior_DefensiveStance" },
     { "bars", function() return M:BudgetBars() end },
+    { "check", "Watch performance all the time", function() return ns.PerfWatch and ns.PerfWatch.enabled end,
+      function(on) ns.Modules:SetEnabled("PerfWatch", on) p:Refresh() end,
+      "times everything Outrider does while you play and keeps every slow moment" },
     { "buttons", {
-      { "Monitor until I stop", function() if ns.LagCheck then ns.LagCheck:Start(0) p:Refresh() end end },
-      { "Stop and save", function() if ns.LagCheck then ns.LagCheck:Stop("stopped") p:Refresh() end end },
       { "Run a lag check (1 min)", function() if ns.LagCheck then ns.LagCheck:Start() end end },
       { "Copy for a post", function() ns.UI:TextDialog("Outrider performance", M:ShareText(), "copy") end },
     } },
+    { "header", "Slow moments", icon = "Spell_Nature_Slow" },
+    { "note", function()
+      return #M.SlowRows() > 0 and "Every time Outrider took 20 ms or more at once, or the game froze for a quarter second or more (loading screens left out), with what you were doing. Newest first."
+        or "No slow moments yet. Outrider keeps every one it sees while you play."
+    end },
+    { "bars", function() return M.SlowRows() end },
+    { "header", "Heaviest parts of Outrider this session", icon = "Trade_Engineering" },
+    { "bars", function() return M.Parts() end },
     { "header", "Minute by minute", icon = "INV_Misc_PocketWatch_02" },
     { "note", function()
-      local L = ns.LagCheck
-      if L and L.on and L.data and L.data.open then return "Monitoring now, with this page open or closed. Stop and save ends it (logging out does too)." end
-      return #M.Minutes() > 0 and "Your last monitoring run, newest minute first." or "Press Monitor until I stop: Outrider measures itself until you press Stop, one row a minute."
+      local W = ns.PerfWatch
+      if W and W.on then return "This session, newest minute first, page open or closed." end
+      return "The watch is off: switch on Watch performance all the time above."
     end },
     { "bars", function() return M.Minutes() end },
+    { "header", "Past sessions", icon = "INV_Misc_PocketWatch_01" },
+    { "bars", function() return M.Sessions() end },
     { "header", "Past lag checks", icon = "Spell_Holy_BorrowedTime" },
     { "bars", function() return M.Checks() end },
     { "note", function() return #M.Checks() == 0 and "No lag check yet: press Run a lag check above." or "" end },
-    { "header", "Past sessions", icon = "INV_Misc_PocketWatch_01" },
+    { "header", "Memory per session", icon = "INV_Misc_Gem_Pearl_04" },
     { "bars", function() return M.History() end },
     { "note", "Memory and login time per session, saved when you log out." },
   })
@@ -389,7 +423,7 @@ ns.Hub:AddTab("performance", "Performance", function(p)
   end
 end, 63, { group = "Outrider", icon = "Interface\\Icons\\Spell_Nature_TimeStop" })
 
-ns.AddCommand("perfpage", "open the Performance page: FPS, latency, Outrider's CPU and memory", function()
+ns.AddCommand("perfpage", "open the Performance page (Settings): FPS, latency, Outrider's CPU, memory and slow moments", function()
   ns.Hub:Build():Show()
   ns.Hub:ShowTab("performance")
 end)

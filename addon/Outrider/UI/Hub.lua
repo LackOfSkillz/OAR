@@ -73,7 +73,7 @@ Hub.SUBS = {
   money     = { { "money", "Earn" }, { "pricehistory", "Price history" }, { "forecasts", "Forecasts" } },
   sharing   = { { "sharing", "Sharing" }, { "fellowship", "Group plan" } },
   people    = { { "people", "Players and guilds" }, { "census", "Census" } },
-  settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" }, { "troubleshoot", "Fix problems" } },
+  settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" }, { "performance", "Performance" }, { "troubleshoot", "Fix problems" } },
   help      = { { "help", "Help" }, { "feedback", "Report or idea" }, { "commands", "All commands" } },
   dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" }, { "dungeonmap", "Dungeon maps" } },
   -- one Professions page (requirement 2026-11-21: combine the professions):

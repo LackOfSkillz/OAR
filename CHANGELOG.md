@@ -2,7 +2,8 @@
 
 ## Unreleased (branch ai/outrider-personal-intelligence, not checked in game yet)
 
-- **Performance page (Outrider, `/ride perfpage`):** your FPS and latency, Outrider's CPU time from the game's own add-on profiler (ms per frame, share of all add-ons, slow frames), its memory next to every add-on's, budgets with pass or fail, past lag checks and sessions, and Copy for a post (no name, realm or gold). It samples only while the page is open.
+- **Always-on performance watch:** from login, Outrider times everything it runs and keeps every slow moment: any single run of 20 ms or more, and any game freeze of a quarter second or more with how much of it was Outrider's, each with what you were doing (moving, combat, map). One row a minute and a saved summary per session; big ones go into the log. Switch on the Performance page.
+- **Performance page (Settings, `/ride perfpage`):** your FPS and latency, Outrider's CPU time from the game's own add-on profiler (ms per frame, share of all add-ons, slow frames), its memory next to every add-on's, budgets with pass or fail, past lag checks and sessions, and Copy for a post (no name, realm or gold). It samples only while the page is open.
 - **Fight key buffs first, for every class:** a self-buff that's down (shaman weapon imbue, Lightning Shield, armors, Fortitude...) is cast before the pull, out of combat, one per press.
 - **What if? on the Gear page:** a damage range from your own spell tooltips (what makes it a range, and what isn't modelled), and Try top upgrade, which puts the best upgrade on a saved copy of you and compares the two. Nothing is equipped or bought.
 - **Worth getting?** on the Gear page now shows (it was hidden by a bug).

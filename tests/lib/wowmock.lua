@@ -539,6 +539,7 @@ function M.new(opts)
   end
   base.GetInventoryItemCount = function(_, slot) if slot == 0 then return game.ammo or opts.ammo or 0 end return 1 end
   base.InCombatLockdown = function() return game.combat end
+  base.IsPlayerMoving = function() return game.moving == true end
   base.GetBuildInfo = function() return "1.60.1", "70862", "Nov 1 2026", 16001 end
   base.WOW_PROJECT_ID = 99
   -- professions: game.prof = { name, skill, max, recipes = { [id] = { name, reagents = {[itemID]=n} } } }

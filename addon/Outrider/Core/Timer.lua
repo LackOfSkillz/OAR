@@ -57,13 +57,14 @@ function Timer.DriverRunning()
   return driver ~= nil and driver:IsShown() and true or false
 end
 
--- A timer or ticker run, timed while a lag check runs (Modules/LagCheck.lua).
+-- A timer or ticker run, timed while a lag check or the always-on watch
+-- runs (ns.timing; Modules/LagCheck.lua, Modules/PerfWatch.lua).
 local function run(label, fn, ...)
-  local lag = ns.LagCheck and ns.LagCheck.on and rawget(_G, "debugprofilestop")
+  local lag = ns.timing and rawget(_G, "debugprofilestop")
   if not lag then return ns.Safe(label, fn, ...) end
   local t0 = lag()
   ns.Safe(label, fn, ...)
-  ns.LagCheck:Note("timer " .. tostring(label), lag() - t0)
+  ns.NoteTiming("timer " .. tostring(label), lag() - t0)
 end
 
 -- ---------------------------------------------------------------- handles
