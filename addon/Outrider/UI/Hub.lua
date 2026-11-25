@@ -111,7 +111,10 @@ end
 -- GearROI's "Worth getting?"): Hub:AddSection(pageId, { note, cards = fn(refresh) })
 -- and the page draws Hub:Sections(pageId); neither knows the other.
 Hub.sections = Hub.sections or {}
+-- (one definition for both shapes: the old pre-tab alias below used to
+-- replace this one, so the Gear page never got GearROI's section)
 function Hub:AddSection(page, section)
+  if type(section) ~= "table" then return self:AddTab(tostring(page):lower(), page, section) end
   self.sections[page] = self.sections[page] or {}
   table.insert(self.sections[page], section)
 end
@@ -137,8 +140,7 @@ function Hub:AddTab(id, title, build, order, opts)
   return t
 end
 
--- Old name kept for anything written against the pre-tab hub.
-function Hub:AddSection(title, build) return self:AddTab(title:lower(), title, build) end
+-- (the old pre-tab name AddSection(title, build) is handled above)
 
 -- Pages a character can't use (the Hunter page for a mage) stay out of the sidebar.
 function Hub:Visible(t)

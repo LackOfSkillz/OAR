@@ -154,5 +154,6 @@ Running straight on from Phase 4 (owner: no stops, one review at the end).
 | OI05-14 Treasurer budget model | MOCK_GREEN | see commit | [OI05-12_16](../reviews/phase5/OI05-12_16.md) | integer copper reserves with sources; unknowns; own amounts; wallets; fits or short |
 | OI05-15 Realized economics and sale uncertainty | MOCK_GREEN | see commit | [OI05-12_16](../reviews/phase5/OI05-12_16.md) | confirmed sales only; unknown cut no net; unverified apart; samples; depth unknown |
 | OI05-16 Professions cost optimizer | MOCK_GREEN | see commit | [OI05-12_16](../reviews/phase5/OI05-12_16.md) | orange cost per sure point; yellow and green chance unknown; owned and unpriced shown; observed apart |
+| OI05-17 Oracle and Forge UX | MOCK_GREEN | see commit | [OI05-17](../reviews/phase5/OI05-17.md) | Gear page What if?: Forge range with assumptions, save, try, compare, refresh when stale, copy, reset; no live mutation; fixed Hub:AddSection being overridden |
 
 Phases 6-8 (OI06-OI08): NOT_STARTED.

@@ -106,6 +106,7 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 
 - **Gear advisor.** Scores items for your class and role and compares them with what you wear: tooltips say how much better or worse. /ride score <item>, /ride weights.
 - **Gear page.** Upgrades you can get: nearby in this zone, from quests, from dungeons, and from your other characters' bags (Bind on Equip handoffs).
+- **What if?.** On the Gear page: a damage estimate from your own tooltips (a range, with what isn't modelled), and Try top upgrade, which puts the best upgrade on a saved copy of you and compares the two. Nothing is equipped or bought; Copy details exports it.
 - **Dungeons page.** Which dungeons you're ready for and what each holds for you.
 - **Quest rewards.** At a turn-in with a choice, the best reward for you is named and its button marked. Also bag upgrades.
 - **Loot rolls.** In a group roll: Need or Greed advice, with the reason (an upgrade for you, or sell it).

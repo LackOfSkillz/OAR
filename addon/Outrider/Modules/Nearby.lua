@@ -515,12 +515,21 @@ ns.Hub:AddTab("gear", "Gear", function(p)
     -- sections other parts of Outrider add to this page (Hub:Sections("gear");
     -- GearROI's "Worth getting?", OI04-09), drawn without knowing them
     { "header", "Worth getting?", icon = "INV_Misc_Coin_02" },
-    { "note", function() local s = ns.Hub:Sections("gear")[1] return s and s.note or "" end },
-    { "cards", function() local s = ns.Hub:Sections("gear")[1] return s and s.cards(function() p:Refresh() end) or {} end },
+    { "note", function() local s = M.Section("worth") return s and s.note or "" end },
+    { "cards", function() local s = M.Section("worth") return s and s.cards(function() p:Refresh() end) or {} end },
+    -- the Oracle and Forge "What if?" (OI05-17)
+    { "header", "What if?", icon = "INV_Misc_Book_09" },
+    { "note", function() local s = M.Section("whatif") return s and s.note or "" end },
+    { "cards", function() local s = M.Section("whatif") return s and s.cards(function() p:Refresh() end) or {} end },
   })
   local refresh = p.Refresh
   function p:Refresh() refresh(self) M.filter = nil end
 end, 44)
+
+-- a section another part of Outrider added to the Gear page, by its key
+function M.Section(key)
+  for _, s in ipairs(ns.Hub:Sections("gear")) do if s.key == key then return s end end
+end
 
 ns.AddCommand("nearby", "upgrades you can get in this zone", function()
   local list = M:Candidates()

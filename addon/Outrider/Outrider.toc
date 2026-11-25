@@ -212,6 +212,7 @@ Intelligence\MacroVersions.lua
 Intelligence\Supply.lua
 Intelligence\Treasurer.lua
 Intelligence\Market.lua
+Intelligence\OraclePage.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua
