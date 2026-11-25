@@ -2,6 +2,6 @@
 ## Title: Outrider Data: walked paths
 ## Notes: Paths walked by Outrider's creator, so the way-there dots know roads and entrances you haven't walked yet.
 ## LoadOnDemand: 1
-## X-Source: Outrider 2026-11-21
+## X-Source: Outrider 2026-11-24
 
 Data.lua
