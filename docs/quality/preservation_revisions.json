@@ -1,0 +1,4 @@
+{
+  "about": "Review OI-FR14: deliberate corrections to shipped data. tools/preservation_check.py fails when a value present at the preservation base is missing or changed, unless it is listed here with its old value (so the original stays recoverable, and git keeps the full file). One row per changed value: file, path (as tools/preservation_flatten.lua prints it), old (the base value, as printed), new, reason, date, by.",
+  "revisions": []
+}

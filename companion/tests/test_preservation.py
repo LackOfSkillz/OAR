@@ -76,5 +76,58 @@ class PreservationGate(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout)
 
 
+
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+import preservation_check as PC  # noqa: E402
+
+BASE = '''local _, ns = ...
+local SRC = "warcraft db, read 2026-11-15"
+ns.Data:Register("rare", "test", {
+  { id = 12345, name = "The Rake", strength = 15, agility = 20, dropRate = 0.12, source = SRC },
+  { id = 777, name = "Twin", x = 0.1 },
+  { id = 777, name = "Twin", x = 0.2 },
+})
+'''
+
+
+@unittest.skipUnless(have_lupa(), "lupa not installed")
+class ContentLevel(unittest.TestCase):
+    """review OI-FR14: keeping an id while losing what it holds fails the gate"""
+
+    def check(self, cur, revisions=None):
+        problems, unverified = [], []
+        PC.compare_file("addon/Outrider/Data/Test.lua", BASE, cur, "addon/Outrider/Data/Test.lua", PC.flattener(),
+                        revisions or {}, problems, unverified)
+        return problems, unverified
+
+    def test_unchanged_and_added_pass(self):
+        self.assertEqual(self.check(BASE), ([], []))
+        added = BASE.replace('  { id = 777, name = "Twin", x = 0.1 },', '  { id = 1, name = "New" },\n  { id = 777, name = "Twin", x = 0.1 },')
+        self.assertEqual(self.check(added)[0], [], "inserting a record doesn't shift the others")
+
+    def test_id_kept_contents_destroyed_fails(self):
+        emptied = BASE.replace('name = "The Rake", strength = 15, agility = 20, dropRate = 0.12, source = SRC', '')
+        problems, _ = self.check(emptied)
+        self.assertTrue(problems and "value(s) changed or missing" in problems[0], problems)
+        self.assertEqual(PC.ids(BASE) - PC.ids(emptied), set(), "the old id-only check would have passed it")
+
+    def test_changed_value_lost_attribution_and_lost_duplicate_fail(self):
+        for cur in (BASE.replace("dropRate = 0.12", "dropRate = 0.5"),
+                    BASE.replace('local SRC = "warcraft db, read 2026-11-15"', 'local SRC = nil'),
+                    BASE.replace('  { id = 777, name = "Twin", x = 0.2 },\n', '')):
+            self.assertTrue(self.check(cur)[0], cur)
+
+    def test_a_recorded_revision_keeps_the_old_value_and_passes(self):
+        cur = BASE.replace("dropRate = 0.12", "dropRate = 0.5")
+        allowed = {"addon/Outrider/Data/Test.lua": {'ns.Data.packs.rare.test[id=12345#1].dropRate' + chr(9) + "0.12"}}
+        self.assertEqual(self.check(cur, allowed)[0], [])
+
+    def test_a_file_the_sandbox_cant_run_is_reported_not_passed(self):
+        odd = "local _, ns = ...\nns.Compat.Call('x')\n" + BASE
+        problems, unverified = self.check(odd)
+        self.assertTrue(any("can't run in the sandbox" in u for u in unverified), unverified)
+        self.assertEqual(problems, [], "falls back to the id check, which this passes")
+
+
 if __name__ == "__main__":
     unittest.main()
