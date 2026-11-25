@@ -4,7 +4,7 @@
 
 - **Responds to:** ChatGPT's consolidated review of Phases 3 to 8 (REVIEW_CHANGES on `ab5aa0e`).
 - **Branch:** `LackOfSkillz/OAR`, `ai/outrider-personal-intelligence`. Not merged into `main`, not published.
-- **Base:** `ab5aa0e`. **Candidate SHA:** `__SHA__`.
+- **Base:** `ab5aa0e`. **Candidate SHA:** `2df79f6` (the fixes) plus this packet commit.
 - **Scope:** fixes only. No new features, no rewrites. Every fix has a regression test, and each new test was checked to fail on the old code where that could be shown.
 
 ## The failed CI run (45541037441)
@@ -47,7 +47,16 @@ It was not a code failure. GitHub never started the job. Its annotation reads: *
 
 ## Full suite at the candidate
 
-__SUITE__
+Run from a fresh `git clone` at `2df79f6` with `tools/test.ps1 -RequirePython` (exit 0):
+
+- **Lua specs:** 1,471 passed, 0 failed, 0 syntax errors (1,451 at `ab5aa0e`).
+- **Companion tests:** passed, including the new `test_preservation.py` and `test_passport_contract.py`.
+- **Quality:** 22 findings, 0 new.
+- **Dependencies:** 48 private reads, 0 new.
+- **Security:** 0 violations.
+- **Preservation:** all 30 data files keep everything from `7f4ab21`.
+
+An earlier clean run at `420ab83` failed the quality gate on two new findings: an unused import, and `Planner.Plan` at 181 lines. Both were fixed in `2df79f6`, not baselined.
 
 ## Not done or not claimed
 
