@@ -213,6 +213,10 @@ Intelligence\Supply.lua
 Intelligence\Treasurer.lua
 Intelligence\Market.lua
 Intelligence\OraclePage.lua
+Intelligence\World.lua
+Intelligence\Contribute.lua
+Intelligence\Fellowship.lua
+Intelligence\PlanShare.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua

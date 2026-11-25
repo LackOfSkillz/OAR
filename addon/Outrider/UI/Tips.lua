@@ -13,6 +13,7 @@ local pages = {
   fishbook = "Every fish you have caught, your fishing milestones and when each fish bites.",
   nexusplan = "A plan for your goals from everything Outrider knows (preview, off by default).",
   afteraction = "How your last session really went: XP an hour, real gold, where the time went.",
+  fellowship = "Plan with your party: opt-in goals and ready, what helps the most members.",
   pricehistory = "Prices over time for an item, and the best time of day, week and month to list it.",
   raremap = "The zone you're in with every rare spot on it. Click a rare for when it was last seen and the arrow.",
   profdetails = "Profession trainers, cooldowns, profit crafts, the one-press craft key and the training button.",

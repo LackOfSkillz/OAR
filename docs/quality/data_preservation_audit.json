@@ -708,6 +708,50 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "contributeQueue",
+   "saved_path": "global.contribute.queue",
+   "retention_mechanism": "no cap; approving or rejecting marks the record, nothing is removed",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/world_spec.lua :: records are marked, never removed"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "contributeBuilds",
+   "saved_path": "global.contribute.builds",
+   "retention_mechanism": "no cap; every build kept so a rollback is picking one",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/world_spec.lua :: records are marked, never removed"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "contributeSeen",
+   "saved_path": "global.contribute.seen",
+   "retention_mechanism": "duplicate keys with when they were first imported; no cap",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/world_spec.lua :: records are marked, never removed"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "planShareOffered",
+   "saved_path": "char.planshare.offered",
+   "retention_mechanism": "no cap; accept or decline marks the record, nothing is removed",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/world_spec.lua :: records are marked, never removed"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

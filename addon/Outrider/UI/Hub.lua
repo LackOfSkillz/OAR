@@ -71,6 +71,7 @@ Hub.SUBS = {
   gear      = { { "gear", "Wearing and upgrades" }, { "gearsets", "Sets and scoring" } },
   alts      = { { "alts", "Characters" }, { "characters", "Copy settings" } },
   money     = { { "money", "Earn" }, { "pricehistory", "Price history" }, { "forecasts", "Forecasts" } },
+  sharing   = { { "sharing", "Sharing" }, { "fellowship", "Group plan" } },
   people    = { { "people", "Players and guilds" }, { "census", "Census" } },
   settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" } },
   help      = { { "help", "Help" }, { "feedback", "Report or idea" }, { "commands", "All commands" } },

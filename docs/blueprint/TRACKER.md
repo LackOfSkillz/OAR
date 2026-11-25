@@ -158,3 +158,23 @@ Running straight on from Phase 4 (owner: no stops, one review at the end).
 | OI05-GATE Phase 5 review gate | MOCK_GREEN | see commit | [OI05-GATE](../reviews/phase5/OI05-GATE.md) | 1416 Lua passed; quality, deps 0 new; security 0; review at the end with Phases 3 to 8 |
 
 Phases 6-8 (OI06-OI08): NOT_STARTED.
+
+## Phase 6: Cartographer and Fellowship
+
+Running straight on (owner: no stops, one review at the end).
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+| OI06-01 World observation schema | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | one shape; player position with precision; ids, coordinates, time, build, map validated |
+| OI06-02 Versioned source registry | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | manifests; unlicensed or unclassified quarantined; Classic labelled; old builds outdated |
+| OI06-03 Conflict resolution | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | all kept with audit; layer and precision groups; spoofed weighs 0; moved noticed |
+| OI06-04 Rare forecasting | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | same layer and build gaps; sightings and censored apart; 3 and 8 thresholds |
+| OI06-05 Route/community discovery | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | unseen vs unavailable vs removed; verified straight-line route |
+| OI06-06 Privacy-filtered contribution export | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | off by default; token consent; world fields only; rounded |
+| OI06-07 Import and pack build pipeline | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | no code run; schema, size, dedup; moderation queue; deterministic builds kept; rights review |
+| OI06-08 Community release gate design | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | offline workflow; online service designed and blocked (docs/COMMUNITY_RELEASE_GATE.md) |
+| OI06-09 Fellowship consent and protocol | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | opt-in FGOAL; group sender, channel, version, size, rate checks; revoke |
+| OI06-10 Fellowship group planner | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | members helped then fairness; unshared never ready; no invites |
+| OI06-11 Group UX and shared plan | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | Group plan sub-tab: share, ready, choose, gaps; roster drops leavers |
+| OI06-12 Mentor plan portability foundation | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | data-only references; class, level, ids checked; stale marks; manual accept |
+| OI06-13 Guild contribution and handoff tests | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | mock two clients and floods green; owner two-client test pending |

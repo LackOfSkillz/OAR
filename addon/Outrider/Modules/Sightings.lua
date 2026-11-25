@@ -69,6 +69,7 @@ function M:OnRareSeen(_, info)
   self:Record(info.npcID, {
     t = info.t or time(), layer = info.layer, mapID = info.mapID, x = info.x, y = info.y,
     how = info.how, by = ns.db.key, state = info.dead and "dead" or "alive",
+    build = ns.World and ns.World.Build() or nil, -- OI06-04: gaps don't cross a game build
   })
 end
 
