@@ -30,6 +30,8 @@ function P.Cards(refresh)
   local res = c.result
   if not res.plan then return {}, "No plan: " .. tostring(res.why) .. "." end
   local scores = {}
+  -- how risky each step's place is for you (Intelligence/Guardian.lua, OI04-12)
+  local risk = ns.Guardian and ns.Guardian.ForPlan(c, ns.Guardian.Level()) or {}
   for _, r in ipairs(c.ranked or {}) do scores[r.id] = r end
   local cards = {}
   local gone = 0
@@ -43,6 +45,12 @@ function P.Cards(refresh)
       local tags = { { i == 1 and "Do this next" or ("Then " .. i), i == 1 and "good" or "plain" }, { o.confidence, "plain" }, { minutes(o.costSeconds), "plain" } }
       if o.costCopper and o.costCopper > 0 then tags[#tags + 1] = { ns.Prices and ns.Prices.Money(o.costCopper) or tostring(o.costCopper), "gold" } end
       local line = o.why or ""
+      local r = risk[id]
+      if r and (r.level == "risky" or r.level == "dangerous") then
+        tags[#tags + 1] = { r.level, "warn" }
+        line = (r.safer and ("Safer: " .. tostring(r.safer.title) .. ". ") or "") .. line
+      end
+      if P.expanded[id] and r then line = line .. "  Risk: " .. r.level .. " (" .. tostring(r.why) .. ")." end
       if o.costUnknown then
         -- not a confirmed purchase (OI02-R13): the plan doesn't count its gold
         tags[#tags + 1] = { "price unknown", "plain" }

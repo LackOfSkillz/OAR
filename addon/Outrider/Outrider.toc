@@ -202,6 +202,7 @@ Intelligence\Estimator.lua
 Intelligence\GearROI.lua
 Intelligence\Foresight.lua
 Intelligence\Quartermaster.lua
+Intelligence\Guardian.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua
