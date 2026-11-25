@@ -1,0 +1,113 @@
+-- OI04-05 .. OI04-08: GearROI.
+local T, mock = ...
+
+local function session()
+  local game = mock.new()
+  local ns = game:loadAddon()
+  game:login()
+  return game, ns, ns.GearROI
+end
+local function cand(id, kind, pct, extra)
+  local c = { itemID = id, name = "Item " .. id, kind = kind, pct = pct, reqLevel = 10 }
+  for k, v in pairs(extra or {}) do c[k] = v end
+  return c
+end
+local CMP = { pct = 12, slot = 5, why = nil }
+
+T.describe("GearROI baseline (OI04-05)", function()
+  T.it("guaranteed and chance sources are told apart; the score is a role score, not DPS", function()
+    local _, _, R = session()
+    T.eq(R.Baseline(cand(1, "quest", 10), { compare = CMP, info = {} }).sourceType, "guaranteed")
+    T.eq(R.Baseline(cand(2, "vendor", 10), { compare = CMP, info = {} }).sourceType, "guaranteed")
+    T.eq(R.Baseline(cand(3, "drop", 10), { compare = CMP, info = {} }).sourceType, "chance")
+    local b = R.Baseline(cand(4, "drop", 10), { compare = CMP, info = {} })
+    T.ok(b.scoreNote:find("not a DPS"))
+  end)
+  T.it("eligibility: usable now, later, or not at all; slot and binding carried", function()
+    local _, _, R = session()
+    local now = R.Baseline(cand(1, "quest", 10), { compare = { pct = 10, slot = 5 }, info = { bindType = 1 } })
+    T.eq(now.usableNow, true) T.eq(now.slot, 5) T.eq(now.bind, "on pickup")
+    local later = R.Baseline(cand(2, "quest", 10), { compare = { pct = 10, slot = 5, why = "level 26", future = 26 }, info = { bindType = 2 } })
+    T.eq(later.usableNow, false) T.eq(later.usableAt, 26) T.eq(later.bind, "on equip")
+    local never = R.Baseline(cand(3, "vendor", 10), { compare = { pct = 10, slot = 5, why = "plate" }, info = {} })
+    T.eq(select(2, R.Utility(never, { seconds = 60 }, { hours = 5 }, {})), "you can't use it: plate")
+  end)
+end)
+
+T.describe("acquisition time and risk (OI04-06)", function()
+  T.it("a drop with no known chance has no time; a zero chance can't be got", function()
+    local _, _, R = session()
+    local b = R.Baseline(cand(1, "drop", 10), { compare = CMP, info = {} })
+    local a = R.Acquisition(b, { trip = 120 })
+    T.eq(a.seconds, nil) T.ok(table.concat(a.notes, ";"):find("chance unknown"))
+    local z = R.Acquisition(b, { trip = 120, dropChance = 0 })
+    T.ok(z.impossible) T.eq(select(2, R.Utility(b, z, { hours = 5 }, {})), "it can't drop for you")
+  end)
+  T.it("with a chance: expected tries, independence stated, a group share, conditional and group availability noted", function()
+    local _, _, R = session()
+    local b = R.Baseline(cand(1, "drop", 10), { compare = CMP, info = {} })
+    local a = R.Acquisition(b, { trip = 100, dropChance = 0.2, trySeconds = 60, groupSize = 5, onlyWhileOnQuest = true, needsGroup = true })
+    T.eq(a.chance, 0.04) T.eq(a.expectedTries, 25)
+    T.eq(a.seconds, 100 + 25 * 60) T.ok(a.timeIsExpected, "an expected time, not a promise")
+    local notes = table.concat(a.notes, ";")
+    T.ok(notes:find("independent") and notes:find("divided by 5") and notes:find("only while") and notes:find("whether you'll find one"), notes)
+    T.ok(math.abs(R.ChanceWithin(0.2, 5) - (1 - 0.8 ^ 5)) < 1e-9)
+  end)
+  T.it("guaranteed sources: trip plus activity", function()
+    local _, ns, R = session()
+    local q = R.Acquisition(R.Baseline(cand(1, "quest", 10), { compare = CMP, info = {} }), { trip = 200 })
+    T.eq(q.seconds, 200 + ns.Journey.QUEST_TIME)
+    local v = R.Acquisition(R.Baseline(cand(2, "vendor", 10), { compare = CMP, info = {} }), { trip = 200 })
+    T.eq(v.seconds, 260)
+  end)
+end)
+
+T.describe("replacement horizon (OI04-07)", function()
+  T.it("the next same-slot upgrade sets the useful life at your pace; itself and other slots don't count", function()
+    local _, _, R = session()
+    local b = { itemID = 1, slot = 5, pct = 10 }
+    local pool = { b, { itemID = 2, slot = 5, pct = 20, reqLevel = 16 }, { itemID = 3, slot = 6, pct = 50, reqLevel = 12 },
+      { itemID = 4, slot = 5, pct = 30, reqLevel = 20 } }
+    local r = R.Replacement(b, pool, 12, 2)
+    T.eq(r.next.itemID, 2) T.eq(r.levels, 4) T.eq(r.hours, 2)
+    local unknown = R.Replacement(b, pool, 12, nil)
+    T.eq(unknown.hours, nil) T.ok(unknown.unknown)
+    local none = R.Replacement(b, { b }, 12, 1)
+    T.ok(none.lo and none.hi and none.lo < none.hours and none.hi > none.hours, "no known upgrade: a range")
+  end)
+  T.it("pace comes only from complete, verified sessions with enough time", function()
+    local _, _, R = session()
+    T.eq(R.Pace({ { final = true, xpVerified = true, durationSeconds = 600, xpEarned = 1000 } }, 1000), nil, "too little")
+    local p = R.Pace({ { final = true, xpVerified = true, durationSeconds = 3600, xpEarned = 2000 },
+      { final = false, xpVerified = true, durationSeconds = 3600, xpEarned = 99999 } }, 1000)
+    T.eq(p, 2)
+  end)
+end)
+
+T.describe("gear acquisition utility (OI04-08)", function()
+  T.it("an expensive, short-lived item ranks below a free alternative", function()
+    local _, _, R = session()
+    local pricey = { pct = 15, price = 200000 }
+    local free = { pct = 10, price = 0 }
+    local u1 = R.Utility(pricey, { seconds = 300 }, { hours = 1 }, { spendable = 1e6, goldPerHour = 50000 })
+    local u2 = R.Utility(free, { seconds = 600 }, { hours = 6 }, { spendable = 1e6, goldPerHour = 50000 })
+    T.ok(u2 > u1)
+    local list = R.Rank({ { name = "pricey", utility = u1, pct = 15 }, { name = "free", utility = u2, pct = 10 }, { name = "unknown", pct = 40 } })
+    T.eq(list[1].name, "free") T.eq(list[3].name, "unknown", "unknowns rank after known")
+  end)
+  T.it("the reserve (mount gold) is respected; unknown pieces give a reason, not a number", function()
+    local _, _, R = session()
+    local b = { pct = 20, price = 50000 }
+    T.eq(select(2, R.Utility(b, { seconds = 60 }, { hours = 5 }, { spendable = 40000, goldPerHour = 1 })), "costs more than you can spend above your reserve")
+    T.eq(select(2, R.Utility(b, { seconds = 60 }, { hours = 5 }, { spendable = 1e6 })), "costs gold and your gold rate is unknown")
+    T.eq(select(2, R.Utility({ pct = 5 }, {}, { hours = 5 }, {})), "time to get it unknown")
+    T.eq(select(2, R.Utility({ pct = 5 }, { seconds = 60 }, {}, {})), "how long you'd use it is unknown")
+    local u, units = R.Utility({ pct = 10 }, { seconds = 3600 }, { hours = 10 }, {})
+    T.ok(math.abs(u - 1) < 1e-9) T.ok(units:find("upgrade%-hours"))
+  end)
+  T.it("Mine runs on the live modules without errors", function()
+    local _, ns, R = session()
+    T.eq(type(R:Mine()), "table")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

@@ -118,6 +118,10 @@ Owner authorization: on 2026-11-24 Gary chose "Start Phase 4 now" while the Phas
 | OI04-01 Horizon session inputs | MOCK_GREEN | 43f031a | [OI04-01](../reviews/phase4/OI04-01.md) | 15/30/60/120 min or custom 5..480, solo/group/either, end at a rest point; solo leaves out group steps and what needs them; migrates askMinutes or a changed Radar budget (old values kept) |
 | OI04-02 Multi-objective planning | MOCK_GREEN | 891ea57 | [OI04-02](../reviews/phase4/OI04-02.md) | step time = trip + activity; same-map travel shared once; estimate with 20% margin, budget checked on the margin |
 | OI04-03 Session ending strategy | MOCK_GREEN | d83ec8f | [OI04-03](../reviews/phase4/OI04-03.md) | time left minus a closing reserve (repair, hand-ins, inn); closing steps only near the end, never a step that can't finish; no automatic logout or action |
-| OI04-04 Horizon live adaptation | MOCK_GREEN | see commit | [OI04-04](../reviews/phase4/OI04-04.md) | automatic re-plans 20 s apart and keep the current first step unless clearly better (10%); your presses re-plan at once; Try another start |
+| OI04-04 Horizon live adaptation | MOCK_GREEN | 9a99d0f | [OI04-04](../reviews/phase4/OI04-04.md) | automatic re-plans 20 s apart and keep the current first step unless clearly better (10%); your presses re-plan at once; Try another start |
+| OI04-05 GearROI baseline | MOCK_GREEN | see commit | [OI04-05_08](../reviews/phase4/OI04-05_08.md) | guaranteed vs chance sources; eligibility, slot, bind; role score, no DPS claim |
+| OI04-06 Acquisition time and risk | MOCK_GREEN | see commit | [OI04-05_08](../reviews/phase4/OI04-05_08.md) | trip + activity; drops: unknown without a chance, expected tries with stated assumptions, never guaranteed |
+| OI04-07 Replacement horizon | MOCK_GREEN | see commit | [OI04-05_08](../reviews/phase4/OI04-05_08.md) | next same-slot upgrade and hours at your pace; range or unknown; never self or circular |
+| OI04-08 Gear acquisition utility | MOCK_GREEN | see commit | [OI04-05_08](../reviews/phase4/OI04-05_08.md) | upgrade-hours per hour spent; reserve respected; unknowns ranked after known with reasons |
 
 Phases 5-8 (OI05-OI08): NOT_STARTED.

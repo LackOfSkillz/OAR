@@ -199,6 +199,7 @@ Intelligence\EconomyOutcomes.lua
 Intelligence\PerformanceStats.lua
 Intelligence\Chronicle.lua
 Intelligence\Estimator.lua
+Intelligence\GearROI.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua
