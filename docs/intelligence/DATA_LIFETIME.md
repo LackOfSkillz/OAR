@@ -20,14 +20,29 @@ The owner's data preservation directive
 - Log and debug buffers keep their caps (they are diagnostics, not collected
   data).
 - Every dataset, its store, cap and archive path is listed in
-  `docs/quality/data_preservation_audit.json` (47 datasets).
+  `docs/quality/data_preservation_audit.json`.
 
 The Nexus adds two small saved stores, and both follow the same rules:
 
 | Store | What | Removal |
 |---|---|---|
 | `ns.db.char.nexusGoals`, `ns.db.global.nexusGoals` | the player's goals (v4 Goal records) | "Archive" sets `status = "archived"`; the record stays |
-| `ns.db.char.modules.Nexus` | planner switch, pinned step, skipped steps, paused | settings: the player's own choices |
+| `ns.db.char.modules.Nexus` | planner switch, pinned step, skipped steps, paused, feedback settings, the last plan's summary (`lastPlan`) | settings: the player's own choices; a new `lastPlan` archives the old one (`nexusLastPlan`) |
+
+Phase 3 (AfterAction) adds these collected stores. All are opt-in (the outcome recorder), per character and capped; past a cap the oldest are archived:
+
+| Store | What | Cap | Removal |
+|---|---|---|---|
+| `char.playSession` | the play-session marker (id, segment, state) | one | replaced on each new session |
+| `char.outcomes.events` | observed outcome events (v4 OutcomeEvent) | 500 (100–2000) | archived `outcomeEvents` |
+| `char.outcomes.activity` | time per activity per session segment | 20 (5–60) | archived `activitySessions` |
+| `char.outcomes.travel`, `openTrip` | trips to set destinations | 200 (50–500) | archived `travelTrips` |
+| `char.outcomes.sales`, `saleKeys` | confirmed sale invoices | 200 (50–500) | archived `confirmedSales` |
+| `char.outcomes.chronicle` | milestones and decisions | 300 (100–1000) | archived `chronicleEntries`; a player clear is archived `chronicleCleared` |
+| `char.outcomes` (whole) | everything above | | Start fresh archives it whole (`outcomesReset`) |
+| quest diary rows (`global.questHistory`) | new fields: play session, group, game build | existing cap | existing `questDiary` archive |
+
+Derived from those stores on demand, and never saved: quest times (QuestTimes), estimates and calibration (Estimator), fight strata and survival (PerformanceStats), preference nudges (Preferences), the AfterAction report and evidence. The chronicle's duplicate index (`chronicleKeys`, 30 days) is an index, not collected data.
 
 ## 2. Runtime caches (disposable)
 

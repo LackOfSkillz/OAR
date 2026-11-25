@@ -91,7 +91,8 @@ function E:ScanInvoices(mod, now)
         sales[#sales + 1] = { at = now, item = type(readable(item)) == "string" and readable(item):sub(1, 80) or nil,
           price = price, deposit = tonumber(readable(deposit)), fee = fee, feeUnknown = fee == nil or nil,
           playSessionId = ns.PlaySession and ns.PlaySession:Id() }
-        while #sales > E.MAX_SALES and ns.Archive:Shift("confirmedSales", sales, { path = "char.outcomes.sales", scope = "char" }) do end
+        local cap = mod.Cap and mod:Cap("sales") or E.MAX_SALES
+        while #sales > cap and ns.Archive:Shift("confirmedSales", sales, { path = "char.outcomes.sales", scope = "char" }) do end
       end
     end
   end

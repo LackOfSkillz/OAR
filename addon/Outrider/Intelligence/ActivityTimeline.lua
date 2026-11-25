@@ -58,7 +58,8 @@ function T:Start(mod, now)
   self.cur = { label = T.Label(self.state), from = now }
   local list = self:Records(mod:Store())
   list[#list + 1] = self.rec
-  while #list > T.MAX_RECORDS and ns.Archive:Shift("activitySessions", list, { path = "char.outcomes.activity", scope = "char" }) do end
+  local cap = mod.Cap and mod:Cap("activity") or T.MAX_RECORDS
+  while #list > cap and ns.Archive:Shift("activitySessions", list, { path = "char.outcomes.activity", scope = "char" }) do end
 end
 
 local function add(rec, label, from, to)

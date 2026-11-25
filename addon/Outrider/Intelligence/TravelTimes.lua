@@ -44,7 +44,8 @@ function R:List(store) store.travel = ns.KeepTable(store.travel, "Travel:char.ou
 local function save(mod, trip)
   local list = R:List(mod:Store())
   list[#list + 1] = trip
-  while #list > R.MAX and ns.Archive:Shift("travelTrips", list, { path = "char.outcomes.travel", scope = "char" }) do end
+  local cap = mod.Cap and mod:Cap("travel") or R.MAX
+  while #list > cap and ns.Archive:Shift("travelTrips", list, { path = "char.outcomes.travel", scope = "char" }) do end
 end
 
 local function pos()
@@ -144,6 +145,9 @@ function R:Wire(mod)
   mod:On("OTR_PLAYSESSION", function(m, _, _, prev) R:Recover(m, prev) end)
   self.ticker = ns.Timer.Ticker(R.TICK, function() if mod.enabled then R:Tick() end end, "travel times")
 end
+
+-- forget an open trip (Start fresh): nothing is saved for it
+function R:Reset() self.trip = nil end
 
 function R:Stop(mod)
   if self.ticker then self.ticker:Cancel() self.ticker = nil end

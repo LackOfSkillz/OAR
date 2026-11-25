@@ -313,6 +313,22 @@ function P.Lines(rep)
   return L
 end
 
+-- Start fresh asks for a second click within ten seconds, then archives
+-- this character's records and begins new ones (Outcomes:StartFresh)
+P.ARM_SECONDS = 10
+function P.StartFresh()
+  local now = time()
+  if not (P.armedAt and now - P.armedAt <= P.ARM_SECONDS) then
+    P.armedAt = now
+    ns.Print("Click Start fresh again within %d seconds: your records go to the archive and new ones begin.", P.ARM_SECONDS)
+    return false, "armed"
+  end
+  P.armedAt = nil
+  local ok, why = ns.Outcomes:StartFresh()
+  ns.Print(ok and "Started fresh. Your old records are kept in the archive." or ("Not reset: " .. tostring(why)))
+  return ok, why
+end
+
 -- ------------------------------------------------------------ page
 P.showDemo = false
 ns.Hub:AddTab("afteraction", "After action", function(p)
@@ -340,6 +356,8 @@ ns.Hub:AddTab("afteraction", "After action", function(p)
         ns.UI:TextDialog("Chronicle", O and ns.Chronicle:Export(O) or "", "copy")
       end, 170 },
       { "Export evidence", function() ns.UI:TextDialog("AfterAction evidence", P.EvidenceText(P.MyEvidence()), "copy") end, 150 },
+      { "Export my records", function() if ns.Outcomes then ns.UI:TextDialog("My outcome records", ns.Outcomes:ExportText(), "copy") end end, 150 },
+      { "Start fresh (archived)", function() P.StartFresh() refresh() end, 170 },
       { "Show an example", function() P.showDemo = not P.showDemo refresh() end, 150 } }, plain = true },
   })
 end, 1.6)

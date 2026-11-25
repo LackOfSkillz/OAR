@@ -29,12 +29,26 @@ local _, ns = ...
 local C = ns.Compat
 local M = ns:NewModule("Outcomes", {
   title = "Outcome recorder (private, opt-in)", phase = "P9", order = 99,
-  defaultEnabled = false, defaults = { chronicleHide = {} },
+  defaultEnabled = false, defaults = { chronicleHide = {}, keep = {} },
 })
 ns.Outcomes = M
 
 M.SCHEMA, M.MAX, M.LATE, M.ATTRIBUTION_WINDOW = 1, 500, 60, 1800
 M.DEDUP = { money_in = 1, money_out = 1, xp_gain = 2, default = 10 }
+
+-- OI03-15: per-character retention caps, each within bounds; past a cap the
+-- oldest records go to the archive (never deleted). keep = { events, travel,
+-- activity, sales, chronicle } in this module's settings.
+M.CAPS = { events = { 500, 100, 2000 }, travel = { 200, 50, 500 }, activity = { 20, 5, 60 },
+  sales = { 200, 50, 500 }, chronicle = { 300, 100, 1000 } }
+function M:Cap(name)
+  local c = M.CAPS[name]
+  if not c then return nil end
+  local keep = self.Settings and self:Settings().keep
+  local v = type(keep) == "table" and tonumber(keep[name]) or nil
+  if not v then return c[1] end
+  return math.max(c[2], math.min(c[3], math.floor(v)))
+end
 M.KINDS = { quest_accepted = true, quest_completed = true, quest_abandoned = true, xp_gain = true, level_up = true,
   money_in = true, money_out = true, gear_equipped = true, profession_skill = true, death = true, recovery = true,
   zone_entered = true }
@@ -124,7 +138,7 @@ function M:Record(kind, f)
   local ok, bad = ns.Nexus.Validate("OutcomeEvent", rec)
   if not ok then store.serial = store.serial - 1 return nil, "invalid " .. tostring(bad) end
   store.events[#store.events + 1] = rec
-  while #store.events > M.MAX and ns.Archive:Shift("outcomeEvents", store.events, { path = "char.outcomes.events", scope = "char" }) do end
+  while #store.events > self:Cap("events") and ns.Archive:Shift("outcomeEvents", store.events, { path = "char.outcomes.events", scope = "char" }) do end
   ns.Events:Fire("OTR_OUTCOME", rec)
   return rec
 end
@@ -235,6 +249,32 @@ function M:OnEnable()
     id = tonumber(readable(id))
     mod:Record("zone_entered", { subject = id and ("map:" .. id), subjectUnknown = not id })
   end)
+end
+
+-- "Start fresh": this character's whole record goes to the archive
+-- (outcomesReset), then a new one begins; the working state built on it (the
+-- open timeline segment, an open trip, the duplicate filter) starts over too.
+-- Under the owner's data preservation rule this is what "reset" and "delete"
+-- mean here: nothing is destroyed, and if archiving fails nothing changes.
+function M:StartFresh()
+  local old = ns.db.char.outcomes
+  if type(old) == "table" and next(old) ~= nil and not ns.Archive:Put("outcomesReset", old, { path = "char.outcomes", scope = "char" }) then
+    return false, "couldn't archive, so nothing was reset"
+  end
+  ns.db.char.outcomes = nil
+  self.recent, self.lastActed = {}, nil
+  if ns.TravelTimes then ns.TravelTimes:Reset() end
+  self:Store()
+  if self.enabled and ns.ActivityTimeline then ns.ActivityTimeline:Start(self) end
+  return true
+end
+
+-- all of this character's records as one data code (OTR1) to copy; nothing is sent
+function M:ExportText()
+  local store = self:Store()
+  local n = #store.events
+  return string.format("Outrider outcome records: %d events, %d trips, %d chronicle entries.\n", n, #(store.travel or {}), #(store.chronicle or {}))
+    .. ns.Serialize.Export(store)
 end
 
 function M:Recent(n)

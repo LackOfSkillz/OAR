@@ -138,8 +138,8 @@ T.describe("outcome events (OI03-02)", function()
 
   T.it("the 501st record archives the oldest, nothing is lost", function()
     local game, ns, O = session()
-    for i = 1, O.MAX + 1 do O:Record("zone_entered", { subject = "map:" .. i }) end
-    T.eq(#O:Store().events, O.MAX)
+    for i = 1, O:Cap("events") + 1 do O:Record("zone_entered", { subject = "map:" .. i }) end
+    T.eq(#O:Store().events, O:Cap("events"))
     T.ok(#ns.Archive:Rows("outcomeEvents") >= 1)
   end)
 end)

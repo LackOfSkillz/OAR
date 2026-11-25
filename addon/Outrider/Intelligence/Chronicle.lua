@@ -56,7 +56,8 @@ function H:Add(mod, kind, key, text, at, ref)
   local i = #list
   while i > 0 and (list[i].at > e.at) do i = i - 1 end
   table.insert(list, i + 1, e)
-  while #list > H.MAX and ns.Archive:Shift("chronicleEntries", list, { path = "char.outcomes.chronicle", scope = "char" }) do end
+  local cap = mod.Cap and mod:Cap("chronicle") or H.MAX
+  while #list > cap and ns.Archive:Shift("chronicleEntries", list, { path = "char.outcomes.chronicle", scope = "char" }) do end
   return e
 end
 
