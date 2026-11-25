@@ -92,6 +92,7 @@ local controls = {
   ["Record outcomes (private, opt-in)"] = "Keep a private record of what happens as you play (quests, gold, deaths, trips). Kept on this PC only.",
   ["Export the chronicle"] = "Show your milestones as text you can copy with Ctrl+C. Nothing is sent anywhere.",
   ["Show an example"] = "Fill the page with clearly labelled example data, or go back to your own session.",
+  ["Try another start"] = "Start the plan with the next best first step instead (it is pinned; unpin to go back).",
   ["15 min"] = "Plan for a 15-minute session.",
   ["30 min"] = "Plan for a 30-minute session.",
   ["1 hour"] = "Plan for a one-hour session.",

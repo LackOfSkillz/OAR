@@ -147,6 +147,7 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
     { "check", "Use the Nexus planner (preview)", function() return ns.NexusCore:Settings().on end,
       function(on) ns.NexusCore:SetOn(on) refresh() end, "off by default while it is being tested" },
     { "buttons", { { "Re-plan", function() ns.NexusCore:Replan("button") refresh() end, 110 },
+      { "Try another start", function() local ok, why = ns.NexusCore:UseAlternative() if not ok then ns.Print("plan: %s", why) end refresh() end, 150 },
       { "Pause", function() ns.NexusCore:Pause() refresh() end, 90 },
       { "Resume", function() ns.NexusCore:Resume() ns.NexusCore:Replan("resume") refresh() end, 90 } } },
     { "cards", function()

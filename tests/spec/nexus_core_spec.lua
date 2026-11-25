@@ -47,7 +47,8 @@ T.describe("nexus core: invalidation and execution boundary", function()
     local before = N.replans
     for _ = 1, 10 do game:fire("BAG_UPDATE_DELAYED") game:fire("PLAYER_MONEY") end
     T.eq(N.replans, before, "nothing yet")
-    game:advance(N.DEBOUNCE + 0.5)
+    -- automatic re-plans keep MIN_GAP from the last one (OI04-04)
+    game:advance(N.MIN_GAP + 1)
     T.eq(N.replans, before + 1, "one re-plan for the whole burst")
   end)
 
@@ -61,7 +62,7 @@ T.describe("nexus core: invalidation and execution boundary", function()
     T.eq(N.replans, before, "no planning in combat")
     game.combat = false
     game:fire("PLAYER_REGEN_ENABLED")
-    game:advance(N.DEBOUNCE + 0.5)
+    game:advance(N.MIN_GAP + 1)
     T.eq(N.replans, before + 1)
   end)
 

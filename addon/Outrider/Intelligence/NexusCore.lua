@@ -23,6 +23,13 @@ local M = ns:NewModule("Nexus", {
 ns.NexusCore = M
 
 M.DEBOUNCE = 2
+-- OI04-04: no thrashing. Automatic re-plans (from game events) are at least
+-- MIN_GAP seconds apart, and keep the current first step unless the new plan
+-- is better by more than HYSTERESIS. The player's own presses (Re-plan, pin,
+-- skip, a goal or session change...) always re-plan at once and freely.
+M.MIN_GAP, M.HYSTERESIS = 20, 0.10
+M.MANUAL = { button = true, pin = true, unpin = true, skip = true, unskip = true, resume = true, ["switched on"] = true,
+  goals = true, horizon = true, alternative = true, ["resume after time away"] = true, ["new plan after time away"] = true }
 M.MAX_AGE = 600
 
 function M:Ready() return self.enabled and self:Settings().on end
@@ -117,6 +124,24 @@ function M:Replan(why)
   local ranked, rejected = ns.NexusScore.Rank(graph, goals, ctx)
   -- the pin is a planner input that must pass every constraint (OI02-R01)
   local res = ns.NexusPlanner.Plan(graph, ranked, ctx, { pin = self:Settings().pinned })
+  -- stability: an automatic re-plan keeps the step you're on unless the new
+  -- plan is clearly better
+  local prev = self.current and self.current.result and self.current.result.plan and self.current.result.plan.steps[1]
+  if not M.MANUAL[why] and not self:Settings().pinned and prev and res.plan and res.plan.steps[1] ~= prev
+      and graph.nodes[prev] and not graph.invalid[prev] then
+    -- compare the two first steps themselves (whole-plan totals can be equal
+    -- when both plans hold the same steps in another order)
+    local sc = {}
+    for _, r in ipairs(ranked) do sc[r.id] = r.score end
+    local old, new = sc[prev], sc[res.plan.steps[1]]
+    if old and new and old >= new - M.HYSTERESIS * math.abs(new) then
+      local keep = ns.NexusPlanner.Plan(graph, ranked, ctx, { pin = prev })
+      if keep.plan and keep.pin and keep.pin.ok then
+        keep.kept = true
+        res = keep
+      end
+    end
+  end
   for id, why in pairs(res.unplannable or {}) do if not rejected[id] then rejected[id] = why end end
   if ctx.closing then
     res.closing = true
@@ -125,6 +150,7 @@ function M:Replan(why)
   self.current = { result = res, revision = ctx.revision, contextKey = contextKey, at = ctx.now, runtime = runtime, graph = graph,
     ranked = ranked, rejected = rejected, excluded = excluded, unavailable = unavailable, why = why }
   self.replans = (self.replans or 0) + 1
+  self.lastReplanAt = ctx.now
   ns.Events:Fire("OTR_NEXUS_PLAN", why)
   return self.current
 end
@@ -145,13 +171,26 @@ function M:Request(why)
   -- trailing debounce: the first request starts the wait, later ones join it
   self.pendingWhy = why
   if self.pending then return end
-  self.pending = self:After(M.DEBOUNCE, function(mod)
+  local wait = M.DEBOUNCE
+  if not M.MANUAL[why] and self.lastReplanAt then
+    wait = math.max(wait, M.MIN_GAP - (time() - self.lastReplanAt))
+  end
+  self.pending = self:After(wait, function(mod)
     mod.pending = nil
     if mod:Ready() then mod:Replan(mod.pendingWhy) end
   end, "nexus:replan")
 end
 
 function M:Pin(id) self:Settings().pinned = id self:Request("pin") end
+-- the player's manual alternate: start with the best other first step instead
+function M:UseAlternative()
+  local res = self.current and self.current.result
+  local alt = res and res.alternatives and res.alternatives[1]
+  if not alt then return false, "no other good start right now" end
+  self:Settings().pinned = alt.firstStep
+  self:Replan("alternative")
+  return true
+end
 function M:Unpin() self:Settings().pinned = nil self:Request("unpin") end
 function M:Skip(id) self:Settings().skipped[id] = true self:Request("skip") end
 function M:Unskip(id) self:Settings().skipped[id] = nil self:Request("unskip") end
