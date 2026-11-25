@@ -997,7 +997,7 @@ function M.new(opts)
       return game.loadedAddons[addon] == true
     end,
     EnableAddOn = function(addon) if game.disabledAddons then game.disabledAddons[addon] = nil end game.enabledAddons = (game.enabledAddons or 0) + 1 end,
-    UpdateAddOnMemoryUsage = function() game.memoryUpdated = true end,
+    UpdateAddOnMemoryUsage = function() game.memoryUpdated = true game.memoryUpdates = (game.memoryUpdates or 0) + 1 end,
     GetAddOnMemoryUsage = function(addon)
       if addon == M.ADDON then return opts.memoryKB or 420 end
       return (game.addonMemory or {})[addon] or 0

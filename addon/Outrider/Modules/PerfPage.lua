@@ -35,7 +35,11 @@ local M = ns:NewModule("PerfPage", {
 ns.PerfPage = M
 
 M.KEEP = 60              -- live samples kept while the page is open (1 a second)
-M.MEMORY_EVERY = 10      -- seconds between "every add-on" memory updates
+-- seconds between "every add-on" memory updates: the game's update walks
+-- every add-on and cost ~22 ms each time (a red spike every 10 s in the
+-- chart, 2026-11-25), so once when the page opens, then once a minute
+M.MEMORY_EVERY = 60
+M.FULL_EVERY = 3         -- the whole page redraws every 3 s; the charts every second
 M.CHECKS = 20            -- past lag checks kept in view; older ones go to the archive
 M.BUDGETS = { loginMs = 100, lagPct = 0.5, frameMs = 1 }
 
@@ -132,11 +136,18 @@ function M:StartLive(refresh)
   self.refresh = refresh
   if self.ticker then return end
   self:Sample()
+  self:Memory(true)
+  self.tick = 0
   self.ticker = ns.Timer.Ticker(1, function()
     local hub = ns.Hub
     if not (hub and hub.frame and hub.frame:IsShown() and hub.current == "performance") then M:StopLive() return end
     M:Sample()
-    if M.refresh then M.refresh() end
+    M.tick = M.tick + 1
+    if M.tick % M.FULL_EVERY == 0 then
+      if M.refresh then M.refresh() end
+    else
+      for _, c in ipairs(M.charts or {}) do if c:IsShown() then c:Refresh() end end
+    end
   end, "perfpage")
 end
 function M:StopLive()
@@ -502,6 +513,8 @@ function M.Chart(host, title, get)
   end
   f:SetScript("OnSizeChanged", function(self) self:Refresh() end)
   f:Refresh()
+  M.charts = M.charts or {}
+  M.charts[#M.charts + 1] = f
   return f
 end
 
