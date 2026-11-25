@@ -164,7 +164,7 @@ function M:Elsewhere(level, faction, mapID)
               missing = missing + 1
               C.Call("C_Item.RequestLoadItemDataByID", id)
             else
-              local r = ns.GearScore:Compare("item:" .. id)
+              local r = M:Compare(id)
               if r and not r.why and r.pct >= 1 then
                 local near = here ~= nil and M.Continent(s[2]) == here
                 local slot = r.slot or ("x" .. id)
@@ -196,6 +196,29 @@ end
 
 -- { {itemID, name, pct, kind, where = {mapID, x, y, who, qlevel, note}, reqLevel} } best first;
 -- quests you cannot take yet come after the ones you can
+-- Each item's score against what you wear, cached: a zone change and every
+-- batch of item details arriving rescanned and rescored the same items
+-- (78 ms on a zone change; 303 item-detail events in 3 minutes; always-on
+-- watch, 2026-11-25). Cleared when your gear, level or talents change, and
+-- after CACHE_S so a change of stat weights shows within a minute.
+M.CACHE_S = 60
+function M:Compare(id)
+  local now = C.Call("GetTime") or 0
+  local cache = self.scores
+  if not cache or now - cache.at > M.CACHE_S then
+    cache = { at = now, by = {} }
+    self.scores = cache
+  end
+  local hit = cache.by[id]
+  if hit == nil then
+    hit = ns.GearScore:Compare("item:" .. id)
+    -- no answer (details not arrived, or not gear) is cheap and not kept
+    if hit then cache.by[id] = hit end
+  end
+  return hit
+end
+function M:ForgetScores() self.scores = nil end
+
 function M:Candidates(opts)
   local world = opts and opts.world
   local out, missing = {}, 0
@@ -211,7 +234,7 @@ function M:Candidates(opts)
       C.Call("C_Item.RequestLoadItemDataByID", id)
       return
     end
-    local r = ns.GearScore:Compare("item:" .. id)
+    local r = M:Compare(id)
     if r and not r.why and r.pct >= 1 then
       seen[id] = true
       out[#out + 1] = { itemID = id, name = name, pct = r.pct, kind = kind, where = where, reqLevel = req }
@@ -278,7 +301,7 @@ function M:Candidates(opts)
           missing = missing + 1
           C.Call("C_Item.RequestLoadItemDataByID", g.itemID)
         else
-          local r = ns.GearScore:Compare("item:" .. g.itemID)
+          local r = M:Compare(g.itemID)
           if r and not r.why and r.pct >= 1 then
             seen[g.itemID] = true
             out[#out + 1] = { itemID = g.itemID, name = g.name, pct = r.pct, kind = "gearquest", via = g.label,
@@ -362,8 +385,9 @@ end
 
 function M:OnEnable()
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) ns.Throttle("nearby:scan", 5, function() mod:Scan("zone") end) end)
-  self:On("PLAYER_EQUIPMENT_CHANGED", function(mod) mod.elsewhereCache = nil end)
-  self:On("PLAYER_LEVEL_UP", function(mod) ns.Throttle("nearby:scan", 5, function() mod:Scan("level") end) end)
+  self:On("PLAYER_EQUIPMENT_CHANGED", function(mod) mod.elsewhereCache = nil mod:ForgetScores() end)
+  self:On("PLAYER_LEVEL_UP", function(mod) mod:ForgetScores() ns.Throttle("nearby:scan", 5, function() mod:Scan("level") end) end)
+  self:On("PLAYER_TALENT_UPDATE", function(mod) mod:ForgetScores() end)
   self:On("GET_ITEM_INFO_RECEIVED", function(mod)
     if (mod.missing or 0) > 0 then ns.Throttle("nearby:scan", 3, function() mod:Scan() end) end
   end)

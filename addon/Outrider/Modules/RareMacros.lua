@@ -75,14 +75,18 @@ end
 function M:Refresh(why)
   local L = ns.MacroLibrary
   if not L then return end
+  -- both macros are hunter macros: other classes have nothing to rebuild
+  if ns.PlayerClass() ~= "HUNTER" then return end
   if C.InCombat() then self.pending = true return end
   self.pending = false
-  for _, id in ipairs({ "hunter-tame-rare", "hunter-rare-scan" }) do
-    for _, e in ipairs(L:Entries()) do
-      if e.id == id and L:State(e) == "changed" then
-        local ok = L:Install(e)
-        self:Info("%s rebuilt (%s): %s", e.name, why, ok and "ok" or "not updated")
-      end
+  -- the two data entries, looked up directly: building the whole macro
+  -- library (every fight key, crafting, combo keys) twice on each zone
+  -- change cost 60-75 ms (always-on watch, 2026-11-25)
+  local want = { ["hunter-tame-rare"] = true, ["hunter-rare-scan"] = true }
+  for _, e in ipairs(ns.Data:All("macro")) do
+    if want[e.id] and L:State(e) == "changed" then
+      local ok = L:Install(e)
+      self:Info("%s rebuilt (%s): %s", e.name, why, ok and "ok" or "not updated")
     end
   end
 end
