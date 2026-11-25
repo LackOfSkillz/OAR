@@ -82,7 +82,13 @@ function M:Store()
   local c = ns.db.char
   if type(c.xp60) ~= "table" or c.xp60.schema ~= M.SCHEMA then
     -- an older schema is kept whole in the archive before the new store starts
-    if type(c.xp60) == "table" then local _ = ns.Archive:Put("xp60OldSchema", c.xp60, { path = "char.xp60", scope = "char" }) or ns.Archive:KeepDamaged("char.xp60", c.xp60)
+    -- OI-FR03: keep the original saved when it can't be archived first
+    if type(c.xp60) == "table" then
+      if not ns.Archive:Preserve("xp60OldSchema", c.xp60, { path = "char.xp60", scope = "char" }) then
+        M.recovery = "old XP records could not be archived; left as they were"
+        M.scratch = M.scratch or { schema = M.SCHEMA, history = {}, recovery = true }
+        return M.scratch
+      end
     else ns.KeepBad(c.xp60, "SessionXP:c.xp60") end
     c.xp60 = { schema = M.SCHEMA, history = {} }
   end

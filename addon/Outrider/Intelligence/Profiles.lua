@@ -44,7 +44,11 @@ function P.State()
   if state.schema ~= P.SCHEMA then
     -- Preserve explicit player preferences. Never infer an old role token.
     local oldRole = state.role
-    if next(state) ~= nil then local _ = ns.Archive:Put("profileOldSchema", state, { path = "char.intelligenceProfile", scope = "char" }) or ns.Archive:KeepDamaged("char.intelligenceProfile", state) end
+    -- OI-FR03: keep the original saved when it can't be archived first
+    if next(state) ~= nil and not ns.Archive:Preserve("profileOldSchema", state, { path = "char.intelligenceProfile", scope = "char" }) then
+      P.recovery = "old profile could not be archived; left as it was"
+      return { schema = P.SCHEMA, role = oldRole, recovery = true }
+    end
     state = { schema = P.SCHEMA, role = oldRole }
     char.intelligenceProfile = state
   end

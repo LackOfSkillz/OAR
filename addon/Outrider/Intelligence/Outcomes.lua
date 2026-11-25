@@ -57,7 +57,13 @@ function M:Store()
   local c = ns.db.char
   local s = ns.KeepTable(c.outcomes, "Outcomes:char.outcomes")
   if type(s) ~= "table" or s.schema ~= M.SCHEMA then
-    if type(s) == "table" then local _ = ns.Archive:Put("outcomeEvents", s, { path = "char.outcomes", scope = "char" }) or ns.Archive:KeepDamaged("char.outcomes", s) end
+    -- OI-FR03: replace the old store only once it is safely kept; if it can't
+    -- be kept, leave it saved as it is and work on a copy that isn't saved
+    if type(s) == "table" and not ns.Archive:Preserve("outcomeEvents", s, { path = "char.outcomes", scope = "char" }) then
+      M.recovery = "old outcome records could not be archived; they are left as they were"
+      M.scratch = M.scratch or { schema = M.SCHEMA, events = {}, serial = 0, recovery = true }
+      return M.scratch
+    end
     s = { schema = M.SCHEMA, events = {}, serial = 0 }
     c.outcomes = s
   end
@@ -285,5 +291,7 @@ function M:Recent(n)
 end
 
 function M:Activity()
-  return string.format("%d outcomes recorded", #self:Store().events)
+  local line = string.format("%d outcomes recorded", #self:Store().events)
+  if M.recovery then line = line .. "; " .. M.recovery end
+  return line
 end

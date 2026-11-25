@@ -17,6 +17,12 @@
 -- OI06-11: a Group page: what helps the most members, each member's gaps,
 --   your ready / not ready and Stop sharing. Leaving the group or a roster
 --   change drops members who left. Each member keeps their own plan.
+-- Review OI-FR08..10 (2026-11-25): goals are shared as objective ids
+--   ("level:30", "gold") built from real Nexus goals (goalId is private to
+--   each client); a revoke is honoured before the rate limit; peers expire
+--   after TTL seconds without news; members are keyed "Name-Realm" so two
+--   players with one name on different realms stay apart, and every party or
+--   raid member who hasn't shared is listed as "not shared".
 
 local _, ns = ...
 local C = ns.Compat
@@ -27,17 +33,64 @@ local M = ns:NewModule("Fellowship", {
   defaults = { share = false, ready = false },
 })
 ns.Fellowship = M
-M.VERSION, M.TYPE, M.RATE, M.MAX_GOALS, M.MAX_ELIGIBLE, M.MAX_ID = 1, "FGOAL", 10, 5, 10, 40
+M.VERSION, M.TYPE, M.RATE, M.MAX_GOALS, M.MAX_ELIGIBLE, M.MAX_ID, M.TTL = 1, "FGOAL", 10, 5, 10, 40, 600
 M.peers, M.served, M.lastIn, M.notes = {}, {}, {}, {}
 
-local function short(name) return type(name) == "string" and (name:match("^([^%-]+)") or name) or nil end
+-- your own realm, without spaces (the form addon senders use)
+function M.MyRealm()
+  local r = C.Readable(C.Call("GetNormalizedRealmName"))
+  if type(r) ~= "string" or r == "" then
+    local _, fr = C.Call("UnitFullName", "player")
+    r = C.Readable(fr)
+  end
+  if type(r) ~= "string" or r == "" then return nil end
+  return (r:gsub("%s", ""))
+end
+
+-- "Name-Realm"; a name without a realm is on your realm
+function M.Canon(name, realm)
+  if type(name) ~= "string" or name == "" then return nil end
+  if name:find("-", 1, true) then return name end
+  if type(realm) == "string" and realm ~= "" then realm = realm:gsub("%s", "") else realm = M.MyRealm() end
+  return realm and (name .. "-" .. realm) or name
+end
+
+-- what the page shows: the bare name on your own realm, Name-Realm otherwise
+function M.Display(key)
+  if type(key) ~= "string" then return key end
+  local n, r = key:match("^([^%-]+)%-(.+)$")
+  if not n then return key end
+  if r == M.MyRealm() then return n end
+  return key
+end
+
+-- every other group member as a "Name-Realm" key: raid1..40 in a raid, else party1..4
+function M.Roster()
+  local out, units = {}, {}
+  if C.Call("IsInRaid") then for i = 1, 40 do units[#units + 1] = "raid" .. i end
+  else for i = 1, 4 do units[#units + 1] = "party" .. i end end
+  local mine = M.Canon(C.Readable(C.Call("UnitName", "player")))
+  for _, u in ipairs(units) do
+    local n, r = C.Call("UnitName", u)
+    local key = M.Canon(C.Readable(n), C.Readable(r))
+    if key and key ~= mine then out[#out + 1] = key end
+  end
+  return out
+end
 
 function M.InGroup(sender)
-  local want = short(sender)
+  local want = M.Canon(sender)
   if not want then return false end
-  for i = 1, 4 do if short(C.Readable(C.Call("UnitName", "party" .. i))) == want then return true end end
-  for i = 1, 40 do if short(C.Readable(C.Call("UnitName", "raid" .. i))) == want then return true end end
+  for _, key in ipairs(M.Roster()) do if key == want then return true end end
   return false
+end
+
+-- forget peers we haven't heard from in TTL seconds
+function M:Expire(now)
+  now = now or time()
+  for key, d in pairs(M.peers) do
+    if type(d) ~= "table" or not d.at or now - d.at > M.TTL then M.peers[key] = nil end
+  end
 end
 
 local function ids(list, max)
@@ -69,21 +122,36 @@ function M:Receive(data, sender, channel, now)
   now = now or time()
   if not (channel == "PARTY" or channel == "RAID" or channel == "WHISPER") then return false, "group channels only" end
   if not M.InGroup(sender) then return false, "not in your group" end
-  if M.lastIn[sender] and now - M.lastIn[sender] < M.RATE then return false, "too often" end
-  M.lastIn[sender] = now
+  local key = M.Canon(sender)
+  -- a valid revoke always counts, however soon after the last message (OI-FR09)
+  if type(data) == "table" and data.v == M.VERSION and data.revoke == true then
+    M.peers[key] = nil
+    return true
+  end
+  if M.lastIn[key] and now - M.lastIn[key] < M.RATE then return false, "too often" end
+  M.lastIn[key] = now
   local d, why = M.Check(data)
   if not d then
-    if why == "newer version" and not M.notes[sender] then M.notes[sender] = "uses a newer Outrider: ignored" end
+    if why == "newer version" and not M.notes[key] then M.notes[key] = "uses a newer Outrider: ignored" end
     return false, why
   end
-  if d.revoke then M.peers[sender] = nil return true end
   d.at = now
-  M.peers[sender] = d
+  M.peers[key] = d
   return true
 end
 
 function M:OnComm(_, kind, data, sender, channel)
   if kind == M.TYPE then self:Receive(data, sender, channel) end
+end
+
+-- a goal as others can read it: its objective and target ("level:30"), never
+-- the goalId (a per-client counter that means nothing to anyone else)
+function M.GoalId(g)
+  if type(g) ~= "table" or type(g.objective) ~= "string" or g.objective == "" then return nil end
+  local id, t = g.objective, g.target
+  if type(t) == "number" or type(t) == "string" then id = id .. ":" .. tostring(t) end
+  id = id:gsub("[%c|]", "")
+  return id:sub(1, M.MAX_ID)
 end
 
 -- what we'd send (nil when sharing is off)
@@ -92,7 +160,8 @@ function M:Payload()
   if not st.share then return nil end
   local goals, elig = {}, {}
   for _, g in ipairs(ns.NexusGoals and ns.NexusGoals:Active() or {}) do
-    if #goals < M.MAX_GOALS and type(g.id) == "string" then goals[#goals + 1] = g.id:sub(1, M.MAX_ID) end
+    local id = M.GoalId(g)
+    if #goals < M.MAX_GOALS and id then goals[#goals + 1] = id end
   end
   for _, id in ipairs(ns.NexusCore and ns.NexusCore.StepIds and ns.NexusCore:StepIds(M.MAX_ELIGIBLE) or {}) do
     if type(id) == "string" then elig[#elig + 1] = id:sub(1, M.MAX_ID) end
@@ -135,7 +204,7 @@ function M:SetReady(on)
 end
 
 function M:OnRoster()
-  for name in pairs(M.peers) do if not M.InGroup(name) then M.peers[name] = nil end end
+  for key in pairs(M.peers) do if not M.InGroup(key) then M.peers[key] = nil end end
   if not self:Channel() then M.peers = {} end
 end
 
@@ -178,18 +247,21 @@ function M:Pick(item)
   for _, n in ipairs(item and item.members or {}) do M.served[n] = (M.served[n] or 0) + 1 end
 end
 
-function M:Members()
+function M:Members(now)
+  self:Expire(now)
   local list = {}
   local me = self:Payload() or {}
   list[#list + 1] = { name = "you", shared = true, eligible = me.eligible or {}, ready = self:Settings().ready, level = me.level }
-  local seen = {}
-  for name, d in pairs(M.peers) do
-    seen[short(name)] = true
-    list[#list + 1] = { name = short(name), shared = true, eligible = d.eligible, ready = d.ready, level = d.level }
+  local seen, keys = {}, {}
+  for key in pairs(M.peers) do keys[#keys + 1] = key end
+  table.sort(keys)
+  for _, key in ipairs(keys) do
+    local d = M.peers[key]
+    seen[key] = true
+    list[#list + 1] = { name = M.Display(key), key = key, shared = true, eligible = d.eligible, ready = d.ready, level = d.level }
   end
-  for i = 1, 4 do
-    local n = short(C.Readable(C.Call("UnitName", "party" .. i)))
-    if n and not seen[n] then list[#list + 1] = { name = n, shared = false } end
+  for _, key in ipairs(M.Roster()) do
+    if not seen[key] then seen[key] = true list[#list + 1] = { name = M.Display(key), key = key, shared = false } end
   end
   return list
 end

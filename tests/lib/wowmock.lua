@@ -354,7 +354,7 @@ function M.new(opts)
   base.ReloadUI = function() game.reloads = game.reloads + 1 end
 
   -- player and units
-  base.UnitName = function(unit) if unit == "player" then return player.name end return game.units and game.units[unit] and game.units[unit].name end
+  base.UnitName = function(unit) if unit == "player" then return player.name end local u = game.units and game.units[unit] if u then return u.name, u.realm end end
   base.UnitFullName = function(unit) if unit == "player" then return player.name, player.realm end end
   base.GetRealmName = function() return player.realm end
   local CLASS_ID = { WARRIOR = 1, PALADIN = 2, HUNTER = 3, ROGUE = 4, PRIEST = 5, SHAMAN = 7, MAGE = 8, WARLOCK = 9, DRUID = 11 }

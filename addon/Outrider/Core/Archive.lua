@@ -128,6 +128,20 @@ function Archive:Move(dataset, list, index, ctx)
   return true
 end
 
+-- Keep a value that is about to be replaced (an old schema, say): the archive
+-- first, the damaged-data list if that fails. True only when one of them
+-- confirmed it. A caller that gets false must NOT replace the value (review
+-- OI-FR03): it keeps the original and works on a copy that isn't saved.
+function Archive:Preserve(dataset, value, ctx)
+  local okPut, put, err = pcall(self.Put, self, dataset, value, ctx)
+  if okPut and put then return true end
+  local path = type(ctx) == "table" and ctx.path or dataset
+  local okKeep, kept = pcall(self.KeepDamaged, self, path, value)
+  if okKeep and kept then return true end
+  report(dataset, (okPut and err) or put or "could not keep it")
+  return false
+end
+
 function Archive:Shift(dataset, list, ctx) return self:Move(dataset, list, 1, ctx) end
 function Archive:Pop(dataset, list, ctx) return self:Move(dataset, list, type(list) == "table" and #list or 0, ctx) end
 

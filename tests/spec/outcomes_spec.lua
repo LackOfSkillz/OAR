@@ -143,3 +143,47 @@ T.describe("outcome events (OI03-02)", function()
     T.ok(#ns.Archive:Rows("outcomeEvents") >= 1)
   end)
 end)
+
+T.describe("fail-safe schema migration (review OI-FR03)", function()
+  local function broken(ns)
+    local put, keep = ns.Archive.Put, ns.Archive.KeepDamaged
+    ns.Archive.Put = function() return false, "injected" end
+    ns.Archive.KeepDamaged = function() error("injected") end
+    return function() ns.Archive.Put, ns.Archive.KeepDamaged = put, keep end
+  end
+
+  T.it("outcomes: when the old store can't be kept, it stays saved untouched", function()
+    local _, ns, O = session()
+    local old = { schema = 0, events = { { kind = "quest_completed", subject = "quest:1" } } }
+    ns.db.char.outcomes = old
+    local undo = broken(ns)
+    local s = O:Store()
+    T.eq(ns.db.char.outcomes, old, "original still saved")
+    T.eq(old.schema, 0) T.eq(#old.events, 1)
+    T.ok(s.recovery, "working on an unsaved copy")
+    T.ok(O:Activity():find("could not be archived", 1, true))
+    undo()
+    O.scratch = nil
+    local s2 = O:Store()
+    T.ok(ns.db.char.outcomes ~= old and s2.schema == O.SCHEMA, "replaced once it can be kept")
+    local found = false
+    for _, e in ipairs(ns.Archive:Rows("outcomeEvents")) do if e.row and e.row.schema == 0 then found = true end end
+    T.ok(found, "old store in the archive")
+  end)
+
+  T.it("XP history and the class profile follow the same rule", function()
+    local _, ns = session()
+    local oldXp = { schema = 0, history = { { xp = 5 } } }
+    ns.db.char.xp60 = oldXp
+    local oldProf = { schema = -1, role = "dps", note = "keep me" }
+    ns.db.char.intelligenceProfile = oldProf
+    local undo = broken(ns)
+    T.ok(ns.SessionXP:Store().recovery)
+    T.eq(ns.db.char.xp60, oldXp)
+    local P = ns.ClassProfiles
+    local st = P.State and P.State() or nil
+    T.eq(ns.db.char.intelligenceProfile, oldProf, "profile left as it was")
+    if st then T.ok(st.recovery) T.eq(st.role, "dps") end
+    undo()
+  end)
+end)
