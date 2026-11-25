@@ -9,6 +9,11 @@
 -- button each. The result is kept (ns.db.global.lagCheck) and goes into the
 -- next report, so it reaches us on GitHub.
 -- Timing only while a check runs: debugprofilestop costs a little itself.
+-- Monitoring (Gary, 2026-11-25: "when I press a button, I wanna be able to
+-- continually monitor performance"): Start(0) runs until Stop, with the page
+-- open or closed, and keeps one row per minute (FPS, latency, Outrider's
+-- share, the game profiler's number). Running totals plus one small row a
+-- minute. Logging out or /reload ends the run and saves it, like Stop.
 
 local _, ns = ...
 local C = ns.Compat
@@ -28,6 +33,23 @@ M.LEVELS = { { 0.5, "fine" }, { 2, "small" } } -- % of the game's time; above: h
 function M:OnInitialize() self.on = false end
 -- a running check stops with the module (OI01-11: no sampler left behind)
 function M:OnDisable() if self.on then self:Stop("module off") end end
+function M:OnEnable()
+  -- logging out or reloading mid-run: save what was measured
+  self:On("PLAYER_LOGOUT", function(mod) if mod.on then mod:Stop("logout") end end)
+end
+
+-- one finished minute of a run
+local function closeMinute(d)
+  local b = d.minute
+  if not b or b.n == 0 then return end
+  local P
+  if ns.PerfPage and ns.PerfPage.Profiler then
+    local okp, pr = pcall(ns.PerfPage.Profiler)
+    P = okp and pr or nil
+  end
+  d.minutes[#d.minutes + 1] = { fps = b.fpsSum / b.n, low = b.low, world = b.world, ms = d.total - b.total0,
+    secs = b.n * M.SAMPLE, cpu = P and P.recentMs or nil }
+end
 
 -- Called by the event and timer dispatch while a check runs.
 function M:Note(where, ms)
@@ -44,15 +66,33 @@ end
 function M:Start(seconds)
   if self.on then return false, "already checking" end
   seconds = seconds or M.SECONDS
-  self.data = { by = {}, total = 0, worst = { where = "-", ms = 0 }, fps = {}, seconds = seconds,
-    started = C.Call("GetTime") or 0 }
+  local open = seconds == 0
+  self.data = { by = {}, total = 0, worst = { where = "-", ms = 0 }, fpsSum = 0, fpsN = 0, seconds = seconds,
+    open = open, minutes = {}, started = C.Call("GetTime") or 0 }
   self.on = true
   self.sampler = ns.Timer.Ticker(M.SAMPLE, function()
-    local f = tonumber(C.Call("GetFramerate"))
-    if f and self.data then self.data.fps[#self.data.fps + 1] = f end
+    local d = self.data
+    if not d then return end
+    local f = tonumber(C.Readable(C.Call("GetFramerate")))
+    local now = C.Call("GetTime") or 0
+    local b = d.minute
+    if not b or now - b.at >= 60 then
+      closeMinute(d)
+      b = { at = now, fpsSum = 0, n = 0, total0 = d.total }
+      d.minute = b
+    end
+    if f then
+      d.fpsSum, d.fpsN = d.fpsSum + f, d.fpsN + 1
+      if not d.fpsLow or f < d.fpsLow then d.fpsLow = f end
+      b.fpsSum, b.n = b.fpsSum + f, b.n + 1
+      if not b.low or f < b.low then b.low = f end
+    end
+    local _, _, _, world = C.Call("GetNetStats")
+    world = tonumber(C.Readable(world))
+    if world and (not b.world or world > b.world) then b.world = world end
   end, "lagcheck:fps")
-  self.timer = ns.Timer.After(seconds, function() M:Stop("done") end, "lagcheck:end")
-  self:Info("lag check started for %d seconds", seconds)
+  if not open then self.timer = ns.Timer.After(seconds, function() M:Stop("done") end, "lagcheck:end") end
+  self:Info(open and "monitoring started (until stopped)" or "lag check started for %d seconds", seconds)
   ns.Events:Fire("OTR_LAGCHECK", "started")
   return true
 end
@@ -67,7 +107,7 @@ function M:Summary()
   local d = self.data
   if not d then return nil end
   local now = C.Call("GetTime") or d.started
-  local secs = math.max(1, math.min(d.seconds, now - d.started))
+  local secs = math.max(1, d.open and (now - d.started) or math.min(d.seconds, now - d.started))
   local parts = {}
   for where, e in pairs(d.by) do
     local name = M.Part(where)
@@ -79,13 +119,11 @@ function M:Summary()
   local list = {}
   for _, p in pairs(parts) do list[#list + 1] = p end
   table.sort(list, function(a, b) return a.ms > b.ms end)
-  local sum, low = 0, nil
-  for _, f in ipairs(d.fps) do sum = sum + f if not low or f < low then low = f end end
   local pct = d.total / (secs * 1000) * 100
   local level = "heavy"
   for _, l in ipairs(M.LEVELS) do if pct < l[1] then level = l[2] break end end
   return { seconds = math.floor(secs + 0.5), totalMs = d.total, pct = pct, level = level,
-    worst = d.worst, fpsAvg = #d.fps > 0 and sum / #d.fps or nil, fpsLow = low, parts = list,
+    worst = d.worst, fpsAvg = d.fpsN > 0 and d.fpsSum / d.fpsN or nil, fpsLow = d.fpsLow, parts = list, open = d.open,
     stutter = d.worst.ms >= M.STUTTER_MS, at = time(), build = ns.build }
 end
 
@@ -94,6 +132,7 @@ function M:Stop(why)
   self.on = false
   if self.sampler then self.sampler:Cancel() self.sampler = nil end
   if self.timer then self.timer:Cancel() self.timer = nil end
+  closeMinute(self.data)
   local s = self:Summary()
   local keep = {}
   for i = 1, math.min(5, #s.parts) do
@@ -101,7 +140,8 @@ function M:Stop(why)
     keep[i] = { name = p.name, ms = math.floor(p.ms * 10 + 0.5) / 10, max = math.floor(p.max * 10 + 0.5) / 10, n = p.n }
   end
   ns.db.global.lagCheck = { at = s.at, build = s.build, seconds = s.seconds, pct = s.pct, level = s.level,
-    totalMs = s.totalMs, worst = s.worst, fpsAvg = s.fpsAvg, fpsLow = s.fpsLow, parts = keep, stutter = s.stutter }
+    totalMs = s.totalMs, worst = s.worst, fpsAvg = s.fpsAvg, fpsLow = s.fpsLow, parts = keep, stutter = s.stutter,
+    monitor = s.open or nil, minutes = #self.data.minutes > 0 and self.data.minutes or nil }
   self:Info("lag check (%s): Outrider %.2f%% of the time (%.0f ms in %d s), slowest %.1f ms in %s, FPS avg %s low %s; heaviest: %s",
     tostring(why), s.pct, s.totalMs, s.seconds, s.worst.ms, tostring(s.worst.where),
     s.fpsAvg and string.format("%.0f", s.fpsAvg) or "?", s.fpsLow and string.format("%.0f", s.fpsLow) or "?",
@@ -147,13 +187,22 @@ end
 function M:Activity()
   if self.on then
     local s = self:Summary()
+    if self.data and self.data.open then
+      return string.format("monitoring: %d min so far, Outrider %.2f%% of the game's time", math.floor((s and s.seconds or 0) / 60), s and s.pct or 0)
+    end
     return string.format("checking: %d of %d seconds", s and s.seconds or 0, self.data and self.data.seconds or M.SECONDS)
   end
   return M.Verdict(ns.db.global.lagCheck)
 end
 
-ns.AddCommand("lag", "[stop]  one-minute lag check: how much of the game's time Outrider uses", function(arg)
-  if (arg or ""):lower() == "stop" then M:Stop("stopped") return end
+ns.AddCommand("lag", "[watch|stop]  one-minute lag check, or watch: monitor until you stop it", function(arg)
+  arg = (arg or ""):lower()
+  if arg == "stop" then M:Stop("stopped") return end
+  if arg == "watch" or arg == "monitor" then
+    local ok, why = M:Start(0)
+    ns.Print(ok and "Monitoring Outrider's performance until you stop it (/ride lag stop, or Stop on the Performance page)." or why)
+    return
+  end
   local ok, why = M:Start()
   ns.Print(ok and "Lag check running for 1 minute: play as usual (move, fight, open the map). The result shows here." or why)
 end)

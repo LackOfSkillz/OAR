@@ -15,6 +15,8 @@
 --     loaded add-ons;
 --   * Outrider's own load: event handlers, timers pending, the timer driver
 --     idle or not (no OnUpdate while idle), modules on, login time;
+--   * Monitor: one press starts measuring until Stop (page open or closed),
+--     with one row per minute (LagCheck:Start(0));
 --   * budgets with a pass or fail, past sessions (Perf.perfRuns) and past
 --     lag checks, and a "Copy for a post" text with no name, realm or gold.
 -- Sampling runs only while this page is open (a 1 s ticker, cancelled when
@@ -263,6 +265,13 @@ function M:Stats()
       color = mem and mem.mine and mem.mine > ns.Perf.BUDGET_KB and "bad" or "good",
       note = mem and mem.all and string.format("%.0f%% of %d add-ons", mem.mine / mem.all * 100, mem.addons) or "" },
   }
+  local L = ns.LagCheck
+  if L and L.on and L.data then
+    local sm = L:Summary()
+    out[#out + 1] = { cap = L.data.open and "Monitoring" or "Lag check", color = "gold",
+      value = string.format("%d:%02d", math.floor(sm.seconds / 60), sm.seconds % 60),
+      note = string.format("Outrider %.2f%% of the game's time", sm.pct) }
+  end
   out[#out + 1] = { cap = "Events / second", value = live.eventsPerSec and string.format("%.1f", live.eventsPerSec) or "—",
     note = l.handlers .. " handlers on " .. l.events .. " events" }
   return out
@@ -308,6 +317,28 @@ function M.History()
   return out
 end
 
+-- One row per minute: the run going on now, else the last monitoring run.
+function M.Minutes()
+  local L = ns.LagCheck
+  local rows, live = nil, false
+  if L and L.on and L.data and L.data.open then rows, live = L.data.minutes, true
+  else
+    local list = ns.db.global.lagChecks or {}
+    for i = #list, 1, -1 do if list[i].monitor then rows = list[i].minutes break end end
+  end
+  local out = {}
+  rows = rows or {}
+  for i = #rows, math.max(1, #rows - 29), -1 do
+    local r = rows[i]
+    local pct = r.secs and r.secs > 0 and r.ms / (r.secs * 1000) * 100 or 0
+    out[#out + 1] = { label = (live and "minute " or "min ") .. i, fill = math.min(1, pct / 2),
+      text = string.format("FPS %.0f (low %.0f), Outrider %.2f%%%s%s", r.fps or 0, r.low or r.fps or 0, pct,
+        r.world and (", world " .. r.world .. " ms") or "", r.cpu and string.format(", %.3f ms/frame", r.cpu) or ""),
+      color = pct < 0.5 and "good" or pct < 2 and "warn" or "bad" }
+  end
+  return out
+end
+
 function M.Checks()
   local out = {}
   local list = ns.db.global.lagChecks or {}
@@ -331,9 +362,18 @@ ns.Hub:AddTab("performance", "Performance", function(p)
     { "header", "Promises we keep", icon = "Ability_Warrior_DefensiveStance" },
     { "bars", function() return M:BudgetBars() end },
     { "buttons", {
+      { "Monitor until I stop", function() if ns.LagCheck then ns.LagCheck:Start(0) p:Refresh() end end },
+      { "Stop and save", function() if ns.LagCheck then ns.LagCheck:Stop("stopped") p:Refresh() end end },
       { "Run a lag check (1 min)", function() if ns.LagCheck then ns.LagCheck:Start() end end },
       { "Copy for a post", function() ns.UI:TextDialog("Outrider performance", M:ShareText(), "copy") end },
     } },
+    { "header", "Minute by minute", icon = "INV_Misc_PocketWatch_02" },
+    { "note", function()
+      local L = ns.LagCheck
+      if L and L.on and L.data and L.data.open then return "Monitoring now, with this page open or closed. Stop and save ends it (logging out does too)." end
+      return #M.Minutes() > 0 and "Your last monitoring run, newest minute first." or "Press Monitor until I stop: Outrider measures itself until you press Stop, one row a minute."
+    end },
+    { "bars", function() return M.Minutes() end },
     { "header", "Past lag checks", icon = "Spell_Holy_BorrowedTime" },
     { "bars", function() return M.Checks() end },
     { "note", function() return #M.Checks() == 0 and "No lag check yet: press Run a lag check above." or "" end },
