@@ -43,9 +43,13 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::Open($zip, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
-  Get-ChildItem -Path $staging -Recurse -File | ForEach-Object {
+  # OI08-14: reproducible zips: entries in a fixed order with a fixed time, so
+  # the same sources always give the same bytes (and the same SHA-256)
+  $fixed = [DateTimeOffset]::new(2026, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+  Get-ChildItem -Path $staging -Recurse -File | Sort-Object { $_.FullName.Substring($staging.Length + 1).Replace('\', '/') } | ForEach-Object {
     $rel = $_.FullName.Substring($staging.Length + 1).Replace('\', '/')
-    [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $_.FullName, $rel, [System.IO.Compression.CompressionLevel]::Optimal)
+    $entry = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $_.FullName, $rel, [System.IO.Compression.CompressionLevel]::Optimal)
+    $entry.LastWriteTime = $fixed
   }
 } finally { $archive.Dispose() }
 Remove-Item -Recurse -Force $staging

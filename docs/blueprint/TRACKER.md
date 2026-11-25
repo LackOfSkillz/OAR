@@ -220,3 +220,4 @@ Running straight on (owner: no stops, one review at the end).
 | OI08-12 Universal live beta | BLOCKED | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | owner: real clients for all classes and roles |
 | OI08-13 Release privacy and license audit | OWNER | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | checks done; name and legal scope need the owner |
 | OI08-14 Release test and rollback | see gate | see commit | [OI08-01_14](../reviews/phase8/OI08-01_14.md) | exact-SHA suite, package hashes, rollback steps |
+| OI08-GATE Final independent review and owner approval | AWAITING REVIEW | see commit | [OI08-GATE](../reviews/phase8/OI08-GATE.md), [combined packet](../reviews/FINAL_REVIEW_PACKET.md) | 1451 passed; companion, quality, deps, security clean; reproducible zip; owner items open |

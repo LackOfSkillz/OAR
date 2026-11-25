@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased (branch ai/outrider-personal-intelligence, not checked in game yet)
+
+- **What if? on the Gear page:** a damage range from your own spell tooltips (what makes it a range, and what isn't modelled), and Try top upgrade, which puts the best upgrade on a saved copy of you and compares the two. Nothing is equipped or bought.
+- **Worth getting?** on the Gear page now shows (it was hidden by a bug).
+- **Lessons (Class > Lessons):** short tips for every class and role (basics, staying alive, useful spells, playing in a group), picked from the spells you know, with practice ideas. Done, Skip, off and Start over. Explorer challenges below: zones to visit and people to meet, no timers.
+- **Fix problems (Settings):** why something isn't working, and what you can do yourself; Copy the list leaves out your name, realm and gold.
+- **How much detail (Settings, Look):** Beginner, Experienced or Advanced (`/ride mode`). The facts are the same in every mode.
+- **Group plan (Sharing):** opt in to plan with your party. Your goals, plan picks and ready go to them, nothing else; Stop sharing asks them to forget it.
+- **Macros:** an update shows the new text, what changes and why, and installs only what you previewed. Roll back to the earlier text, and see when a respec or a new rank makes a macro out of date.
+- **Planning:** supply plans across your characters (craft, mail or buy), gold kept for training, riding, goals and professions, confirmed auction sales kept apart from estimates, and skill-up costs per profession.
+- **Rares:** sightings remember the game build, so respawn times don't mix patches. The details say how sure Outrider is, and from where.
+- **After a game update:** the welcome-back summary asks you to check quests instead of claiming they're done.
+- **Companion:**
+  - offline reports;
+  - passports (a small, chosen snapshot with no names);
+  - XP60's automatic install stays off until the owner approves it;
+  - Outrider's own caveats can't be pushed out by a model's answer.
+
 ## 0.5.0 (2026-11-24)
 
 - **Welcome back:** with the planner on, after time away the Plan page lists what changed since your last plan (quests done or gone, gear, place, level, goals) and lets you resume or start a new plan.
