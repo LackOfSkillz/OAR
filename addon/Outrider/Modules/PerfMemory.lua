@@ -30,11 +30,27 @@ M.SETTLE_S = 120
 M.KEEP = 20
 M.TABLE, M.ARRAY, M.HASH, M.STRING = 40, 16, 40, 24
 
+-- Scheduled on the game's own engine timer (like the always-on watch), so a
+-- measurement waiting to start or between slices is never Outrider's pending
+-- work and never keeps a per-frame script alive.
+local function later(delay, fn, label)
+  local CT = rawget(_G, "C_Timer")
+  if CT and type(CT.After) == "function" then
+    CT.After(delay, function() ns.Safe(label, fn) end)
+  else
+    ns.Timer.After(delay, fn, label)
+  end
+end
+
 function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod)
     if mod.autoDone then return end
     mod.autoDone = true
-    ns.Timer.After(M.SETTLE_S, function() M:Start("auto") end, "perfmemory:auto")
+    -- the automatic run needs the engine timer; without it, only the button measures
+    local CT = rawget(_G, "C_Timer")
+    if CT and type(CT.After) == "function" then
+      later(M.SETTLE_S, function() if M.enabled then M:Start("auto") end end, "perfmemory:auto")
+    end
   end)
 end
 function M:OnDisable() self.job = nil end
@@ -132,7 +148,7 @@ function M:Start(why)
     local job = M.job
     if not job then return end
     -- never adds work to a fight: wait it out
-    if C.Readable(C.Call("InCombatLockdown")) == true then ns.Timer.After(1, step, "perfmemory:combat") return end
+    if C.Readable(C.Call("InCombatLockdown")) == true then later(1, step, "perfmemory:combat") return end
     local ok, res = coroutine.resume(job.co)
     if not ok then
       M.job = nil
@@ -140,7 +156,7 @@ function M:Start(why)
       return
     end
     if coroutine.status(job.co) == "dead" then M:Finish(res) return end
-    ns.Timer.After(0.01, step, "perfmemory:step")
+    later(0.01, step, "perfmemory:step")
   end
   step()
   return true
