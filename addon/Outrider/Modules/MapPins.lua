@@ -301,7 +301,12 @@ function M.QuestLines(pin)
   return out
 end
 
+-- how often each map's pin list was built this session (logged at logout):
+-- the minimap reads it five times a second while moving, so it must be a
+-- cache hit nearly every time
+M.builds = 0
 function M:BuildPins(mapID)
+  M.builds = M.builds + 1
   local out, hidden = {}, self:Settings().hidden
   local faction = C.Call("UnitFactionGroup", "player")
   local own = {}
@@ -568,6 +573,7 @@ function M:MakeButton()
 end
 
 function M:OnEnable()
+  self:On("PLAYER_LOGOUT", function(mod) mod:Info("map pin lists built %d times this session", M.builds) end)
   local map = rawget(_G, "WorldMapFrame")
   if not map or not map.GetCanvas then self:Warn("no world map canvas: pins off") return end
   self.map = map

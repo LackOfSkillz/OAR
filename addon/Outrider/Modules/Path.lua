@@ -41,7 +41,13 @@ M.EVERY = 3        -- seconds between re-plans while moving
 M.MOVED = 12       -- yards you must move before a re-plan
 M.MAX_NODES = 4000
 M.SLICE_MS = 4      -- search work per frame before it waits for the next one
-M.REFRESH = 30      -- seconds: while walking, new breadcrumbs join the search at most this often
+-- seconds: while walking, new breadcrumbs join the search at most this often.
+-- Was 30: each refresh rebuilt the whole search (up to MAX_NODES trail
+-- points) and the session's biggest maker of short-lived memory was this
+-- (326 MB in 10 minutes, always-on watch 2026-11-25). Your own new crumbs
+-- barely change the way ahead; leaving the searched area, a new destination
+-- or a new zone still searches again at once.
+M.REFRESH = 300
 M.END_GAP = 50     -- yards: walked ground must reach this close to the destination
 M.WALKED = { 0.25, 1.00, 0.90 }
 M.GUESS = { 0.85, 0.95, 1.00 }

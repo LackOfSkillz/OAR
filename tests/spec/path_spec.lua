@@ -279,3 +279,27 @@ T.describe("the way there", function()
   end)
 end)
 
+T.describe("the way there while walking (performance)", function()
+  T.it("new breadcrumbs while walking don't rebuild the search; a new destination does", function()
+    local game, ns, P = session()
+    road(ns, 100, 0.1, 0.3)
+    ns.Waypoints:Set(100, 0.3, 0.5, "Tower")
+    P:Replan("walked")
+    for _ = 1, 50 do game:advance(0.1) end
+    local orig, n = P.Builder, 0
+    P.Builder = function(...) n = n + 1 return orig(...) end
+    -- walking along: the trail grows (a new revision) and re-plans come every few seconds
+    for step = 1, 20 do
+      game.opts.x = 0.1 + step * 0.004
+      ns.trailRev = (ns.trailRev or 0) + 1
+      P:Replan("moving")
+      game:advance(3)
+    end
+    T.eq(n, 0, "the search is re-used while walking")
+    ns.Waypoints:Set(100, 0.25, 0.5, "Well")
+    T.ok(n >= 1, "a new destination searches again")
+    P.Builder = orig
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
+
