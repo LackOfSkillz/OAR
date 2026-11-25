@@ -111,3 +111,44 @@ T.describe("gear acquisition utility (OI04-08)", function()
     T.eq(#ns.Errors.list, 0)
   end)
 end)
+
+T.describe("gear comparison on the Gear page (OI04-09)", function()
+  local function list()
+    return {
+      { itemID = 11, name = "Shop Boots", pct = 12, kind = "vendor", sourceType = "guaranteed", slot = 8, scoreNote = "role score", acq = { seconds = 300, notes = {} }, rep = { hours = 4 }, utility = 1.5, utilityWhy = "upgrade-hours per hour spent" },
+      { itemID = 12, name = "Drop Boots", pct = 18, kind = "drop", sourceType = "chance", slot = 8, scoreNote = "role score", acq = { notes = { "drop chance unknown: no time can be given" } }, rep = { unknown = "pace unknown" }, utilityWhy = "time to get it unknown" },
+    }
+  end
+  T.it("cards show cost, chance, time, life, alternatives and evidence; no price says so; no buy button", function()
+    local _, ns, R = session()
+    local cards = R.Cards(list())
+    T.eq(#cards, 2)
+    local tags = {}
+    for _, t in ipairs(cards[1].tags) do tags[#tags + 1] = t[1] end
+    local s = table.concat(tags, "|")
+    T.ok(s:find("price unknown") and s:find("guaranteed") and s:find("about 5 min") and s:find("useful ~4.0 h"), s)
+    T.ok(cards[1].line:find("Other options for this slot: Drop Boots"), cards[1].line)
+    T.ok(cards[2].line:find("Not ranked: time to get it unknown") and cards[2].line:find("drop chance unknown"), cards[2].line)
+    for _, c in ipairs(cards) do for _, a in ipairs(c.actions) do T.ok(not a[1]:lower():find("buy"), "no purchase action") end end
+  end)
+  T.it("keep on top and hide persist per character", function()
+    local _, ns, R = session()
+    local cards = R.Cards(list())
+    for _, a in ipairs(cards[2].actions) do if a[1] == "Keep on top" then a[2]() end end
+    T.eq(R.Cards(list())[1].title, "Drop Boots", "kept on top")
+    for _, a in ipairs(R.Cards(list())[1].actions) do if a[1] == "Hide this one" then a[2]() end end
+    local after = R.Cards(list())
+    T.eq(#after, 1) T.eq(after[1].title, "Shop Boots")
+    T.ok(ns.db.char.gearROI.hidden[12])
+  end)
+  T.it("the Gear page builds with the new section, without a companion, and every control has a tooltip", function()
+    local game, ns = session()
+    game.env.Outrider_Advice = nil
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("gear")
+    T.eq(#ns.Errors.list, 0)
+    local missing = {}
+    for label in pairs(ns.UI.untipped or {}) do missing[#missing + 1] = label end
+    T.eq(#missing, 0, table.concat(missing, ", "))
+  end)
+end)

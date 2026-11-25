@@ -183,3 +183,64 @@ function R:Mine()
   end
   return R.Rank(base)
 end
+
+-- ------------------------------------------------------------ Gear page (OI04-09)
+-- "Worth getting?": each candidate against what you wear, with its cost, time,
+-- chance, useful life, other options for the slot and the evidence. Buttons:
+-- the existing Set waypoint, Keep on top and Hide this one (per character).
+-- There is no buy button: buying stays in the auction house's own confirm
+-- flow (GearShop / AHBuy). Works with no price and no companion.
+function R.Store()
+  local c = ns.db.char
+  c.gearROI = ns.KeepTable(c.gearROI, "GearROI:char.gearROI") or {}
+  c.gearROI.pinned = ns.KeepTable(c.gearROI.pinned, "GearROI:pinned") or {}
+  c.gearROI.hidden = ns.KeepTable(c.gearROI.hidden, "GearROI:hidden") or {}
+  return c.gearROI
+end
+local function hrs(h) if not h then return nil end return h < 1 and (math.floor(h * 60 + 0.5) .. " min") or string.format("%.1f h", h) end
+local function mins(s) if not s then return nil end return s < 90 and (math.floor(s + 0.5) .. " s") or (math.floor(s / 60 + 0.5) .. " min") end
+
+function R.Cards(list, refresh)
+  local st = R.Store()
+  local shown = {}
+  for _, b in ipairs(list or {}) do if not st.hidden[b.itemID] then shown[#shown + 1] = b end end
+  table.sort(shown, function(a, b)
+    local pa, pb = st.pinned[a.itemID] and 1 or 0, st.pinned[b.itemID] and 1 or 0
+    if pa ~= pb then return pa > pb end
+    return false
+  end)
+  local out = {}
+  for i, b in ipairs(shown) do
+    if i > 5 then break end
+    local tags = { { string.format("+%d%% vs what you wear", math.floor((b.pct or 0) + 0.5)), "good" },
+      { b.sourceType == "chance" and "a chance (drop)" or b.sourceType == "guaranteed" and "guaranteed" or "source unclear", b.sourceType == "chance" and "warn" or "plain" } }
+    if b.price and b.price > 0 then tags[#tags + 1] = { ns.Prices and ns.Prices.Money(b.price) or tostring(b.price), "gold" }
+    elseif b.kind == "vendor" or b.kind == "auction" then tags[#tags + 1] = { "price unknown", "warn" }
+    else tags[#tags + 1] = { "no gold", "plain" } end
+    tags[#tags + 1] = { b.acq and b.acq.seconds and ("about " .. mins(b.acq.seconds)) or "time unknown", "plain" }
+    tags[#tags + 1] = { b.rep and b.rep.hours and ("useful ~" .. hrs(b.rep.hours)) or "useful life unknown", "plain" }
+    if st.pinned[b.itemID] then tags[#tags + 1] = { "kept on top", "gold" } end
+    local parts = {}
+    if b.utility then parts[#parts + 1] = string.format("Worth %.1f %s.", b.utility, b.utilityWhy or "")
+    elseif b.utilityWhy then parts[#parts + 1] = "Not ranked: " .. b.utilityWhy .. "." end
+    for _, n in ipairs(b.acq and b.acq.notes or {}) do parts[#parts + 1] = n .. "." end
+    if b.rep and b.rep.next then parts[#parts + 1] = "Next upgrade for this slot: " .. tostring(b.rep.next.name) .. " at level " .. tostring(b.rep.next.reqLevel) .. "."
+    elseif b.rep and b.rep.unknown then parts[#parts + 1] = b.rep.unknown .. "." end
+    local alts = {}
+    for _, o in ipairs(list) do if o ~= b and o.slot == b.slot and #alts < 2 then alts[#alts + 1] = tostring(o.name) end end
+    if #alts > 0 then parts[#parts + 1] = "Other options for this slot: " .. table.concat(alts, ", ") .. "." end
+    parts[#parts + 1] = "(" .. b.scoreNote .. ")"
+    local actions = {}
+    local w = b.where
+    if type(w) == "table" and w.mapID and w.x then
+      actions[#actions + 1] = { "Set waypoint", function() ns.Waypoints:Set(w.mapID, w.x, w.y, tostring(b.name)) end, "Sets the arrow to where you get it." }
+    end
+    local id = b.itemID
+    actions[#actions + 1] = { st.pinned[id] and "Unpin" or "Keep on top", function() st.pinned[id] = not st.pinned[id] or nil if refresh then refresh() end end,
+      "Keep this one at the top of the list." }
+    actions[#actions + 1] = { "Hide this one", function() st.hidden[id] = time() if refresh then refresh() end end,
+      "Hide this suggestion for this character." }
+    out[#out + 1] = { itemID = id, title = tostring(b.name), tags = tags, line = table.concat(parts, " "), actions = actions, highlight = i == 1 }
+  end
+  return out
+end
