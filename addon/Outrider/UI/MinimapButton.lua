@@ -18,7 +18,11 @@ local function onTooltip(tt)
   tt:AddLine(ns.db.key, 0.7, 0.7, 0.7)
   local _, loads = ns.DB:SavedVariablesStatus()
   tt:AddLine(string.format("v%s  build %s  loads %d", ns.version, ns.build, loads), 0.7, 0.7, 0.7)
-  if #ns.Errors.list > 0 then tt:AddLine(#ns.Errors.list .. " error(s): /ride errors", 1, 0.4, 0.4) end
+  -- only this build's errors need a look (as on the Hub); older ones were
+  -- logged by builds since fixed and stay in the list as history
+  local fresh, older = ns.Errors:Fresh(), #ns.Errors.list - ns.Errors:Fresh()
+  if fresh > 0 then tt:AddLine(fresh .. " error(s) this build: /ride errors", 1, 0.4, 0.4)
+  elseif older > 0 then tt:AddLine(older .. " older error(s) from earlier builds: /ride errors clear", 0.6, 0.6, 0.6) end
   local unread = ns.Feed and ns.Feed:Unread() or 0
   if unread > 0 then tt:AddLine(unread .. " new in the Feed tab", 1, 0.78, 0.3) end
   if ns.Alts and ns.Alts.enabled then

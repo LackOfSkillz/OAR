@@ -112,6 +112,22 @@ T.describe("alts", function()
     T.contains(table.concat(game.env.GameTooltip.__lines or {}, "|"), "Instances (estimated)")
   end)
 
+  T.it("the minimap tooltip counts only this build's errors; older ones are history", function()
+    local game, ns = start()
+    local b = ns.MinimapButton.button
+    local function tip()
+      game.env.GameTooltip.__lines = {}
+      b.__scripts.OnEnter(b)
+      return table.concat(game.env.GameTooltip.__lines or {}, "|")
+    end
+    ns.Errors.list = { { build = "old-build", count = 369, where = "lua:unknown", msg = "x" } }
+    local t = tip()
+    T.ok(not t:find("this build", 1, true), "an old build's error is not reported as current")
+    T.contains(t, "1 older error(s)")
+    ns.Errors.list[#ns.Errors.list + 1] = { build = ns.build, count = 1, where = "x", msg = "y" }
+    T.contains(tip(), "1 error(s) this build")
+  end)
+
   T.it("the page and command work", function()
     local game, ns, M = start()
     ns.Hub:Toggle()
