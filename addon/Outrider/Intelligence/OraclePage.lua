@@ -103,7 +103,10 @@ function P.Cards(refresh)
   local ok, rep = pcall(function() return ns.Forge.Run(ns.Forge.Live(kind())) end)
   local short, detail = P.ForgeLines(ok and rep or nil)
   local pick = ns.Modes and ns.Modes.Pick or function(s, d) return s .. (#d > 0 and (" " .. table.concat(d, " ")) or "") end
+  -- experimental until rage, energy, combo points, procs, haste and
+  -- spell-changing talents are modelled (review OI-FR07, docs/FORGE_GAPS.md)
   out[#out + 1] = { title = "Your damage estimate", line = pick(short, detail, { "forge " .. ns.Forge.VERSION }),
+    tags = { { "Experimental", "warn" } },
     actions = { { "Copy details", function() ns.UI:TextDialog("What if?", P.ExportText(), "copy") end, "Copy the estimate and its assumptions." } } }
   local cmp = P.Compare()
   short, detail = P.CompareLines(cmp)
