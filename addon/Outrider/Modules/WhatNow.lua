@@ -178,6 +178,10 @@ SOURCES.quests = function()
   local list = ns.Journey:XPList()
   local best = list[1] and list[1].rate or 0
   local out = {}
+  -- your own quest times, once there are enough of them (review OI-FR04)
+  local myLevel = tonumber(ns.Compat.Readable(ns.Compat.Call("UnitLevel", "player")))
+  local mine = ns.QuestTimes and ns.QuestTimes.Personal and
+    ns.QuestTimes:Personal(myLevel, ns.Compat.Readable(ns.Compat.Call("IsInGroup")) == true) or nil
   -- orange quests (3-4 levels up) give the most XP per minute but are hard
   -- fights solo, so they count for less; battleground quests are left out
   for _, e in ipairs(list) do
@@ -191,11 +195,14 @@ SOURCES.quests = function()
           hard and " Several levels above you: expect hard fights." or ""),
         where = string.format("%s, %s, %s away", tostring(e.giver or "quest giver"), zone(e.mapID), minutes(e.seconds) or "?"),
         benefit = benefit, confidence = 0.6, seconds = e.seconds, mapID = e.mapID, label = "community",
-        -- Journey uses a Classic-level formula and fixed five-minute task
-        -- estimate. These are NOT observed quest XP or completion times.
+        -- Journey uses a Classic-level formula and a fixed five-minute task
+        -- estimate (not observed). Once you have enough timed quests of your
+        -- own, the task time is yours instead (OI-FR04); the XP stays Journey's.
         questID = e.questID, questFaction = e.faction, preAll = e.preAll, preAny = e.preAny,
         estimatedQuestXP = e.xp, estimatedTripSeconds = e.seconds,
-        estimatedActivitySeconds = ns.Journey.QUEST_TIME, estimateBasis = "journey_community",
+        estimatedActivitySeconds = mine and math.floor(mine.value + 0.5) or ns.Journey.QUEST_TIME,
+        estimateBasis = mine and "personal_observed" or "journey_community",
+        estimateSamples = mine and mine.n or nil,
         target = e.target and not e.target.approx and { mapID = e.target.mapID, x = e.target.x, y = e.target.y } or nil,
         caveat = "Quest spots come from Classic data and may have moved on Forever.",
         go = function() return ns.Journey:Go(e) end }

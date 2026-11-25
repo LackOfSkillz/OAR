@@ -111,6 +111,31 @@ function Q.Compare(summary, baseline)
   return out
 end
 
+-- Review OI-FR04: your own quest time (took -> handed in) for a level and
+-- solo/group, for the planner. Only when the estimator has enough of your
+-- samples ("observed", or "older build" with a wider band); a sparse, stale
+-- or missing history returns nil and the planner keeps its usual estimate.
+-- The estimate is already shrunk toward Journey's 300 s, so a few odd quests
+-- don't move it far. Cached while the diary keeps its length.
+function Q:Personal(level, grouped)
+  local E = ns.Estimator
+  if not (E and level) then return nil end
+  local QI = ns.Modules:Get("QuestInfo")
+  local hist = QI and QI.History and QI:History()
+  local A = ns.Archive
+  local nArch = A and A:Sets() and type(A:Sets().questDiary) == "table" and #A:Sets().questDiary or 0
+  local _, gameBuild = ns.Compat.Call("GetBuildInfo")
+  local build = ns.Compat.Readable(gameBuild)
+  local ck = tostring(hist) .. "|" .. (hist and #hist or 0) .. "|" .. nArch .. "|" .. tostring(build)
+  if not (self.personal and self.personal.key == ck) then
+    local prior = ns.Journey and ns.Journey.QUEST_TIME or 300
+    self.personal = { key = ck, models = E.Fit(E.QuestSamples(self:Mine()), { build = build, prior = prior }) }
+  end
+  local m = self.personal.models["L" .. tostring(Q.Band(level)) .. (grouped and "|group" or "|solo")]
+  if m and m.value and (m.basis == "observed" or m.basis == "older build") then return m end
+  return nil
+end
+
 -- this character's samples from the diary
 function Q:Mine()
   local QI = ns.Modules:Get("QuestInfo")
