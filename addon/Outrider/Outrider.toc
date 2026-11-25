@@ -209,6 +209,9 @@ Intelligence\Scenario.lua
 Intelligence\Oracle.lua
 Intelligence\Forge.lua
 Intelligence\MacroVersions.lua
+Intelligence\Supply.lua
+Intelligence\Treasurer.lua
+Intelligence\Market.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua

@@ -686,6 +686,28 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "supplyReservations",
+   "saved_path": "global.supply.reservations",
+   "retention_mechanism": "no cap; a released reservation is marked released and kept, never removed",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/supply_spec.lua :: releasing a reservation keeps it"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "treasurerReserves",
+   "saved_path": "char.treasurer.reserves",
+   "retention_mechanism": "player's own amounts per category; clearing one returns the estimate (a setting, not collected data)",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/supply_spec.lua :: your own reserve replaces the estimate"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [
