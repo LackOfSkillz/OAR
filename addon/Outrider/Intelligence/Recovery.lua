@@ -39,7 +39,7 @@ function R.Summarize(planner)
   for _, g in ipairs(ns.NexusGoals:Active()) do goals[#goals + 1] = tostring(g.objective) .. ":" .. tostring(g.priority) end
   return { at = time(), steps = steps, pinned = planner:Settings().pinned, level = tonumber(readable(C.Call("UnitLevel", "player"))),
     copper = tonumber(readable(C.Call("GetMoney"))), mapID = tonumber(readable(C.PlayerPosition("player"))),
-    build = readable(gameBuild), goals = table.concat(goals, ",") }
+    build = readable(gameBuild), goals = table.concat(goals, ","), char = ns.db and ns.db.key }
 end
 
 function R.Save(planner)
@@ -57,12 +57,16 @@ end
 function R.Check(saved, now)
   now = now or time()
   if type(saved) ~= "table" or type(saved.steps) ~= "table" then return nil end
+  -- OI07-09: a summary another character left is not this one's
+  if saved.char and ns.db and saved.char ~= ns.db.key then return nil end
   local out = { lines = {}, steps = {}, away = now - (tonumber(saved.at) or now) }
   local function line(t) out.lines[#out.lines + 1] = t end
   out.long = out.away >= R.LONG_AWAY
   if out.long then line(string.format("You've been away %d days: look again before you pick anything up.", math.floor(out.away / 86400))) end
   local _, gameBuild = C.Call("GetBuildInfo")
-  if saved.build and readable(gameBuild) and saved.build ~= readable(gameBuild) then line("The game was updated since: quest and route data may have changed.") end
+  local patched = saved.build and readable(gameBuild) and saved.build ~= readable(gameBuild)
+  if patched then line("The game was updated since: quest and route data may have changed.") end
+  out.patched = patched or nil
   local level = tonumber(readable(C.Call("UnitLevel", "player")))
   if level and saved.level and level ~= saved.level then line(string.format("You're level %d now (was %d).", level, saved.level)) end
   local map = tonumber(readable(C.PlayerPosition("player")))
@@ -103,6 +107,9 @@ function R.Check(saved, now)
       end
     end
     if status == "ok" and st.itemID and worn[st.itemID] then status, why = "done", "you're wearing it now" end
+    -- after a game update a quest can read as finished or gone when it isn't:
+    -- never claim it, ask the player to look
+    if patched and st.questID and (status == "done" or status == "gone") then status, why = "check", "the game was updated: check this one yourself" end
     out.steps[#out.steps + 1] = { id = st.id, title = st.title, status = status, why = why }
     if status == "ok" and not out.resumeStep and not out.long then out.resumeStep = st.id end
     if why then line(string.format("%s: %s.", st.title, why)) end

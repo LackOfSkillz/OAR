@@ -179,3 +179,22 @@ Running straight on (owner: no stops, one review at the end).
 | OI06-12 Mentor plan portability foundation | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | data-only references; class, level, ids checked; stale marks; manual accept |
 | OI06-13 Guild contribution and handoff tests | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | mock two clients and floods green; owner two-client test pending |
 | OI06-GATE Phase 6 review gate | MOCK_GREEN | see commit | [OI06-GATE](../reviews/phase6/OI06-GATE.md) | 1431 passed plus 2 fixed; quality, deps, security clean; two-client live test pending |
+
+## Phase 7: Expedition, Mentor, UX
+
+Running straight on (owner: no stops, one review at the end).
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+| OI07-01 Experience modes | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | Beginner, Experienced, Advanced per character; same facts; Settings and /ride mode |
+| OI07-02 Lesson contract | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | versioned ids, prerequisites, sources; words apart; unknown spell skipped |
+| OI07-03 Nine-class curriculum | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | 37 lessons, four topics per class, role variants; cited, unverified |
+| OI07-04 Adaptive lesson delivery | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | eligibility from spellbook; out of combat; skip, off, reset |
+| OI07-05 Practice and Benchmark integration | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | like-for-like dummy check or words only; voluntary question |
+| OI07-06 Mentor curated progression | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | data-only bundles; license; preview, token accept; incompatible left out |
+| OI07-07 Troubleshooter expansion | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | seven checks with manual remedies; couldn't-check; private export |
+| OI07-08 Confidence UI consistency | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | word badges; verified needs evidence; when, build, source |
+| OI07-09 Recovery and Chronicle UX | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | no done after a patch; other character ignored |
+| OI07-10 Explorer challenges | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | unknown visit never done; dismiss and reset; no timers |
+| OI07-11 Navigation and UI quality | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | all pages at size extremes; two clicks; Esc; texture limits |
+| OI07-12 Documentation and help completeness | MOCK_GREEN | see commit | [OI07-01_12](../reviews/phase7/OI07-01_12.md) | README, help, guide, flags, errors, lessons, privacy |

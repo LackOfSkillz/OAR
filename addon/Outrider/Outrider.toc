@@ -217,6 +217,11 @@ Intelligence\World.lua
 Intelligence\Contribute.lua
 Intelligence\Fellowship.lua
 Intelligence\PlanShare.lua
+Intelligence\Modes.lua
+Intelligence\Confidence.lua
+Intelligence\Expedition.lua
+Intelligence\Challenges.lua
+Intelligence\Troubleshooter.lua
 Intelligence\Outcomes.lua
 Intelligence\NextSession.lua
 Modules\Skin.lua

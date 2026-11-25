@@ -94,6 +94,13 @@ Open the hub with `/ride` (or the minimap button). Pages are grouped in the side
 - Notification feed, chat highlights and spam filter, URL copy, spell check, command bar, errand list, a cleaner skin that steps aside for ElvUI and similar addons.
 - Sharing with other Outrider users is **off by default**. When switched on: version hello, rare sightings, gathering spots, gear cards and (separately) your map position, over guild, party, raid or whisper only.
 
+**Planning and learning** (branch `ai/outrider-personal-intelligence`, **not yet checked in game**)
+- Plan page: a short plan across quests, gear, gold and travel, with times as estimates and the reasons it left things out. After action: how the last session really went (opt-in recorder).
+- What if? on the Gear page: a damage range from your own tooltips, and the top upgrade tried on a saved copy of you. Nothing is equipped or bought.
+- Lessons (Class page): short tips per class and role from the spells you know, with explorer challenges. Fix problems (Settings): why something isn't working and what to do.
+- Group plan (Sharing page): opt-in goals and ready for your party. Detail level per character: Beginner, Experienced or Advanced (Settings, Look).
+- The switches and their defaults are in [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md); what is kept and what can leave your PC is in [docs/PRIVACY.md](docs/PRIVACY.md).
+
 ## Safety and privacy
 
 - No automation: every cast, target, buy and craft comes from your key press or click.

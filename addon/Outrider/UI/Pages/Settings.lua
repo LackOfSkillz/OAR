@@ -67,6 +67,12 @@ ns.Hub:AddTab("settings", "Settings", function(p)
     { "check", "High contrast", function() return A().highContrast end, function(on) ns.Slash:Run("access contrast " .. onoff(on)) end },
     { "check", "Reduced motion", function() return A().reducedMotion end, function(on) ns.Slash:Run("access motion " .. onoff(not on)) end },
     { "buttons", { { "Reload now", function() C.Call("ReloadUI") end }, { "First-run setup", Run("setup") } } },
+    -- OI07-01: how much detail pages show (the same facts in every mode)
+    { "note", "How much detail pages show. Every mode uses the same facts; Beginner shows the plain line, Advanced adds the evidence." },
+    { "buttons", { { "Beginner", function() ns.Modes.Set("beginner") p:Refresh() end },
+      { "Experienced", function() ns.Modes.Set("experienced") p:Refresh() end },
+      { "Advanced", function() ns.Modes.Set("advanced") p:Refresh() end } },
+      active = function(i) return ns.Modes.MODES[i] == ns.Modes.Current() end },
     { "header", "Info bar" },
     { "check", "Show the info bar", function() return ns.InfoBar:Settings().shown end, function(on) ns.Slash:Run("bar " .. onoff(on)) end },
     { "check", "Bar: gold", function() return ns.InfoBar:Settings().gold ~= false end, function(on) ns.InfoBar:Settings().gold = on ns.InfoBar:Apply() end },

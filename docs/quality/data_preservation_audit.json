@@ -752,6 +752,39 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "expeditionProgress",
+   "saved_path": "char.expedition",
+   "retention_mechanism": "done, skipped and answers; Start over archives them first (expeditionProgress)",
+   "archive_destination": "global.archive.sets.expeditionProgress",
+   "tests": [
+    "tests/spec/expedition_spec.lua :: reset archives before clearing"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "planShareRoutes",
+   "saved_path": "char.planshare.routes",
+   "retention_mechanism": "accepted mentor routes; no cap; never removed",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/expedition_spec.lua :: reset archives before clearing"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "challengesDismissed",
+   "saved_path": "char.challenges.dismissed",
+   "retention_mechanism": "hidden challenges; Show hidden ones archives the list first (challengesDismissed)",
+   "archive_destination": "global.archive.sets.challengesDismissed",
+   "tests": [
+    "tests/spec/expedition_spec.lua :: reset archives before clearing"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

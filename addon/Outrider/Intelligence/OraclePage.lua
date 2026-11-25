@@ -102,7 +102,8 @@ function P.Cards(refresh)
   local out = {}
   local ok, rep = pcall(function() return ns.Forge.Run(ns.Forge.Live(kind())) end)
   local short, detail = P.ForgeLines(ok and rep or nil)
-  out[#out + 1] = { title = "Your damage estimate", line = short .. (#detail > 0 and (" " .. table.concat(detail, " ")) or ""),
+  local pick = ns.Modes and ns.Modes.Pick or function(s, d) return s .. (#d > 0 and (" " .. table.concat(d, " ")) or "") end
+  out[#out + 1] = { title = "Your damage estimate", line = pick(short, detail, { "forge " .. ns.Forge.VERSION }),
     actions = { { "Copy details", function() ns.UI:TextDialog("What if?", P.ExportText(), "copy") end, "Copy the estimate and its assumptions." } } }
   local cmp = P.Compare()
   short, detail = P.CompareLines(cmp)
@@ -116,7 +117,7 @@ function P.Cards(refresh)
   end
   actions[#actions + 1] = { "Reset", function() P.Reset() again() end, "Forget the saved copy." }
   out[#out + 1] = { title = P.state.tryName and ("Try " .. tostring(P.state.tryName)) or "Try an upgrade",
-    line = short .. (#detail > 0 and (" " .. table.concat(detail, "; ") .. ".") or ""), actions = actions }
+    line = pick(short, detail, { "oracle " .. ns.Oracle.VERSION }), actions = actions }
   return out
 end
 

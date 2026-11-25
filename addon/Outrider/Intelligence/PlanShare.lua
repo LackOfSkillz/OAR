@@ -75,3 +75,80 @@ function PS.Decide(i, accept)
   rec.status, rec.decided = accept and "accepted" or "declined", time()
   return true
 end
+
+-- OI07-06: a mentor's bundle: plan steps, lessons and a route, data only.
+--   ExportBundle{ title, source, license, build, steps, lessons, route = { {mapID, x, y, name} } }
+--   PreviewBundle(text) checks each part for this character: lesson ids must be
+--   Outrider lessons this character is eligible for; route points need a map
+--   id and 0..1 coordinates; plan steps as in Check. What doesn't fit is listed
+--   and left out. AcceptBundle(preview, token) records what fits: the plan as
+--   an offered plan, the lessons as assigned (offered first), the route as a
+--   saved suggestion; nothing is set, cast or moved. Source, license and build
+--   are kept on the record.
+PS.MAX_ROUTE = 50
+function PS.ExportBundle(b)
+  if type(b) ~= "table" then return nil, "a bundle is a table" end
+  if type(b.license) ~= "string" or b.license == "" then return nil, "a bundle needs a license" end
+  local out = { v = PS.VERSION, kind = "bundle", title = tostring(b.title or "Bundle"):sub(1, 60), source = tostring(b.source or "mentor"):sub(1, 40),
+    license = b.license:sub(1, 40), build = b.build or (ns.World and ns.World.Build()), steps = {}, lessons = {}, route = {},
+    classes = b.classes, minLevel = b.minLevel, maxLevel = b.maxLevel }
+  for i, s in ipairs(b.steps or {}) do if not plainId(s) then return nil, "step " .. i .. " isn't a plain id" end out.steps[i] = s end
+  for i, l in ipairs(b.lessons or {}) do if not plainId(l) and not (type(l) == "string" and l:match("^[%l]+%.[%l]+%.%d+@%d+$")) then return nil, "lesson " .. i .. " isn't a lesson id" end out.lessons[i] = l end
+  for i, p in ipairs(b.route or {}) do
+    if type(p) ~= "table" then return nil, "route point " .. i .. " isn't a point" end
+    out.route[i] = { mapID = p.mapID, x = p.x, y = p.y, name = p.name and tostring(p.name):sub(1, 40) }
+  end
+  return ns.Serialize.Export(out)
+end
+
+function PS.PreviewBundle(text, now)
+  local d, err = ns.Serialize.Import(text)
+  if type(d) ~= "table" then return nil, err or "not readable" end
+  if d.kind ~= "bundle" or d.v ~= PS.VERSION then return nil, "not a mentor bundle" end
+  if type(d.license) ~= "string" or d.license == "" then return nil, "no license: not installed" end
+  for k, v in pairs(d) do if type(v) == "function" then return nil, "field " .. tostring(k) .. " isn't data" end end
+  local me = ns.Expedition and ns.Expedition.Me() or { class = ns.PlayerClass(), level = 1 }
+  me.build = ns.World and ns.World.Build()
+  local out = { title = tostring(d.title), source = tostring(d.source), license = d.license, build = d.build, fits = { lessons = {}, route = {} }, left = {} }
+  if type(d.steps) == "table" and #d.steps > 0 then
+    local rec, why = PS.Check({ v = PS.VERSION, steps = d.steps, classes = d.classes, minLevel = d.minLevel, maxLevel = d.maxLevel,
+      build = d.build, title = d.title, source = d.source }, me, now)
+    if rec then out.fits.plan = rec else out.left[#out.left + 1] = "plan: " .. tostring(why) end
+  end
+  local eligible = {}
+  for _, l in ipairs(ns.Expedition and ns.Expedition.Eligible(me) or {}) do eligible[l.id] = true end
+  for _, id in ipairs(type(d.lessons) == "table" and d.lessons or {}) do
+    if eligible[id] then out.fits.lessons[#out.fits.lessons + 1] = id else out.left[#out.left + 1] = "lesson " .. tostring(id) .. ": not for you (or unknown)" end
+  end
+  for i, p in ipairs(type(d.route) == "table" and d.route or {}) do
+    if i > PS.MAX_ROUTE then out.left[#out.left + 1] = "route: more than " .. PS.MAX_ROUTE .. " points" break end
+    local okPoint = type(p) == "table" and type(p.mapID) == "number" and p.mapID == math.floor(p.mapID) and p.mapID > 0
+      and type(p.x) == "number" and p.x > 0 and p.x < 1 and type(p.y) == "number" and p.y > 0 and p.y < 1
+    if okPoint then out.fits.route[#out.fits.route + 1] = { mapID = p.mapID, x = p.x, y = p.y, name = p.name and tostring(p.name) }
+    else out.left[#out.left + 1] = "route point " .. i .. ": not a map point" end
+  end
+  out.token = ns.Serialize.Adler32(text)
+  return out
+end
+
+function PS.AcceptBundle(pv, token)
+  if type(pv) ~= "table" or token ~= pv.token then return false, "preview the bundle, then accept that preview" end
+  local st = PS.Store()
+  local stamp = { source = pv.source, license = pv.license, build = pv.build, at = time() }
+  if pv.fits.plan then
+    local rec = pv.fits.plan
+    rec.license, rec.status = pv.license, "accepted"
+    st.offered[#st.offered + 1] = rec
+  end
+  if #pv.fits.route > 0 then
+    st.routes = ns.KeepTable(st.routes, "PlanShare:routes") or {}
+    st.routes[#st.routes + 1] = { title = pv.title, points = pv.fits.route, stamp = stamp }
+  end
+  local X = ns.Expedition
+  if X and #pv.fits.lessons > 0 then
+    local ex = X.Store()
+    ex.assigned = ns.KeepTable(ex.assigned, "Expedition:assigned") or {}
+    for _, id in ipairs(pv.fits.lessons) do ex.assigned[id] = stamp end
+  end
+  return true
+end

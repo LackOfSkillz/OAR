@@ -79,6 +79,8 @@ function R:Details(r)
     lines[#lines + 1] = string.format("A %s hunters can tame.", tostring(pack.beast.family or "beast"):lower())
   end
   if pack and pack.notes then lines[#lines + 1] = tostring(pack.notes) end
+  -- OI07-08: one way to say how sure (a word, with when and where from)
+  if pack and ns.Confidence then lines[#lines + 1] = "How sure: " .. ns.Confidence.Text(pack) end
   local prof = ns.RareProfile and ns.RareProfile.Summary and ns.RareProfile:Summary(r.npcID)
   if prof then lines[#lines + 1] = "Seen fighting: " .. prof:gsub("^[^:]+: ", "") end
   local loot = ns.RareAlerts and ns.RareAlerts.KnownLoot and ns.RareAlerts:KnownLoot(r.npcID) or {}
