@@ -147,5 +147,7 @@ Running straight on from Phase 4 (owner: no stops, one review at the end).
 | OI05-07 Forge runner | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | deterministic, bounded, out of combat only, partial report |
 | OI05-08 Forge equipment and build comparison | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | eligibility, ownership, respec cost apart; nothing spent |
 | OI05-09 Forge dummy calibration | MOCK_GREEN | see commit | [OI05-03_09](../reviews/phase5/OI05-03_09.md) | like for like; under 3 fights not judged |
+| OI05-10 Macro versioning and rollback | MOCK_GREEN | see commit | [OI05-10_11](../reviews/phase5/OI05-10_11.md) | preview with diff, rationale and spell ranks; token approval; stale after respec or rank; rollback keeps the replaced text; scripts refused |
+| OI05-11 Macro regression scenarios | MOCK_GREEN | see commit | [OI05-10_11](../reviews/phase5/OI05-10_11.md) | 9-class matrix: length, validator, scripts, null sequences, ranks, modifiers, resets, removed spells |
 
 Phases 6-8 (OI06-OI08): NOT_STARTED.
