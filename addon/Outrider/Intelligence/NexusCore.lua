@@ -43,7 +43,10 @@ function M:Context()
     local ps = NP.Settings(self)
     if ps.on ~= false then prefs = NP.Adjustments(NP.Sources(), ps) end
   end
-  return { preferences = prefs, copper = gold and gold.value, reserveCopper = reserve, mapID = loc and loc.value.mapID,
+  -- the session you plan for (OI04-01): time budget, solo or group
+  local hz = ns.NexusHorizon and ns.NexusHorizon.Context(self) or {}
+  return { budgetSeconds = hz.budgetSeconds, solo = hz.solo, stopRest = hz.stopRest,
+    preferences = prefs, copper = gold and gold.value, reserveCopper = reserve, mapID = loc and loc.value.mapID,
     faction = st and st.faction ~= "unknown" and st.faction or nil, revision = S:Revision(), now = time() }, goals
 end
 
@@ -60,6 +63,8 @@ function M:ContextKey()
   for id in pairs(s.skipped or {}) do skipped[#skipped + 1] = id end
   table.sort(skipped)
   parts[#parts + 1] = "skip=" .. table.concat(skipped, ",")
+  local hz = type(s.horizon) == "table" and s.horizon or {}
+  parts[#parts + 1] = "horizon=" .. tostring(hz.minutes) .. ":" .. tostring(hz.group) .. ":" .. tostring(hz.stopRest)
   local pr = type(s.prefs) == "table" and s.prefs or {}
   parts[#parts + 1] = "prefs=" .. tostring(pr.on ~= false) .. ":" .. tostring(pr.since)
   local goals = {}

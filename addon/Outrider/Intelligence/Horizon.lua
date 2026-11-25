@@ -1,0 +1,78 @@
+-- Intelligence/Horizon.lua  (OI04-01)
+-- The session you plan for: how long you have, solo or with a group, and how
+-- you want to stop. Saved with the planner's settings (horizon = {...}); no
+-- language model or provider involved.
+--   minutes   15, 30, 60, 120, or a custom 5..480; nil = no time limit
+--   group     "solo" (steps that need a group are left out, and so is anything
+--             that needs them first), "group", or "either"
+--   stopRest  end the session at a safe rest point (an inn or a city) when there
+--             is time (used by the session ending, OI04-03)
+-- Goals and the gold reserve stay where they are (NexusGoals, OI02-R07).
+-- Migration: with no horizon saved yet, the time you last set elsewhere is
+-- copied in (the Ask snapshot's minutes, or a Radar budget you changed); the
+-- old settings stay as they are.
+
+local _, ns = ...
+local H = { PRESETS = { 15, 30, 60, 120 }, MIN = 5, MAX = 480, GROUP = { solo = true, group = true, either = true } }
+ns.NexusHorizon = H
+
+-- check one input set; returns a clean copy, or nil and why
+function H.Validate(input)
+  if type(input) ~= "table" then return nil, "not a table" end
+  local out = { group = input.group or "either", stopRest = input.stopRest == true or nil }
+  if not H.GROUP[out.group] then return nil, "group must be solo, group or either" end
+  if input.minutes ~= nil then
+    local m = tonumber(input.minutes)
+    if not m or m ~= m or m ~= math.floor(m) then return nil, "minutes must be a whole number" end
+    if m < H.MIN or m > H.MAX then return nil, string.format("minutes must be %d to %d", H.MIN, H.MAX) end
+    out.minutes = m
+  end
+  return out
+end
+
+-- the saved horizon (migrated and checked once); planner = NexusCore
+function H.Get(planner)
+  local s = planner:Settings()
+  if type(s.horizon) ~= "table" then
+    local mins = tonumber(ns.db.char.askMinutes)
+    local radar = ns.Modules:Get("OpportunityRadar")
+    local rb = radar and tonumber(radar:Settings().timeBudget)
+    if not mins and rb and rb ~= 45 then mins = rb end
+    if mins then mins = math.max(H.MIN, math.min(H.MAX, math.floor(mins))) end
+    s.horizon = { minutes = mins, group = "either", migrated = mins and true or nil }
+  end
+  local ok = H.Validate(s.horizon)
+  if not ok then
+    -- a damaged saved value is kept aside (owner rule) and the default used
+    ns.KeepBad(s.horizon, "Horizon:settings.horizon")
+    s.horizon = { group = "either" }
+    ok = s.horizon
+  end
+  return ok
+end
+
+function H.Set(planner, input)
+  local clean, why = H.Validate(input)
+  if not clean then return false, why end
+  planner:Settings().horizon = clean
+  return true
+end
+
+-- what the planner context gets from it
+function H.Context(planner)
+  local h = H.Get(planner)
+  return { budgetSeconds = h.minutes and h.minutes * 60 or nil, solo = h.group == "solo" or nil,
+    group = h.group, stopRest = h.stopRest }
+end
+
+-- steps that need a group (dungeons, dungeon quests)
+function H.NeedsGroup(c)
+  if type(c) ~= "table" then return false end
+  return c.kind == "dungeon" or tostring(c.key or ""):find("^dq:") ~= nil or c.needsGroup == true
+end
+
+function H.Label(h)
+  local t = h.minutes and (h.minutes >= 60 and (h.minutes % 60 == 0 and (h.minutes / 60 .. " h") or (h.minutes .. " min")) or (h.minutes .. " min")) or "no time limit"
+  return string.format("%s, %s%s", t, h.group == "solo" and "solo" or h.group == "group" and "with a group" or "solo or group",
+    h.stopRest and ", end at a rest point" or "")
+end

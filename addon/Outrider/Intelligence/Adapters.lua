@@ -181,6 +181,8 @@ function A.Meta(c, questIndex, done)
   end
   unknown[#unknown + 1] = "excludes"
   m.unknown = unknown
+  -- steps that need a group (OI04-01: a solo session leaves them out)
+  if ns.NexusHorizon and ns.NexusHorizon.NeedsGroup(c) then m.needsGroup = true end
   return m
 end
 

@@ -43,6 +43,9 @@ function G.Build(opps, meta, ctx)
     local n = g.nodes[id]
     local m = n.meta
     if m.faction and ctx.faction and m.faction ~= ctx.faction then bad(id, "faction: for " .. m.faction) end
+    -- a solo session leaves out steps that need a group (and, through the
+    -- prerequisite spread below, anything that needs them first)
+    if ctx.solo and m.needsGroup then bad(id, "needs a group (you chose solo)") end
     for _, req in ipairs(m.requires or {}) do
       g.edges[#g.edges + 1] = { from = req, to = id, type = "requires" }
       if not done[req] and not g.nodes[req] then bad(id, "unmet prerequisite: " .. req) end

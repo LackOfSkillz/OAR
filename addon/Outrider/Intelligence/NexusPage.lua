@@ -169,6 +169,36 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
             "Forget last time's plan and plan from what is true now." },
         } } }
     end },
+    -- the session you plan for (OI04-01)
+    { "header", "This session" },
+    { "note", function() return "Planning for: " .. ns.NexusHorizon.Label(ns.NexusHorizon.Get(ns.NexusCore)) .. "." end },
+    { "buttons", (function()
+      local row = {}
+      for _, m in ipairs({ { "15 min", 15 }, { "30 min", 30 }, { "1 hour", 60 }, { "2 hours", 120 }, { "No limit", false } }) do
+        row[#row + 1] = { m[1], function()
+          local h = ns.NexusHorizon.Get(ns.NexusCore)
+          ns.NexusHorizon.Set(ns.NexusCore, { minutes = m[2] or nil, group = h.group, stopRest = h.stopRest })
+          ns.NexusCore:Request("horizon") refresh()
+        end, 80 }
+      end
+      return row
+    end)(), plain = true },
+    { "buttons", (function()
+      local row = {}
+      for _, g in ipairs({ { "Solo", "solo" }, { "With a group", "group" }, { "Either", "either" } }) do
+        row[#row + 1] = { g[1], function()
+          local h = ns.NexusHorizon.Get(ns.NexusCore)
+          ns.NexusHorizon.Set(ns.NexusCore, { minutes = h.minutes, group = g[2], stopRest = h.stopRest })
+          ns.NexusCore:Request("horizon") refresh()
+        end, 110 }
+      end
+      row[#row + 1] = { "End at a rest point", function()
+        local h = ns.NexusHorizon.Get(ns.NexusCore)
+        ns.NexusHorizon.Set(ns.NexusCore, { minutes = h.minutes, group = h.group, stopRest = not h.stopRest })
+        ns.NexusCore:Request("horizon") refresh()
+      end, 160 }
+      return row
+    end)(), plain = true },
     { "header", "My goals" },
     { "note", function()
       local n = #P.GoalCards()

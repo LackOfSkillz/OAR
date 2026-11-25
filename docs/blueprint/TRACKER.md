@@ -109,4 +109,12 @@ ChatGPT's conditions for Phase 3:
 | OI03-15 Retention and privacy controls | MOCK_GREEN | see commit | [OI03-15](../reviews/phase3/OI03-15.md) | opt-in, nothing recorded when off; per-character caps within bounds (overflow archived); Start fresh archives everything (two clicks); export as data code; works with no provider |
 | OI03-GATE Phase 3 review gate | SUBMITTED | see commit | [packet](../reviews/phase3/OI03-GATE.md) | STOPPED for ChatGPT review and Gary's approval; owner asked for a CurseForge upload of this pass before the review |
 
-Phases 4-8 (OI04-OI08): NOT_STARTED.
+## Phase 4: Intelligent planning (Horizon, GearROI, Foresight)
+
+Owner authorization: on 2026-11-24 Gary chose "Start Phase 4 now" while the Phase 3 review (OI03-GATE) is still pending with ChatGPT. Phase 3 findings get fixed when they come in. Phase 4 base: 6bd48d5.
+
+| Task | Status | SHA | Evidence | Notes |
+|---|---|---|---|---|
+| OI04-01 Horizon session inputs | MOCK_GREEN | see commit | [OI04-01](../reviews/phase4/OI04-01.md) | 15/30/60/120 min or custom 5..480, solo/group/either, end at a rest point; solo leaves out group steps and what needs them; migrates askMinutes or a changed Radar budget (old values kept) |
+
+Phases 5-8 (OI05-OI08): NOT_STARTED.
