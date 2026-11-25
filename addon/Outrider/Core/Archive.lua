@@ -155,6 +155,58 @@ function Archive:Rows(dataset, char)
   return out
 end
 
+-- Review OI-FR02: what learning and reports read. The archived rows of one
+-- dataset for THIS character (oldest first, as Shift moved them), then the
+-- active list, as one array of references (nothing is copied or changed).
+--   opts.char   character key (default: the current one); false = every character
+--   opts.keys   only entries whose keys match ({ character = ... })
+--   opts.where  function(row) -> bool, applied to both parts
+--   opts.max    keep only the newest max rows (default MAX_HISTORY)
+-- Archive files moved off the saved variables (docs/ARCHIVE_GROWTH.md) are
+-- not read here.
+Archive.MAX_HISTORY = 5000
+function Archive:WithActive(dataset, active, opts)
+  opts = opts or {}
+  local char = opts.char
+  if char == nil then char = ns.db and ns.db.key end
+  local out = {}
+  local sets = self:Sets()
+  local list = sets and sets[dataset]
+  -- cached while both lists keep their length (rows only ever move from the
+  -- active list to the archive), so hot paths such as route times stay cheap
+  local memoKey
+  if not opts.where then
+    local ks = {}
+    for k, v in pairs(type(opts.keys) == "table" and opts.keys or {}) do ks[#ks + 1] = tostring(k) .. "=" .. tostring(v) end
+    table.sort(ks)
+    memoKey = table.concat({ dataset, tostring(char), tostring(list), type(list) == "table" and #list or 0, tostring(active),
+      type(active) == "table" and #active or 0, table.concat(ks, ","), tostring(opts.max) }, "|")
+    Archive.memo = Archive.memo or {}
+    local hit = Archive.memo[dataset]
+    if hit and hit.key == memoKey then return hit.rows end
+  end
+  if type(list) == "table" then
+    for _, e in ipairs(list) do
+      local ok = type(e) == "table" and e.row ~= nil and (not char or e.char == char)
+      if ok and type(opts.keys) == "table" then
+        for k, v in pairs(opts.keys) do if type(e.keys) ~= "table" or e.keys[k] ~= v then ok = false break end end
+      end
+      if ok and (not opts.where or opts.where(e.row)) then out[#out + 1] = e.row end
+    end
+  end
+  for _, r in ipairs(type(active) == "table" and active or {}) do
+    if not opts.where or opts.where(r) then out[#out + 1] = r end
+  end
+  local max = opts.max or Archive.MAX_HISTORY
+  if #out > max then
+    local trimmed = {}
+    for i = #out - max + 1, #out do trimmed[#trimmed + 1] = out[i] end
+    out = trimmed
+  end
+  if memoKey then Archive.memo[dataset] = { key = memoKey, rows = out } end
+  return out
+end
+
 function Archive:Restore(dataset, fn)
   local n = 0
   for _, e in ipairs(self:Rows(dataset)) do

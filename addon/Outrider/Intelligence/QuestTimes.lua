@@ -115,5 +115,7 @@ end
 function Q:Mine()
   local QI = ns.Modules:Get("QuestInfo")
   if not (QI and QI.History) then return {} end
-  return Q.Observe(QI:History())
+  -- diary rows past the cap live in the archive: read them first, so a quest
+  -- taken before the cut still pairs with its hand-in (review OI-FR02)
+  return Q.Observe(ns.Archive:WithActive("questDiary", QI:History(), { keys = { character = ns.db.key } }))
 end

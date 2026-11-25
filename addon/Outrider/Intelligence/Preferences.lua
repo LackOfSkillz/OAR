@@ -99,7 +99,8 @@ function P.Sources()
   src.skip = st and st.skip or {}
   src.shown = st and st.shown or {}
   local O = ns.Outcomes
-  src.outcomes = O and O.Store and O:Store().events or {}
+  -- archived outcomes count too (review OI-FR02)
+  src.outcomes = O and O.Store and ns.Archive:WithActive("outcomeEvents", O:Store().events) or {}
   return src
 end
 

@@ -40,6 +40,8 @@ function R.WalkingSample(t)
 end
 
 function R:List(store) store.travel = ns.KeepTable(store.travel, "Travel:char.outcomes.travel") or {} return store.travel end
+-- every trip of this character, archived ones first (review OI-FR02)
+function R:History(store) return ns.Archive:WithActive("travelTrips", self:List(store)) end
 
 local function save(mod, trip)
   local list = R:List(mod:Store())
@@ -159,7 +161,7 @@ end
 -- walking samples, and every trip by mode (for reports and the estimator)
 function R:Summary(store)
   local by, walking = {}, {}
-  for _, t in ipairs(R:List(store)) do
+  for _, t in ipairs(R:History(store)) do
     by[t.mode or "?"] = (by[t.mode or "?"] or 0) + 1
     if t.walking then walking[#walking + 1] = t end
   end

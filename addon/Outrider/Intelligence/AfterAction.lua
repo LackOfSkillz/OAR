@@ -64,17 +64,18 @@ function P.Report(psId)
   rep.xp = P.XP(psId, X and X.Merged and X:Merged() or {})
   local O = ns.Outcomes
   local store = O and O:Store() or {}
-  local events = {}
-  for _, e in ipairs(store.events or {}) do if e.sessionId == psId then events[#events + 1] = e end end
-  local sales = {}
-  for _, s in ipairs(store.sales or {}) do if s.playSessionId == psId then sales[#sales + 1] = s end end
+  -- archived records count too (review OI-FR02): a session's rows may have
+  -- moved to the archive since
+  local AR = ns.Archive
+  local events = AR:WithActive("outcomeEvents", store.events, { where = function(e) return e.sessionId == psId end })
+  local sales = AR:WithActive("confirmedSales", store.sales, { where = function(s) return s.playSessionId == psId end })
   local current = ns.PlaySession and ns.PlaySession:Id() == psId
   local estimate = current and ns.LootLog and ns.LootLog.SessionValue and ns.LootLog:SessionValue() or nil
   rep.gold = ns.EconomyOutcomes and ns.EconomyOutcomes.Summary(events, sales, { estimatedLoot = estimate }) or {}
   local A = ns.ActivityTimeline
   local live
   if current and A and A.rec then local t = A:Totals() live = { rec = A.rec, totals = t } end
-  rep.activity, rep.played = P.Activity(psId, store.activity, live)
+  rep.activity, rep.played = P.Activity(psId, AR:WithActive("activitySessions", store.activity), live)
   rep.deaths = 0
   for _, e in ipairs(events) do if e.kind == "death" then rep.deaths = rep.deaths + 1 end end
   -- milestones in this session
@@ -94,7 +95,7 @@ function P.Report(psId)
     rep.questTime = E.Predict(models, key, { prior = ns.Journey and ns.Journey.QUEST_TIME })
   end
   if E and ns.TravelTimes then
-    rep.walking = E.FitOne(E.TravelSamples(ns.TravelTimes:List(store)), {})
+    rep.walking = E.FitOne(E.TravelSamples(ns.TravelTimes:History(store)), {})
   end
   -- compared with your own earlier sessions, numbers only
   local past = {}
@@ -218,7 +219,7 @@ end
 function P.MyEvidence()
   local O = ns.Outcomes
   local store = O and O:Store() or {}
-  return P.Evidence({ quests = ns.QuestTimes and ns.QuestTimes:Mine() or {}, trips = store.travel or {},
+  return P.Evidence({ quests = ns.QuestTimes and ns.QuestTimes:Mine() or {}, trips = ns.TravelTimes and ns.TravelTimes:History(store) or store.travel or {},
     events = store.events or {}, sessions = ns.SessionXP and ns.SessionXP:Merged() or {},
     prior = ns.Journey and ns.Journey.QUEST_TIME })
 end

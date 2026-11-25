@@ -82,7 +82,7 @@ function PF.Install()
     local secs, via = raw(self, prep, target)
     if not secs then return nil end
     local O = ns.Outcomes
-    local trips = O and O.Store and O:Store().travel or {}
+    local trips = O and O.Store and ns.TravelTimes and ns.TravelTimes:History(O:Store()) or {}
     local _, gameBuild = C.Call("GetBuildInfo")
     local lastLeg = via and prep and prep.best and prep.best[via] and (secs - prep.best[via]) or nil
     local est = PF.Estimate(secs, { fromMap = tonumber(C.Readable(C.PlayerPosition("player"))), toMap = target and target.mapID,
