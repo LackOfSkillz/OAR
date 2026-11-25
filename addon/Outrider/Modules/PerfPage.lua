@@ -45,6 +45,9 @@ function M:OnEnable()
   self:On("OTR_LAGCHECK", function(mod, _, what) if what == "done" then mod:KeepCheck() end end)
 end
 function M:OnDisable() self:StopLive() end
+function M:Activity()
+  return self.ticker and "showing live numbers (Settings, Performance)" or "Settings, Performance: FPS, latency, Outrider's CPU and memory"
+end
 
 -- ------------------------------------------------------------ the game's numbers
 function M.Net()

@@ -101,6 +101,12 @@ function M:Note(where, ms)
   if ms >= M.SPIKE_MS then self:Slow("spike", where, ms) end
 end
 
+function M:Activity()
+  local w = self.on and self:Summary()
+  if not w then return "off" end
+  return string.format("watching: Outrider %.2f%% of the game's time, %d slow moments, %d freezes this session", w.pct, w.spikes, w.hitches)
+end
+
 -- what the player was doing (all read-only, fail-soft)
 function M.Context()
   local map = C.Call("C_Map.GetBestMapForUnit", "player")
