@@ -258,12 +258,12 @@ end
 function M:CpuLines()
   local p, why = M.Profiler()
   if not p then
-    return { { pic = "Interface\Icons\INV_Misc_QuestionMark", title = "CPU from the game: not available", line = why .. ". The always-on watch below times Outrider itself instead." } }
+    return { { pic = "Interface\\Icons\\INV_Misc_QuestionMark", title = "CPU from the game: not available", line = why .. ". The always-on watch below times Outrider itself instead." } }
   end
   return {
-    { pic = "Interface\Icons\Spell_Nature_TimeStop", title = "Recent average", line = ms(p.recentMs, 3) .. " per frame" .. (p.shareGame and string.format(" (%.2f%% of the game's frame time)", p.shareGame) or "") },
-    { pic = "Interface\Icons\INV_Misc_PocketWatch_01", title = "This session", line = ms(p.sessionMs, 3) .. " per frame on average; peak " .. ms(p.peakMs, 1) },
-    { pic = "Interface\Icons\Spell_Nature_Slow", title = "Slow frames", line = string.format("%s frames over 5 ms, %s over 50 ms this session",
+    { pic = "Interface\\Icons\\Spell_Nature_TimeStop", title = "Recent average", line = ms(p.recentMs, 3) .. " per frame" .. (p.shareGame and string.format(" (%.2f%% of the game's frame time)", p.shareGame) or "") },
+    { pic = "Interface\\Icons\\INV_Misc_PocketWatch_01", title = "This session", line = ms(p.sessionMs, 3) .. " per frame on average; peak " .. ms(p.peakMs, 1) },
+    { pic = "Interface\\Icons\\Spell_Nature_Slow", title = "Slow frames", line = string.format("%s frames over 5 ms, %s over 50 ms this session",
       p.over5 and string.format("%.0f", p.over5) or "?", p.over50 and string.format("%.0f", p.over50) or "?") },
   }
 end
