@@ -138,5 +138,7 @@ Running straight on from Phase 4 (owner: no stops, one review at the end).
 
 | Task | Status | SHA | Evidence | Notes |
 |---|---|---|---|---|
+| OI05-01 Scenario contract | MOCK_GREEN | see commit | [OI05-01_02](../reviews/phase5/OI05-01_02.md) | frozen branch of a live copy; overrides checked with reasons; live hash unchanged; version, base hash, assumptions |
+| OI05-02 Oracle deterministic comparisons | MOCK_GREEN | see commit | [OI05-01_02](../reviews/phase5/OI05-01_02.md) | known dimensions with deltas (gold, gear role score, level, role, professions, zone risk, plan value); unknowns listed; stale asks for refresh; offline |
 
 Phases 6-8 (OI06-OI08): NOT_STARTED.
