@@ -113,6 +113,159 @@ function P.Report(psId)
   return rep
 end
 
+-- ------------------------------------------------------------ evidence (OI03-14)
+-- A sanitized, repeatable summary for measuring how well Outrider's own
+-- figures match what you did. No names, no character keys, no times: counts,
+-- medians and map ids only, the same input always giving the same output.
+--   quests     held-out comparison of Journey's fixed estimate (prior only)
+--              with your personal estimator on the same later samples
+--   routes     walking trips paired by route (from map > to map): actual
+--              time against the planner's estimate; routes walked once are
+--              listed as unmatched, not compared
+--   outcomes   counts by kind; completions after a Go are "likely", never proof
+--   sessions   sessions with and without a planner-attributed outcome are
+--              compared only when matched on level band and game build, with
+--              at least MIN_MATCHED of each; otherwise "not compared"
+P.MIN_MATCHED = 3
+local function med(t) local c = {} for i, v in ipairs(t) do c[i] = v end return median(c) end
+function P.Evidence(input)
+  input = input or {}
+  local out = { schema = 1, fixture = input.fixture or nil }
+  local E = ns.Estimator
+  -- quests: prior only vs personal, same held-out split
+  local qs = E and E.QuestSamples(input.quests) or {}
+  table.sort(qs, function(a, b) if a.at ~= b.at then return (a.at or 0) < (b.at or 0) end return a.value < b.value end)
+  local prior = input.prior or 300
+  local cut = math.floor(#qs * (E and E.TRAIN or 0.7))
+  local test, train = {}, {}
+  for i, x in ipairs(qs) do if i <= cut then train[#train + 1] = x else test[#test + 1] = x end end
+  local q = { samples = #qs, train = #train, test = #test }
+  if E and #test >= E.MIN then
+    local models = E.Fit(train, { prior = prior, now = train[#train] and train[#train].at })
+    local pe, me = {}, {}
+    for _, x in ipairs(test) do
+      pe[#pe + 1] = math.abs(x.value - prior)
+      local m = E.Predict(models, x.key, { prior = prior })
+      if m.value then me[#me + 1] = math.abs(x.value - m.value) end
+    end
+    q.priorMedianAbsError, q.personalMedianAbsError = med(pe), med(me)
+    q.note = "same later samples for both; lower is closer"
+  else
+    q.note = "not enough later samples to compare"
+  end
+  out.quests = q
+  -- routes
+  local routes, matched, unmatched = {}, {}, 0
+  for _, t in ipairs(input.trips or {}) do
+    if t.walking and t.seconds and t.estimate and t.fromMap and t.toMap then
+      local k = tostring(t.fromMap) .. ">" .. tostring(t.toMap)
+      routes[k] = routes[k] or { actual = {}, estimate = {} }
+      table.insert(routes[k].actual, t.seconds)
+      table.insert(routes[k].estimate, t.estimate)
+    end
+  end
+  local keys = {}
+  for k in pairs(routes) do keys[#keys + 1] = k end
+  table.sort(keys)
+  for _, k in ipairs(keys) do
+    local r = routes[k]
+    if #r.actual >= 2 then
+      matched[#matched + 1] = { route = k, trips = #r.actual, medianActual = med(r.actual), medianEstimate = med(r.estimate),
+        ratio = med(r.actual) / math.max(1, med(r.estimate)) }
+    else
+      unmatched = unmatched + 1
+    end
+  end
+  out.routes = { paired = matched, unmatched = unmatched, note = "routes walked once are not compared" }
+  -- outcomes
+  local kinds, likely, unknown = {}, 0, 0
+  for _, e in ipairs(input.events or {}) do
+    kinds[e.kind] = (kinds[e.kind] or 0) + 1
+    if e.attribution == "likely" then likely = likely + 1 else unknown = unknown + 1 end
+  end
+  out.outcomes = { byKind = kinds, likely = likely, unknown = unknown, note = "Likely means it followed a Go on a plan step about the same thing; that is not proof the plan led to it" }
+  -- sessions: matched comparison only
+  local used = {}
+  for _, e in ipairs(input.events or {}) do if e.attribution == "likely" and e.sessionId then used[e.sessionId] = true end end
+  local groups = {}
+  for _, m in ipairs(input.sessions or {}) do
+    if m.final == true and m.xpVerified == true and (tonumber(m.durationSeconds) or 0) >= 600 then
+      local band = m.levelStart and (math.floor((m.levelStart - 1) / 5) * 5 + 1) or "?"
+      local k = tostring(band) .. "|" .. tostring(m.build)
+      groups[k] = groups[k] or { with = {}, without = {} }
+      local rate = m.xpEarned * 3600 / m.durationSeconds
+      if used[m.playSessionId] then table.insert(groups[k].with, rate) else table.insert(groups[k].without, rate) end
+    end
+  end
+  local compared = {}
+  local gk = {}
+  for k in pairs(groups) do gk[#gk + 1] = k end
+  table.sort(gk)
+  for _, k in ipairs(gk) do
+    local g = groups[k]
+    if #g.with >= P.MIN_MATCHED and #g.without >= P.MIN_MATCHED then
+      compared[#compared + 1] = { stratum = k, withPlan = #g.with, withoutPlan = #g.without,
+        medianWith = med(g.with), medianWithout = med(g.without) }
+    end
+  end
+  out.sessions = { compared = compared,
+    note = #compared > 0 and "A difference between matched groups is an observation, not proof of cause"
+      or "Not compared: not enough matched sessions with and without the planner" }
+  return out
+end
+
+-- this character's evidence, from the live stores
+function P.MyEvidence()
+  local O = ns.Outcomes
+  local store = O and O:Store() or {}
+  return P.Evidence({ quests = ns.QuestTimes and ns.QuestTimes:Mine() or {}, trips = store.travel or {},
+    events = store.events or {}, sessions = ns.SessionXP and ns.SessionXP:Merged() or {},
+    prior = ns.Journey and ns.Journey.QUEST_TIME })
+end
+
+-- the evidence as Markdown text (same input, same text), for the export
+-- button, the bench tool and the tests
+function P.EvidenceText(ev)
+  local L = { "# AfterAction measurement report (OI03-14)", "",
+    ev.fixture and "Fixture data from a fixed seed, not anyone's play. Same fixture, same report." or "Your own records, without names or times.", "" }
+  local q = ev.quests
+  L[#L + 1] = "## Quest times: Journey's fixed estimate vs your personal estimate"
+  L[#L + 1] = ""
+  L[#L + 1] = string.format("Samples %d (trained on %d earlier, tested on %d later).", q.samples, q.train, q.test)
+  if q.priorMedianAbsError then
+    L[#L + 1] = string.format("Median absolute error: fixed estimate %.0f s, personal estimate %.0f s (%s).", q.priorMedianAbsError, q.personalMedianAbsError, q.note)
+  else
+    L[#L + 1] = "Not compared: " .. q.note .. "."
+  end
+  L[#L + 1] = ""
+  L[#L + 1] = "## Walking routes: planner estimate vs actual"
+  L[#L + 1] = ""
+  L[#L + 1] = "| Route | Trips | Median actual s | Median estimate s | Actual / estimate |"
+  L[#L + 1] = "|---|---|---|---|---|"
+  for _, r in ipairs(ev.routes.paired) do
+    L[#L + 1] = string.format("| %s | %d | %.0f | %.0f | %.2f |", r.route, r.trips, r.medianActual, r.medianEstimate, r.ratio)
+  end
+  L[#L + 1] = ""
+  L[#L + 1] = string.format("Unmatched routes (walked once, not compared): %d.", ev.routes.unmatched)
+  L[#L + 1] = ""
+  L[#L + 1] = "## Outcomes"
+  L[#L + 1] = ""
+  local kinds = {}
+  for k, n in pairs(ev.outcomes.byKind) do kinds[#kinds + 1] = k .. " " .. n end
+  table.sort(kinds)
+  L[#L + 1] = "By kind: " .. table.concat(kinds, ", ") .. "."
+  L[#L + 1] = string.format("Attributed likely: %d; unknown: %d. %s.", ev.outcomes.likely, ev.outcomes.unknown, ev.outcomes.note)
+  L[#L + 1] = ""
+  L[#L + 1] = "## Sessions with and without the planner"
+  L[#L + 1] = ""
+  for _, c in ipairs(ev.sessions.compared) do
+    L[#L + 1] = string.format("- Level band and build %s: with %d sessions, median %.0f XP/h; without %d, median %.0f XP/h.", c.stratum, c.withPlan, c.medianWith, c.withoutPlan, c.medianWithout)
+  end
+  L[#L + 1] = ev.sessions.note .. "."
+  return table.concat(L, "\n") .. "\n"
+end
+
+
 function P.Demo()
   return { demo = true, sessionId = "example", xp = { xp = 18400, seconds = 5400, xpPerHour = 12267, labels = { "example data" } },
     gold = { realizedNet = 25400, transfers = 0, confirmedSales = 2, knownFees = 300, salesWithUnknownFee = 0, estimatedLoot = 41000 },
@@ -186,6 +339,7 @@ ns.Hub:AddTab("afteraction", "After action", function(p)
         local O = ns.Outcomes
         ns.UI:TextDialog("Chronicle", O and ns.Chronicle:Export(O) or "", "copy")
       end, 170 },
+      { "Export evidence", function() ns.UI:TextDialog("AfterAction evidence", P.EvidenceText(P.MyEvidence()), "copy") end, 150 },
       { "Show an example", function() P.showDemo = not P.showDemo refresh() end, 150 } }, plain = true },
   })
 end, 1.6)

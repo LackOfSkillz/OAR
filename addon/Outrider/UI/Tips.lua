@@ -92,6 +92,7 @@ local controls = {
   ["Record outcomes (private, opt-in)"] = "Keep a private record of what happens as you play (quests, gold, deaths, trips). Kept on this PC only.",
   ["Export the chronicle"] = "Show your milestones as text you can copy with Ctrl+C. Nothing is sent anywhere.",
   ["Show an example"] = "Fill the page with clearly labelled example data, or go back to your own session.",
+  ["Export evidence"] = "Show a summary of how well Outrider's estimates match your play (no names or times) to copy with Ctrl+C.",
   ["Resume where I left off"] = "Plan again, starting with the first step from last time that is still good.",
   ["Start a new plan"] = "Forget last time's plan and plan from what is true now.",
   ["Use the Nexus planner (preview)"] = "Switch the planner on. It only suggests; every step is your click.",
