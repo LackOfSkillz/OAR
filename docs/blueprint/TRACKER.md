@@ -155,5 +155,6 @@ Running straight on from Phase 4 (owner: no stops, one review at the end).
 | OI05-15 Realized economics and sale uncertainty | MOCK_GREEN | see commit | [OI05-12_16](../reviews/phase5/OI05-12_16.md) | confirmed sales only; unknown cut no net; unverified apart; samples; depth unknown |
 | OI05-16 Professions cost optimizer | MOCK_GREEN | see commit | [OI05-12_16](../reviews/phase5/OI05-12_16.md) | orange cost per sure point; yellow and green chance unknown; owned and unpriced shown; observed apart |
 | OI05-17 Oracle and Forge UX | MOCK_GREEN | see commit | [OI05-17](../reviews/phase5/OI05-17.md) | Gear page What if?: Forge range with assumptions, save, try, compare, refresh when stale, copy, reset; no live mutation; fixed Hub:AddSection being overridden |
+| OI05-GATE Phase 5 review gate | MOCK_GREEN | see commit | [OI05-GATE](../reviews/phase5/OI05-GATE.md) | 1416 Lua passed; quality, deps 0 new; security 0; review at the end with Phases 3 to 8 |
 
 Phases 6-8 (OI06-OI08): NOT_STARTED.
