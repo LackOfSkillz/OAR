@@ -127,7 +127,11 @@ T.describe("memory made, by part", function()
       for i = 1, 3000 do keep[#keep + 1] = { i, "row " .. i } end
     end)
     ns.Events:On("OTR_TEST_ALLOC", { name = "Lean" }, function() end)
+    -- a collection mid-handler would read low (by design): keep it out of this measurement
+    collectgarbage("collect")
+    collectgarbage("stop")
     ns.Events:Fire("OTR_TEST_ALLOC")
+    collectgarbage("restart")
     local by = {}
     for _, p in ipairs(W:Summary().parts) do by[p.name] = p end
     T.ok(by.Hungry.kb > 100, "the allocating part is charged: " .. by.Hungry.kb)
