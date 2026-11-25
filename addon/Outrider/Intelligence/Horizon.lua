@@ -11,6 +11,13 @@
 -- Migration: with no horizon saved yet, the time you last set elsewhere is
 -- copied in (the Ask snapshot's minutes, or a Radar budget you changed); the
 -- old settings stay as they are.
+-- Review OI-FR05 (2026-11-25): the saved minutes/group/stopRest are your
+-- preference; startedAt is the running session clock. A clock starts when you
+-- set a time, when a migrated time has none, when you press Start a new
+-- session (H.StartNew), and at login once the last session's time has run
+-- out (a /reload keeps the clock). Choosing the same length again during a
+-- running session keeps it; after it ran out, a new one starts. A clock set
+-- in the future is ignored.
 
 local _, ns = ...
 local H = { PRESETS = { 15, 30, 60, 120 }, MIN = 5, MAX = 480, GROUP = { solo = true, group = true, either = true } }
@@ -26,7 +33,9 @@ function H.Validate(input)
     if not m or m ~= m or m ~= math.floor(m) then return nil, "minutes must be a whole number" end
     if m < H.MIN or m > H.MAX then return nil, string.format("minutes must be %d to %d", H.MIN, H.MAX) end
     out.minutes = m
-    out.startedAt = tonumber(input.startedAt)
+    local at = tonumber(input.startedAt)
+    if at and at > time() + 60 then at = nil end
+    out.startedAt = at
   end
   return out
 end
@@ -42,6 +51,8 @@ function H.Get(planner)
     if mins then mins = math.max(H.MIN, math.min(H.MAX, math.floor(mins))) end
     s.horizon = { minutes = mins, group = "either", migrated = mins and true or nil }
   end
+  -- a time limit always has a clock (a migrated one had none: OI-FR05)
+  if type(s.horizon) == "table" and s.horizon.minutes and not tonumber(s.horizon.startedAt) then s.horizon.startedAt = time() end
   local ok = H.Validate(s.horizon)
   if not ok then
     -- a damaged saved value is kept aside (owner rule) and the default used
@@ -57,10 +68,33 @@ function H.Set(planner, input)
   if not clean then return false, why end
   -- the session clock starts when you set a time (OI04-03)
   local old = type(planner:Settings().horizon) == "table" and planner:Settings().horizon or {}
-  if clean.minutes and (old.minutes ~= clean.minutes or not old.startedAt) then clean.startedAt = time()
+  if clean.minutes and (old.minutes ~= clean.minutes or not old.startedAt or H.Over(old)) then clean.startedAt = time()
   elseif clean.minutes then clean.startedAt = old.startedAt end
   planner:Settings().horizon = clean
   return true
+end
+
+-- has this horizon's session clock run out?
+function H.Over(h, now)
+  if type(h) ~= "table" or not h.minutes or not tonumber(h.startedAt) then return false end
+  return (now or time()) - h.startedAt >= h.minutes * 60
+end
+
+-- Start a new session: same length, a fresh clock
+function H.StartNew(planner, now)
+  local h = H.Get(planner)
+  if not h.minutes then return false, "no time limit set" end
+  local s = planner:Settings()
+  s.horizon.startedAt = now or time()
+  return true
+end
+
+-- at login: a session whose time ran out while you were away is over, so the
+-- clock starts again; a quick relog or a /reload keeps it
+function H.OnLogin(planner, now)
+  local h = H.Get(planner)
+  if h.minutes and H.Over(h, now) then return H.StartNew(planner, now) end
+  return false
 end
 
 -- what the planner context gets from it

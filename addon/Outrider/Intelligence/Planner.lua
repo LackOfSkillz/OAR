@@ -32,7 +32,13 @@
 
 local _, ns = ...
 local P = { MAX_CANDIDATES = 60, HORIZON = 8, BEAM = 16, MAX_WORK = 20000, UNKNOWN_SECONDS = 900, MAP_CHANGE = 0.05,
-  LOCAL_MOVE = 120, BUFFER = 1.2 }
+  LOCAL_MOVE = 120, BUFFER = 1.2, PARETO = 4, FAST_SHARE = 0.25 }
+-- Review OI-FR06 (2026-11-25): step times depend on the order, so two states
+-- with the same steps ending on the same map are no longer equivalent. Each
+-- (steps, map) keeps up to PARETO states that no other beats on value, time
+-- and gold together; under a time budget FAST_SHARE of the beam goes to the
+-- quickest states the value cut would drop, so a cheaper path that leaves room
+-- for one more step can still win.
 -- OI04-02: a step's time is its trip plus its activity. When the step before
 -- already brought you to the same map, the trip is shared: this step counts
 -- LOCAL_MOVE instead of its trip from where you started. Plans report their
@@ -41,7 +47,9 @@ local P = { MAX_CANDIDATES = 60, HORIZON = 8, BEAM = 16, MAX_WORK = 20000, UNKNO
 function P.StepSeconds(st, n)
   local s = n.opp.costSeconds or P.UNKNOWN_SECONDS
   local trip = n.meta.travelSeconds
-  if #st.seq > 0 and n.opp.costSeconds and trip and n.meta.mapID and st.map == n.meta.mapID then
+  -- shared travel only after a step whose map is known (st.here): a step with
+  -- no map doesn't put you anywhere (OI-FR06)
+  if #st.seq > 0 and st.here ~= false and n.opp.costSeconds and trip and n.meta.mapID and st.map == n.meta.mapID then
     s = math.max(0, s - trip) + math.min(trip, P.LOCAL_MOVE)
   end
   return s
@@ -175,7 +183,7 @@ function P.Plan(graph, ranked, ctx, opts)
     local map = n.meta.mapID or st.map
     local value = st.value + score[id]
     if n.meta.mapID and st.map and n.meta.mapID ~= st.map then value = value - P.MAP_CHANGE end
-    return { seq = seq, set = set, value = value, map = map,
+    return { seq = seq, set = set, value = value, map = map, here = n.meta.mapID and true or false,
       copper = st.copper + math.max(0, n.opp.costCopper or 0), seconds = st.seconds + P.StepSeconds(st, n) }
   end
 
@@ -206,12 +214,40 @@ function P.Plan(graph, ranked, ctx, opts)
           for i, s in ipairs(nx.seq) do sorted[i] = s end
           table.sort(sorted)
           local k = key(sorted) .. "@" .. tostring(nx.map)
-          local at = seen[k]
-          if not at then
+          local bucket = seen[k]
+          if not bucket then
             nextStates[#nextStates + 1] = nx
-            seen[k] = #nextStates
-          elseif nx.value > nextStates[at].value then
-            nextStates[at] = nx
+            seen[k] = { #nextStates }
+          else
+            local function beats(a, b) return a.value >= b.value and a.seconds <= b.seconds and a.copper <= b.copper end
+            local dominated = false
+            for _, j in ipairs(bucket) do
+              local o = nextStates[j]
+              if o and beats(o, nx) then dominated = true break end
+            end
+            if not dominated then
+              local placed = false
+              for _, j in ipairs(bucket) do
+                local o = nextStates[j]
+                if o and beats(nx, o) then
+                  if placed then nextStates[j] = false else nextStates[j] = nx placed = true end
+                end
+              end
+              if not placed then
+                if #bucket < P.PARETO then
+                  nextStates[#nextStates + 1] = nx
+                  bucket[#bucket + 1] = #nextStates
+                else
+                  -- full: replace the lowest value if this one is higher
+                  local wj
+                  for _, j in ipairs(bucket) do
+                    local o = nextStates[j]
+                    if o and (not wj or o.value < nextStates[wj].value) then wj = j end
+                  end
+                  if wj and nx.value > nextStates[wj].value then nextStates[wj] = nx end
+                end
+              end
+            end
           end
           local f = nx.seq[1]
           if not firsts[f] or nx.value > firsts[f] then firsts[f] = nx.value end
@@ -219,12 +255,36 @@ function P.Plan(graph, ranked, ctx, opts)
       end
       if truncated then break end
     end
+    local live = {}
+    for _, st in ipairs(nextStates) do if st then live[#live + 1] = st end end
+    nextStates = live
     if #nextStates == 0 then break end
     table.sort(nextStates, function(a, b)
       if a.value ~= b.value then return a.value > b.value end
+      if a.seconds ~= b.seconds then return a.seconds < b.seconds end
       return key(a.seq) < key(b.seq)
     end)
-    for i = #nextStates, beam + 1, -1 do nextStates[i] = nil end
+    if #nextStates > beam then
+      local fast = budgetSeconds and math.floor(beam * P.FAST_SHARE) or 0
+      local keep = {}
+      for i = 1, beam - fast do keep[i] = nextStates[i] end
+      if fast > 0 then
+        local rest = {}
+        for i = beam - fast + 1, #nextStates do rest[#rest + 1] = nextStates[i] end
+        table.sort(rest, function(a, b)
+          if a.seconds ~= b.seconds then return a.seconds < b.seconds end
+          if a.value ~= b.value then return a.value > b.value end
+          return key(a.seq) < key(b.seq)
+        end)
+        for i = 1, math.min(fast, #rest) do keep[#keep + 1] = rest[i] end
+        table.sort(keep, function(a, b)
+          if a.value ~= b.value then return a.value > b.value end
+          if a.seconds ~= b.seconds then return a.seconds < b.seconds end
+          return key(a.seq) < key(b.seq)
+        end)
+      end
+      nextStates = keep
+    end
     if nextStates[1].value > best.value then best = nextStates[1] end
     frontier = nextStates
     if truncated then break end

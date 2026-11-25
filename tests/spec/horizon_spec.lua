@@ -100,3 +100,52 @@ T.describe("Horizon session inputs (OI04-01)", function()
     T.eq(H.Label(H.Get(N)), "30 min, solo")
   end)
 end)
+
+T.describe("session clock (review OI-FR05)", function()
+  T.it("a migrated time gets a clock; a clock in the future is ignored", function()
+    local game, ns, N, H = session(function(_, ns) ns.db.char.askMinutes = 30 end)
+    N:Settings().horizon = nil
+    local h = H.Get(N)
+    T.eq(h.minutes, 30)
+    T.ok(tonumber(h.startedAt), "migrated time has a start")
+    T.eq(H.Validate({ minutes = 30, startedAt = game.now + 3600 }).startedAt, nil)
+    T.ok(ns)
+  end)
+
+  T.it("the same length again keeps a running clock, but starts a new one after it ran out", function()
+    local game, _, N, H = session()
+    H.Set(N, { minutes = 60 })
+    local first = N:Settings().horizon.startedAt
+    game.now = game.now + 600
+    H.Set(N, { minutes = 60 })
+    T.eq(N:Settings().horizon.startedAt, first, "still running")
+    N:Settings().horizon.startedAt = game.now - 3601
+    H.Set(N, { minutes = 60 })
+    T.ok(game.now - N:Settings().horizon.startedAt < 5, "a fresh clock")
+  end)
+
+  T.it("Start a new session and a login after the time ran out restart the clock; a reload keeps it", function()
+    local game, _, N, H = session()
+    H.Set(N, { minutes = 30 })
+    N:Settings().horizon.startedAt = game.now - 600
+    T.eq(H.OnLogin(N), false, "time left: kept")
+    T.ok(game.now - N:Settings().horizon.startedAt >= 600)
+    N:Settings().horizon.startedAt = game.now - 4000
+    T.ok(H.OnLogin(N), "ran out while away")
+    T.ok(game.now - N:Settings().horizon.startedAt < 5)
+    N:Settings().horizon.startedAt = game.now - 900
+    T.ok(H.StartNew(N))
+    T.ok(game.now - N:Settings().horizon.startedAt < 5)
+  end)
+
+  T.it("a plan that no longer fits the time left, or closing time, makes it stale", function()
+    local game, _, N, H = session()
+    H.Set(N, { minutes = 60 })
+    local cur = N:Replan("x")
+    T.ok(cur and cur.result.plan, "a plan")
+    T.eq((N:IsStale()), false)
+    -- most of the hour passes: the plan's buffered time is over what is left
+    N:Settings().horizon.startedAt = game.now - 3540
+    T.ok((N:IsStale()), "stale once it can't fit")
+  end)
+end)

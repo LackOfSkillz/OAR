@@ -72,7 +72,16 @@ function M:ContextKey()
   table.sort(skipped)
   parts[#parts + 1] = "skip=" .. table.concat(skipped, ",")
   local hz = type(s.horizon) == "table" and s.horizon or {}
-  parts[#parts + 1] = "horizon=" .. tostring(hz.minutes) .. ":" .. tostring(hz.group) .. ":" .. tostring(hz.stopRest)
+  parts[#parts + 1] = "horizon=" .. tostring(hz.minutes) .. ":" .. tostring(hz.group) .. ":" .. tostring(hz.stopRest) .. ":" .. tostring(hz.startedAt)
+  -- OI-FR05: crossing into closing time, or a plan that no longer fits the
+  -- time left, makes the plan stale
+  if hz.minutes and ns.NexusHorizon then
+    local hc = ns.NexusHorizon.Context(self)
+    parts[#parts + 1] = "closing=" .. tostring(hc.closing == true)
+    local res = self.current and self.current.result
+    local need = res and res.bufferedSeconds
+    if need and hc.budgetSeconds and need > hc.budgetSeconds then parts[#parts + 1] = "over=" .. tostring(self.current.at) end
+  end
   local pr = type(s.prefs) == "table" and s.prefs or {}
   parts[#parts + 1] = "prefs=" .. tostring(pr.on ~= false) .. ":" .. tostring(pr.since)
   local goals = {}
@@ -409,6 +418,8 @@ function M:OnEnable()
   end)
   self:On("OTR_PLAYSESSION", function(mod, _, kind)
     if ns.NexusRecovery then ns.NexusRecovery.OnLogin(mod, kind) end
+    -- a session whose time ran out while you were away starts again (OI-FR05)
+    if ns.NexusHorizon and ns.NexusHorizon.OnLogin(mod) then mod:Request("horizon") end
   end)
 end
 

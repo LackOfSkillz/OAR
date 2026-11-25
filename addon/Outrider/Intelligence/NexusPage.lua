@@ -214,6 +214,10 @@ ns.Hub:AddTab("nexusplan", "Plan (preview)", function(p)
         ns.NexusHorizon.Set(ns.NexusCore, { minutes = h.minutes, group = h.group, stopRest = not h.stopRest })
         ns.NexusCore:Request("horizon") refresh()
       end, 160 }
+      row[#row + 1] = { "Start a new session", function()
+        if ns.NexusHorizon.StartNew(ns.NexusCore) then ns.NexusCore:Request("horizon") end
+        refresh()
+      end, 150 }
       return row
     end)(), plain = true },
     { "header", "My goals" },

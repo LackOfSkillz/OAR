@@ -109,6 +109,7 @@ local controls = {
   ["Solo"] = "Plan solo: steps that need a group are left out.",
   ["With a group"] = "Plan with a group: dungeons and group quests are in.",
   ["Either"] = "Plan solo or with a group.",
+  ["Start a new session"] = "Start the session clock again from now, with the same length.",
   ["End at a rest point"] = "Switch on or off: leave time to end the session at an inn or a city.",
   ["Turn on"] = "Switch this minimap tracking on now (your click).",
   ["Export my records"] = "Show all of this character's outcome records as a code to copy with Ctrl+C. Nothing is sent anywhere.",
