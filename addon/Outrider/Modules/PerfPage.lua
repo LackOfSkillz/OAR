@@ -105,7 +105,7 @@ function M:Sample()
   local l = M.Load()
   local W = ns.PerfWatch
   local s = { at = C.Call("GetTime") or 0, fps = M.FPS(), handled = l.handled,
-    ours = W and W.on and W.cur and W.cur.total or nil }
+    ours = W and W:Current() and W:Current().total or nil }
   s.home, s.world = M.Net()
   local list = self.samples
   list[#list + 1] = s
@@ -213,7 +213,7 @@ function M:ShareText()
     add("Memory: %.1f MB%s", mem.mine / 1024, mem.all and string.format(" of %.1f MB for %d add-ons", mem.all / 1024, mem.addons) or "")
   end
   local W = ns.PerfWatch
-  local w = W and W.on and W:Summary()
+  local w = W and W:IsWatching() and W:Summary()
   if w then add("Always-on watch this session: %.3f%% of the game's time over %d min, %d spikes, %d game freezes (%d mostly Outrider's)",
     w.pct, math.floor(w.seconds / 60), w.spikes, w.hitches, w.ours) end
   local lc = ns.db.global.lagCheck
@@ -244,7 +244,7 @@ function M:Stats()
       note = mem and mem.all and string.format("%.0f%% of %d add-ons", mem.mine / mem.all * 100, mem.addons) or "" },
   }
   local W = ns.PerfWatch
-  local w = W and W.on and W:Summary()
+  local w = W and W:IsWatching() and W:Summary()
   if w then
     out[#out + 1] = { cap = "Watching this session", color = w.pct < M.BUDGETS.lagPct and "good" or "warn",
       value = string.format("%.2f%%", w.pct),
@@ -299,7 +299,7 @@ end
 function M.Minutes()
   local W = ns.PerfWatch
   local rows, live = nil, false
-  if W and W.on and W.cur then rows, live = W.cur.minutes, true
+  if W and W:Current() then rows, live = W:Current().minutes, true
   else
     local list = ns.db.global.perfWatch or {}
     rows = list[#list] and list[#list].minutes
@@ -343,7 +343,7 @@ end
 -- Outrider's heaviest parts this session (the always-on watch)
 function M.Parts()
   local W = ns.PerfWatch
-  local w = W and W.on and W:Summary()
+  local w = W and W:IsWatching() and W:Summary()
   if not w then return {} end
   local out, top = {}, w.parts[1] and w.parts[1].ms or 1
   for i = 1, math.min(8, #w.parts) do
@@ -482,7 +482,7 @@ function M:LiveCpu()
     colorOf = function(v) return v <= budget and "good" or v <= budget * 4 and "warn" or "bad" end,
     now = #vals > 0 and string.format("%.1f ms in the last second (%.2f%%)", vals[#vals], vals[#vals] / 10) or "",
     topText = function(max) return string.format("%.0f ms", max) end,
-    empty = ns.PerfWatch and ns.PerfWatch.on and "starting..." or "switch on Watch performance all the time" }
+    empty = ns.PerfWatch and ns.PerfWatch:IsWatching() and "starting..." or "switch on Watch performance all the time" }
 end
 
 -- Live: FPS each second, last 60 s
@@ -498,7 +498,7 @@ end
 -- This session, minute by minute: Outrider's share; red marks = a slow moment in that minute
 function M.SessionChart()
   local W = ns.PerfWatch
-  local rows = W and W.on and W.cur and W.cur.minutes or {}
+  local rows = W and W:Current() and W:Current().minutes or {}
   local vals, marks = {}, {}
   local slow = ns.db.global.perfSlow or {}
   for i, r in ipairs(rows) do
@@ -551,7 +551,7 @@ ns.Hub:AddTab("performance", "Performance", function(p)
     { "header", "Minute by minute", icon = "INV_Misc_PocketWatch_02" },
     { "note", function()
       local W = ns.PerfWatch
-      if W and W.on then return "This session, newest minute first, page open or closed." end
+      if W and W:IsWatching() then return "This session, newest minute first, page open or closed." end
       return "The watch is off: switch on Watch performance all the time above."
     end },
     { "bars", function() return M.Minutes() end },

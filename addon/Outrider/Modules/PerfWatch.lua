@@ -101,6 +101,10 @@ function M:Note(where, ms)
   if ms >= M.SPIKE_MS then self:Slow("spike", where, ms) end
 end
 
+-- public: is the watch running, and the session so far (or nil)
+function M:IsWatching() return self.on == true end
+function M:Current() return self.on and self.cur or nil end
+
 function M:Activity()
   local w = self.on and self:Summary()
   if not w then return "off" end
