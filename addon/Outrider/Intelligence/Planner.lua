@@ -31,7 +31,21 @@
 --   financial = "confirmed"|"unconfirmed", unconfirmed = { ids } }
 
 local _, ns = ...
-local P = { MAX_CANDIDATES = 60, HORIZON = 8, BEAM = 16, MAX_WORK = 20000, UNKNOWN_SECONDS = 900, MAP_CHANGE = 0.05 }
+local P = { MAX_CANDIDATES = 60, HORIZON = 8, BEAM = 16, MAX_WORK = 20000, UNKNOWN_SECONDS = 900, MAP_CHANGE = 0.05,
+  LOCAL_MOVE = 120, BUFFER = 1.2 }
+-- OI04-02: a step's time is its trip plus its activity. When the step before
+-- already brought you to the same map, the trip is shared: this step counts
+-- LOCAL_MOVE instead of its trip from where you started. Plans report their
+-- time as an estimate with a BUFFER margin, and a time budget is checked
+-- against the margined figure (conservative).
+function P.StepSeconds(st, n)
+  local s = n.opp.costSeconds or P.UNKNOWN_SECONDS
+  local trip = n.meta.travelSeconds
+  if #st.seq > 0 and n.opp.costSeconds and trip and n.meta.mapID and st.map == n.meta.mapID then
+    s = math.max(0, s - trip) + math.min(trip, P.LOCAL_MOVE)
+  end
+  return s
+end
 ns.NexusPlanner = P
 
 local function key(seq) return table.concat(seq, ">") end
@@ -145,8 +159,8 @@ function P.Plan(graph, ranked, ctx, opts)
     local c = n.opp.costCopper or 0 -- an unknown cost never reaches here as 0 under a reserve (Graph.lua)
     if c > 0 and (not spendable or state.copper + c > spendable) then return false, "over budget" end
     if budgetSeconds then
-      local s = n.opp.costSeconds or P.UNKNOWN_SECONDS
-      if state.seconds + s > budgetSeconds then return false, "over the time budget" end
+      local s = P.StepSeconds(state, n)
+      if (state.seconds + s) * P.BUFFER > budgetSeconds then return false, "over the time budget" end
     end
     return true
   end
@@ -162,7 +176,7 @@ function P.Plan(graph, ranked, ctx, opts)
     local value = st.value + score[id]
     if n.meta.mapID and st.map and n.meta.mapID ~= st.map then value = value - P.MAP_CHANGE end
     return { seq = seq, set = set, value = value, map = map,
-      copper = st.copper + math.max(0, n.opp.costCopper or 0), seconds = st.seconds + (n.opp.costSeconds or P.UNKNOWN_SECONDS) }
+      copper = st.copper + math.max(0, n.opp.costCopper or 0), seconds = st.seconds + P.StepSeconds(st, n) }
   end
 
   local start = { seq = {}, set = {}, value = 0, copper = 0, seconds = 0, map = ctx.mapID }
@@ -240,5 +254,6 @@ function P.Plan(graph, ranked, ctx, opts)
   local ok, field = ns.Nexus.Validate("Plan", plan)
   if not ok then return { why = "plan failed validation: " .. tostring(field), code = "invalid_plan", work = work, pin = pinInfo } end
   return { plan = plan, value = best.value, alternatives = alternatives, truncated = truncated, work = work, pin = pinInfo,
-    unconfirmed = unconfirmed, financial = #unconfirmed > 0 and "unconfirmed" or "confirmed", unplannable = unplannable }
+    unconfirmed = unconfirmed, financial = #unconfirmed > 0 and "unconfirmed" or "confirmed", unplannable = unplannable,
+    estimateSeconds = best.seconds, bufferedSeconds = math.floor(best.seconds * P.BUFFER + 0.5) }
 end

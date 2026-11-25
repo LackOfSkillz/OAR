@@ -39,9 +39,8 @@ T.describe("Horizon session inputs (OI04-01)", function()
     H.Set(N, { minutes = 15, group = "either" })
     local cur = N:Replan("x")
     T.eq(N:Context().budgetSeconds, 900)
-    local total = 0
-    for _, id in ipairs(cur.result.plan.steps) do total = total + (cur.graph.nodes[id].opp.costSeconds or 900) end
-    T.ok(total <= 900, "the plan fits 15 minutes: " .. total)
+    -- the plan's own estimate (shared travel counted once), with its margin
+    T.ok(cur.result.bufferedSeconds <= 900, "the plan fits 15 minutes: " .. tostring(cur.result.bufferedSeconds))
   end)
 
   T.it("solo leaves out steps that need a group, and what needs them first", function()

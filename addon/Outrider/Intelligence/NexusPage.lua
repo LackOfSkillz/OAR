@@ -66,6 +66,10 @@ function P.Cards(refresh)
   local notes = {}
   if N:IsStale() then notes[#notes + 1] = "|cffffc84dYour character changed since this plan: press Re-plan.|r" end
   if gone > 0 then notes[#notes + 1] = string.format("%d step%s went out of date: press Re-plan.", gone, gone == 1 and "" or "s") end
+  if res.estimateSeconds and res.estimateSeconds > 0 then
+    notes[#notes + 1] = string.format("About %d min for these steps (an estimate; allow up to %d min). Travel shared between steps on one map is counted once.",
+      math.floor(res.estimateSeconds / 60 + 0.5), math.floor(res.bufferedSeconds / 60 + 0.5))
+  end
   if res.truncated then notes[#notes + 1] = "The search stopped at its time limit; this is the best plan found so far." end
   if #(res.alternatives or {}) > 0 then
     local alt = {}

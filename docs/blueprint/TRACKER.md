@@ -115,6 +115,7 @@ Owner authorization: on 2026-11-24 Gary chose "Start Phase 4 now" while the Phas
 
 | Task | Status | SHA | Evidence | Notes |
 |---|---|---|---|---|
-| OI04-01 Horizon session inputs | MOCK_GREEN | see commit | [OI04-01](../reviews/phase4/OI04-01.md) | 15/30/60/120 min or custom 5..480, solo/group/either, end at a rest point; solo leaves out group steps and what needs them; migrates askMinutes or a changed Radar budget (old values kept) |
+| OI04-01 Horizon session inputs | MOCK_GREEN | 43f031a | [OI04-01](../reviews/phase4/OI04-01.md) | 15/30/60/120 min or custom 5..480, solo/group/either, end at a rest point; solo leaves out group steps and what needs them; migrates askMinutes or a changed Radar budget (old values kept) |
+| OI04-02 Multi-objective planning | MOCK_GREEN | see commit | [OI04-02](../reviews/phase4/OI04-02.md) | step time = trip + activity; same-map travel shared once; estimate with 20% margin, budget checked on the margin |
 
 Phases 5-8 (OI05-OI08): NOT_STARTED.

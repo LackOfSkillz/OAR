@@ -114,8 +114,13 @@ function A.Adapt(source, c, revision, now)
     expiresAt = ev.expiresAt, intent = c.go and "waypoint" or (c.panel and "panel") or "none",
     revision = revision or 1, legacyCandidateId = idPart(c.key):sub(1, 120), why = clean(c.why, 300),
   }
+  -- time = the trip there plus the activity itself, when the producer gives
+  -- one (OI04-02: a quest's own time used to be left out)
   local secs = tonumber(c.seconds)
-  if secs and secs >= 0 and secs == secs then rec.costSeconds = math.min(31536000, math.floor(secs)) end
+  local act = tonumber(c.estimatedActivitySeconds)
+  if secs and secs >= 0 and secs == secs then
+    rec.costSeconds = math.min(31536000, math.floor(secs + ((act and act >= 0 and act == act) and act or 0)))
+  end
   local conf = clamp(c.confidence)
   if conf then rec.risk = 1 - conf end
   if ev.freshness == "unknown" then rec.freshnessUnknown = true end
