@@ -91,6 +91,30 @@ An earlier clean run at `420ab83` failed the quality gate on two new findings: a
 - **Owner checks:** live, two-client, clean-machine and provider tests.
 - **Command Center planning:** waiting for the owner to confirm the direction.
 
+## Round 3: FR17 (ChatGPT review of `09874c8`)
+
+| ID | Fix | Files | Regression test |
+|---|---|---|---|
+| FR17 strict gate fails closed | Under `--require-content`, the gate now fails on any unverified result: a missing lupa, a sandbox failure in either the base or the candidate version of a file, or any part of either version that couldn't be compared. The record-id fallback never counts as content verification in strict mode. Non-strict runs still fall back to ids and print UNVERIFIED notes. | `tools/preservation_check.py` (commit `6523212`) | `companion/tests/test_preservation.py`, class `StrictFailsClosed`: four tests cover a missing lupa, a sandbox failure on the base side and on the candidate side, uncomparable parts, and the strict CLI exit code on the repository. Two of them fail on the previous gate (`09874c8`); the missing-lupa case already failed there. |
+
+**Full suite from a fresh clone at `6523212`** (`tools/test.ps1 -RequirePython`, exit 0):
+
+- **Lua specs:** 1,472 passed, 0 failed.
+- **Companion tests:** passed. `test_preservation.py` ran 12 tests with 0 skipped; the 1 skip in the suite is the existing cloud test.
+- **Quality:** 0 new findings.
+- **Dependencies:** 0 new.
+- **Security:** 0 violations.
+- **Preservation (strict):** all 30 data files keep every value from `7f4ab21`, with 0 unverified.
+
+The UNVERIFIED lines in the test output come from the test's own deliberately broken flattener, not from the repository.
+
+**Command Center:** the planning documents are in a separate docs-only commit (Track B). No Command Center code has been written.
+
+**Still open:**
+
+- **CI:** blocked by GitHub billing.
+- **Owner checks:** live, two-client, clean-machine and provider tests.
+
 ## Independent review (ChatGPT fills)
 
 | Finding ID | Severity | Evidence | Status |
