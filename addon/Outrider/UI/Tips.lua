@@ -92,6 +92,7 @@ local controls = {
   ["Record outcomes (private, opt-in)"] = "Keep a private record of what happens as you play (quests, gold, deaths, trips). Kept on this PC only.",
   ["Export the chronicle"] = "Show your milestones as text you can copy with Ctrl+C. Nothing is sent anywhere.",
   ["Show an example"] = "Fill the page with clearly labelled example data, or go back to your own session.",
+  ["Turn on"] = "Switch this minimap tracking on now (your click).",
   ["Export my records"] = "Show all of this character's outcome records as a code to copy with Ctrl+C. Nothing is sent anywhere.",
   ["Start fresh (archived)"] = "Click twice: this character's records go to the archive (kept, not deleted) and new ones begin.",
   ["Export evidence"] = "Show a summary of how well Outrider's estimates match your play (no names or times) to copy with Ctrl+C.",

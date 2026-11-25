@@ -3,7 +3,7 @@
 -- (ideas only, no code or data copied from other addons):
 --   * Find Herbs reminder: herb dots on the minimap come from Blizzard's
 --     "Find Herbs" tracking. If you have Herbalism and it is off, say so once
---     per session (hard rule 6). Outrider never switches it itself.
+--     per character per day (hard rule 6). Outrider never switches it itself.
 --   * Pin on sight: mouse over a herb or ore node and it goes on the map
 --     straight away (LootLog already pins it when you gather). Position is
 --     where you stand, merged like gathered nodes; verified = false.
@@ -52,17 +52,45 @@ function M:CheckTracking()
   for skill, spell in pairs(TRACKING) do
     if owned[skill] then
       for _, t in ipairs(list) do
-        if t.name == spell and not t.active and self:Settings().remind and not (self.reminded or {})[spell] then
-          self.reminded = self.reminded or {}
-          self.reminded[spell] = true
+        -- at most once per character per day: a /reload or another login the
+        -- same day doesn't repeat it (it came back 38 times, 2026-11-24)
+        local s = self:Settings()
+        s.remindedOn = type(s.remindedOn) == "table" and s.remindedOn or {}
+        local today = date("%Y-%m-%d")
+        if t.name == spell and not t.active and s.remind and s.remindedOn[spell] ~= today then
+          s.remindedOn[spell] = today
           -- to the Feed, not chat: login stays quiet (rule 6, premium plan B18)
-          if ns.Feed then ns.Feed:Add(nil, { title = spell .. " is off", color = "warn",
-            text = "Herb and ore dots won't show on the minimap. Press your Herb button or use the minimap's magnifier." }) end
+          if ns.Feed then ns.Feed:Add(nil, { title = spell .. " is off", color = "warn", action = "tracking", arg = spell,
+            text = "Herb and ore dots won't show on the minimap. Press Turn on here, or your Herb button (Macros page)." }) end
           self:Info("%s tracking is off", spell)
         end
       end
     end
   end
+end
+
+-- Turn a minimap tracking type on, from the player's click on the feed card
+-- (the same call Blizzard's tracking menu makes). Checked again afterwards;
+-- if this client refuses, the Herb button (a /cast macro) still works.
+function M:TurnOn(spell)
+  local n = C.Call("C_Minimap.GetNumTrackingTypes")
+  if type(n) ~= "number" then return false, "this client doesn't list tracking: press your Herb button instead" end
+  for i = 1, n do
+    local info = C.Call("C_Minimap.GetTrackingInfo", i)
+    if type(info) == "table" and C.Readable(info.name) == spell then
+      if info.active then return true, spell .. " is already on" end
+      local fn = C.Resolve("C_Minimap.SetTracking")
+      local ok = type(fn) == "function" and pcall(fn, i, true)
+      local again = C.Call("C_Minimap.GetTrackingInfo", i)
+      if ok and type(again) == "table" and again.active then
+        self:Info("%s turned on from the feed", spell)
+        return true, spell .. " is on: herb dots show on the minimap"
+      end
+      self:Info("%s: turning on from the feed didn't work", spell)
+      return false, "couldn't turn " .. spell .. " on from here: press your Herb button (Macros page)"
+    end
+  end
+  return false, spell .. " isn't in your tracking list"
 end
 
 -- Lines of a tooltip from its data (TooltipDataProcessor) or the frame.
@@ -160,6 +188,11 @@ ns.TooltipLines:Add("item", "herb", M, function(tip)
 end)
 
 function M:OnEnable()
+  -- the feed card's "Turn on" button (Feed loads after this file)
+  if ns.Feed and ns.Feed.RegisterAction then
+    ns.Feed.RegisterAction("tracking", "Turn on", "Switch this minimap tracking on now (your click).",
+      function(spell) return M:TurnOn(spell) end)
+  end
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:CheckTracking() end)
   self:On("MINIMAP_UPDATE_TRACKING", function(mod) mod:CheckTracking() end)
   if not M.hooked then

@@ -37,7 +37,10 @@ function M:Add(_, opts)
   -- top (premium plan B13: "No hunter aspect active" was listed three times)
   for i = 1, math.min(8, #self.list) do
     local e = self.list[i]
-    if e.title == title and e.text == text and time() - (e.t or 0) < 6 * 3600 then
+    -- only the same character's repeat merges: another character's notice is
+    -- its own entry with its own name (2026-11-24: Sheer's Find Herbs reminder
+    -- showed as Khreos's, x38)
+    if e.title == title and e.text == text and e.who == ns.db.key and time() - (e.t or 0) < 6 * 3600 then
       table.remove(self.list, i)
       e.count, e.t, e.n = (e.count or 1) + 1, time(), g.feedN
       table.insert(self.list, 1, e)
@@ -45,7 +48,8 @@ function M:Add(_, opts)
       return
     end
   end
-  table.insert(self.list, 1, { n = g.feedN, t = time(), title = title, text = text, color = opts.color, who = ns.db.key })
+  table.insert(self.list, 1, { n = g.feedN, t = time(), title = title, text = text, color = opts.color, who = ns.db.key,
+    action = type(opts.action) == "string" and opts.action or nil, arg = type(opts.arg) == "string" and opts.arg or nil })
   while #self.list > self.CAP do table.remove(self.list) end
   ns.Hub:Refresh()
 end
@@ -57,6 +61,13 @@ function M:Unread()
 end
 
 function M:MarkRead() ns.db.global.feedSeen = ns.db.global.feedN end
+
+-- Buttons on feed cards. A notice saves only an action name and an argument
+-- (opts.action = "tracking", opts.arg = "Find Herbs"); the module that owns it
+-- registers what the button does. It runs only from the player's click, and
+-- only on the character the notice is about.
+M.ACTIONS = {}
+function M.RegisterAction(name, label, tip, fn) M.ACTIONS[name] = { label = label, tip = tip, fn = fn } end
 
 local function when(t)
   local d = time() - t
@@ -103,8 +114,17 @@ ns.Hub:AddTab("feed", "Feed", function(p)
         local icon = ({ rare = "Ability_Hunter_SniperShot", upgrade = "INV_Chest_Chain_05", reward = "INV_Box_01",
           ammo = "INV_Ammo_Arrow_02", errand = "INV_Misc_Bag_08", tip = "INV_Misc_Note_01" })[kind]
         local art = ns.Art and ns.Art:Has("feed_" .. kind) and ("feed_" .. kind) or nil
+        local actions
+        local a = e.action and M.ACTIONS[e.action]
+        if a and e.who == ns.db.key then
+          actions = { { a.label, function()
+            local ok, why = a.fn(e.arg)
+            ns.Print("%s", tostring(why or (ok and "done" or "that didn't work")))
+            p:Refresh()
+          end, a.tip } }
+        end
         out[#out + 1] = { art = art, pic = "Interface\\Icons\\" .. icon, title = e.title, tags = tags,
-          line = e.text and e.text:gsub("\n", " ") or "" }
+          line = e.text and e.text:gsub("\n", " ") or "", actions = actions }
       end
       return out
     end },

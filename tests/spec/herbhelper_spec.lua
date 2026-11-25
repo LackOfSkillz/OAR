@@ -80,4 +80,50 @@ T.describe("herb helper", function()
     T.ok(listed)
     T.eq(#ns.Errors.list, 0)
   end)
+  T.it("reminds once per character per day, not on every reload or login (it came back x38)", function()
+    local game, ns = session({ { name = "Find Herbs", active = false } })
+    local H = ns.HerbHelper
+    for _ = 1, 5 do H.reminded = nil H:CheckTracking() end
+    local n = 0
+    for _, e in ipairs(ns.Feed.list) do if e.title == "Find Herbs is off" then n = n + (e.count or 1) end end
+    T.eq(n, 1, "the same day: once")
+    game:advance(86400 + 60)
+    H:CheckTracking()
+    n = 0
+    for _, e in ipairs(ns.Feed.list) do if e.title == "Find Herbs is off" then n = n + (e.count or 1) end end
+    T.eq(n, 2, "the next day: once more")
+  end)
+
+  T.it("another character's notice is its own entry with its own name, never merged under the first", function()
+    local game, ns = session({ { name = "Find Herbs", active = false } })
+    local first = ns.Feed.list[1]
+    T.eq(first.who, ns.db.key)
+    local me = ns.db.key
+    ns.db.key = "Sheer-Mcluvin"
+    ns.Feed:Add(nil, { title = first.title, text = first.text })
+    ns.db.key = me
+    T.eq(ns.Feed.list[1].who, "Sheer-Mcluvin")
+    T.eq(ns.Feed.list[2].who, me)
+    T.eq(ns.Feed.list[2].count or 1, 1, "the other character's count is untouched")
+  end)
+
+  T.it("Turn on switches Find Herbs on from the feed card, and says so when the client refuses", function()
+    local game, ns = session({ { name = "Find Herbs", active = false }, { name = "Track Beasts", active = true } })
+    ns.Hub:Build():Show()
+    ns.Hub:ShowTab("feed")
+    local ok, why = ns.HerbHelper:TurnOn("Find Herbs")
+    T.ok(ok, why) T.eq(game.tracking[1].active, true)
+    ok, why = ns.HerbHelper:TurnOn("Find Herbs")
+    T.ok(why:find("already on"))
+    game.tracking[1].active = false
+    game.trackingLocked = true
+    ok, why = ns.HerbHelper:TurnOn("Find Herbs")
+    T.eq(ok, false) T.ok(why:find("Herb button"), why)
+    T.ok(ns.Feed.ACTIONS.tracking, "the feed knows the Turn on button")
+    T.eq(ns.Feed.list[1].action, "tracking") T.eq(ns.Feed.list[1].arg, "Find Herbs")
+    local missing = {}
+    for label in pairs(ns.UI.untipped or {}) do missing[#missing + 1] = label end
+    T.eq(#missing, 0, table.concat(missing, ", "))
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

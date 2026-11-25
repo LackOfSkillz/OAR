@@ -1100,7 +1100,13 @@ function M.new(opts)
   end }
   base.C_Minimap = { GetViewRadius = function() return opts.minimapRadius or 200 end,
     GetNumTrackingTypes = function() return game.tracking and #game.tracking or 0 end,
-    GetTrackingInfo = function(i) return game.tracking and game.tracking[i] end }
+    GetTrackingInfo = function(i) return game.tracking and game.tracking[i] end,
+    -- like the client: switches tracking type i on or off (game.trackingLocked refuses)
+    SetTracking = function(i, on)
+      if game.trackingLocked then error("blocked") end
+      local t = game.tracking and game.tracking[i]
+      if t then t.active = on and true or false end
+    end }
   base.GetPlayerFacing = function() return game.facing or 0 end
   base.UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = mapID, x = x, y = y } end }
   base.C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) game.superTracked = on end }
