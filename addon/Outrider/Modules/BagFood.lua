@@ -22,6 +22,26 @@ local function itemSpell(id)
   return C.Readable(name)
 end
 
+-- What each item is never changes: its food/drink spell and its name and
+-- level are kept by item id, so a bag update (every loot) only looks up items
+-- it hasn't seen (34 ms a bag update before; always-on watch, 2026-11-25).
+-- An item whose details haven't arrived isn't kept, so it is asked again.
+M.known = {}
+local function lookup(id)
+  local k = M.known[id]
+  if k ~= nil then return k end
+  local info = C.ItemInfo(id)
+  if not (info and info.name) then return nil end
+  local spell = itemSpell(id)
+  if spell == "Food" or spell == "Drink" or spell == "Refreshment" then
+    k = { spell = spell, name = info.name, reqLevel = info.reqLevel or 0, conjured = info.name:find("Conjured", 1, true) ~= nil }
+  else
+    k = false
+  end
+  M.known[id] = k
+  return k
+end
+
 -- returns { food = name, drink = name }
 function M:Scan()
   local myLevel = C.Call("UnitLevel", "player") or 1
@@ -38,16 +58,10 @@ function M:Scan()
   for bag = 0, (rawget(_G, "NUM_BAG_SLOTS") or 4) do
     for slot = 1, C.NumSlots(bag) do
       local _, id = C.ItemCountAt(bag, slot)
-      if id then
-        local spell = itemSpell(id)
-        if spell == "Food" or spell == "Drink" or spell == "Refreshment" then
-          local info = C.ItemInfo(id)
-          if info and info.name and (info.reqLevel or 0) <= myLevel then
-            info.conjured = info.name:find("Conjured", 1, true) ~= nil
-            if spell ~= "Drink" then consider("food", info) end
-            if spell ~= "Food" then consider("drink", info) end
-          end
-        end
+      local k = id and lookup(id)
+      if k and k.reqLevel <= myLevel then
+        if k.spell ~= "Drink" then consider("food", k) end
+        if k.spell ~= "Food" then consider("drink", k) end
       end
     end
   end

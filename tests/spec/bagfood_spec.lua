@@ -53,4 +53,19 @@ T.describe("bag food", function()
     T.contains(game.macros[1].body, "Old Bread")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("a bag update only looks up items it hasn't seen (34 ms per loot before)", function()
+    local game, ns = session()
+    local C = ns.Compat
+    local orig, n = C.ItemInfo, 0
+    C.ItemInfo = function(...) n = n + 1 return orig(...) end
+    ns.BagFood:Scan()
+    T.eq(n, 0, "every item in the bags is already known")
+    game.items[7] = { name = "Moist Cornbread", reqLevel = 15, spell = "Food" }
+    game.bags[0][7] = 7
+    ns.BagFood:Scan()
+    T.eq(n, 1, "only the new item is looked up")
+    C.ItemInfo = orig
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)
