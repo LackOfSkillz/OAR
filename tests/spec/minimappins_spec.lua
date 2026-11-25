@@ -29,6 +29,7 @@ T.describe("minimap pins", function()
     game:login()
     ns.Modules:SetEnabled("AutoCheck", false)
     ns.db.global.pois["npc-1-vendor"] = { id = "npc-1-vendor", kind = "vendor", mapID = 1412, x = 0.50, y = 0.37, name = "Smith", verified = false }
+    ns.MapPins:Invalidate() -- placed directly, as the addon's own writers then do
     local M = ns.Modules:Get("MinimapPins")
     M:Update()
     T.eq(#M.used, 1, "40 yards away with a 200 yard radius")
@@ -46,6 +47,7 @@ T.describe("minimap pin hover", function()
     game:login()
     ns.Modules:SetEnabled("AutoCheck", false)
     ns.db.global.pois["npc-1-vendor"] = { id = "npc-1-vendor", kind = "vendor", mapID = 1412, x = 0.50, y = 0.37, name = "Smith", verified = false }
+    ns.MapPins:Invalidate() -- placed directly, as the addon's own writers then do
     local M = ns.Modules:Get("MinimapPins")
     M:Update()
     local d = M.used[1]
@@ -67,6 +69,7 @@ T.describe("minimap pins direction", function()
     ns.Modules:SetEnabled("AutoCheck", false)
     -- player at map 0.46,0.37; place at 0.50 (east), 0.33 (north): map y grows south
     ns.db.global.pois["npc-2-vendor"] = { id = "npc-2-vendor", kind = "vendor", mapID = 1412, x = 0.50, y = 0.33, name = "NE", verified = false }
+    ns.MapPins:Invalidate() -- placed directly, as the addon's own writers then do
     local M = ns.Modules:Get("MinimapPins")
     M:Update()
     local _, _, _, x1, y1 = M.used[1]:GetPoint(1)

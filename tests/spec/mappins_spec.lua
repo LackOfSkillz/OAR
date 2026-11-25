@@ -14,6 +14,7 @@ local function addPlaces(ns)
   ns.db.global.pois["npc-1-vendor"] = { id = "npc-1-vendor", kind = "vendor", mapID = 1412, x = 0.4, y = 0.5, name = "Smith", n = 2, faction = "Horde", verified = false }
   ns.db.global.pois["npc-2-flight_master"] = { id = "npc-2-flight_master", kind = "flight_master", mapID = 1412, x = 0.6, y = 0.2, name = "Flyer", faction = "Alliance", verified = false }
   ns.db.global.pois["npc-3-bank"] = { id = "npc-3-bank", kind = "bank", mapID = 9999, x = 0.1, y = 0.1, name = "Banker", verified = false }
+  ns.MapPins:Invalidate() -- placed directly, as the addon's own writers then do
 end
 
 T.describe("map pins", function()

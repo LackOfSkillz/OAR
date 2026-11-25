@@ -49,3 +49,29 @@ T.describe("zone change hitches", function()
     G.Compare = orig
   end)
 end)
+
+T.describe("minimap while moving", function()
+  T.it("map pins don't recount every saved place on each call, and still see new places", function()
+    local game, ns = session("WARRIOR")
+    local P = ns.MapPins
+    local pois = ns.db.global.pois
+    pois["npc-1-vendor"] = { id = "npc-1-vendor", kind = "vendor", mapID = 1412, x = 0.4, y = 0.5, name = "Smith", verified = false }
+    P:Invalidate()
+    local first = P:PinsFor(1412)
+    -- a place added without an event: the cached list is kept for a while...
+    pois["npc-2-bank"] = { id = "npc-2-bank", kind = "bank", mapID = 1412, x = 0.2, y = 0.2, name = "Banker", verified = false }
+    T.eq(P:PinsFor(1412), first, "no recount on every call")
+    -- ...and picked up within COUNT_S
+    game:advance(P.COUNT_S + 1)
+    local found
+    for _, p in ipairs(P:PinsFor(1412)) do if p.name == "Banker" then found = p end end
+    T.ok(found, "the new place shows within " .. P.COUNT_S .. " s")
+    -- with the event it shows at once
+    pois["npc-3-inn"] = { id = "npc-3-inn", kind = "innkeeper", mapID = 1412, x = 0.3, y = 0.3, name = "Inn", verified = false }
+    ns.Events:Fire("OTR_POI_ADDED")
+    local inn
+    for _, p in ipairs(P:PinsFor(1412)) do if p.name == "Inn" then inn = p end end
+    T.ok(inn, "an added place shows at once")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)

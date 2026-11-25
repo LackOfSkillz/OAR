@@ -48,6 +48,7 @@ T.describe("npc pack", function()
   T.it("an NPC Gary visited himself replaces the pack copy", function()
     local game, ns = session(true)
     ns.db.global.pois["npc-9101-vendor"] = { id = "npc-9101-vendor", kind = "vendor", mapID = 1412, x = 0.471, y = 0.371, npcID = 9101, name = "Pack Smith", verified = false }
+    if ns.MapPins then ns.MapPins:Invalidate() end -- placed directly, as the addon's own writers then do
     local n = 0
     for _, p in ipairs(ns.MapPins:PinsFor(1412)) do if p.npcID == 9101 then n = n + 1 end end
     T.eq(n, 1)

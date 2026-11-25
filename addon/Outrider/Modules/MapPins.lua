@@ -223,7 +223,8 @@ end
 -- tables each time made memory read 3 MB (2026-11-11). Results are cached
 -- per map and dropped when a place, sighting, filter or rare pack changes.
 M.cache = {}
-function M:Invalidate() self.cache = {} end
+M.COUNT_S = 10
+function M:Invalidate() self.cache = {} self.poiCountAt = nil end
 
 ns.Events:On("OTR_POI_ADDED", M, function() M:Invalidate() end)
 ns.Events:On("OTR_SIGHTING_ADDED", M, function() M:Invalidate() end)
@@ -233,9 +234,17 @@ local NONE = {}
 function M:PinsFor(mapID)
   if self:Settings().off then return NONE end
   if ns.LocationShare and ns.LocationShare:Prune() then self:Invalidate() end
-  -- also rebuild if places were added or removed without an event
-  local n = 0
-  for _ in pairs(ns.db.global.pois or {}) do n = n + 1 end
+  -- also rebuild if places were added or removed without an event. Counting
+  -- every saved place on each call cost the minimap work several times a
+  -- second while moving (always-on watch, 2026-11-25): the count is taken at
+  -- most every COUNT_S; the add/remove events still rebuild at once.
+  local now = (GetTime and GetTime()) or 0
+  if not self.poiCountAt or now - self.poiCountAt >= M.COUNT_S then
+    local n = 0
+    for _ in pairs(ns.db.global.pois or {}) do n = n + 1 end
+    self.poiCount, self.poiCountAt = n, now
+  end
+  local n = self.poiCount
   local cached = self.cache[mapID]
   if cached and cached.poiCount == n then return cached.pins end
   local out = self:BuildPins(mapID)

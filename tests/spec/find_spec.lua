@@ -11,6 +11,7 @@ local function session()
   game:login()
   ns.db.global.pois["npc-1-vendor"] = { id = "npc-1-vendor", kind = "vendor", mapID = 1412, x = 0.45, y = 0.45, name = "Varia Hardhide" }
   ns.db.global.pois["npc-2-spirit_healer"] = { id = "npc-2-spirit_healer", kind = "spirit_healer", mapID = 1412, x = 0.52, y = 0.52, name = "Spirit Healer" }
+  if ns.MapPins then ns.MapPins:Invalidate() end -- placed directly, as the addon's own writers then do
   ns.db.global.sightings[5807] = { { t = game.now, state = "alive", mapID = 1412, x = 0.3, y = 0.3, layer = 1 } }
   ns.db.global.discovered = ns.db.global.discovered or {}
   ns.db.global.discovered.npcs = ns.db.global.discovered.npcs or {}

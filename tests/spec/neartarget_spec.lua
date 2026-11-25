@@ -9,6 +9,7 @@ local function session(cls, level)
   ns.db.global.pois = {}
   local function put(id, name, title, x, y, note)
     ns.db.global.pois[id] = { id = id, kind = "trainer", mapID = 1412, x = x, y = y, name = name, title = title, note = note }
+    if ns.MapPins then ns.MapPins:Invalidate() end -- placed directly, as the addon's own writers then do
   end
   return game, ns, put
 end
