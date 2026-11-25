@@ -87,4 +87,21 @@ T.describe("memory by part", function()
     T.eq(addons[1].label, "Questie")
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("repeats every 15 minutes and logs which part grew", function()
+    local game, ns, P = session()
+    game:advance(P.SETTLE_S + 1)
+    finish(game, P)
+    ns.db.global.growing = {}
+    for i = 1, 6000 do ns.db.global.growing[i] = { "row " .. i, i } end
+    game:advance(P.AGAIN_S + 1)
+    finish(game, P)
+    local list = ns.db.global.perfMemory
+    T.eq(#list, 2, "a second automatic estimate")
+    T.ok(list[2].grew and list[2].grew[1].name == "saved: growing", "the growing part is named")
+    local L = rawget(game.env, "Outrider_Log")
+    local found = false
+    for _, l in ipairs(L.lines) do if tostring(l.x):find("memory grew since", 1, true) then found = true end end
+    T.ok(found, "and logged")
+  end)
 end)

@@ -27,6 +27,7 @@ ns.PerfMemory = M
 
 M.STEP_MS = 3
 M.SETTLE_S = 120
+M.AGAIN_S = 900          -- and every 15 minutes after, to see which part grows
 M.KEEP = 20
 M.TABLE, M.ARRAY, M.HASH, M.STRING = 40, 16, 40, 24
 
@@ -201,18 +202,44 @@ function M:Finish(parts)
   for i = 1, math.min(40, #parts) do keep[i] = { name = parts[i].name, kind = parts[i].kind, kb = math.floor(parts[i].kb + 0.5) } end
   local top = {}
   for i = 1, math.min(15, #addons) do top[i] = { name = addons[i].name, kb = math.floor(addons[i].kb + 0.5) } end
-  local row = { at = time(), build = ns.build, why = job and job.why, totalKB = total, measuredKB = measured, savedKB = saved,
+  local row = { at = time(), build = ns.build, why = job and job.why, session = ns.session, totalKB = total, measuredKB = measured, savedKB = saved,
     parts = keep, addons = top, secs = job and ((C.Call("GetTime") or 0) - job.started) or nil }
   local g = ns.db.global
   g.perfMemory = ns.KeepTable(g.perfMemory, "PerfMemory:g.perfMemory") or {}
   local list = g.perfMemory
   list[#list + 1] = row
   while #list > M.KEEP and ns.Archive:Shift("perfMemory", list, { path = "global.perfMemory", scope = "account" }) do end
+  -- what grew since the last estimate this session (a part that keeps growing
+  -- is a cache without a limit, or a leak)
+  local prev = list[#list - 1]
+  if prev and prev.session == ns.session then
+    local before = {}
+    for _, p in ipairs(prev.parts or {}) do before[p.name] = p.kb end
+    local grew = {}
+    for _, p in ipairs(keep) do
+      local d = p.kb - (before[p.name] or 0)
+      if d >= 256 then grew[#grew + 1] = { name = p.name, kb = d } end
+    end
+    table.sort(grew, function(a, b) return a.kb > b.kb end)
+    local g = {}
+    for i = 1, math.min(8, #grew) do g[i] = string.format("%s +%.1f MB", grew[i].name, grew[i].kb / 1024) end
+    row.grew = grew
+    self:Info("memory grew since %s: game %+.1f MB, tables %+.1f MB; %s", date("%H:%M", prev.at),
+      ((total or 0) - (prev.totalKB or 0)) / 1024, (measured - (prev.measuredKB or 0)) / 1024,
+      #g > 0 and table.concat(g, ", ") or "no part grew by 0.25 MB or more")
+  end
   local names = {}
   for i = 1, math.min(10, #keep) do names[#names + 1] = string.format("%s %.1f MB", keep[i].name, keep[i].kb / 1024) end
   self:Info("memory estimate (%s): game says %s, tables found %.1f MB (saved data %.1f MB); biggest: %s",
     tostring(row.why), total and string.format("%.1f MB", total / 1024) or "?", measured / 1024, saved / 1024, table.concat(names, ", "))
   ns.Events:Fire("OTR_PERFMEMORY", "done")
+  -- the automatic runs repeat, so a part that keeps growing shows up
+  if row.why == "auto" then
+    local CT = rawget(_G, "C_Timer")
+    if CT and type(CT.After) == "function" then
+      later(M.AGAIN_S, function() if M.enabled then M:Start("auto") end end, "perfmemory:again")
+    end
+  end
   return row
 end
 
