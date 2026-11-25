@@ -136,7 +136,13 @@ local function buildMethods(game)
   m.GetFrameStrata = function(self) return rawget(self, "__strata") or "MEDIUM" end
   m.SetAllPoints = noop
   m.IsMouseOver = function(self) return rawget(self, "__mouseOver") == true end
-  m.SetColorTexture = noop
+  -- the game refuses a colour that isn't numbers (a table or a theme name
+  -- crashed the Performance page in game, 2026-11-25)
+  m.SetColorTexture = function(_, r, g, b, a)
+    if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" or (a ~= nil and type(a) ~= "number") then
+      error("bad argument #1 to 'SetColorTexture' (Usage: self:SetColorTexture(color [, a]))", 2)
+    end
+  end
   m.Click = function(self, button)
     if self.__scripts.OnClick then self.__scripts.OnClick(self, button or "LeftButton", false) end
     local a = rawget(self, "__attrs")

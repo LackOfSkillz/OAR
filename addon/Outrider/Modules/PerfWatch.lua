@@ -194,7 +194,7 @@ function M:CloseMinute()
   local b = s and s.minute
   if not b or b.n == 0 then return end
   local okp, P = pcall(ns.Perf.Profiler)
-  s.minutes[#s.minutes + 1] = { fps = b.fpsSum / b.n, low = b.low, world = b.world, ms = s.total - b.total0,
+  s.minutes[#s.minutes + 1] = { at = time(), fps = b.fpsSum / b.n, low = b.low, world = b.world, ms = s.total - b.total0,
     secs = b.n * M.TICK, cpu = okp and P and P.recentMs or nil }
   s.minute = nil
 end

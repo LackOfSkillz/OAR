@@ -103,7 +103,9 @@ end
 -- ------------------------------------------------------------ live sampling
 function M:Sample()
   local l = M.Load()
-  local s = { at = C.Call("GetTime") or 0, fps = M.FPS(), handled = l.handled }
+  local W = ns.PerfWatch
+  local s = { at = C.Call("GetTime") or 0, fps = M.FPS(), handled = l.handled,
+    ours = W and W.on and W.cur and W.cur.total or nil }
   s.home, s.world = M.Net()
   local list = self.samples
   list[#list + 1] = s
@@ -223,6 +225,8 @@ function M:ShareText()
 end
 
 -- ------------------------------------------------------------ page
+-- bars take an {r, g, b} colour; stat tiles take the theme name
+local function rgb(name) if name then return { ns.Theme:Color(name) } end end
 local function ms(v, d) return v and string.format("%." .. (d or 2) .. "f ms", v) or "—" end
 
 function M:Stats()
@@ -254,12 +258,12 @@ end
 function M:CpuLines()
   local p, why = M.Profiler()
   if not p then
-    return { { title = "CPU from the game: not available", line = why .. ". The lag check below times Outrider itself instead." } }
+    return { { pic = "Interface\Icons\INV_Misc_QuestionMark", title = "CPU from the game: not available", line = why .. ". The always-on watch below times Outrider itself instead." } }
   end
   return {
-    { title = "Recent average", line = ms(p.recentMs, 3) .. " per frame" .. (p.shareGame and string.format(" (%.2f%% of the game's frame time)", p.shareGame) or "") },
-    { title = "This session", line = ms(p.sessionMs, 3) .. " per frame on average; peak " .. ms(p.peakMs, 1) },
-    { title = "Slow frames", line = string.format("%s frames over 5 ms, %s over 50 ms this session",
+    { pic = "Interface\Icons\Spell_Nature_TimeStop", title = "Recent average", line = ms(p.recentMs, 3) .. " per frame" .. (p.shareGame and string.format(" (%.2f%% of the game's frame time)", p.shareGame) or "") },
+    { pic = "Interface\Icons\INV_Misc_PocketWatch_01", title = "This session", line = ms(p.sessionMs, 3) .. " per frame on average; peak " .. ms(p.peakMs, 1) },
+    { pic = "Interface\Icons\Spell_Nature_Slow", title = "Slow frames", line = string.format("%s frames over 5 ms, %s over 50 ms this session",
       p.over5 and string.format("%.0f", p.over5) or "?", p.over50 and string.format("%.0f", p.over50) or "?") },
   }
 end
@@ -268,7 +272,7 @@ function M:BudgetBars()
   local out = {}
   for _, b in ipairs(self:Budgets()) do
     out[#out + 1] = { label = b[1], fill = b[2] == nil and 0 or 1, text = (b[2] == true and "pass  " or b[2] == false and "FAIL  " or "")
-      .. b[3], color = b[2] == true and "good" or b[2] == false and "bad" or nil }
+      .. b[3], color = rgb(b[2] == true and "good" or b[2] == false and "bad" or nil) }
   end
   return out
 end
@@ -308,7 +312,7 @@ function M.Minutes()
     out[#out + 1] = { label = (live and "minute " or "min ") .. i, fill = math.min(1, pct / 2),
       text = string.format("FPS %.0f (low %.0f), Outrider %.2f%%%s%s", r.fps or 0, r.low or r.fps or 0, pct,
         r.world and (", world " .. r.world .. " ms") or "", r.cpu and string.format(", %.3f ms/frame", r.cpu) or ""),
-      color = pct < 0.5 and "good" or pct < 2 and "warn" or "bad" }
+      color = rgb(pct < 0.5 and "good" or pct < 2 and "warn" or "bad") }
   end
   return out
 end
@@ -330,7 +334,7 @@ function M.SlowRows()
     end
     if (r.n or 1) > 1 then what = what .. string.format(", %d times", r.n) end
     out[#out + 1] = { label = r.at and date("%b %d %H:%M", r.at) or "?",
-      fill = math.min(1, r.ms / 1000), color = (r.kind == "spike" or (r.ours or 0) >= r.ms / 2) and "bad" or "warn",
+      fill = math.min(1, r.ms / 1000), color = rgb((r.kind == "spike" or (r.ours or 0) >= r.ms / 2) and "bad" or "warn"),
       text = what .. " - " .. (W and W.Describe(r) or "") }
   end
   return out
@@ -346,7 +350,7 @@ function M.Parts()
     local p = w.parts[i]
     out[#out + 1] = { label = p.name, fill = top > 0 and p.ms / top or 0,
       text = string.format("%.0f ms in %d runs, slowest %.1f ms", p.ms, p.n, p.max),
-      color = p.max >= W.SPIKE_MS and "warn" or "good" }
+      color = rgb(p.max >= W.SPIKE_MS and "warn" or "good") }
   end
   return out
 end
@@ -360,7 +364,7 @@ function M.Sessions()
     out[#out + 1] = { label = r.startedAt and date("%b %d %H:%M", r.startedAt) or "?", fill = math.min(1, (r.pct or 0) / 2),
       text = string.format("%.2f%% over %d min, %d spikes, %d freezes (%d ours)%s", r.pct or 0, math.floor((r.seconds or 0) / 60),
         r.spikes or 0, r.hitches or 0, r.ours or 0, r.fpsAvg and string.format(", FPS %.0f", r.fpsAvg) or ""),
-      color = (r.ours or 0) > 0 and "bad" or (r.pct or 0) < 0.5 and "good" or "warn" }
+      color = rgb((r.ours or 0) > 0 and "bad" or (r.pct or 0) < 0.5 and "good" or "warn") }
   end
   return out
 end
@@ -373,16 +377,158 @@ function M.Checks()
     out[#out + 1] = { label = r.at and date("%b %d %H:%M", r.at) or "?", fill = math.min(1, (r.pct or 0) / 2),
       text = string.format("%.2f%%, slowest %.1f ms%s", r.pct or 0, r.worst and r.worst.ms or 0,
         r.fpsAvg and string.format(", FPS %.0f", r.fpsAvg) or ""),
-      color = r.level == "fine" and "good" or r.level == "small" and "warn" or "bad" }
+      color = rgb(r.level == "fine" and "good" or r.level == "small" and "warn" or "bad") }
   end
   return out
+end
+
+
+-- ------------------------------------------------------------ charts
+-- A column chart drawn with plain textures (Gary, 2026-11-25: "a graph or
+-- some visualization"). get() returns { values = {...}, max, budget,
+-- colorOf(v) -> theme name, marks = { [i] = true }, now = "text", empty = "text" }.
+M.CHART_H = 64
+function M.Chart(host, title, get)
+  local Theme = ns.Theme
+  local f = CreateFrame("Frame", nil, host)
+  f:SetSize(600, M.CHART_H + 34)
+  f.title = ns.UI.Text(f, "small", "gold")
+  f.title:SetPoint("TOPLEFT", 0, 0)
+  f.title:SetText(title)
+  f.now = ns.UI.Text(f, "small", "body")
+  f.now:SetPoint("TOPRIGHT", 0, 0)
+  f.plot = f:CreateTexture(nil, "BACKGROUND")
+  f.plot:SetPoint("TOPLEFT", 0, -16)
+  f.plot:SetPoint("RIGHT", f, "RIGHT", 0, 0)
+  f.plot:SetHeight(M.CHART_H)
+  f.plot:SetColorTexture(Theme:Color("bg"))
+  f.budget = f:CreateTexture(nil, "OVERLAY")
+  f.budget:SetHeight(1)
+  f.budget:SetColorTexture(Theme:Color("gold"))
+  f.budgetText = ns.UI.Text(f, "small", "muted")
+  f.top = ns.UI.Text(f, "small", "muted")
+  f.top:SetPoint("TOPLEFT", f.plot, "TOPLEFT", 4, -2)
+  f.empty = ns.UI.Text(f, "small", "muted")
+  f.empty:SetPoint("CENTER", f.plot, "CENTER", 0, 0)
+  f.cols, f.marks = {}, {}
+  function f:LayoutHeight() return M.CHART_H + 34 end
+  function f:Refresh()
+    local ok, d = ns.Safe("perfpage:chart", get)
+    d = ok and type(d) == "table" and d or { values = {} }
+    local vals = d.values or {}
+    local n = #vals
+    local w = math.max(100, (self:GetWidth() or 600))
+    local max = d.max or 0
+    for _, v in ipairs(vals) do if v > max then max = v end end
+    if d.budget and d.budget > max then max = d.budget * 1.25 end
+    if max <= 0 then max = 1 end
+    self.now:SetText(d.now or "")
+    self.empty:SetText(n == 0 and (d.empty or "no data yet") or "")
+    self.top:SetText(n > 0 and (d.topText and d.topText(max) or "") or "")
+    local slots = math.max(n, d.slots or n)
+    local cw = slots > 0 and w / slots or w
+    for i = 1, math.max(n, #self.cols) do
+      local c = self.cols[i]
+      if i <= n then
+        if not c then c = self:CreateTexture(nil, "ARTWORK") self.cols[i] = c end
+        local h = math.max(1, math.min(M.CHART_H, vals[i] / max * M.CHART_H))
+        c:ClearAllPoints()
+        c:SetPoint("BOTTOMLEFT", self.plot, "BOTTOMLEFT", (slots - n + i - 1) * cw + 1, 0)
+        c:SetSize(math.max(1, cw - 2), h)
+        local r, g, b = Theme:Color(d.colorOf and d.colorOf(vals[i]) or "gold")
+        c:SetColorTexture(r, g, b, 0.85)
+        c:Show()
+      elseif c then c:Hide() end
+      local m = self.marks[i]
+      if i <= n and d.marks and d.marks[i] then
+        if not m then m = self:CreateTexture(nil, "OVERLAY") self.marks[i] = m end
+        m:ClearAllPoints()
+        m:SetPoint("TOPLEFT", self.plot, "TOPLEFT", (slots - n + i - 1) * cw + 1, 0)
+        m:SetSize(math.max(2, cw - 2), 4)
+        local r, g, b = Theme:Color("bad")
+        m:SetColorTexture(r, g, b, 1)
+        m:Show()
+      elseif m then m:Hide() end
+    end
+    if d.budget and n > 0 then
+      local y = d.budget / max * M.CHART_H
+      self.budget:ClearAllPoints()
+      self.budget:SetPoint("BOTTOMLEFT", self.plot, "BOTTOMLEFT", 0, y)
+      self.budget:SetPoint("RIGHT", self.plot, "RIGHT", 0, 0)
+      self.budget:Show()
+      self.budgetText:ClearAllPoints()
+      self.budgetText:SetPoint("BOTTOMRIGHT", self.plot, "BOTTOMRIGHT", -4, y + 2)
+      self.budgetText:SetText(d.budgetText or "budget")
+    else
+      self.budget:Hide()
+      self.budgetText:SetText("")
+    end
+    self.last = d
+  end
+  f:SetScript("OnSizeChanged", function(self) self:Refresh() end)
+  f:Refresh()
+  return f
+end
+
+-- Live: Outrider's ms in each second, last 60 s (budget: 0.5% = 5 ms a second)
+function M:LiveCpu()
+  local list, vals = self.samples, {}
+  for i = 2, #list do
+    local a, b = list[i - 1], list[i]
+    if a.ours and b.ours and b.at > a.at then vals[#vals + 1] = math.max(0, (b.ours - a.ours) / (b.at - a.at)) end
+  end
+  local budget = M.BUDGETS.lagPct * 10
+  return { values = vals, slots = M.KEEP - 1, budget = budget, budgetText = "budget 0.5%",
+    colorOf = function(v) return v <= budget and "good" or v <= budget * 4 and "warn" or "bad" end,
+    now = #vals > 0 and string.format("%.1f ms in the last second (%.2f%%)", vals[#vals], vals[#vals] / 10) or "",
+    topText = function(max) return string.format("%.0f ms", max) end,
+    empty = ns.PerfWatch and ns.PerfWatch.on and "starting..." or "switch on Watch performance all the time" }
+end
+
+-- Live: FPS each second, last 60 s
+function M:LiveFps()
+  local vals = {}
+  for _, s in ipairs(self.samples) do if s.fps then vals[#vals + 1] = s.fps end end
+  return { values = vals, slots = M.KEEP,
+    colorOf = function(v) return v >= 50 and "good" or v >= 25 and "warn" or "bad" end,
+    now = #vals > 0 and string.format("%.0f FPS now", vals[#vals]) or "",
+    topText = function(max) return string.format("%.0f", max) end, empty = "starting..." }
+end
+
+-- This session, minute by minute: Outrider's share; red marks = a slow moment in that minute
+function M.SessionChart()
+  local W = ns.PerfWatch
+  local rows = W and W.on and W.cur and W.cur.minutes or {}
+  local vals, marks = {}, {}
+  local slow = ns.db.global.perfSlow or {}
+  for i, r in ipairs(rows) do
+    vals[i] = r.secs and r.secs > 0 and r.ms / (r.secs * 1000) * 100 or 0
+    local from, to = rows[i - 1] and rows[i - 1].at or (r.at and r.at - 60) or 0, r.at or 0
+    for j = #slow, 1, -1 do
+      local s = slow[j]
+      if s.session ~= ns.session then break end
+      if s.at and s.at > from and s.at <= to then marks[i] = true break end
+    end
+  end
+  -- the newest 90 minutes fit the chart
+  local start = math.max(1, #vals - 89)
+  local v2, m2 = {}, {}
+  for i = start, #vals do v2[#v2 + 1] = vals[i] if marks[i] then m2[#v2] = true end end
+  return { values = v2, marks = m2, budget = M.BUDGETS.lagPct, budgetText = "budget 0.5%",
+    colorOf = function(v) return v <= M.BUDGETS.lagPct and "good" or v <= 2 and "warn" or "bad" end,
+    now = #v2 > 0 and string.format("%d minutes, red = a slow moment", #vals) or "",
+    topText = function(max) return string.format("%.2f%%", max) end,
+    empty = "the first minute shows after one minute of play" }
 end
 
 ns.Hub:AddTab("performance", "Performance", function(p)
   ns.UI:FormPage(p, {
     { "header", "What Outrider costs your game", icon = "Spell_Nature_TimeStop" },
-    { "note", "Live numbers from the game itself, while this page is open. 1. Play as usual. 2. Watch the numbers. 3. Run a lag check for the full picture, then copy the result for a post." },
+    { "note", "Live numbers from the game itself, updated every second while this page is open. Outrider also watches itself the whole time you play: see Slow moments below." },
     { "stats", function() return M:Stats() end },
+    { "custom", function(host) return M.Chart(host, "Outrider's time, each second (last minute)", function() return M:LiveCpu() end) end, M.CHART_H + 34, stretch = true },
+    { "custom", function(host) return M.Chart(host, "Your FPS, each second (last minute)", function() return M:LiveFps() end) end, M.CHART_H + 34, stretch = true },
+    { "custom", function(host) return M.Chart(host, "This session: Outrider's share of the game's time, each minute", M.SessionChart) end, M.CHART_H + 34, stretch = true },
     { "header", "CPU time", icon = "Trade_Engineering" },
     { "cards", function() return M:CpuLines() end },
     { "header", "Promises we keep", icon = "Ability_Warrior_DefensiveStance" },
