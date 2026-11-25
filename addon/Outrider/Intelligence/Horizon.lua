@@ -26,6 +26,7 @@ function H.Validate(input)
     if not m or m ~= m or m ~= math.floor(m) then return nil, "minutes must be a whole number" end
     if m < H.MIN or m > H.MAX then return nil, string.format("minutes must be %d to %d", H.MIN, H.MAX) end
     out.minutes = m
+    out.startedAt = tonumber(input.startedAt)
   end
   return out
 end
@@ -54,6 +55,10 @@ end
 function H.Set(planner, input)
   local clean, why = H.Validate(input)
   if not clean then return false, why end
+  -- the session clock starts when you set a time (OI04-03)
+  local old = type(planner:Settings().horizon) == "table" and planner:Settings().horizon or {}
+  if clean.minutes and (old.minutes ~= clean.minutes or not old.startedAt) then clean.startedAt = time()
+  elseif clean.minutes then clean.startedAt = old.startedAt end
   planner:Settings().horizon = clean
   return true
 end
@@ -61,8 +66,12 @@ end
 -- what the planner context gets from it
 function H.Context(planner)
   local h = H.Get(planner)
-  return { budgetSeconds = h.minutes and h.minutes * 60 or nil, solo = h.group == "solo" or nil,
-    group = h.group, stopRest = h.stopRest }
+  -- the time left, minus the closing reserve (Intelligence/SessionEnd.lua)
+  local SE = ns.SessionEnd
+  local p = SE and SE.Plan(h) or {}
+  local budget = h.minutes and (p.budget or h.minutes * 60) or nil
+  return { budgetSeconds = p.closing and p.left or budget, solo = h.group == "solo" or nil,
+    group = h.group, stopRest = h.stopRest, closing = p.closing or nil, sessionLeft = p.left, reserve = p.reserve, horizon = h }
 end
 
 -- steps that need a group (dungeons, dungeon quests)

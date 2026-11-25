@@ -45,7 +45,8 @@ function M:Context()
   end
   -- the session you plan for (OI04-01): time budget, solo or group
   local hz = ns.NexusHorizon and ns.NexusHorizon.Context(self) or {}
-  return { budgetSeconds = hz.budgetSeconds, solo = hz.solo, stopRest = hz.stopRest,
+  return { budgetSeconds = hz.budgetSeconds, solo = hz.solo, stopRest = hz.stopRest, closing = hz.closing,
+    sessionLeft = hz.sessionLeft, reserve = hz.reserve, horizon = hz.horizon,
     preferences = prefs, copper = gold and gold.value, reserveCopper = reserve, mapID = loc and loc.value.mapID,
     faction = st and st.faction ~= "unknown" and st.faction or nil, revision = S:Revision(), now = time() }, goals
 end
@@ -100,7 +101,14 @@ function M:Replan(why)
   if self:Settings().paused then return self.current end
   local ctx, goals = self:Context()
   local contextKey = self:ContextKey()
-  local opps, excluded, unavailable, runtime = ns.NexusAdapters:All(ctx.revision, ctx.now)
+  local opps, excluded, unavailable, runtime
+  if ctx.closing and ns.SessionEnd then
+    -- closing time (OI04-03): only the closing steps, within the time left
+    opps, excluded, unavailable, runtime = ns.NexusAdapters:Collect({}, ctx.revision, ctx.now,
+      { closure = function() return ns.SessionEnd.Candidates(ctx.horizon) end })
+  else
+    opps, excluded, unavailable, runtime = ns.NexusAdapters:All(ctx.revision, ctx.now)
+  end
   local skipped = self:Settings().skipped or {}
   local kept = {}
   for _, o in ipairs(opps) do if not skipped[o.opportunityId] then kept[#kept + 1] = o end end
@@ -110,6 +118,10 @@ function M:Replan(why)
   -- the pin is a planner input that must pass every constraint (OI02-R01)
   local res = ns.NexusPlanner.Plan(graph, ranked, ctx, { pin = self:Settings().pinned })
   for id, why in pairs(res.unplannable or {}) do if not rejected[id] then rejected[id] = why end end
+  if ctx.closing then
+    res.closing = true
+    if not res.plan then res.why, res.code = "not enough time left for anything: a good moment to stop", "session_over" end
+  end
   self.current = { result = res, revision = ctx.revision, contextKey = contextKey, at = ctx.now, runtime = runtime, graph = graph,
     ranked = ranked, rejected = rejected, excluded = excluded, unavailable = unavailable, why = why }
   self.replans = (self.replans or 0) + 1

@@ -185,6 +185,7 @@ Intelligence\Graph.lua
 Intelligence\Preferences.lua
 Intelligence\Score.lua
 Intelligence\Planner.lua
+Intelligence\SessionEnd.lua
 Intelligence\Horizon.lua
 Intelligence\Recovery.lua
 Intelligence\NexusCore.lua
