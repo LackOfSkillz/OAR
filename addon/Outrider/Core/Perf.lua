@@ -34,7 +34,11 @@ function ns.MemKB()
 end
 -- the part of Outrider a timing belongs to: "MinimapPins:PLAYER_STARTED_MOVING" -> MinimapPins
 function Perf.Part(where)
-  return tostring(where):match("^([^:]+)") or tostring(where)
+  where = tostring(where)
+  -- a throttled job names its owner after "throttle:" ("timer throttle:nearby:scan" -> throttle nearby)
+  local job = where:match("^timer throttle:([^:]+)")
+  if job then return "throttle " .. job end
+  return where:match("^([^:]+)") or where
 end
 
 -- The game's add-on profiler, when the client has it and it is on.

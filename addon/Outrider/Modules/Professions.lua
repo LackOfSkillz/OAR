@@ -22,6 +22,8 @@ function M:OnEnable()
   self:On("TRADE_SKILL_LIST_UPDATE", function(mod) ns.Throttle("prof:update", 2, function() mod:Scan("update") end) end)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:ScanSkills() end)
   self:On("SKILL_LINES_CHANGED", function(mod) mod:ScanSkills() end)
+  -- a recipe learned doesn't change the recipe list's size: scan in full next time
+  self:On("NEW_RECIPE_LEARNED", function(mod) mod.dirty = true end)
 end
 
 function M:Store()
@@ -83,20 +85,40 @@ function M.OpenName()
   return nil
 end
 
-function M:ScanModern()
+-- What a recipe needs and makes never changes: asked once per recipe id
+-- (each list update asked the game twice per recipe for it: 99 MB of
+-- short-lived memory in a session with the window open, 2026-11-25).
+M.static = {}
+local function static(id)
+  local st = M.static[id]
+  if not st then
+    local product, makes = M.Output(id)
+    st = { reagents = reagentsModern(id), product = product, makes = makes }
+    M.static[id] = st
+  end
+  return st
+end
+
+-- why = "update" (the list changed while the window is open) skips the scan
+-- when the profession, its skill and the recipe count are the same as last
+-- time and no recipe was learned; it returns same = true then.
+function M:ScanModern(why)
   local ids = C.Call("C_TradeSkillUI.GetAllRecipeIDs")
   if type(ids) ~= "table" or #ids == 0 then return nil end
   local base = C.Call("C_TradeSkillUI.GetBaseProfessionInfo")
   local line = C.Call("C_TradeSkillUI.GetProfessionInfo") or base
   local name = M.OpenName()
+  local sig = tostring(name) .. "|" .. #ids .. "|" .. tostring(type(base) == "table" and C.Readable(base.skillLevel) or "")
+  if why == "update" and not self.dirty and sig == self.lastSig then return nil, nil, nil, nil, true end
+  self.lastSig, self.dirty = sig, nil
   local recipes = {}
   for _, id in ipairs(ids) do
     local info = C.Call("C_TradeSkillUI.GetRecipeInfo", id)
     if type(info) == "table" and info.learned ~= false then
       -- diff: the client's color, 0 orange, 1 yellow, 2 green, 3 grey (relativeDifficulty)
-      local product, makes = M.Output(id)
-      recipes[id] = { name = C.Readable(info.name), learned = info.learned ~= false, reagents = reagentsModern(id),
-        diff = C.Readable(info.relativeDifficulty), skillUps = C.Readable(info.numSkillUps), product = product, makes = makes }
+      local st = static(id)
+      recipes[id] = { name = C.Readable(info.name), learned = info.learned ~= false, reagents = st.reagents,
+        diff = C.Readable(info.relativeDifficulty), skillUps = C.Readable(info.numSkillUps), product = st.product, makes = st.makes }
     end
   end
   M.lastLine = type(base) == "table" and C.Readable(base.professionID) or nil
@@ -139,7 +161,8 @@ function M:ScanClassic()
 end
 
 function M:Scan(why)
-  local ok, name, recipes, skill, max = pcall(self.ScanModern, self)
+  local ok, name, recipes, skill, max, same = pcall(self.ScanModern, self, why)
+  if ok and same then return end
   local how = "C_TradeSkillUI"
   if not ok or not name then
     ok, name, recipes, skill, max = pcall(self.ScanClassic, self)
