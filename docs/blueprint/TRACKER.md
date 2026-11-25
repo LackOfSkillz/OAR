@@ -178,3 +178,4 @@ Running straight on (owner: no stops, one review at the end).
 | OI06-11 Group UX and shared plan | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | Group plan sub-tab: share, ready, choose, gaps; roster drops leavers |
 | OI06-12 Mentor plan portability foundation | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | data-only references; class, level, ids checked; stale marks; manual accept |
 | OI06-13 Guild contribution and handoff tests | MOCK_GREEN | see commit | [OI06-01_13](../reviews/phase6/OI06-01_13.md) | mock two clients and floods green; owner two-client test pending |
+| OI06-GATE Phase 6 review gate | MOCK_GREEN | see commit | [OI06-GATE](../reviews/phase6/OI06-GATE.md) | 1431 passed plus 2 fixed; quality, deps, security clean; two-client live test pending |

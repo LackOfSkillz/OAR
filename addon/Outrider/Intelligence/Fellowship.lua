@@ -94,10 +94,8 @@ function M:Payload()
   for _, g in ipairs(ns.NexusGoals and ns.NexusGoals:Active() or {}) do
     if #goals < M.MAX_GOALS and type(g.id) == "string" then goals[#goals + 1] = g.id:sub(1, M.MAX_ID) end
   end
-  local cur = ns.NexusCore and ns.NexusCore.current
-  for _, step in ipairs(cur and cur.plan or {}) do
-    local id = step.opportunityId or step.id
-    if #elig < M.MAX_ELIGIBLE and type(id) == "string" then elig[#elig + 1] = id:sub(1, M.MAX_ID) end
+  for _, id in ipairs(ns.NexusCore and ns.NexusCore.StepIds and ns.NexusCore:StepIds(M.MAX_ELIGIBLE) or {}) do
+    if type(id) == "string" then elig[#elig + 1] = id:sub(1, M.MAX_ID) end
   end
   local P = ns.ClassProfiles and ns.ClassProfiles.Current and ns.ClassProfiles.Current() or {}
   return { v = M.VERSION, goals = goals, eligible = elig, ready = st.ready == true,
@@ -219,6 +217,12 @@ function M:Cards(refresh)
   table.sort(gaps)
   if #gaps > 0 then out[#out + 1] = { title = "Members", line = table.concat(gaps, "; ") .. "." } end
   return out
+end
+
+function M:Activity()
+  local n = 0
+  for _ in pairs(M.peers) do n = n + 1 end
+  return string.format("sharing %s, %d group member%s sharing with you", self:Settings().share and "on" or "off", n, n == 1 and "" or "s")
 end
 
 function M:OnEnable()

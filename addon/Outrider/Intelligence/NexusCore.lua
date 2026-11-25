@@ -269,6 +269,17 @@ end
 -- of the producer's own candidate (its go() for the click) with the plan's
 -- order and score; off, every page keeps its baseline. Re-plans only when there
 -- is no current plan or it went stale, never in combat or while paused.
+-- the current plan's step ids, read only (no re-plan), for other parts of Outrider
+function M:StepIds(n)
+  local res = self.current and self.current.result
+  local out = {}
+  for _, id in ipairs(res and res.plan and res.plan.steps or {}) do
+    if n and #out >= n then break end
+    out[#out + 1] = id
+  end
+  return out
+end
+
 function M:Picks(n)
   if not self:Ready() then return nil end
   if not ns.Compat.InCombat() and not self:Settings().paused and self:IsStale() then self:Replan("picks") end
