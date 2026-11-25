@@ -851,6 +851,18 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "lagChecks",
+   "saved_path": "global.lagChecks",
+   "retention_mechanism": "20 finished lag checks in view (Performance page)",
+   "archive_destination": "global.archive.sets.lagChecks",
+   "tests": [
+    "tests/spec/perfpage_spec.lua :: every finished lag check is kept; past the cap the oldest go to the archive",
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

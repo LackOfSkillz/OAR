@@ -55,6 +55,12 @@ function Perf:Runtime()
     end
   end
   out.errors, out.taint = errs, taint
+  -- the game's add-on profiler, when present (Modules/PerfPage.lua)
+  if ns.PerfPage and ns.PerfPage.Profiler then
+    local okp, pr = pcall(ns.PerfPage.Profiler)
+    if okp and pr then out.profiler = { recentMs = pr.recentMs, sessionMs = pr.sessionMs, peakMs = pr.peakMs, over5 = pr.over5,
+      shareAddons = pr.shareAddons } end
+  end
   -- collected rows moved to the archive so far (owner retention decision 2026-11-24)
   out.archiveRows = ns.Archive and ns.Archive:Count() or 0
   return out

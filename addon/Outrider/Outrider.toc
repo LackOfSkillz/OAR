@@ -255,6 +255,7 @@ Modules\Trail.lua
 Modules\Path.lua
 Modules\Feedback.lua
 Modules\LagCheck.lua
+Modules\PerfPage.lua
 Modules\NetTest.lua
 Modules\ManaCare.lua
 Modules\QuestsNear.lua

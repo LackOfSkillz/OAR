@@ -991,7 +991,16 @@ function M.new(opts)
     end,
     EnableAddOn = function(addon) if game.disabledAddons then game.disabledAddons[addon] = nil end game.enabledAddons = (game.enabledAddons or 0) + 1 end,
     UpdateAddOnMemoryUsage = function() game.memoryUpdated = true end,
-    GetAddOnMemoryUsage = function(addon) if addon == M.ADDON then return opts.memoryKB or 420 end return 0 end,
+    GetAddOnMemoryUsage = function(addon)
+      if addon == M.ADDON then return opts.memoryKB or 420 end
+      return (game.addonMemory or {})[addon] or 0
+    end,
+    -- the add-on list, in load order: Outrider, then game.addonList (names)
+    GetNumAddOns = function() return 1 + #(game.addonList or {}) end,
+    GetAddOnInfo = function(i)
+      local name = i == 1 and M.ADDON or (game.addonList or {})[i - 1]
+      if name then return name, name, "", true, "INSECURE", false end
+    end,
   }
   if not opts.noCTimer then
     base.C_Timer = {
