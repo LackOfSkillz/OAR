@@ -118,3 +118,24 @@ T.describe("always-on performance watch", function()
     T.eq(#ns.db.global.perfWatch, 1, "the session so far was saved")
   end)
 end)
+
+T.describe("memory made, by part", function()
+  T.it("the watch counts the memory each part makes, and the page lists the biggest makers", function()
+    local game, ns, W = session()
+    local keep = {}
+    ns.Events:On("OTR_TEST_ALLOC", { name = "Hungry" }, function()
+      for i = 1, 3000 do keep[#keep + 1] = { i, "row " .. i } end
+    end)
+    ns.Events:On("OTR_TEST_ALLOC", { name = "Lean" }, function() end)
+    ns.Events:Fire("OTR_TEST_ALLOC")
+    local by = {}
+    for _, p in ipairs(W:Summary().parts) do by[p.name] = p end
+    T.ok(by.Hungry.kb > 100, "the allocating part is charged: " .. by.Hungry.kb)
+    T.ok(by.Lean.kb < 1)
+    T.eq(ns.PerfPage.Churn()[1].label, "Hungry")
+    game:fire("PLAYER_LOGOUT")
+    local row = ns.db.global.perfWatch[#ns.db.global.perfWatch]
+    T.eq(row.churn[1].name, "Hungry", "saved with the session")
+    T.ok(row.kb > 100)
+  end)
+end)

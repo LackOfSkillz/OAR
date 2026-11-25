@@ -62,9 +62,11 @@ end
 local function run(label, fn, ...)
   local lag = ns.timing and rawget(_G, "debugprofilestop")
   if not lag then return ns.Safe(label, fn, ...) end
+  local k0 = ns.MemKB()
   local t0 = lag()
   ns.Safe(label, fn, ...)
-  ns.NoteTiming("timer " .. tostring(label), lag() - t0)
+  local ms = lag() - t0
+  ns.NoteTiming("timer " .. tostring(label), ms, k0 and math.max(0, ns.MemKB() - k0))
 end
 
 -- ---------------------------------------------------------------- handles

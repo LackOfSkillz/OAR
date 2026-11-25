@@ -34,12 +34,15 @@ local function dispatch(event, ...)
     if not h.removed then
       local where = (h.ownerName or "?") .. ":" .. event
       if timed then
+        -- memory made too (Lua's KB counter before and after; a garbage
+        -- collection mid-handler makes it read low, never high)
+        local k0 = lag and ns.MemKB()
         local t0 = debugprofilestop()
         ns.Safe(where, h.fn, event, ...)
         local ms = debugprofilestop() - t0
         -- the slowest-handlers list stays a debug-mode tool (/ride perf)
         if debugOn then Events:NoteTiming(where, ms) end
-        if lag then ns.NoteTiming(where, ms) end
+        if lag then ns.NoteTiming(where, ms, k0 and math.max(0, ns.MemKB() - k0)) end
       else
         ns.Safe(where, h.fn, event, ...)
       end

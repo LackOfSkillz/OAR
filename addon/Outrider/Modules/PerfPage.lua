@@ -366,6 +366,23 @@ function M.Parts()
   return out
 end
 
+-- memory each part made this session (garbage the game has to clean up)
+function M.Churn()
+  local W = ns.PerfWatch
+  local w = W and W:IsWatching() and W:Summary()
+  if not w then return {} end
+  local list = {}
+  for _, p in ipairs(w.parts) do if (p.kb or 0) > 0 then list[#list + 1] = p end end
+  table.sort(list, function(a, b) return a.kb > b.kb end)
+  local out, top = {}, list[1] and list[1].kb or 1
+  for i = 1, math.min(8, #list) do
+    local p = list[i]
+    out[#out + 1] = { label = p.name, fill = p.kb / top, color = rgb(p.kb >= 10240 and "bad" or p.kb >= 1024 and "warn" or "good"),
+      text = string.format("%.1f MB made in %d runs (%.1f KB a run)", p.kb / 1024, p.n, p.kb / math.max(1, p.n)) }
+  end
+  return out
+end
+
 -- past sessions from the always-on watch
 function M.Sessions()
   local out = {}
@@ -610,6 +627,14 @@ ns.Hub:AddTab("performance", "Performance", function(p)
     { "bars", function() return M.SlowRows() end },
     { "header", "Heaviest parts of Outrider this session", icon = "Trade_Engineering" },
     { "bars", function() return M.Parts() end },
+    { "header", "Memory made this session, by part", icon = "INV_Misc_Bag_08" },
+    { "note", function()
+      local W = ns.PerfWatch
+      local w = W and W:IsWatching() and W:Summary()
+      return w and string.format("Outrider made %.1f MB of short-lived memory in %d minutes. The game cleans it up, and cleaning a lot causes small stutters, so less is better.",
+        (w.kb or 0) / 1024, math.floor(w.seconds / 60)) or ""
+    end },
+    { "bars", function() return M.Churn() end },
     { "header", "Minute by minute", icon = "INV_Misc_PocketWatch_02" },
     { "note", function()
       local W = ns.PerfWatch

@@ -52,7 +52,7 @@ local function closeMinute(d)
 end
 
 -- Called by the event and timer dispatch while a check runs.
-function M:Note(where, ms)
+function M:Note(where, ms, _kb)
   local d = self.data
   if not d or type(ms) ~= "number" then return end
   local e = d.by[where]

@@ -21,8 +21,16 @@ function Perf:UpdateTiming()
   for _, s in ipairs(self.sinks) do if s.on then on = true end end
   ns.timing = on
 end
-function ns.NoteTiming(where, ms)
-  for _, s in ipairs(Perf.sinks) do if s.on then s:Note(where, ms) end end
+function ns.NoteTiming(where, ms, kb)
+  for _, s in ipairs(Perf.sinks) do if s.on then s:Note(where, ms, kb) end end
+end
+-- Lua's memory in KB right now (all add-ons share it; a before/after
+-- difference around one handler is what that handler made), or nil
+local gc = rawget(_G, "collectgarbage")
+function ns.MemKB()
+  if not gc then return nil end
+  local ok, kb = pcall(gc, "count")
+  return ok and type(kb) == "number" and kb or nil
 end
 -- the part of Outrider a timing belongs to: "MinimapPins:PLAYER_STARTED_MOVING" -> MinimapPins
 function Perf.Part(where)

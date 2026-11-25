@@ -97,7 +97,7 @@ function M:Backfill()
   if added > 0 then
     self:Info("backfilled %d places from earlier NPC visits", added)
     -- map pins count places only now and then: tell them (MapPins.COUNT_S)
-    if ns.MapPins then ns.MapPins:Invalidate() end
+    ns.Events:Fire("OTR_POI_ADDED", nil)
   end
   return added
 end

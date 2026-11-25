@@ -87,15 +87,17 @@ function M:Begin()
 end
 
 -- every timed Outrider handler or timer run
-function M:Note(where, ms)
+function M:Note(where, ms, kb)
   local s = self.cur
   if not s or type(ms) ~= "number" then return end
   s.total = s.total + ms
+  kb = type(kb) == "number" and kb or 0
+  s.kb = (s.kb or 0) + kb
   self.window = self.window + ms
   local name = ns.Perf.Part(where)
   local p = s.by[name]
-  if not p then p = { name = name, ms = 0, max = 0, n = 0 } s.by[name] = p end
-  p.ms, p.n = p.ms + ms, p.n + 1
+  if not p then p = { name = name, ms = 0, max = 0, n = 0, kb = 0 } s.by[name] = p end
+  p.ms, p.n, p.kb = p.ms + ms, p.n + 1, p.kb + kb
   if ms > p.max then p.max, p.worstAt = ms, where end
   if ms > s.worst.ms then s.worst = { ms = ms, where = where } end
   if ms >= M.SPIKE_MS then self:Slow("spike", where, ms) end
@@ -213,7 +215,7 @@ function M:Summary()
   table.sort(parts, function(a, b) return a.ms > b.ms end)
   return { seconds = math.floor(secs + 0.5), totalMs = s.total, pct = s.total / (secs * 1000) * 100,
     fpsAvg = s.fpsN > 0 and s.fpsSum / s.fpsN or nil, fpsLow = s.fpsLow, spikes = s.spikes, hitches = s.hitches,
-    ours = s.ours, worst = s.worst, parts = parts, minutes = s.minutes, startedAt = s.startedAt }
+    ours = s.ours, worst = s.worst, parts = parts, minutes = s.minutes, startedAt = s.startedAt, kb = s.kb or 0 }
 end
 
 -- logout, /reload or switched off: the session is saved once
@@ -225,11 +227,20 @@ function M:Save(why)
   local keep = {}
   for i = 1, math.min(10, #r.parts) do
     local p = r.parts[i]
-    keep[i] = { name = p.name, ms = math.floor(p.ms * 10 + 0.5) / 10, max = math.floor(p.max * 10 + 0.5) / 10, n = p.n, worstAt = p.worstAt }
+    keep[i] = { name = p.name, ms = math.floor(p.ms * 10 + 0.5) / 10, max = math.floor(p.max * 10 + 0.5) / 10, n = p.n, worstAt = p.worstAt,
+      kb = math.floor((p.kb or 0) + 0.5) }
+  end
+  -- the parts that made the most memory (garbage the game must clean up)
+  local byKb = {}
+  for _, p in ipairs(r.parts) do byKb[#byKb + 1] = p end
+  table.sort(byKb, function(a, b) return (a.kb or 0) > (b.kb or 0) end)
+  local churn = {}
+  for i = 1, math.min(10, #byKb) do
+    churn[i] = { name = byKb[i].name, kb = math.floor((byKb[i].kb or 0) + 0.5), n = byKb[i].n }
   end
   local row = { session = ns.session, build = ns.build, char = ns.db.key, startedAt = r.startedAt, seconds = r.seconds,
     pct = r.pct, totalMs = r.totalMs, fpsAvg = r.fpsAvg, fpsLow = r.fpsLow, spikes = r.spikes, hitches = r.hitches,
-    ours = r.ours, worst = r.worst, parts = keep, minutes = r.minutes, why = why }
+    ours = r.ours, worst = r.worst, parts = keep, minutes = r.minutes, why = why, kb = math.floor(r.kb + 0.5), churn = churn }
   local g = ns.db.global
   g.perfWatch = ns.KeepTable(g.perfWatch, "PerfWatch:g.perfWatch") or {}
   local list = g.perfWatch
@@ -238,5 +249,8 @@ function M:Save(why)
   self:Info("session (%s): Outrider %.3f%% of the game's time (%.0f ms in %d s), %d spikes, %d freezes (%d mostly Outrider's), slowest %.1f ms in %s, FPS avg %s low %s",
     tostring(why), r.pct, r.totalMs, r.seconds, r.spikes, r.hitches, r.ours, r.worst.ms, tostring(r.worst.where),
     r.fpsAvg and string.format("%.0f", r.fpsAvg) or "?", r.fpsLow and string.format("%.0f", r.fpsLow) or "?")
+  local made = {}
+  for i = 1, math.min(6, #churn) do made[i] = string.format("%s %.1f MB", churn[i].name, churn[i].kb / 1024) end
+  self:Info("memory made this session: %.1f MB; most by %s", r.kb / 1024, table.concat(made, ", "))
   return row
 end
