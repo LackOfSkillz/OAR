@@ -796,6 +796,28 @@
    ],
    "behaviour_tested": true,
    "live_pending": null
+  },
+  {
+   "dataset": "worldProvenance",
+   "saved_path": "global.worldProvenance",
+   "retention_mechanism": "append-only log of every manifest and pack registration, and every quarantined version (with its entries) per name; nothing replaced or removed (review OI-FR11)",
+   "archive_destination": null,
+   "tests": [
+    "tests/spec/world_spec.lua :: review OI-FR11: a rejected import never displaces the pack in use; every version is saved"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
+  },
+  {
+   "dataset": "worldPackReplaced",
+   "saved_path": "World.active (runtime)",
+   "retention_mechanism": "a usable outside pack replaced by a newer version is archived first, with its entries and revision",
+   "archive_destination": "global.archive.sets.worldPackReplaced",
+   "tests": [
+    "tests/spec/world_spec.lua :: review OI-FR11: a rejected import never displaces the pack in use; every version is saved"
+   ],
+   "behaviour_tested": true,
+   "live_pending": null
   }
  ],
  "findings": [

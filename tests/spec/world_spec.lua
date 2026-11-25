@@ -55,6 +55,31 @@ T.describe("world observations and sources (OI06-01, OI06-02)", function()
     T.ok(W.Classify("oldpack", { minBuild = "1.60.0" }).outdated)
     T.ok(W.Classify("seed").firstParty)
   end)
+
+  T.it("review OI-FR11: a rejected import never displaces the pack in use; every version is saved", function()
+    local _, ns, W = session()
+    local good = { license = "CC-BY", evidence = "observed", revision = 1 }
+    T.eq((W.RegisterPack("poi", "shared", good, { { id = "g1", kind = "vendor", mapID = 1, x = 0.5, y = 0.5, verified = false } })), 1)
+    local n, cls = W.RegisterPack("poi", "shared", { evidence = "observed", revision = 2 }, { { id = "b1", kind = "vendor", mapID = 1, x = 0.1, y = 0.1, verified = false } })
+    T.eq(n, 0) T.ok(cls.protected, "the pack in use is protected")
+    T.ok(ns.Data:Get("poi", "g1"), "still in use")
+    T.eq(W.Classify("shared").usable, true, "its manifest wasn't replaced by the rejected one")
+    T.ok(W.quarantine.shared.rejectedImport)
+    W.RegisterPack("poi", "shared", { revision = 3 }, { { id = "b2" } })
+    T.eq(#W.QuarantineHistory("shared"), 2, "both rejected versions kept")
+    -- a reload: memory is gone, the saved records are not
+    W.quarantine, W.loaded = {}, nil
+    T.ok(W.Quarantined().shared, "back after a reload")
+    T.eq(W.QuarantineHistory("shared")[1].entries[1].id, "b1")
+    -- a newer usable version archives the one it replaces
+    W.RegisterPack("poi", "shared", { license = "CC-BY", evidence = "observed", revision = 4 }, { { id = "g2", kind = "vendor", mapID = 1, x = 0.6, y = 0.6, verified = false } })
+    local archived = false
+    for _, e in ipairs(ns.Archive:Rows("worldPackReplaced")) do if e.row.revision == 1 and e.row.entries[1].id == "g1" then archived = true end end
+    T.ok(archived, "revision 1 in the archive")
+    local events = {}
+    for _, r in ipairs(W.Store().log) do events[#events + 1] = r.event .. ":" .. tostring(r.revision) end
+    T.ok(#events >= 4, table.concat(events, ","))
+  end)
 end)
 
 T.describe("conflicts, rare forecasts and the explorer (OI06-03..05)", function()

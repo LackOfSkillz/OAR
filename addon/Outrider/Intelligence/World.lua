@@ -91,8 +91,31 @@ function W.FromSighting(npcID, s, build, now)
 end
 
 -- OI06-02 source registry
-W.manifests = {}
-function W.Manifest(name, m)
+-- Review OI-FR11 (2026-11-25): provenance is versioned and saved. Every
+-- manifest and every registration is appended to a saved log
+-- (global.worldProvenance.log), never replaced; a pack set aside keeps every
+-- version (global.worldProvenance.quarantine[name] = { record, ... }, with
+-- its entries) across reloads. A new import that fails its checks never
+-- displaces a pack already in use under that name: it is recorded as a
+-- rejected import and the protected pack stays. A usable new version of a
+-- pack in use archives the previous version's entries first.
+W.manifests, W.active = {}, {}
+function W.Store()
+  local g = ns.db and ns.db.global
+  if not g then return { log = {}, quarantine = {} } end
+  local st = ns.KeepTable(g.worldProvenance, "World:global.worldProvenance")
+  if type(st) ~= "table" then st = {} g.worldProvenance = st end
+  st.log = ns.KeepTable(st.log, "World:worldProvenance.log") or {}
+  st.quarantine = ns.KeepTable(st.quarantine, "World:worldProvenance.quarantine") or {}
+  g.worldProvenance = st
+  return st
+end
+local function logRow(row)
+  row.at = row.at or time()
+  local log = W.Store().log
+  log[#log + 1] = row
+end
+local function buildManifest(name, m)
   if type(m) ~= "table" then return nil, "manifest must be a table" end
   local why
   if type(m.license) ~= "string" or m.license == "" then why = "no license" end
@@ -100,7 +123,14 @@ function W.Manifest(name, m)
   local rec = { name = name, license = m.license, revision = m.revision, flavor = m.flavor or "forever", build = m.build,
     evidence = m.evidence, quarantined = why }
   if rec.flavor == "classic" then rec.label = "Classic data: may be wrong on Forever" end
+  return rec
+end
+function W.Manifest(name, m)
+  local rec, err = buildManifest(name, m)
+  if not rec then return nil, err end
   W.manifests[name] = rec
+  logRow({ event = "manifest", name = name, revision = rec.revision, license = rec.license, flavor = rec.flavor,
+    build = rec.build, evidence = rec.evidence, quarantined = rec.quarantined })
   return rec
 end
 -- a rule: { minBuild = "1.60.0" } makes older packs outdated
@@ -114,8 +144,7 @@ local function older(a, b)
   return false
 end
 W.older = older
-function W.Classify(name, rules)
-  local m = W.manifests[name]
+local function classifyRec(name, m, rules)
   if not m then return { name = name, firstParty = true, label = "Outrider's own pack: each entry names its source" } end
   local out = { name = name, flavor = m.flavor, evidence = m.evidence, license = m.license, label = m.label }
   if m.quarantined then out.quarantined, out.label = m.quarantined, "quarantined: " .. m.quarantined end
@@ -123,23 +152,61 @@ function W.Classify(name, rules)
   out.usable = not out.quarantined and not out.outdated
   return out
 end
+function W.Classify(name, rules) return classifyRec(name, W.manifests[name], rules) end
 
 -- register an outside pack: quarantined or outdated packs are kept apart
--- (W.quarantine[name], entries untouched), never indexed for use
+-- (W.quarantine[name] = the latest, entries untouched; every version saved),
+-- never indexed for use
 W.quarantine = {}
+-- saved quarantine records back into memory (after a reload)
+function W.LoadQuarantine()
+  if W.loaded then return end
+  W.loaded = true
+  for name, list in pairs(W.Store().quarantine) do
+    if type(list) == "table" and type(list[#list]) == "table" and W.quarantine[name] == nil then W.quarantine[name] = list[#list] end
+  end
+end
 -- the packs set aside, for other parts of Outrider: { name = why }
 function W.Quarantined()
+  W.LoadQuarantine()
   local out = {}
   for name, q in pairs(W.quarantine) do out[name] = q.why end
   return out
 end
+-- every saved version set aside under a name, oldest first
+function W.QuarantineHistory(name)
+  local list = W.Store().quarantine[name]
+  return type(list) == "table" and list or {}
+end
 function W.RegisterPack(kind, name, manifest, entries, rules)
-  W.Manifest(name, manifest)
-  local cls = W.Classify(name, rules)
+  W.LoadQuarantine()
+  local rec, err = buildManifest(name, manifest)
+  local cls = rec and classifyRec(name, rec, rules) or { name = name, quarantined = err, label = "quarantined: " .. tostring(err), usable = false }
+  local key = tostring(kind) .. ":" .. tostring(name)
+  local prior = W.active[key]
+  logRow({ event = "register", kind = kind, name = name, revision = rec and rec.revision, usable = cls.usable == true,
+    why = not cls.usable and (cls.quarantined or cls.label) or nil, count = type(entries) == "table" and #entries or 0,
+    protected = (not cls.usable and prior) and true or nil })
   if not cls.usable then
-    W.quarantine[name] = { kind = kind, why = cls.quarantined or cls.label, entries = entries }
+    local q = { kind = kind, why = cls.quarantined or cls.label, entries = entries, revision = rec and rec.revision, at = time(),
+      rejectedImport = prior and true or nil }
+    local saved = W.Store().quarantine
+    saved[name] = type(saved[name]) == "table" and saved[name] or {}
+    saved[name][#saved[name] + 1] = q
+    W.quarantine[name] = q
+    -- the pack already in use under this name stays in use (protected)
+    if prior then cls.protected, cls.label = true, "rejected import: " .. tostring(q.why) .. " (the pack in use is kept)" end
     return 0, cls
   end
+  -- a newer usable version: the one it replaces goes to the archive first;
+  -- if that can't be kept, the version in use stays (nothing is lost)
+  local old = prior and prior.entries ~= entries and { kind = kind, name = name, revision = prior.revision, entries = prior.entries }
+  if old and not ns.Archive:Preserve("worldPackReplaced", old, { path = "World.active", keys = { kind = kind, name = name } }) then
+    cls.usable, cls.label = false, "not replaced: the version in use couldn't be archived"
+    return 0, cls
+  end
+  W.manifests[name] = rec
+  W.active[key] = { revision = rec.revision, entries = entries }
   for _, e in ipairs(entries or {}) do
     e.flavor = e.flavor or cls.flavor
     if cls.flavor == "classic" then e.verified = false e.confidence = e.confidence == "verified" and "community" or e.confidence end
