@@ -411,7 +411,9 @@
       ],
       "implementation": "Define instance and encounter IDs, sizes, ruleset, difficulty, verified requirements and source refs.",
       "acceptance": "No assumed Classic mechanics or future unlocks; unknowns shown.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-02",
@@ -422,7 +424,9 @@
       ],
       "implementation": "Model keys, quests, attunements and prerequisites using existing data.",
       "acceptance": "AND/OR prerequisites and cycle guards; access unknown != access denied.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-03",
@@ -433,7 +437,9 @@
       ],
       "implementation": "Implement weighted intervals, known-only index and separate critical gates.",
       "acceptance": "All-unknown cannot produce confident score; monotonicity, determinism and missing-critical tests.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-04",
@@ -444,7 +450,9 @@
       ],
       "implementation": "Apply role and utility requirements per encounter.",
       "acceptance": "Distinct boss risks, reasons, source/build and evidence coverage; no probability label.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-05",
@@ -455,7 +463,9 @@
       ],
       "implementation": "Produce bounded gap actions for self and advisory text for peers.",
       "acceptance": "Criticality, costs, alternatives and prerequisite tests; no actions on peers.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-06",
@@ -466,7 +476,9 @@
       ],
       "implementation": "Reuse validated opportunity, budget, evidence and Act boundaries.",
       "acceptance": "Actual producer-to-planner tests; stale/disabled/invalid actions rejected.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-07",
@@ -477,7 +489,9 @@
       ],
       "implementation": "Connect item acquisition, crafting, existing inventory, AH and travel estimates.",
       "acceptance": "Unknown cost never free; reserve protected; enchant depends on equipment decision.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-08",
@@ -488,7 +502,9 @@
       ],
       "implementation": "Integrate overview, roster, evidence, boss tabs and clear unknown/expired states.",
       "acceptance": "5/40 layout, accessible color+text, no hidden confidence caveats.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-09",
@@ -499,7 +515,9 @@
       ],
       "implementation": "Create reusable templates, actionable checklist and aggregate copy preview.",
       "acceptance": "User initiated copy, no auto chat, identifying details excluded by default.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-10",
@@ -510,7 +528,9 @@
       ],
       "implementation": "Invalidate on roster/role/profile/catalog/time and relevant goal changes.",
       "acceptance": "Old assessment unusable immediately; UI cannot keep stale success status.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-11",
@@ -521,7 +541,9 @@
       ],
       "implementation": "Exercise full flow with no peer addon, desktop or internet.",
       "acceptance": "Roster-only and partial native inspection provide useful accurate assessment; fallback documented.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-GATE",
@@ -532,7 +554,9 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "evidence": "docs/vanguard/VG03_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-01",

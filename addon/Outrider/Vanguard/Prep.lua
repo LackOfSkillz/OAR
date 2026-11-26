@@ -215,7 +215,7 @@ function P.Journal(instance)
   if ok2 then
     for i, u in ipairs(ups or {}) do
       if i > 8 then break end
-      out.upgrades[#out.upgrades + 1] = { itemID = u.itemID, name = u.name, boss = u.boss, pct = u.pct, later = u.later }
+      out.upgrades[#out.upgrades + 1] = { itemID = u.itemID, name = u.name, boss = u.boss, pct = u.pct, later = u.later, slot = u.slot }
     end
   end
   out.source = "installed dungeon and quest packs (completeness unverified)"

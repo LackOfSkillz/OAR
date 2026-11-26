@@ -212,6 +212,7 @@ function M:SetRole(key, role)
   if not (self.snap and self.snap.byKey[key]) then return false end
   if role ~= nil and not Roster.ROLES[role] then return false end
   self.manual[key] = role
+  self.roleRev = (self.roleRev or 0) + 1
   local p = Cache:Get(key)
   if p then p.role = Profile.Role(self.snap.byKey[key], p.talents, role) end
   self:Redraw()
@@ -508,4 +509,164 @@ ns.AddCommand("prep", "prep add <text> | done <n> | undo <n> | drop <n>  your ow
     for i, c in ipairs(st.custom) do ns.Print("  %d. [%s] %s", i, c.done and "x" or " ", c.text) end
     ns.Print("usage: /ride prep add <text> | done <n> | undo <n> | drop <n>")
   end
+end)
+
+-- ------------------------------------------------------------------ VG03 assessment (no requests)
+-- built fresh every time (cheap): an old assessment can never be shown as current
+local function freshProfiles(snap)
+  local profiles, at = {}, {}
+  for _, m in ipairs(snap and snap.members or {}) do
+    local p, fresh = Cache:Get(m.key)
+    if p and fresh == "fresh" then profiles[m.key] = p at[m.key] = p.cachedAt end
+  end
+  return profiles, at
+end
+
+function M:AssessKey(instance)
+  local snap = self.snap or self:ReadRoster()
+  local profiles = freshProfiles(snap)
+  return V.Assess.Key(snap, V.Catalog.Find(instance), profiles, self.roleRev, self:Settings(), V.Catalog.Get().version)
+end
+
+function M:Assessment(instance)
+  instance = instance or self:PrepInstance()
+  local entry = instance and V.Catalog.Find(instance)
+  if not entry then return nil, "not in the catalog" end
+  local snap = self.snap or self:ReadRoster()
+  local profiles, at = freshProfiles(snap)
+  return V.Assess.Build({ snap = snap, entry = entry, roleOf = function(m) return M:RoleOf(m) end, profiles = profiles,
+    cachedAt = at, ttl = Cache.TTL, roleRev = self.roleRev, st = self:Settings() })
+end
+
+-- slots the chosen place could upgrade for you (an enchant there waits)
+function M:UpgradeSlots()
+  local out = {}
+  local name = self:PrepInstance()
+  local j = name and V.Prep.Journal(name)
+  for _, u in ipairs(j and j.upgrades or {}) do
+    local slot = tonumber(u.slot)
+    if slot then out[slot] = true end
+  end
+  return out
+end
+
+local ROLE_COUNT_WORD = { TANK = "tank", HEALER = "healer", DAMAGER = "damage" }
+function M:ReportText(instance, withNames)
+  local a = self:Assessment(instance)
+  if not a then return "No assessment: pick a place first." end
+  local entry = V.Catalog.Find(a.instance)
+  local snap = self.snap
+  local roles, classes, names = { TANK = 0, HEALER = 0, DAMAGER = 0, unknown = 0 }, {}, {}
+  for _, m in ipairs(snap and snap.members or {}) do
+    local r = self:RoleOf(m).value
+    roles[r or "unknown"] = (roles[r or "unknown"] or 0) + 1
+    local c = V.Obs.Value(m.class)
+    if c then classes[#classes + 1] = c:sub(1, 1) .. c:sub(2):lower() end
+    if withNames then names[#names + 1] = string.format("%s (%s)", m.self and "you" or tostring(m.name or "?"), r and ROLE_COUNT_WORD[r] or "role unknown") end
+  end
+  table.sort(classes)
+  local lines = {
+    string.format("Outrider group check: %s (%s data)", a.instance, entry and entry.availability or "?"),
+    string.format("Group: %d of %s. Roles: %d tank, %d healer, %d damage, %d unknown. Classes: %s.", #(snap and snap.members or {}),
+      tostring(entry and entry.size or "?"), roles.TANK, roles.HEALER, roles.DAMAGER, roles.unknown, table.concat(classes, ", ")),
+    "Readiness index: " .. V.Readiness.Text(a.score) .. " (a readiness index, not a prediction)",
+  }
+  if a.score.gate ~= "none" then lines[#lines + 1] = "Must-haves: " .. a.score.gate end
+  for _, r in ipairs(a.results) do lines[#lines + 1] = string.format("- %s: %s", r.rule, r.text) end
+  for _, b in ipairs(a.bosses) do
+    if #b.risks > 0 then lines[#lines + 1] = string.format("- %s: %s", b.name, table.concat(b.risks, "; ")) end
+  end
+  if #a.unknowns > 0 then lines[#lines + 1] = "Unknown: " .. table.concat(a.unknowns, "; ") end
+  if withNames and #names > 0 then lines[#lines + 1] = "Members: " .. table.concat(names, ", ") end
+  return table.concat(lines, "\n")
+end
+
+-- you press it; it shows the text in a copy box and sends nothing
+function M:CopyReport(withNames)
+  ns.UI:TextDialog("Group check report", self:ReportText(nil, withNames), "copy")
+end
+
+ns.AddCommand("vgboss", "vgboss <boss name> <need> | clear <boss name>  your own rule: a boss needs interrupt, dispel_poison, ...", function(arg)
+  local st = M:Settings()
+  st.bossNeeds = st.bossNeeds or {}
+  arg = tostring(arg or "")
+  local clear = arg:match("^clear%s+(.+)$")
+  if clear then st.bossNeeds[clear] = nil ns.Print("vgboss: cleared your rules for %s", clear) return end
+  local boss, cap = arg:match("^(.-)%s+([%w_]+)$")
+  if not (boss and boss ~= "" and V.Utility.CAPS[cap]) then
+    local caps = {}
+    for _, c in ipairs(V.Utility.ORDER) do caps[#caps + 1] = c end
+    ns.Print("usage: /ride vgboss <boss name> <need>; needs: %s", table.concat(caps, ", "))
+    return
+  end
+  st.bossNeeds[boss] = st.bossNeeds[boss] or {}
+  st.bossNeeds[boss][cap] = true
+  ns.Print("vgboss: %s needs %s (your own rule)", boss, V.Utility.CAPS[cap].label:lower())
+end)
+
+-- VG03-08: overview and boss matrix
+local GATE_WORD = { blocked = "|cffff6060blocked|r", ["not established"] = "|cffffd100not established|r",
+  ["prerequisites observed"] = "|cff66dd77observed|r", none = "none set" }
+local function frac(r)
+  if r.l == r.u then return r.l >= 1 and "|cff66dd77met|r" or (r.u == 0 and "|cffff6060missing|r" or "|cffffd100part|r") end
+  return "|cffffd100unknown|r"
+end
+
+ns.Hub:AddTab("vanguard_board", "Boss matrix", function(p)
+  local UI = ns.UI
+  local refresh = function() if p.Refresh then p:Refresh() end end
+  local function on() return M:IsEnabled() end
+  local function cur() if not on() then return nil end return M:Assessment() end
+  UI:FormPage(p, {
+    { "header", "Boss matrix (preview)" },
+    { "note", "Is the group ready for this place? 1. Turn on Group check and scan your group. 2. Pick the place with Next dungeon. 3. Read the checks and each boss's risks. The number is a readiness index against Outrider's group template, not a chance of winning; boss mechanics aren't in the data, so they show as unknown." },
+    { "note", function()
+      if not on() then return "|cffffd100Group check is off.|r Turn it on on the Group check page." end
+      return ""
+    end },
+    { "stats", function()
+      local a = cur()
+      if not a then return { { cap = "Place", value = M:PrepInstance() or "none" } } end
+      return {
+        { cap = "Place", value = a.instance },
+        { cap = "Readiness", value = V.Readiness.Text(a.score) },
+        { cap = "Must-haves", value = GATE_WORD[a.score.gate] or a.score.gate },
+        { cap = "Risks", value = tostring(#a.risks) },
+      }
+    end },
+    { "buttons", {
+      { "Next dungeon", function() M:NextInstance(1) refresh() end, 110 },
+      { "Copy group report", function() M:CopyReport(false) end, 140 },
+      { "Copy with names", function() M:CopyReport(true) end, 130 },
+    }, plain = true },
+    { "table", 8, {
+      { key = "rule", label = "Check", width = 0, sort = function(x) return x.rule end, text = function(x) return x.rule end },
+      { key = "text", label = "Group", width = 250, sort = function(x) return x.text end, text = function(x) return x.text end },
+      { key = "state", label = "State", width = 80, sort = function(x) return x.l + x.u end, text = frac },
+      { key = "src", label = "Source", width = 90, sort = function(x) return x.verification end, text = function(x) return x.verification end },
+    }, function() local a = cur() return a and a.results or {} end, nil, sortKey = "state" },
+    { "table", 8, {
+      { key = "name", label = "Boss", width = 160, sort = function(x) return x.order end, text = function(x) return x.name end },
+      { key = "level", label = "Lvl", width = 36, align = "RIGHT", sort = function(x) return x.level or 0 end, text = function(x) return x.level or "?" end },
+      { key = "score", label = "Readiness", width = 140, sort = function(x) return x.score.low or 0 end, text = function(x) return V.Readiness.Text(x.score) end },
+      { key = "risks", label = "Risks", width = 0, sort = function(x) return #x.risks end,
+        text = function(x) return #x.risks > 0 and table.concat(x.risks, "; ") or "none found (mechanics unknown)" end },
+    }, function() local a = cur() return a and a.bosses or {} end, nil, sortKey = "name" },
+    { "note", function()
+      local a = cur()
+      if not a then return "" end
+      local acts, advice = V.Plan.Actions(M:PrepRows(), a, { upgrades = M:UpgradeSlots() })
+      local lines = { "|cffffd100What would help most|r (you do these; nothing is done for you):" }
+      for i, x in ipairs(acts) do
+        if i > 6 then break end
+        lines[#lines + 1] = string.format("  %d. %s%s%s", i, x.title, x.costUnknown and " (price unknown)" or "",
+          x.overReserve and " (over your gold reserve)" or (x.waits and (" (" .. x.prerequisites[1] .. ")") or ""))
+      end
+      for _, t in ipairs(advice) do lines[#lines + 1] = "  " .. t end
+      if #a.unknowns > 0 then lines[#lines + 1] = "Unknown: " .. table.concat(a.unknowns, "; ") end
+      lines[#lines + 1] = "Assumes: " .. table.concat(a.assumptions, "; ")
+      return table.concat(lines, "\n")
+    end },
+    { "note", "Your own boss rules: /ride vgboss <boss name> <need> (for example interrupt or dispel_poison). They count only for you and show as yours." },
+  })
 end)

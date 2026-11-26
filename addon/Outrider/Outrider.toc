@@ -258,6 +258,11 @@ Vanguard\Stats.lua
 Vanguard\Adequacy.lua
 Vanguard\Utility.lua
 Vanguard\Prep.lua
+Vanguard\Catalog.lua
+Vanguard\Access.lua
+Vanguard\Readiness.lua
+Vanguard\Assess.lua
+Vanguard\Plan.lua
 Modules\Vanguard.lua
 Modules\NPCPack.lua
 Modules\Waypoints.lua

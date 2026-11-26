@@ -10,7 +10,8 @@
 --     training (ProfTrainer, MoneyGuide), rares (Sightings), gold (MoneyGuide,
 --     LootLog), gather (LootLog, Travel); DealDesk's live vendor-flip lots
 --     (only lots the player's own auction search produced); Handoffs (BoE
---     upgrades another character holds, from saved inventories).
+--     upgrades another character holds, from saved inventories); Vanguard
+--     (VG03-06: your own prep actions, only while Group check is on).
 --   Every resource cost or gain is in copper (costCopper) or seconds
 --     (costSeconds), with an evidence id; no adapter starts a scan or search.
 -- Rules:
@@ -297,8 +298,14 @@ function A.HandoffItems()
   return out
 end
 
+-- Vanguard (VG03-06): your own prep actions, only while Group check (preview) is on
+function A.VanguardPrep()
+  local P = ns.Vanguard and ns.Vanguard.Plan
+  return P and P.Candidates() or {}
+end
+
 function A:Resources(revision, now)
-  return self:Collect(self.RESOURCES, revision, now, { deals = A.DealLots, handoffs = A.HandoffItems })
+  return self:Collect(self.RESOURCES, revision, now, { deals = A.DealLots, handoffs = A.HandoffItems, vanguard = A.VanguardPrep })
 end
 
 -- everything, progression and resources, de-duplicated together
@@ -306,5 +313,6 @@ function A:All(revision, now)
   local names = {}
   for _, n in ipairs(self.PROGRESSION) do names[#names + 1] = n end
   for _, n in ipairs(self.RESOURCES) do names[#names + 1] = n end
-  return self:Collect(names, revision, now, { levelroute = A.LevelRouteStep, deals = A.DealLots, handoffs = A.HandoffItems })
+  return self:Collect(names, revision, now, { levelroute = A.LevelRouteStep, deals = A.DealLots, handoffs = A.HandoffItems,
+    vanguard = A.VanguardPrep })
 end
