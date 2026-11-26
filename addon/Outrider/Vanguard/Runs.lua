@@ -153,10 +153,8 @@ function R.Close(store, why, t)
   run.distinctKills = kills
   store.runs[#store.runs + 1] = run
   -- over the cap: the oldest go to the archive (never deleted)
-  while #store.runs > R.CAP do
-    local ok = ns.Archive and ns.Archive:Shift("vanguardRuns", store.runs, { path = "char.vanguardRuns.runs", scope = "char" })
-    if not ok then break end
-  end
+  -- (a refused archive write keeps the run and stops the loop)
+  while #store.runs > R.CAP and ns.Archive and ns.Archive:Shift("vanguardRuns", store.runs, { path = "char.vanguardRuns.runs", scope = "char" }) do end
   return run
 end
 
