@@ -245,8 +245,27 @@ T.describe("fight key buffs first, with the class plans on", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("the imbue leaves the macro after the cast with no aura event (a weapon enchant isn't an aura)", function()
+    local game, ns = planned("SHAMAN", 6, sp("Lightning Bolt", "Rockbiter Weapon", "Earth Shock", "Healing Wave"))
+    T.contains(macro(game, "Fight"), "Rockbiter Weapon")
+    game.mhEnchant = true
+    game:fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", 8002)
+    game:advance(4)
+    T.ok(not macro(game, "Fight"):find("Rockbiter", 1, true), "imbued: gone without UNIT_AURA")
+    -- it wears off: the weapon slot changes and it comes back
+    game.mhEnchant = false
+    game:fire("UNIT_INVENTORY_CHANGED", "player")
+    game:advance(4)
+    T.contains(macro(game, "Fight"), "Rockbiter Weapon")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("without GetTotemInfo no totem lines (can't tell they're up)", function()
     local game, ns = planned("SHAMAN", 20, sp("Lightning Bolt", "Searing Totem", "Healing Wave"))
+    -- a client that answers "have" for an empty slot: still missing
+    game.env.GetTotemInfo = function() return true, "", 0, 0, "" end
+    T.eq(#ns.HunterFight.MissingTotems(), 1, "empty slot counts as missing")
+    T.contains(ns.HunterFight.TotemState(), "fire Searing Totem missing")
     game.env.GetTotemInfo = nil
     T.eq(#ns.HunterFight.MissingTotems(), 0)
     T.eq(#ns.Errors.list, 0)

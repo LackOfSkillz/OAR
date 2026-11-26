@@ -441,6 +441,7 @@ function M:Update(why)
           self:Info("%s macro written (%s): %d chars, %d lines", entry.name, tostring(why), #entry.body,
             select(2, entry.body:gsub("\n", "")))
           self:Debug("%s macro text: %s", entry.name, (entry.body:gsub("\n", " | ")))
+          if kind == "ranged" and ns.PlayerClass() == "SHAMAN" and M.TotemState then self:Info("totems: %s", M.TotemState()) end
         else
           -- once per macro per session (it repeated after every fight)
           self.warned = self.warned or {}
@@ -483,6 +484,9 @@ end
 
 function M:OnCast(_, unit, _, spellID)
   if unit ~= "player" then return end
+  -- out of combat a cast may have put on a buff, imbue or totem: look again
+  -- once the game has applied it (OnEnable's watch)
+  if M.watchNow and not C.InCombat() then ns.Timer.After(0.6, function() M.watchNow(M) end, "hunterfight:watch") end
   local name = C.SpellName(spellID)
   if not name then return end
   local f = M.fight
@@ -637,12 +641,19 @@ function M:OnEnable()
     if on == "" then return end
     if on ~= mod.aspectWas then
       mod.aspectWas = on
+      if ns.PlayerClass() == "SHAMAN" and M.TotemState then mod:Info("buffs %s; totems: %s", on, M.TotemState()) end
       later(on)
     end
   end
   self:On("UNIT_AURA", function(mod, _, unit) if unit == "player" then watch(mod) end end)
   -- shaman totems down or gone (ClassFight.lua's pre-pull totem lines)
   self:On("PLAYER_TOTEM_UPDATE", function(mod) if ns.PlayerClass() == "SHAMAN" then watch(mod) end end)
+  -- a weapon imbue is no aura: UNIT_AURA never fires for it, so Rockbiter was
+  -- recast every press before the pull (Gary's shaman, 2026-11-25). The weapon
+  -- slot changes, and every cast of your own out of combat is checked once
+  -- the game has applied it.
+  self:On("UNIT_INVENTORY_CHANGED", function(mod, _, unit) if unit == "player" then watch(mod) end end)
+  M.watchNow = watch
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod, _, slot)
     if (slot == 18 or slot == 16) and mod:Settings().auto then later(slot == 18 and "ranged weapon" or "main hand") end
   end)

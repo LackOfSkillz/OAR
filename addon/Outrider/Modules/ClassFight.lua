@@ -94,8 +94,21 @@ F.TOTEMS = {
 }
 function F.TotemDown(slot)
   if type(C.Resolve("GetTotemInfo")) ~= "function" then return nil end
-  local have = C.Call("GetTotemInfo", slot)
-  return C.Readable(have) == true
+  -- a totem only counts as down with a name and time on it (some clients
+  -- answer "have" for an empty slot; Gary's shaman 2026-11-25 never got one)
+  local have, name, _, duration = C.Call("GetTotemInfo", slot)
+  name, duration = C.Readable(name), tonumber(C.Readable(duration))
+  return C.Readable(have) == true and type(name) == "string" and name ~= "" and (duration or 0) > 0
+end
+-- what each element's totem line is doing, for the log: "earth Stoneskin
+-- Totem missing, fire not known, ..."
+function F.TotemState()
+  local parts = {}
+  for _, t in ipairs(F.TOTEMS) do
+    local n = first(unpack(t.names))
+    parts[#parts + 1] = t.what .. " " .. (n and (n .. (F.TotemDown(t.slot) and " down" or " missing")) or "not known")
+  end
+  return table.concat(parts, ", ")
 end
 function F.MissingTotems()
   local out = {}
