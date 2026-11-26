@@ -2,6 +2,7 @@
 
 ## Unreleased (branch ai/outrider-personal-intelligence, not checked in game yet)
 
+- **FarmLab (Gold > FarmLab, `/ride farm`):** what each farm really pays. Dungeon runs time themselves; a Start/Stop timer covers outdoor farming. Each run keeps coin looted, the items you actually received (not just what a loot window showed) at vendor and auction prices from when they dropped, costs, and the real gold change. Compare farms by gold per hour (middle run, worst to best, how reliable), see rare drops with sample sizes, compare characters, revalue old loot at today's prices, and export CSV or JSON.
 - **Fix: the shaman Fight key recast Rockbiter Weapon every press before the pull.** A weapon imbue isn't a buff, so the macro never heard it go on; it now checks after each of your casts out of combat. Totems count as down only when the game names one in the slot.
 - **Shaman totems on the Fight key:** after the buffs, out of combat, one press each: your best earth totem (Strength of Earth, else Stoneskin), Searing Totem and Mana Spring, only while that element has no totem down. Ctrl still drops Searing Totem in a fight.
 - **Fishing ring off by default:** turn it on on the Fishing page; when on, drag the bar above it to move it. Off, it does no work at all. The fishing key alone casts, puts lures on and hooks.

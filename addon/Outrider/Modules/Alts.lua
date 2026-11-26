@@ -230,6 +230,7 @@ function M:OnZone()
     self.run = { map = map, instanceID = map, name = name, start = now, entry = not same and self.inst[#self.inst] or nil, money = tonumber(C.Call("GetMoney")) or 0, xp = 0, kills = 0,
       char = ns.db.key, level = tonumber(C.Call("UnitLevel", "player")) or 1, continued = same or nil }
     self.lastXP, self.lastMax = tonumber(readable(C.Call("UnitXP", "player"))), tonumber(readable(C.Call("UnitXPMax", "player")))
+    ns.Events:Fire("OTR_RUN_START", self.run) -- FarmLab times the run's loot
   elseif self.run then
     self:EndRun(now)
   end
@@ -244,6 +245,7 @@ function M:EndRun(now)
   r.money = nil
   self.lastLeft = { map = r.map, t = r.stop }
   if r.entry and r.entry.t == r.start then r.entry.left = r.stop end
+  ns.Events:Fire("OTR_RUN_END", r)
   if r.stop - r.start < 60 then return end -- a peek inside, not a run
   table.insert(self.runs, 1, r)
   while #self.runs > M.KEEP_RUNS and ns.Archive:Pop("dungeonRuns", self.runs, { path = "global.runs" }) do end

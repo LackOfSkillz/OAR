@@ -148,6 +148,7 @@ Modules\LootLog.lua
 Modules\HerbHelper.lua
 Modules\NodePack.lua
 Modules\MoneyGuide.lua
+Modules\FarmLab.lua
 Modules\Favor.lua
 Modules\Mailbox.lua
 Modules\CraftQueue.lua

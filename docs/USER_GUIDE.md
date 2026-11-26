@@ -133,6 +133,7 @@ Outrider spots rares by itself from nameplates, your target and mouseover.
 - **Quest details.** Quest cards, the tracker and quest givers show quest chains (Part 2 of 4, next quest), breadcrumbs, reputation rewards and categories (Darkmoon Faire, profession, class, repeatable). Taking a quest whose breadcrumb you skipped gives one warning. Quest links in chat show their level. A short sound plays when an objective or quest is done. The Quests page keeps a dated history of the quests you take, hand in and abandon. Escort and patrol NPCs of your quests walk a dotted path on the map. Quest-giver pins hide holiday quests and profession quests for professions you don't have (switches on the Quests page). Community data, unverified.
 - **Money page.** The best ways to earn gold at your level and with your professions, and your own earnings per hour.
 - **Gold ledger.** Where your gold came from and went, per session and character.
+- **FarmLab: what each farm pays.** Gold > FarmLab. Every dungeon run is timed by itself; for outdoor farming press Start farm timer, then Stop and save (or /ride farm start [name], /ride farm stop). Each run keeps the coin you looted, the items you actually received with their vendor and auction price at the time (Auctionator, TSM or Outrider's own scans), your costs (repairs, buys) and the real change in your gold. Vendor and auction value are two ways to sell the same loot, never added. Leave a dungeon and go back in within 30 minutes and the run continues. Which farm pays best ranks your farms by the middle run's gold per hour (pick coin, vendor, auction or gold change; this character or all; prices when looted or today's), with worst to best and how reliable it is. Rare drops show how many runs had one. Export gives CSV or JSON to copy. Runs are kept for good.
 - **Merchant's Favor.** Waylaid Crates: what each crate needs and your Favor balance. /ride favor.
 - **Errands.** Entering a town, one pop-up with what to do there: sell junk, repair, buy ammo, train. Town errands tab on Home lists them.
 - **Vendor and mailbox.** Sell junk and Repair buttons beside vendors; a Collect button beside the mailbox (one item per click) that says what's waiting in total. Send to: your characters on this realm and the last people you mailed, one click fills the To: box. At login, one line warns about mail with gold or items expiring within 3 days on any of your characters.
@@ -249,6 +250,7 @@ Type each after `/ride` (or `/outrider`). In game, the All commands page lists t
 | `/ride errands` | what to do in town for this character |
 | `/ride errors` | [clear]  show recent Outrider errors |
 | `/ride export` | show this character's settings as a string |
+| `/ride farm` | farm start [name] \| stop \| export |
 | `/ride favor` | Merchant's Favor balance and what your crates need |
 | `/ride feed` | show the last 10 notifications |
 | `/ride fight` | [concussive\|wingclip\|pet\|auto on\|off]  make, show or change your class's Fight macros (every class) |

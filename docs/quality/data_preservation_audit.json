@@ -308,6 +308,17 @@
    "live_pending": null
   },
   {
+   "dataset": "farmRuns",
+   "saved_path": "global.farmlab.runs",
+   "retention_mechanism": "FarmLab.KEEP",
+   "archive_destination": "global.archive.sets.farmRuns",
+   "tests": [
+    "tests/spec/archive_spec.lua :: every archive call in the addon is fail-safe and names its path (static contract)"
+   ],
+   "behaviour_tested": false,
+   "live_pending": null
+  },
+  {
    "dataset": "dungeonRuns",
    "saved_path": "global.runs",
    "retention_mechanism": "KEEP_RUNS",
