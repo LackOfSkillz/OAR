@@ -292,7 +292,9 @@ function Probe.Shape(v, depth, budget)
   if budget.n > 200 then return "..." end
   if ns.Compat.IsSecret(v) then return "secret" end
   local t = type(v)
-  if t == "string" then return string.format("%q", #v > 40 and v:sub(1, 40) .. "..." or v) end
+  -- string values are never written as they came (VG00-R02): an API payload
+  -- (a damage meter session, say) can hold other players' names
+  if t == "string" then return "string(" .. #v .. ")" end
   if t == "number" or t == "boolean" or t == "nil" then return tostring(v) end
   if t ~= "table" then return t end
   if (depth or 0) >= 3 then return "{...}" end
@@ -378,6 +380,49 @@ end
 
 local function bump(t, k) t[k] = (t[k] or 0) + 1 end
 
+-- Allowlist (VG00-R02): a probe value is kept only as a number, a boolean,
+-- or a type with a size: never an API string or table as it came back, so
+-- nothing about another player can ride along into the saved data.
+function Probe.Kind(v)
+  if ns.Compat.IsSecret(v) then return "secret" end
+  local t = type(v)
+  if v == nil then return "nil" end
+  if t == "number" then return (v == v and v ~= math.huge and v ~= -math.huge) and v or "number" end
+  if t == "boolean" then return v end
+  if t == "string" then return "string(" .. #v .. ")" end
+  if t == "table" then
+    local n = 0
+    for _ in pairs(v) do n = n + 1 if n > 999 then break end end
+    return "table(" .. n .. ")"
+  end
+  return t
+end
+
+-- one of a fixed set of words, else its kind
+function Probe.OneOf(v, words)
+  v = readable(v)
+  if type(v) == "string" and words[v] then return v end
+  return Probe.Kind(v)
+end
+Probe.ROLES = { TANK = true, HEALER = true, DAMAGER = true, NONE = true }
+Probe.CLASSES = { WARRIOR = true, PALADIN = true, HUNTER = true, ROGUE = true, PRIEST = true, SHAMAN = true,
+  MAGE = true, WARLOCK = true, DRUID = true, DEATHKNIGHT = true, MONK = true, DEMONHUNTER = true, EVOKER = true }
+Probe.INSTANCE_TYPES = { none = true, party = true, raid = true, pvp = true, arena = true, scenario = true }
+
+-- game content (boss and instance names), never a player's name: capped
+local function contentName(v)
+  v = readable(v)
+  return type(v) == "string" and v:sub(1, 60) or Probe.Kind(v)
+end
+
+-- a count table as text for the log: {a=1, b=2}
+local function counts(t)
+  local parts = {}
+  for k, v in pairs(t or {}) do parts[#parts + 1] = tostring(k) .. "=" .. tostring(v) end
+  table.sort(parts)
+  return "{" .. table.concat(parts, ", ") .. "}"
+end
+
 function Probe:KeepGroup(sample)
   local g = ns.db.global
   g.probeGroup = ns.KeepTable(g.probeGroup, "Probe:g.probeGroup") or {}
@@ -418,9 +463,9 @@ function Probe:Roster(why)
       end
       local _, class = C.Call("UnitClass", unit)
       class = readable(class)
-      bump(out.classes, type(class) == "string" and class or "unreadable")
+      bump(out.classes, Probe.CLASSES[class or ""] and class or "unreadable")
       local role = readable(C.Call("UnitGroupRolesAssigned", unit))
-      bump(out.roles, type(role) == "string" and role or "unreadable")
+      bump(out.roles, Probe.ROLES[role or ""] and role or "unreadable")
       local inRange = C.Call("CheckInteractDistance", unit, 1)
       f.inspectRange = f.inspectRange or {}
       bump(f.inspectRange, ns.Compat.IsSecret(inRange) and "secret" or (inRange and "in range" or "out of range"))
@@ -436,16 +481,16 @@ function Probe:Roster(why)
       bump(f.raidInfo, sub == nil and "no value" or (ns.Compat.IsSecret(sub) and "secret" or "yes"))
       if type(readable(sub)) == "number" then bump(out.subgroups, readable(sub)) end
       out.raidSample = out.raidSample or { rankType = type(rank), levelType = type(level), fileType = type(fileName),
-        onlineType = type(online), deadType = type(dead), roleType = type(role), mlType = type(ml), combatRole = type(readable(combatRole)) == "string" and readable(combatRole) or type(combatRole) }
+        onlineType = type(online), deadType = type(dead), roleType = type(role), mlType = type(ml), combatRole = Probe.OneOf(combatRole, Probe.ROLES) }
     end
   end
-  out.me = { role = readable(C.Call("UnitGroupRolesAssigned", "player")), leader = readable(C.Call("UnitIsGroupLeader", "player")) and true or false }
+  out.me = { role = Probe.OneOf(C.Call("UnitGroupRolesAssigned", "player"), Probe.ROLES), leader = readable(C.Call("UnitIsGroupLeader", "player")) and true or false }
   self:KeepGroup(out)
   local roles = {}
   for k, v in pairs(out.roles) do roles[#roles + 1] = k .. "=" .. v end
   table.sort(roles)
   ns.Log:Info("probe", "roster (%s): %s of %d, %d units, roles %s, CanInspect %s, range %s", tostring(why), kind, n, #units,
-    table.concat(roles, " "), Probe.Shape(f.CanInspect), Probe.Shape(f.inspectRange))
+    table.concat(roles, " "), counts(f.CanInspect), counts(f.inspectRange))
   return out
 end
 
@@ -458,8 +503,8 @@ function Probe:Inspect(unit, source, secs)
   local out = { kind = "inspect", at = time(), source = source, secs = secs, inCombat = C.InCombat(),
     build = select(2, C.Call("GetBuildInfo")), slots = { link = 0, id = 0, none = 0, secret = 0 }, talents = {} }
   local _, class = C.Call("UnitClass", unit)
-  out.class = readable(class)
-  out.level = readable(C.Call("UnitLevel", unit))
+  out.class = Probe.OneOf(class, Probe.CLASSES)
+  out.level = Probe.Kind(readable(C.Call("UnitLevel", unit)))
   local ilvls = 0
   for _, slot in ipairs(Probe.SLOTS) do
     local link = C.Call("GetInventoryItemLink", unit, slot)
@@ -474,14 +519,16 @@ function Probe:Inspect(unit, source, secs)
   end
   out.slots.itemLevels = ilvls
   local t = out.talents
-  t.spec = Probe.Shape(C.Call("GetInspectSpecialization", unit))
-  t.classicTabs = Probe.Shape(C.Call("GetNumTalentTabs", true))
-  t.classicTab1 = Probe.Shape({ C.Call("GetTalentTabInfo", 1, true) })
+  t.spec = Probe.Kind(C.Call("GetInspectSpecialization", unit))
+  t.classicTabs = Probe.Kind(C.Call("GetNumTalentTabs", true))
+  local tab = { C.Call("GetTalentTabInfo", 1, true) }
+  t.classicTab1 = { returns = #tab }
+  for i = 1, math.min(#tab, 8) do t.classicTab1[i] = Probe.Kind(tab[i]) end
   local cfg = C.Resolve("Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID")
-  t.inspectConfigID = Probe.Shape(cfg)
+  t.inspectConfigID = Probe.Kind(cfg)
   if type(cfg) == "number" then
     local info = C.Call("C_Traits.GetConfigInfo", cfg)
-    t.configInfo = Probe.Shape(info)
+    t.configInfo = { kind = Probe.Kind(info), trees = type(info) == "table" and type(info.treeIDs) == "table" and #info.treeIDs or nil }
     local trees = type(info) == "table" and info.treeIDs
     if type(trees) == "table" and trees[1] then
       local nodes = C.Call("C_Traits.GetTreeNodes", trees[1])
@@ -498,11 +545,11 @@ function Probe:Inspect(unit, source, secs)
     end
   end
   local s = C.Call("C_Traits.GenerateInspectImportString", unit)
-  t.importString = ns.Compat.IsSecret(s) and "secret" or (type(s) == "string" and ("string, " .. #s .. " chars") or Probe.Shape(s))
+  t.importString = Probe.Kind(s)
   self:KeepGroup(out)
   ns.Log:Info("probe", "inspect (%s, %s %s, %s s): slots link=%d id=%d none=%d secret=%d ilvl=%d; spec %s; classic tabs %s; traits config %s nodes %s; import %s",
     tostring(source), tostring(out.class), tostring(out.level), secs and string.format("%.1f", secs) or "?", out.slots.link, out.slots.id,
-    out.slots.none, out.slots.secret, ilvls, t.spec, t.classicTabs, t.inspectConfigID, Probe.Shape(t.nodes), t.importString)
+    out.slots.none, out.slots.secret, ilvls, tostring(t.spec), tostring(t.classicTabs), tostring(t.inspectConfigID), counts(t.nodes), tostring(t.importString))
   return out
 end
 
@@ -511,14 +558,14 @@ function Probe:Encounter(event, id, name, difficulty, size, success)
   local C = ns.Compat
   local inst = { C.CallAll("GetInstanceInfo") }
   local out = { kind = "encounter", at = time(), event = event, build = select(2, C.Call("GetBuildInfo")),
-    id = readable(id), name = readable(name), difficulty = readable(difficulty), size = readable(size),
-    success = Probe.Shape(success), idType = type(id),
-    instance = { name = readable(inst[1]), type = readable(inst[2]), difficultyID = readable(inst[3]),
-      difficultyName = readable(inst[4]), maxPlayers = readable(inst[5]), instanceID = readable(inst[8]) },
+    id = Probe.Kind(id), name = contentName(name), difficulty = Probe.Kind(difficulty), size = Probe.Kind(size),
+    success = Probe.Kind(success), idType = type(id),
+    instance = { name = contentName(inst[1]), type = Probe.OneOf(inst[2], Probe.INSTANCE_TYPES), difficultyID = Probe.Kind(inst[3]),
+      difficultyName = contentName(inst[4]), maxPlayers = Probe.Kind(inst[5]), instanceID = Probe.Kind(inst[8]) },
     group = select(2, Probe.GroupUnits()), groupSize = select(3, Probe.GroupUnits()) }
   self:KeepGroup(out)
   ns.Log:Info("probe", "%s: id %s (%s) %s, difficulty %s size %s success %s; instance %s id %s type %s max %s",
-    tostring(event), tostring(out.id), out.idType, tostring(out.name), tostring(out.difficulty), tostring(out.size), out.success,
+    tostring(event), tostring(out.id), out.idType, tostring(out.name), tostring(out.difficulty), tostring(out.size), tostring(out.success),
     tostring(out.instance.name), tostring(out.instance.instanceID), tostring(out.instance.type), tostring(out.instance.maxPlayers))
   return out
 end

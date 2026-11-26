@@ -31,7 +31,7 @@ Date: 2026-11-26. Source inventory at baseline `c2ef910`. "Have" means the data 
 | Access / attunement | Leveling_DungeonQuests, Questie-derived quests | Forever attunement graph (Onyxia: Drakefire Amulet in bags per Blizzard's raid overview; Barrow and Hyjal: none named) | VG02 AccessTracker from cited sources, manual states |
 | Supplies | DungeonGuide ReadyCheck (food, water, ammo, reagents, durability), Supply, Quartermaster | per-encounter consumable needs | reuse; encounter needs come from templates |
 | Gear upgrades and cost | GearScore, GearShop, GearROI, Prices (Auctionator/TSM/own) | — | reuse through Nexus |
-| Inspected other players | PlayerInfo (item level, quality counts, weapon) | talents on Forever (Classic API missing; Traits path pending VG00-05) | VG01 after the live probe |
+| Inspected other players | PlayerInfo (item level, quality counts, weapon); live 2026-11-26: gear links, item levels, spec ID, Traits tree (config -1) and import string all readable for a non-user | spent talent points not seen yet (sample was level 7); PlayerInfo's talent line still uses the missing Classic API | VG01 InspectBroker reads talents through Traits |
 
 ## History available for GroupHistory (counts are not read here; Gary's SavedVariables stay closed while he plays)
 
@@ -48,7 +48,7 @@ Date: 2026-11-26. Source inventory at baseline `c2ef910`. "Have" means the data 
 
 ## Conclusions for later phases
 
-- T0 (roster only) and T1 (inspect) are feasible on known APIs, except other players' talents, which depend on VG00-05 live evidence.
+- T0 (roster only) and T1 (inspect) are feasible. Live 2026-11-26: one non-user inspected (gear, spec, Traits tree); spent talent points still to be seen on a level 10+ player.
 - RoleScore can score gear for the player's own role with labelled starting weights. For other players it can show item level, quality and enchant presence, not throughput.
 - EncounterIQ needs a new catalog. Existing packs have bosses and loot, not mechanics. Encounter requirements start as manual, labelled templates.
 - History needs new composition capture before any learning. Forecast abstains by design until the evidence floors are met.

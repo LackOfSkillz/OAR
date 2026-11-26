@@ -1,6 +1,6 @@
 # VG00-03: Policy and privacy decision record (ADR)
 
-Date: 2026-11-26. Status: **proposed by Claude, awaiting independent review and owner approval** at the VG00 gate. Recorded as D27 in `docs/DECISIONS.md`.
+Date: 2026-11-26. Status: **conditionally accepted by ChatGPT's VG00 review (2026-11-26); corrections R01/R02 done; awaiting Gary's approval.** Recorded as D27 in `docs/DECISIONS.md`.
 
 ## Context
 
@@ -21,6 +21,15 @@ They do not conflict if the line is drawn **at collection time**: what is never 
 - **Hostile input is not "collected data".** Malformed, oversized, spoofed or replayed packets are rejected and not kept (spec section 4).
 - **Reports default to aggregates.** Names appear in a report only when the player explicitly selects them, and only through a copy box the player pastes themselves. Nothing is posted automatically.
 - **Inspection is user-started.** Vanguard never inspects on a timer, on an event or in combat. The existing tooltip-hover inspect in PlayerInfo stays as it is (one request per hover) until VG01 moves it into one shared InspectBroker.
+
+## Scope note: Census (found while fixing VG00-R02, 2026-11-26)
+
+Outrider's older Census feature (Modules/Census.lua, since P8) already saves players seen nearby: name-realm, class, level, zone and time. It is used for the "Last seen" tooltip line, trade-chat professions and the realm census. It is not part of Vanguard, and under the preservation override it is kept as it is. D27 covers **what Vanguard and inspection add**: inspected gear, talents, specs, GUIDs and inspect log lines never reach saved data. A regression test checks this with debug mode on, across the whole saved file (`tests/spec/vanguard_probe_spec.lua`, "with debug on, nothing written to disk..."). It allows the name only inside Census, and only next to Census's simple sighting fields. Whether Census itself should change is a separate decision for Gary, not part of VG00.
+
+## Implementation of the review corrections (2026-11-26)
+
+- **VG00-R01:** `PlayerInfo:OnInspect` logged the inspected player's full name in debug mode. It now logs only "inspected a level N CLASS". Older log lines stay as they are (preservation override).
+- **VG00-R02:** Vanguard probes keep only allowlisted values: numbers, booleans, a fixed word list (roles, classes, instance types), types with a size (`string(35)`, `table(54)`), and game-content names (boss and instance, capped at 60 characters). The generic `Probe.Shape` no longer writes any string value (it writes `string(n)`). That also covers the older damage-meter probe, whose session payloads can hold party members' names. Tests: every saved string in the probe samples; the whole saved file with debug on (GUID, realm, gear link, item name, talent import string and talent config name all absent); the damage-meter log carries no API string.
 
 ## Retention and consent matrix
 
@@ -51,11 +60,11 @@ They do not conflict if the line is drawn **at collection time**: what is never 
 | Cross-character leakage | per-character scope for own data; aggregates carry no names |
 | Unsafe AI output | advice stays data-only (D16); no numbers from an LLM |
 
-## Open decisions (block the related work until answered)
+## Open decisions (ChatGPT's review recommendation in brackets; Gary decides)
 
-1. **Inspect cache lifetime:** 5 minutes (spec) or the whole group session? Claude recommends 5 minutes plus refresh on gear change, matching ForeverDB's published behaviour. Owner decision.
-2. **Named run history with consenting friends:** allowed later only with an explicit opt-in on both sides. Not built before an owner decision (VG04/VG05).
-3. **Should the tooltip-hover inspect stay automatic?** It inspects on hover today (PlayerInfo, setting on by default), which is a single request per hover, similar to GearScore Forever. Vanguard's own scans will be user-started only. Claude recommends keeping hover inspect and routing it through the shared broker in VG01. Owner decision.
+1. **Inspect cache lifetime:** [review: 5 minutes, refreshed on a detected gear change, cleared on group leave, logout or reload; expired data shown as stale] Owner decision.
+2. **Named run history with consenting friends:** [review: defer until a separate consent design is approved] Not built before an owner decision.
+3. **Should the tooltip-hover inspect stay automatic?** It inspects on hover today (PlayerInfo, setting on by default), which is a single request per hover, similar to GearScore Forever. Vanguard's own scans will be user-started only. [review: keep it on by default with a setting to turn it off; route every inspect through one shared InspectBroker] Owner decision.
 
 ## Consequences
 

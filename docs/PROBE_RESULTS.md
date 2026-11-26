@@ -128,3 +128,12 @@ All present: C_DamageMeter (IsDamageMeterAvailable, GetAvailableCombatSessions, 
 Events valid (IsEventValid, not registered): UNIT_COMBAT, UNIT_THREAT_SITUATION_UPDATE, UNIT_THREAT_LIST_UPDATE, PLAYER_XP_UPDATE, DAMAGE_METER_COMBAT_SESSION_UPDATED, DAMAGE_METER_CURRENT_SESSION_UPDATED, DAMAGE_METER_RESET, ENCOUNTER_TIMELINE_EVENT_ADDED, COOLDOWN_VIEWER_DATA_LOADED.
 Return shapes of C_DamageMeter: not known yet; AutoCheck logs them after the first 3 fights of a session (Probe:DamageMeter).
 Measured 2026-11-16 (Khreos, Redridge): Enum.DamageMeterType = DamageDone 0, Dps 1, HealingDone 2, Hps 3, Absorbs 4, Interrupts 5, Dispels 6, DamageTaken 7, AvoidableDamageTaken 8, Deaths 9, EnemyDamageTaken 10; Enum.DamageMeterSessionType = Overall 0, Current 1, Expired 2. GetAvailableCombatSessions() lists ~30 recent fights {sessionID, name (the mob), durationSeconds}. GetCombatSessionFromID(id, type) returns {durationSeconds, totalAmount, maxAmount, combatSources = {{name, sourceGUID, isLocalPlayer, classFilename, totalAmount, amountPerSecond, ...}}}; amounts readable out of combat, specIconID secret. The *FromType calls returned empty tables after the fight. Only the player was listed as a source (pet merged or absent: next capture checks).
+
+## Group, inspect and loot facts (2026-11-25/26, build 71139, 1.60.1)
+
+- `GetNumTalentTabs` is **missing** (probe 2026-11-25). The Classic talent-tab API can't read your own or anyone else's talents; use `C_Traits`.
+- **Inspecting another player works** (2026-11-26 08:23, tooltip hover on a level 7 rogue without Outrider): `INSPECT_READY` came 0.4 s after `NotifyInspect`; `GetInventoryItemLink(unit, slot)` gave 8 links, 1 slot an ID only, 9 empty, none secret; `C_Item.GetDetailedItemLevelInfo` read 8 item levels; `GetInspectSpecialization` = 1488; `Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID` = -1 and `C_Traits.GetConfigInfo(-1)` gave 1 tree with 54 nodes (0 ranked at level 7); `C_Traits.GenerateInspectImportString` gave a 35-character string. Talents of a player with points spent not seen yet.
+- Party roster (2026-11-26 08:24): `UnitGroupRolesAssigned` readable (DAMAGER), `CanInspect` true. Raid roster and `GetRaidRosterInfo` not seen yet.
+- Loot chat line (2026-11-26 08:18): `You receive loot: |cnIQ1:|Hitem:2589::::::::8:1489:::::::::|h[Linen Cloth]|h|r` matches `LOOT_ITEM_SELF`. Item links on Forever start with `|cnIQ<quality>:` instead of `|cff<hex>`.
+- Details and the Vanguard capability matrix: `docs/vanguard/VG00-04-06_CAPABILITY_MATRIX.md`.
+

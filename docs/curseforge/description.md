@@ -14,6 +14,10 @@ Outrider looks at the character you're playing (class, race, level, talents, pro
 
 Your three talent trees on one screen, with researched builds for every class for levelling, max damage, max healing, tanking and PvP. Outrider estimates how each build does with *your* spells and marks its pick for you. Try any build, change points with the game's own rules, slide the level to see it as you grow, and press **Follow**: the game's talent window then lights up where your next point goes.
 
+## New: FarmLab
+
+Which farm really pays? Every dungeon run times itself, and a Start button covers outdoor farming. Outrider counts the coin you loot and every item you actually receive, at vendor and auction prices, minus your repairs and restocks. It ranks your farms by gold per hour using the middle run, so one lucky drop doesn't decide it. Gold > FarmLab.
+
 ## The auction house, done for you
 
 **Skill-ups:** the cheapest way to your next profession points, each recipe with what it costs per point and every reagent, bought in one click.
@@ -115,6 +119,7 @@ Your three talent trees on one screen, with researched builds for every class fo
 - **Tooltips:** auction price, whole-stack price, and what disenchanting is likely worth.
 
 ### Gold
+- **FarmLab:** what each farm really pays you. Dungeon runs time themselves; press Start for outdoor farming. Coin, the loot you actually received at vendor and auction prices, costs, and gold per hour, so you can see which farm pays best, how reliable it is, how often rare drops show up, and which character farms best. Old loot can be revalued at today's prices, and runs export as CSV or JSON.
 - **Money page:** the best ways to earn at your level and with your professions, and your own earnings per hour.
 - **Gold ledger**, Merchant's Favor crates, and town errands (sell junk, repair, mail, train) in one pop-up.
 

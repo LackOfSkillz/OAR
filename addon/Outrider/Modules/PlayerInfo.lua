@@ -240,7 +240,9 @@ function M:OnInspect(guid)
     if readable(C.Call("UnitGUID", "mouseover")) == guid then unit = "mouseover" else return end
   end
   self:Read(unit, guid)
-  self:Debug("inspected %s", tostring(self:FullName(unit)))
+  -- no name, realm or GUID in the log (VG00-R01, D27): the saved log is permanent
+  local _, cls = C.Call("UnitClass", unit)
+  self:Debug("inspected a level %s %s", tostring(readable(C.Call("UnitLevel", unit))), tostring(readable(cls)))
   local frame = rawget(_G, "InspectFrame")
   if not (frame and frame.IsShown and frame:IsShown()) and C.Resolve("ClearInspectPlayer") then pcall(ClearInspectPlayer) end
   -- refresh the tooltip if we're still pointing at them

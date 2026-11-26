@@ -82,8 +82,9 @@ Open the hub with `/ride` (or the minimap button). Pages are grouped in the side
 
 **Professions and gold**
 - Training button for every crafting profession: one key makes what still gives skill. For cooking it makes the campfire, places it and cooks (never a second campfire).
-- Fishing: one key to cast and hook (auto loot), lure applied on the same key, a HUD with skill, lure timer, what bites here, silver per hour, and rare catch sounds.
+- Fishing: one key to cast and hook (auto loot), lure applied on the same key (the button ring is off by default, draggable when on), a HUD with skill, lure timer, what bites here, silver per hour, and rare catch sounds.
 - Auction house: one panel with **Training** (ingredients and recipes, ranked by cost per skill point), **Weapons** (top 10) and **Armor** (best per slot). Only what your class and skills can use, never above the gold you carry, stat-by-stat comparison and an overall change. Buying is one confirmed click per item. **Scan all prices** gives you prices without other addons.
+- FarmLab (Gold > FarmLab): what each farm really pays. Dungeon runs time themselves, a Start/Stop timer covers outdoor farming; coin, the items you received at vendor and auction prices, costs and gold per hour per farm, how reliable each farm is, rare drops with sample sizes, character comparison, today's prices, CSV/JSON export.
 - Money guide by level, professions and faction, learning your own gold per hour. Gold ledger, merchant panel (sell junk, repair), mailbox collect, inventory across characters.
 
 **Gear**

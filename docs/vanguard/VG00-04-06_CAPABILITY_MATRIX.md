@@ -1,6 +1,6 @@
 # VG00-04 / 05 / 06: Roster, inspection and encounter capability matrix
 
-Date: 2026-11-26. Client: WoW Forever 1.60.1, build 71139, interface 16001, enUS (last probe 2026-11-25 21:48). Status: **probe built and unit-tested; live samples pending** (Gary's next group play). Nothing below is marked verified without an in-game sample.
+Date: 2026-11-26. Client: WoW Forever 1.60.1, build 71139, interface 16001, enUS (last probe 2026-11-25 21:48). Status: **probe built and unit-tested; first live samples 2026-11-26** (see the end). Rows say "pending" until a sample exists.
 
 ## How it is measured (self-collecting, hard rule: no typing mid-play)
 
@@ -18,17 +18,17 @@ No names, realms, GUIDs or gear links of other players are stored (VG00-03). Sam
 | Capability | API / event | Status on Forever | Evidence | Fallback if absent |
 |---|---|---|---|---|
 | Group size | `GetNumGroupMembers` | present | probe 2026-11-25 | solo |
-| Party / raid | `IsInGroup`, `IsInRaid` | **pending** (added to probe) | — | party unit scan |
+| Party / raid | `IsInGroup`, `IsInRaid` | party **works** (live 2026-11-26); raid pending | roster sample | party unit scan |
 | Member GUID | `UnitGUID(partyN)` | present; readability per member **pending** | probe (presence) | canonical name + realm, never merge ambiguous names |
 | Class, level | `UnitClass`, `UnitLevel` | present (used everywhere) | in use since P1 | unknown |
-| Assigned role | `UnitGroupRolesAssigned` | **pending** | — | ask the player / unknown; never infer as fact |
+| Assigned role | `UnitGroupRolesAssigned` | **readable** (live 2026-11-26, party) | roster sample | ask the player / unknown; never infer as fact |
 | Raid subgroup | `GetRaidRosterInfo` | **pending** | — | unknown subgroup; optimiser works on hypotheticals |
 | Inspect allowed | `CanInspect`, `CheckInteractDistance` | present (PlayerInfo uses both) | in use since 2026-11-17, no errors logged | roster-only mode (T0) |
-| Inspect request | `NotifyInspect` → `INSPECT_READY` | present; wiki says *AllowedWhenUntainted* on 1.60.1 | wiki; PlayerInfo uses it with no logged error, but **no success sample logged** | manual Inspect only |
-| Inspected gear | `GetInventoryItemLink(unit, slot)` | **pending for other units** | — | slot state "unreadable" (not "empty") |
+| Inspect request | `NotifyInspect` → `INSPECT_READY` | **works** (live 2026-11-26, answer in 0.4 s) | inspect sample | manual Inspect only |
+| Inspected gear | `GetInventoryItemLink(unit, slot)` | **works** for a non-user (8 links, 1 ID only, 9 empty; live 2026-11-26) | inspect sample | slot state "unreadable" (not "empty") |
 | Inspected talents (Classic) | `GetNumTalentTabs(true)`, `GetTalentTabInfo` | **`GetNumTalentTabs` missing** | probe 2026-11-25 | Traits path below |
-| Inspected talents (modern) | `INSPECT_TRAIT_CONFIG_ID`, `C_Traits.GetConfigInfo`, `GenerateInspectImportString` | **pending** | — | spec only, or unknown |
-| Inspected spec | `GetInspectSpecialization` | **pending** | — | unknown |
+| Inspected talents (modern) | `INSPECT_TRAIT_CONFIG_ID`, `C_Traits.GetConfigInfo`, `GenerateInspectImportString` | **works**: config -1, 1 tree, 54 nodes, import string (live 2026-11-26); spent points not seen yet | inspect sample | spec only, or unknown |
+| Inspected spec | `GetInspectSpecialization` | **works** (a spec ID, live 2026-11-26) | inspect sample | unknown |
 | Boss pull and result | `ENCOUNTER_START` / `ENCOUNTER_END` | used by DungeonJournal and BossTimeline since P4; **no sample logged yet** | code only | instance enter / leave from Alts runs |
 | Boss kill | `BOSS_KILL` | **pending** (validity only) | — | `ENCOUNTER_END` success |
 | Instance identity | `GetInstanceInfo` | present (Alts) | in use | zone name |
@@ -46,6 +46,10 @@ No names, realms, GUIDs or gear links of other players are stored (VG00-03). Sam
 - Encounter: a missing success field stays unknown, not a wipe.
 - Overflow moves to the archive (12 kept, the rest archived, none lost).
 - The probe lists every new API, event and constant.
+
+## Privacy of the probes (VG00-R02)
+
+Samples hold only allowlisted values: numbers, booleans, role/class/instance-type words, types with a size (`string(35)`), and boss and instance names. Tested with debug mode on across the whole saved file.
 
 ## What Gary does (live acceptance for VG00-04..06)
 

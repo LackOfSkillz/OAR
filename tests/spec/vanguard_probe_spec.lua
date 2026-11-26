@@ -109,7 +109,7 @@ T.describe("vanguard probe (VG00)", function()
     T.eq(s.slots.id, 1, "an item ID without a link is told apart")
     T.eq(s.slots.none, #ns.Probe.SLOTS - 3)
     T.eq(s.slots.itemLevels, 2)
-    T.eq(s.talents.spec, "0")
+    T.eq(s.talents.spec, 0)
     T.eq(s.talents.classicTabs, "nil", "missing API is shown as missing, not as zero talents")
     T.eq(s.class, "WARRIOR")
     T.eq(leaks(s), nil, "no gear links or names kept")
@@ -145,7 +145,7 @@ T.describe("vanguard probe (VG00)", function()
     T.eq(#e, 3)
     T.eq(e[1].event, "ENCOUNTER_START")
     T.eq(e[2].id, 1144)
-    T.eq(e[2].success, "1")
+    T.eq(e[2].success, 1)
     T.eq(e[3].success, "nil", "no result is not a wipe")
     T.eq(e[2].instance.name, "The Deadmines")
     T.eq(e[2].group, "party")
@@ -170,5 +170,44 @@ T.describe("vanguard probe (VG00)", function()
     for _, e in ipairs({ "INSPECT_READY", "ENCOUNTER_END", "GROUP_ROSTER_UPDATE", "READY_CHECK" }) do T.ok(events[e], e) end
     local p = ns.Probe:Run()
     T.ok(p.constants["Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID"] ~= nil)
+  end)
+
+  T.it("with debug on, nothing written to disk names, identifies or describes the gear of an inspected player", function()
+    local game, ns = start()
+    ns.Slash:Run("debug on")
+    game.units.mouseover = game.units.party1
+    set(game, "GetInventoryItemLink", function(u, slot)
+      if u == "mouseover" and slot == 16 then return "|cffa335ee|Hitem:100::::::::20:::::|h[Big Axe]|h|r" end
+    end)
+    set(game, "GetInspectSpecialization", function() return 71 end)
+    set(game, "C_Traits", setmetatable({ GenerateInspectImportString = function() return "BKhreosSECRETBUILD" end,
+      GetConfigInfo = function() return { name = "Khreos's talents", treeIDs = { 1 } } end }, { __index = game.base.C_Traits }))
+    game:fire("GROUP_ROSTER_UPDATE")
+    game:advance(4)
+    ns.PlayerInfo:Lines("mouseover")
+    game:fire("INSPECT_READY", "Player-1-0000BEEF")
+    game:fire("ENCOUNTER_END", 1144, "Rhahk'Zor", 1, 5, 1)
+    ns.Probe:Run()
+    -- Census (players seen nearby, an older feature kept under the preservation
+    -- directive) may hold a name with class, level, zone and time; nothing more
+    local allowed = { c = true, l = true, z = true, t = true, g = true, r = true, n = true, s = true, f = true }
+    for _, realm in pairs(ns.db.global.census or {}) do
+      for _, p in pairs(realm.players or {}) do
+        for k, v in pairs(p) do
+          T.ok(allowed[k] and type(v) ~= "table", "census keeps only simple sighting fields, not " .. tostring(k))
+        end
+      end
+    end
+    ns.db.global.census = nil -- everything else on disk is checked for the name too
+    local saved = game:logout()
+    -- the inspected player's GUID, realm, gear and talent payload are nowhere on disk
+    for _, bad in ipairs({ "0000BEEF", "0000CAFE", "Nightslayer", "Big Axe", "Hitem:100:", "SECRETBUILD", "Khreos's talents" }) do
+      T.eq(saved:find(bad, 1, true), nil, bad .. " must not be saved")
+    end
+    T.eq(saved:find("Khreos", 1, true), nil, "outside Census, no saved data names them")
+    T.eq(saved:find("Mirae", 1, true), nil)
+    T.eq(leaks(ns.db.global.probeGroup), nil)
+    T.ok(saved:find("inspected a level", 1, true), "the debug line is saved, without a name")
+    T.eq(#ns.Errors.list, 0)
   end)
 end)
