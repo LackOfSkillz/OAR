@@ -219,6 +219,39 @@ T.describe("fight key buffs first, with the class plans on", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("a shaman's Fight drops missing totems after the buffs, before the pull, and leaves them out once down", function()
+    local game, ns = planned("SHAMAN", 20, sp("Lightning Bolt", "Rockbiter Weapon", "Lightning Shield", "Searing Totem",
+      "Strength of Earth Totem", "Stoneskin Totem", "Earth Shock", "Healing Wave"))
+    local f = macro(game, "Fight")
+    T.contains(f, "/cast [nocombat] Strength of Earth Totem", "the best earth totem")
+    T.ok(not f:find("Stoneskin", 1, true), "one per element")
+    T.contains(f, "/cast [nocombat] Searing Totem")
+    T.ok(before(f, "Lightning Shield", "Strength of Earth Totem"), "totems after the buffs: " .. f)
+    T.ok(before(f, "Searing Totem", "Lightning Bolt"), "totems before the pull")
+    T.ok(not f:find("Mana Spring", 1, true), "not learned: left out")
+    T.ok(#f <= 255, "fits a macro")
+    -- the earth totem goes down: rewritten without it; the fire one stays
+    game.totems = { [2] = "Strength of Earth Totem" }
+    game:fire("PLAYER_TOTEM_UPDATE", 2)
+    game:advance(3)
+    f = macro(game, "Fight")
+    T.ok(not f:find("Strength of Earth", 1, true), "earth down: no wasted press")
+    T.contains(f, "/cast [nocombat] Searing Totem")
+    -- it ends: back in
+    game.totems = {}
+    game:fire("PLAYER_TOTEM_UPDATE", 2)
+    game:advance(3)
+    T.contains(macro(game, "Fight"), "Strength of Earth Totem")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("without GetTotemInfo no totem lines (can't tell they're up)", function()
+    local game, ns = planned("SHAMAN", 20, sp("Lightning Bolt", "Searing Totem", "Healing Wave"))
+    game.env.GetTotemInfo = nil
+    T.eq(#ns.HunterFight.MissingTotems(), 0)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("every class with a self-buff gets it on Fight while missing, once, before the first cast", function()
     local cases = {
       { "SHAMAN", 10, { "Lightning Bolt", "Earth Shock", "Lightning Shield", "Healing Wave" }, "Lightning Shield" },

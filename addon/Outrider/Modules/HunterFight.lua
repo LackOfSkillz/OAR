@@ -631,15 +631,18 @@ function M:OnEnable()
   self:On("SPELLS_CHANGED", function(mod) if mod:Settings().auto then later("spells") end end)
   self:On("PLAYER_LEVEL_UP", function(mod) if mod:Settings().auto then later("level") end end)
   -- Hawk or Monkey on or off changes Fight and Strike: rewrite when one flips (out of combat)
-  self:On("UNIT_AURA", function(mod, _, unit)
-    if unit ~= "player" or not mod:Settings().auto then return end
+  local function watch(mod)
+    if not mod:Settings().auto then return end
     local on = M.WatchState()
     if on == "" then return end
     if on ~= mod.aspectWas then
       mod.aspectWas = on
       later(on)
     end
-  end)
+  end
+  self:On("UNIT_AURA", function(mod, _, unit) if unit == "player" then watch(mod) end end)
+  -- shaman totems down or gone (ClassFight.lua's pre-pull totem lines)
+  self:On("PLAYER_TOTEM_UPDATE", function(mod) if ns.PlayerClass() == "SHAMAN" then watch(mod) end end)
   self:On("PLAYER_EQUIPMENT_CHANGED", function(mod, _, slot)
     if (slot == 18 or slot == 16) and mod:Settings().auto then later(slot == 18 and "ranged weapon" or "main hand") end
   end)

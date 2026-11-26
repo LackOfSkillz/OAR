@@ -48,7 +48,7 @@ Two macros per character that follow your spellbook for its whole life: drag key
 - **Warlock.** Fight: demon in, Bane of Agony, Corruption, Immolate, Siphon Life once each, then the wand (Drain Life from level 30, Shadow Bolt without a wand). Strike: Life Tap; Shift fears the target.
 - **Druid.** Fight follows your form. No form: Moonfire, Wrath. Bear: Demoralizing Roar, Primal Bite, Maul. Cat: Rake, three Claws, Rip or Ferocious Bite. Heal: Swipe in Bear, Tiger's Fury in Cat, Healing Touch out of form.
 - **Paladin.** Fight: Blessing and Aura while missing, Seal and Judgement round and round (Seal of Command with a two-hander from 20), Holy Strike, Crusader Strike, Consecration. Heal: Holy Light.
-- **Shaman.** Fight: weapon imbue and Lightning Shield while missing, Lightning Bolt to pull, Searing Totem, Flame Shock once, Stormstrike, Earth Shock. Heal: Healing Wave.
+- **Shaman.** Fight: weapon imbue, Lightning Shield and your totems (earth, Searing, Mana Spring) while missing, out of combat, then Lightning Bolt to pull; Ctrl drops Searing Totem again in a fight, Flame Shock once, Stormstrike, Earth Shock. Heal: Healing Wave.
 - **Checking the order.** Every fight's casts and refused presses are logged by themselves. Orders come from the WoW Forever levelling guides and are tuned from those logs.
 
 ## Healing and talents

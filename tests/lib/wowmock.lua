@@ -390,6 +390,12 @@ function M.new(opts)
     end,
   }
   -- temporary weapon enchant (a fishing lure): game.lureMs = milliseconds left, nil = none
+  -- shaman totems: game.totems[slot] = "Searing Totem" (1 fire, 2 earth, 3 water, 4 air)
+  base.GetTotemInfo = function(slot)
+    local name = game.totems and game.totems[slot]
+    if name then return true, name, 0, 60, "" end
+    return false, "", 0, 0, ""
+  end
   base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return game.mhEnchant or false end
   -- druid forms: game.forms = { spellID, ... } in stance-bar order
   base.GetNumShapeshiftForms = function() return #(game.forms or {}) end

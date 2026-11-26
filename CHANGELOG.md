@@ -2,6 +2,7 @@
 
 ## Unreleased (branch ai/outrider-personal-intelligence, not checked in game yet)
 
+- **Shaman totems on the Fight key:** after the buffs, out of combat, one press each: your best earth totem (Strength of Earth, else Stoneskin), Searing Totem and Mana Spring, only while that element has no totem down. Ctrl still drops Searing Totem in a fight.
 - **Fishing ring off by default:** turn it on on the Fishing page; when on, drag the bar above it to move it. Off, it does no work at all. The fishing key alone casts, puts lures on and hooks.
 - **Always-on performance watch:** from login, Outrider times everything it runs and keeps every slow moment: any single run of 20 ms or more, and any game freeze of a quarter second or more with how much of it was Outrider's, each with what you were doing (moving, combat, map). One row a minute and a saved summary per session; big ones go into the log. Switch on the Performance page.
 - **Performance page (Settings, `/ride perfpage`):** your FPS and latency, Outrider's CPU time from the game's own add-on profiler (ms per frame, share of all add-ons, slow frames), its memory next to every add-on's, budgets with pass or fail, past lag checks and sessions, and Copy for a post (no name, realm or gold). It samples only while the page is open.

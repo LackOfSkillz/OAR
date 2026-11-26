@@ -14,6 +14,7 @@ Probe.APIS = {
   -- core
   { "C_AddOnProfiler.GetAddOnMetric", "P8", "the game's own CPU time per add-on (Performance page)" },
   { "C_AddOnProfiler.IsEnabled", "P8" }, { "C_AddOnProfiler.GetOverallMetric", "P8" }, { "C_AddOnProfiler.GetApplicationMetric", "P8" },
+  { "GetTotemInfo", "P8", "shaman totems down (Fight key drops missing totems before the pull)" },
   { "C_AddOns.GetAddOnMetadata", "P1" }, { "C_AddOns.IsAddOnLoaded", "P1" }, { "C_AddOns.LoadAddOn", "P1" },
   { "C_QuestLog.GetNextWaypoint", "P3", "the game's own next step for a quest (cave entrances, flights)" },
   { "C_QuestLog.GetNextWaypointText", "P3" }, { "C_Map.GetUserWaypoint", "P3", "the game's own map pin" },

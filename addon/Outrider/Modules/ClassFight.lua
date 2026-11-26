@@ -80,6 +80,35 @@ local function imbueName()
   return (level() >= 30 and twoHander() and first("Windfury Weapon")) or first("Rockbiter Weapon", "Flametongue Weapon")
 end
 
+-- Shaman totems before the pull, after the buffs (Gary 2026-11-25: "work
+-- totems in after the buff"). One per element, best known first; a line only
+-- while that element has no totem down (GetTotemInfo by slot: 1 fire, 2
+-- earth, 3 water, 4 air). Out of combat only: a macro can't be rewritten in
+-- a fight and totems have no cooldown, so an in-combat line would recast
+-- every press. In a fight, Ctrl drops Searing Totem again.
+-- A client without GetTotemInfo gets no totem lines (can't tell they're up).
+F.TOTEMS = {
+  { slot = 2, names = { "Strength of Earth Totem", "Stoneskin Totem" }, what = "earth" },
+  { slot = 1, names = { "Searing Totem" }, what = "fire" },
+  { slot = 3, names = { "Mana Spring Totem" }, what = "water" },
+}
+function F.TotemDown(slot)
+  if type(C.Resolve("GetTotemInfo")) ~= "function" then return nil end
+  local have = C.Call("GetTotemInfo", slot)
+  return C.Readable(have) == true
+end
+function F.MissingTotems()
+  local out = {}
+  if type(C.Resolve("GetTotemInfo")) ~= "function" then return out end
+  for _, t in ipairs(F.TOTEMS) do
+    local n = first(unpack(t.names))
+    if n and not F.TotemDown(t.slot) then
+      out[#out + 1] = { text = "/cast [nocombat] " .. n, why = "before the pull, while no " .. t.what .. " totem is down", spell = n, totem = true }
+    end
+  end
+  return out
+end
+
 -- The self-buffs missing right now, for the Fight key of every class (Gary,
 -- 2026-11-25: "if you press fight and your buffs are not up, it buffs you
 -- then pulls"). FightPlan puts them first when its plan doesn't cast them
@@ -96,11 +125,16 @@ function F.SelfBuffs(cls)
   buffLines(cls, function(_, text, why)
     out[#out + 1] = { text = text, why = why, spell = text:match("%] (.+)$") }
   end)
+  if cls == "SHAMAN" then
+    for _, t in ipairs(F.MissingTotems()) do out[#out + 1] = t end
+  end
   return out
 end
 F.WatchExtra = function()
-  if ns.PlayerClass() == "SHAMAN" then return mainHandEnchanted() and "imbue on" or "imbue off" end
-  return nil
+  if ns.PlayerClass() ~= "SHAMAN" then return nil end
+  local s = mainHandEnchanted() and "imbue on" or "imbue off"
+  for _, t in ipairs(F.TOTEMS) do s = s .. (F.TotemDown(t.slot) and " T" or " -") end
+  return s
 end
 
 -- Druid forms by number on the stance bar ([form:N]); learning a form can
@@ -311,6 +345,7 @@ function CASTER.SHAMAN(kind, add)
   local imbue = imbueName()
   if imbue and not mainHandEnchanted() then add(6, "/cast [nocombat] " .. imbue, "before the pull, while the weapon has no imbue") end
   buffLines("SHAMAN", add)
+  for _, t in ipairs(F.MissingTotems()) do add(7, t.text, t.why) end
   if known("Lightning Bolt") then add(5, "/cast [nocombat] Lightning Bolt", "pulls from range") end
   if known("Searing Totem") then add(4, "/cast [mod:ctrl] Searing Totem", "Ctrl: Searing Totem") end
   if known("Stormstrike") then add(2, "/cast Stormstrike", "whenever it is off cooldown") end
@@ -357,5 +392,5 @@ E.DRUID = { ranged = "Key 1, spam it: follows your form (caster, Bear or Cat).",
   heal = "Key 2: Swipe in Bear, Tiger's Fury in Cat, a heal out of form." }
 E.PALADIN = { ranged = "Key 1, spam it: Blessing and Aura, Seal and Judgement, Holy Strike on cooldown.",
   heal = "Key 2: Holy Light on who you point at, or you." }
-E.SHAMAN = { ranged = "Key 1, spam it: imbue and Lightning Shield, bolt to pull, totem, Flame Shock, shocks.",
+E.SHAMAN = { ranged = "Key 1, spam it: imbue, Lightning Shield and your totems while missing, bolt to pull, Flame Shock, shocks. Ctrl: Searing Totem again.",
   heal = "Key 2: Healing Wave on who you point at, or you." }

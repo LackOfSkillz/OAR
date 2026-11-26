@@ -166,7 +166,7 @@ function M:Lines(kind, add)
   local casts = 0
   -- the Fight key puts this class's missing self-buffs first, after the
   -- targeting lines, unless the plan casts that spell itself (ClassFight.lua)
-  local extra = {}
+  local extra, totems = {}, {}
   if kind == "ranged" and F.SelfBuffs then
     local planned = {}
     for _, sl in ipairs(slots) do
@@ -174,16 +174,17 @@ function M:Lines(kind, add)
       if sl.line then for sp in sl.line:gmatch("%] ([^;]+)$") do planned[sp] = true end end
     end
     for _, b in ipairs(F.SelfBuffs(ns.PlayerClass())) do
-      if b.spell and not planned[b.spell] then extra[#extra + 1] = b end
+      if b.totem then totems[#totems + 1] = b
+      elseif b.spell and not planned[b.spell] then extra[#extra + 1] = b end
     end
   end
-  local function flushExtra()
-    for _, b in ipairs(extra) do
+  local function flushExtra(list)
+    for _, b in ipairs(list) do
       local text = ns.PlayerClass() == "DRUID" and M.DruidForms(b.text) or b.text
       add(7, text, b.why)
       casts = casts + 1
     end
-    extra = {}
+    for i = #list, 1, -1 do list[i] = nil end
   end
   for _, sl in ipairs(slots) do
     local skip = false
@@ -197,13 +198,17 @@ function M:Lines(kind, add)
     if not text then skip = true end
     if text and ns.PlayerClass() == "DRUID" then text = M.DruidForms(text) end
     -- self-buffs go in before the first line that isn't targeting or swinging
-    if #extra > 0 and not (sl.line or ""):find("^/targetenemy") and not (sl.line or ""):find("^/startattack") then flushExtra() end
+    local aiming = (sl.line or ""):find("^/targetenemy") or (sl.line or ""):find("^/startattack")
+    if #extra > 0 and not aiming then flushExtra(extra) end
+    -- shaman totems after every buff, the plan's own too, before the first cast
+    if #totems > 0 and not aiming and sl.kind ~= "buff" then flushExtra(totems) end
     if not skip then
       add(sl.keep or 5, text, sl.why)
       if not text:find("^/targetenemy") and not text:find("^/startattack") and not text:find("^/petattack") then casts = casts + 1 end
     end
   end
-  flushExtra()
+  flushExtra(extra)
+  flushExtra(totems)
   return casts > 0
 end
 
