@@ -13,7 +13,7 @@
 | `58b76a0` | VG04-01..07 What-if, optimizer, notes, opt-in sharing, reconciliation |
 | `7678b77` | VG05-01..10 run records, archive, rates, forecast plan and gate |
 | `1d2e491` | VG06-01..06 audits, evidence, docs |
-| candidate | the commit adding this packet (full suite and CI below) |
+| `37ac555` | VG05-03 archive loop fix, audit entry; **candidate** (full suite, deploy and CI below) |
 
 - **Exact-SHA CI and local run:** see "Results" at the end (filled in after the run).
 
@@ -87,4 +87,8 @@ Accept VG01–VG06 as engineering-complete **preview** features with the live bl
 
 ## Results
 
-(filled in below after the full run and CI)
+- **Candidate:** `37ac5555962c60d4d6248e284ca69afa2f7e7ed3`.
+- **Local full suite** (`tools/deploy.ps1`, Lua 5.1 via lupa, Windows): 1596 passed, 0 failed, 0 syntax errors. The first run at `1d2e491` failed one test (archive static contract: the run archive loop wasn't in the fail-safe form and `vanguardRuns` wasn't in `docs/quality/data_preservation_audit.json`); fixed in `37ac555`.
+- **Deployed:** build `20261126-152328-37ac555` to the game folder. New files: a full game restart is needed. Not run in game yet.
+- **Exact-SHA CI:** https://github.com/LackOfSkillz/OAR/actions/runs/45890717410, conclusion **success**.
+- Earlier CI on this branch: VG01 `a1e9b17` (run 45868231506) success, VG02 `3ab8e19` (run 45886947914) success. VG03 to VG06 were pushed together with the candidate.
