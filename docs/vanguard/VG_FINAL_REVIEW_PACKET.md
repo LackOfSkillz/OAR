@@ -13,7 +13,8 @@
 | `58b76a0` | VG04-01..07 What-if, optimizer, notes, opt-in sharing, reconciliation |
 | `7678b77` | VG05-01..10 run records, archive, rates, forecast plan and gate |
 | `1d2e491` | VG06-01..06 audits, evidence, docs |
-| `37ac555` | VG05-03 archive loop fix, audit entry; **candidate** (full suite, deploy and CI below) |
+| `37ac555` | VG05-03 archive loop fix, audit entry; first candidate |
+| `99fb744` | Researched facts pack (boss needs, access, raids, prices, enchants) wired into Catalog, Access, Assess, Stats, Plan; **candidate** (full suite, deploy and CI below) |
 
 - **Exact-SHA CI and local run:** see "Results" at the end (filled in after the run).
 
@@ -33,7 +34,7 @@ Per-task tables with source paths, tests and limits: `VG01_EVIDENCE.md`, `VG02_E
 
 ## Spec tests (new for VG01–VG06)
 
-`inspect_broker_spec` (9), `vanguard_spec` (11), `vanguard_load_spec` (3), `vanguard_roles_spec` (8), `vanguard_board_spec` (10), `vanguard_whatif_spec` (9), `vanguard_runs_spec` (9), `vanguard_audit_spec` (6): 65 tests, negative cases included.
+`inspect_broker_spec` (9), `vanguard_spec` (11), `vanguard_load_spec` (3), `vanguard_roles_spec` (8), `vanguard_board_spec` (10), `vanguard_whatif_spec` (9), `vanguard_runs_spec` (9), `vanguard_audit_spec` (6), `vanguard_facts_spec` (6): 71 tests, negative cases included.
 
 ## API capability matrix
 
@@ -77,7 +78,7 @@ Targets, cohort floors, split and metrics pre-registered (`VG05-07_FORECAST_PLAN
 ## Outstanding blockers
 
 - **Live (Gary in game):** L01 party with non-users; L02 out of range/offline; L03 Inspect window during a scan; L04 combat and leaving during a scan; L05 raid roster; L06 nine classes; L07 two-user sharing and revoke; L08 a place with a key; L09 prep and Plan; L10 run outcomes with reload; L11 backup/restore with history; L12 real-client performance and taint; L13 competitors; L14 not applicable (VG07 not authorized).
-- **Data:** researched facts added after the candidate (`docs/vanguard/VANGUARD_FACTS_SOURCES.md`): boss needs for 29 dungeons, access for 30 places, Forever raid sizes and status, vendor prices and Forever enchant values, all from cited web sources and unverified in game. Still missing: recommended raid makeups (none published), most boss NPC ids.
+- **Data:** researched facts in the candidate (`docs/vanguard/VANGUARD_FACTS_SOURCES.md`): boss needs for 29 dungeons, access for 30 places, Forever raid sizes and status, vendor prices and Forever enchant values, all from cited web sources and unverified in game. Still missing: recommended raid makeups (none published), most boss NPC ids.
 - **Policy/owner:** release, merge to main and CurseForge upload need Gary's approval; VG07 needs separate authorization.
 - **Forecast:** blocked on real data by design.
 
@@ -87,7 +88,11 @@ Accept VG01–VG06 as engineering-complete **preview** features with the live bl
 
 ## Results
 
-- **Candidate:** `37ac5555962c60d4d6248e284ca69afa2f7e7ed3`.
+- **Candidate:** `99fb74468caafd88fa3de2d78d7b0f61021cfaca` (adds the researched facts pack; new spec `vanguard_facts_spec`, 6 tests).
+  - Local full suite (`tools/deploy.ps1`): 1602 passed, 0 failed. The first deploy of the facts shipped an empty pack (build-script slip); fixed, and a minimum-count test now guards it.
+  - Deployed: build `20261126-164304-7d13f71+` (the facts commit's files). Full game restart needed. Not run in game yet.
+  - Exact-SHA CI: https://github.com/LackOfSkillz/OAR/actions/runs/45900055669, conclusion **success**.
+- **Previous candidate:** `37ac5555962c60d4d6248e284ca69afa2f7e7ed3`.
 - **Local full suite** (`tools/deploy.ps1`, Lua 5.1 via lupa, Windows): 1596 passed, 0 failed, 0 syntax errors. The first run at `1d2e491` failed one test (archive static contract: the run archive loop wasn't in the fail-safe form and `vanguardRuns` wasn't in `docs/quality/data_preservation_audit.json`); fixed in `37ac555`.
 - **Deployed:** build `20261126-152328-37ac555` to the game folder. New files: a full game restart is needed. Not run in game yet.
 - **Exact-SHA CI:** https://github.com/LackOfSkillz/OAR/actions/runs/45890717410, conclusion **success**.
