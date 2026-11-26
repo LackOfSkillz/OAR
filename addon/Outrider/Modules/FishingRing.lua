@@ -25,7 +25,9 @@ local M = ns:NewModule("FishingRing", {
   title = "Fishing button ring",
   phase = "P5",
   order = 77,
-  defaults = { show = true, shape = "circle", scale = 1, point = nil, lure = nil },
+  -- ringOn: off unless turned on (Gary 2026-11-25: in the way; the fishing key
+  -- does the casting). The old `show` setting is left as it was, unused.
+  defaults = { ringOn = false, shape = "circle", scale = 1, point = nil, lure = nil },
   -- one fishing HUD on screen: step aside for the fishing addons (hard rule 8)
   yieldsTo = { "FishingBuddy", "ForeverFishing", "FishFry" },
 })
@@ -257,12 +259,37 @@ function M:Build()
   f.cast:SetPoint("CENTER")
   -- drag the middle with the right mouse button (out of combat)
   f.cast:RegisterForDrag("RightButton")
-  f.cast:SetScript("OnDragStart", function() if not C.InCombat() then f:StartMoving() end end)
-  f.cast:SetScript("OnDragStop", function()
+  local function startMove() if not C.InCombat() then f:StartMoving() end end
+  local function stopMove()
     f:StopMovingOrSizing()
     local p, _, _, x, y = f:GetPoint()
     M:Settings().point = { p, x, y }
+  end
+  f.cast:SetScript("OnDragStart", startMove)
+  f.cast:SetScript("OnDragStop", stopMove)
+  -- a plain (not secure) grip above the ring: left-drag it to move the ring
+  -- (Gary 2026-11-25: it was in the way and the right-drag was hidden)
+  local grip = CreateFrame("Frame", "Outrider_FishingRingGrip", f)
+  grip:SetSize(70, 14)
+  grip:SetPoint("BOTTOM", f, "TOP", 0, M.RADIUS + 4)
+  grip:EnableMouse(true)
+  grip:RegisterForDrag("LeftButton")
+  grip:SetScript("OnDragStart", startMove)
+  grip:SetScript("OnDragStop", stopMove)
+  grip.bg = grip:CreateTexture(nil, "BACKGROUND")
+  grip.bg:SetAllPoints()
+  grip.bg:SetColorTexture(0, 0, 0, 0.55)
+  grip.text = grip:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  grip.text:SetPoint("CENTER")
+  grip.text:SetText("drag")
+  grip:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine("Fishing ring")
+    GameTooltip:AddLine("Drag to move. Turn it off on the Fishing page.", 1, 1, 1, true)
+    GameTooltip:Show()
   end)
+  grip:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  f.grip = grip
   for i = 1, 7 do f.buttons[i] = makeButton(f, "Outrider_FishingRing" .. i, M.SIZE) end
   f.flyout = {}
   for i = 1, 6 do
@@ -295,7 +322,7 @@ end
 function M:Apply()
   local f = self.frame
   local s = self:Settings()
-  local show = self.enabled and s.show and self.pole
+  local show = self.enabled and s.ringOn and self.pole
   f:ClearAllPoints()
   local pt = s.point
   if type(pt) == "table" then f:SetPoint(pt[1], UIParent, pt[1], pt[2], pt[3]) else f:SetPoint("CENTER", UIParent, "CENTER", 260, -160) end
@@ -406,9 +433,10 @@ function M:Update()
   self.pole = pole
   self:Build()
   self:Rebuild()
-  if pole and not self.ticker then
+  local want = pole and self.enabled and self:Settings().ringOn
+  if want and not self.ticker then
     self.ticker = ns.Timer.Ticker(1, function() ns.Safe("fishingring:paint", M.Paint, M) end, "fishingring")
-  elseif not pole and self.ticker then
+  elseif not want and self.ticker then
     self.ticker:Cancel() self.ticker = nil
   end
 end
@@ -427,6 +455,6 @@ function M:OnDisable()
 end
 
 function M:Activity()
-  if not self:Settings().show then return "off" end
+  if not self:Settings().ringOn then return "off (Fishing page turns it on)" end
   return self.pole and "shown with your pole" or "shows while a fishing pole is equipped"
 end

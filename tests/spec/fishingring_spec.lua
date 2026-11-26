@@ -53,7 +53,12 @@ T.describe("fishing ring", function()
     T.ok(not (R.frame and R.frame:IsShown()), "no pole: hidden")
     game.pole = true
     R:Update()
-    T.ok(R.frame:IsShown(), "pole on: shown")
+    T.ok(not R.frame:IsShown(), "off by default, even with the pole")
+    T.ok(not R.ticker, "no per-second paint while off")
+    R:Settings().ringOn = true
+    R:Update()
+    T.ok(R.frame:IsShown(), "turned on, pole on: shown")
+    T.ok(R.frame.grip, "a drag grip")
     local keys = {}
     for _, s in ipairs(R.specs) do keys[#keys + 1] = s.key end
     T.eq(table.concat(keys, ","), "cast,lure,weapons,page")
