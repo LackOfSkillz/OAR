@@ -19,6 +19,9 @@ local function start()
   set(game, "UnitIsUnit", function(a, b) return a == b end)
   ns.DungeonGuide.ByName = function() return { ["The Deadmines"] = { bosses = { { 644, "Rhahk'Zor", 19, nil, {} },
     { 639, "Edwin VanCleef", 21, nil, {} } }, items = {} } } end
+  -- the pack's two bosses define "completed" here; researched facts are tested elsewhere
+  ns.VanguardFacts = { bosses = {}, access = {}, raids = {}, prices = {}, enchants = {} }
+  ns.Vanguard.Facts.Reset()
   ns.Vanguard.Catalog.Reset()
   game.instance = nil
   set(game, "IsInInstance", function() if game.instance then return true, "party" end return false, "none" end)

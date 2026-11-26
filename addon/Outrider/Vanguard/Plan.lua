@@ -8,7 +8,8 @@
 --     the plan's validator, budget and evidence rules apply unchanged
 --     (Intelligence/Adapters.lua takes them as the "vanguard" producer).
 -- Rules:
---   * a cost we don't know is "unknown", never free (costCopper nil);
+--   * a cost we don't know is "unknown", never free (costCopper nil); a
+--     researched vendor price fills it in, labeled "check the vendor";
 --   * a known cost that would eat into your gold reserve (Treasurer) is
 --     marked and ranked last, not recommended;
 --   * an enchant on a slot you could still replace waits for that decision
@@ -53,6 +54,13 @@ function Pl.Actions(prep, assessment, opts)
           a.prerequisites[#a.prerequisites + 1] = "decide on the " .. (V.Prep.SLOT_NAME[r.slot] or "slot") .. " upgrade first"
           a.waits = true
         end
+      end
+      -- a researched vendor price (Data/VanguardFacts.lua): cost = what's missing x price
+      local price = r.priceKey and V.Facts and V.Facts.Price(r.priceKey)
+      if a.costCopper == nil and price and tonumber(price.copper) and r.want and r.have then
+        local per = tonumber(price.per) or 1
+        a.costCopper = math.ceil((r.want - r.have) / per) * price.copper
+        a.costSource = "vendor price from " .. tostring(price.kind == "forever" and "a Forever source" or "a Classic source") .. "; check the vendor"
       end
       if a.costCopper == nil and (r.action ~= "bags") then a.costUnknown = true end
       if r.action == "bags" then a.costCopper = 0 end

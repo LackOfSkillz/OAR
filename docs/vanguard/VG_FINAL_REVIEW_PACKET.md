@@ -77,7 +77,7 @@ Targets, cohort floors, split and metrics pre-registered (`VG05-07_FORECAST_PLAN
 ## Outstanding blockers
 
 - **Live (Gary in game):** L01 party with non-users; L02 out of range/offline; L03 Inspect window during a scan; L04 combat and leaving during a scan; L05 raid roster; L06 nine classes; L07 two-user sharing and revoke; L08 a place with a key; L09 prep and Plan; L10 run outcomes with reload; L11 backup/restore with history; L12 real-client performance and taint; L13 competitors; L14 not applicable (VG07 not authorized).
-- **Data:** no boss mechanics, attunement chains or raid makeup in any installed data; no verified enchant table or vendor prices.
+- **Data:** researched facts added after the candidate (`docs/vanguard/VANGUARD_FACTS_SOURCES.md`): boss needs for 29 dungeons, access for 30 places, Forever raid sizes and status, vendor prices and Forever enchant values, all from cited web sources and unverified in game. Still missing: recommended raid makeups (none published), most boss NPC ids.
 - **Policy/owner:** release, merge to main and CurseForge upload need Gary's approval; VG07 needs separate authorization.
 - **Forecast:** blocked on real data by design.
 

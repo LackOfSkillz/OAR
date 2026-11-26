@@ -24,6 +24,9 @@ local function start(units)
   -- a small dungeon pack for the catalog
   ns.DungeonGuide.ByName = function() return { ["The Deadmines"] = { bosses = { { 644, "Rhahk'Zor", 19, nil, {} },
     { 639, "Edwin VanCleef", 21, nil, {} } }, items = {} } } end
+  -- these tests check the template logic alone; researched facts have their own spec
+  ns.VanguardFacts = { bosses = {}, access = {}, raids = {}, prices = {}, enchants = {} }
+  ns.Vanguard.Facts.Reset()
   ns.Vanguard.Catalog.Reset()
   ns.Modules:SetEnabled("Vanguard", true)
   return game, ns, ns.Vanguard, ns.VanguardModule

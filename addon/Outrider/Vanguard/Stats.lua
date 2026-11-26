@@ -8,8 +8,9 @@
 --   * a slot we couldn't read (pending, unreadable, unavailable) or an item
 --     whose stats didn't come back makes the top end open (hi = nil): the
 --     real total is at least lo, maybe more;
---   * an enchant's bonus isn't in the item stats and there is no verified
---     enchant table, so an enchanted slot also opens the top end.
+--   * an enchant's bonus isn't in the item stats: a known flat enchant from
+--     the researched table (Data/VanguardFacts.lua, unverified) is added;
+--     any other enchant opens the top end.
 -- Derived values are labeled "derived" and never written over an observation.
 
 local _, ns = ...
@@ -67,7 +68,15 @@ function S.Derive(profile, reader)
       if s.enchant then
         out.enchants.known = out.enchants.known + 1
         row.enchant = s.enchant
-        out.open[#out.open + 1] = s.slot
+        local e = ns.Vanguard.Facts and ns.Vanguard.Facts.Enchant(s.enchant)
+        if e and type(e.stats) == "table" and next(e.stats) and not e.proc then
+          -- a researched flat bonus (Data/VanguardFacts.lua): counted, labeled
+          row.enchantStats = e.stats
+          for token, v in pairs(e.stats) do if type(v) == "number" then add(token, v) end end
+          out.enchants.counted = (out.enchants.counted or 0) + 1
+        else
+          out.open[#out.open + 1] = s.slot
+        end
       elseif row.stats then
         out.enchants.none = out.enchants.none + 1
       end

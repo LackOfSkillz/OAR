@@ -72,7 +72,8 @@ T.describe("vanguard roles and prep (VG02)", function()
     T.eq(w.lo, 25.5)
     T.eq(V.Stats.Range(full, V.Roles.INDICATORS.ranged).empty, true, "empty ranged slot is a known empty")
     -- a pending slot and an enchant: totals become lower bounds
-    local part = V.Stats.Derive(profile({ [5] = { "known", 10, 1891 }, [7] = { "pending", 11 }, [16] = { "unreadable" } }))
+    -- 99991: an enchant not in the researched table
+    local part = V.Stats.Derive(profile({ [5] = { "known", 10, 99991 }, [7] = { "pending", 11 }, [16] = { "unreadable" } }))
     T.eq(part.complete, false)
     T.eq(part.totals.ITEM_MOD_STAMINA_SHORT.lo, 10)
     T.eq(part.totals.ITEM_MOD_STAMINA_SHORT.hi, nil, "open top")

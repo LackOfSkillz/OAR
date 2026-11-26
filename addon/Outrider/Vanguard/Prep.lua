@@ -118,7 +118,7 @@ function P.Supplies(pf)
     if not carried then check(out, id, "unknown", label .. ": " .. tostring(name) .. ", count not readable") return end
     check(out, id, carried >= want and "ok" or "missing", string.format("%s: %d %s (want %d)%s", label, carried, tostring(name), want,
       bank and string.format(", %d more in the bank (not carried)", bank) or ""), { have = carried, want = want, bank = bank,
-      action = carried < want and id or nil })
+      action = carried < want and id or nil, item = name, priceKey = name })
   end
   stock("food", food, pf.food, "Food")
   stock("drink", drink, pf.drink, "Drink")
@@ -126,8 +126,9 @@ function P.Supplies(pf)
     local a = ns.Modules and ns.Modules:Get("Ammo")
     local n = a and a.Count and a:Count()
     if type(n) == "number" then
+      local ammoId = C.Readable(C.Call("GetInventoryItemID", "player", 0))
       check(out, "ammo", n >= pf.ammo and "ok" or "missing", string.format("Ammo: %d (want %d)", n, pf.ammo),
-        { have = n, want = pf.ammo, action = n < pf.ammo and "ammo" or nil })
+        { have = n, want = pf.ammo, action = n < pf.ammo and "ammo" or nil, priceKey = type(ammoId) == "number" and ammoId or nil })
     else
       check(out, "ammo", "unknown", "Ammo: not readable")
     end
@@ -141,7 +142,7 @@ function P.Supplies(pf)
         check(out, "reagent:" .. r.item, carried >= r.want and "ok" or "missing",
           string.format("%s: %d (want %d for %s)%s", r.item, carried, r.want, r.spell,
             bank and string.format(", %d more in the bank (not carried)", bank) or ""),
-          { have = carried, want = r.want, bank = bank, action = carried < r.want and "reagent" or nil, item = r.item })
+          { have = carried, want = r.want, bank = bank, action = carried < r.want and "reagent" or nil, item = r.item, priceKey = r.item })
       else
         check(out, "reagent:" .. r.item, "unknown", r.item .. ": count not readable")
       end

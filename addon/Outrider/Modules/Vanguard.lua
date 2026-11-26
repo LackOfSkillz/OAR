@@ -649,7 +649,7 @@ ns.Hub:AddTab("vanguard_board", "Boss matrix", function(p)
   local function cur() if not on() then return nil end return M:Assessment() end
   UI:FormPage(p, {
     { "header", "Boss matrix (preview)" },
-    { "note", "Is the group ready for this place? 1. Turn on Group check and scan your group. 2. Pick the place with Next dungeon. 3. Read the checks and each boss's risks. The number is a readiness index against Outrider's group template, not a chance of winning; boss mechanics aren't in the data, so they show as unknown." },
+    { "note", "Is the group ready for this place? 1. Turn on Group check and scan your group. 2. Pick the place with Next dungeon. 3. Read the checks and each boss's risks. The number is a readiness index against Outrider's group template, not a chance of winning. Boss needs (interrupts, dispels, crowd control) come from dungeon guides found online and are not checked in game yet; where no guide covers a boss, it shows as unknown." },
     { "note", function()
       if not on() then return "|cffffd100Group check is off.|r Turn it on on the Group check page." end
       return ""
@@ -680,7 +680,7 @@ ns.Hub:AddTab("vanguard_board", "Boss matrix", function(p)
       { key = "level", label = "Lvl", width = 36, align = "RIGHT", sort = function(x) return x.level or 0 end, text = function(x) return x.level or "?" end },
       { key = "score", label = "Readiness", width = 140, sort = function(x) return x.score.low or 0 end, text = function(x) return V.Readiness.Text(x.score) end },
       { key = "risks", label = "Risks", width = 0, sort = function(x) return #x.risks end,
-        text = function(x) return #x.risks > 0 and table.concat(x.risks, "; ") or "none found (mechanics unknown)" end },
+        text = function(x) return #x.risks > 0 and table.concat(x.risks, "; ") or (x.mechanics:find("unknown") and "none found (mechanics unknown)" or "nothing the group is missing") end },
     }, function() local a = cur() return a and a.bosses or {} end, nil, sortKey = "name" },
     { "note", function()
       local a = cur()
@@ -964,7 +964,9 @@ function M:RunCheck(t)
   end
   if inside and (kind == "party" or kind == "raid") and type(name) == "string" then
     local entry = V.Catalog.Find(name)
-    local info = { size = entry and entry.size, bosses = entry and #entry.encounters or 0 }
+    local nb = 0
+    for _, enc in ipairs(entry and entry.encounters or {}) do if not enc.optional then nb = nb + 1 end end
+    local info = { size = entry and entry.size, bosses = nb }
     if not (store.open and store.open.instance == name) or store.open.left then
       local snap = self.snap or self:ReadRoster()
       info.features = Runs.Features(snap, function(m) return M:RoleOf(m) end)

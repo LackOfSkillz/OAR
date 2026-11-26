@@ -34,6 +34,12 @@ local function leaf(node, env)
     local n = env.item and env.item(v)
     if type(n) ~= "number" then return "unknown", "item count not readable" end
     return n > 0 and "met" or "unmet", n > 0 and "you have it" or "not carried or banked"
+  elseif k == "holder" then
+    -- one member's key opens it for the group: you not carrying it isn't a no
+    local n = env.item and env.item(v)
+    if type(n) ~= "number" then return "unknown", "item count not readable" end
+    if n > 0 then return "met", "you carry the key" end
+    return "unknown", "you don't carry the key; someone else in the group may"
   elseif k == "manual" then
     local a = env.manual and env.manual(v)
     if a == true then return "met", "you said you have it" end
@@ -89,8 +95,30 @@ function Acc.ForInstance(e, st)
   end
   local a = st and st.access and e and st.access[e.instanceId]
   if a ~= nil then
+    -- your own answer wins over the researched facts
     g.access = { kind = "manual", value = e.instanceId }
     g.root.children[#g.root.children + 1] = "access"
+    return g
+  end
+  local f = e and e.access
+  if type(f) == "table" and f.disputed then
+    g.access = { kind = "manual", value = e.instanceId }
+    g.root.children[#g.root.children + 1] = "access"
+    return g
+  end
+  if type(f) == "table" and f.needs and f.needs ~= "none" then
+    local item = tonumber(f.item) or (type(f.itemName) == "string" and f.itemName) or nil
+    if item then
+      -- an item by id, or by name (the game's item count takes either)
+      g.access = { kind = f.who == "each" and "item" or "holder", value = item }
+      g.root.children[#g.root.children + 1] = "access"
+    elseif tonumber(f.quest) then
+      g.access = { kind = "quest", value = tonumber(f.quest) }
+      g.root.children[#g.root.children + 1] = "access"
+    else
+      g.access = { kind = "manual", value = e.instanceId }
+      g.root.children[#g.root.children + 1] = "access"
+    end
   end
   return g
 end

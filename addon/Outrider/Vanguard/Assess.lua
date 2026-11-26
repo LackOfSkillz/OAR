@@ -116,9 +116,15 @@ function As.Build(ctx)
   local cov = V.Utility.Coverage(snap and snap.members or {})
   local reqs = {}
   for _, r in ipairs(entry and entry.requirements or {}) do reqs[#reqs + 1] = r end
-  if entry and ctx.st and ctx.st.access and ctx.st.access[entry.instanceId] ~= nil then
+  local answered = entry and ctx.st and ctx.st.access and ctx.st.access[entry.instanceId] ~= nil
+  local f = entry and entry.access
+  if answered then
     reqs[#reqs + 1] = { id = "access", category = "access", weight = 2, critical = true, target = 1, entry = entry,
       rule = "you can get in (your answer)", verification = "manual", source = "your own answer" }
+  elseif type(f) == "table" and f.needs and f.needs ~= "none" then
+    reqs[#reqs + 1] = { id = "access", category = "access", weight = 2, critical = true, target = 1, entry = entry,
+      rule = string.format("you can get in (%s%s)", tostring(f.itemName or f.questName or f.needs), f.who == "each" and ", everyone needs it" or ""),
+      verification = f.kind == "forever" and "reference" or "classic", source = tostring(f.source or "guide") }
   end
   local res = results(reqs, ps, cov, ctx.st)
   local a = { version = As.VERSION, instance = entry and entry.instanceId, catalogVersion = cat.version,
@@ -149,8 +155,10 @@ function As.Build(ctx)
     for _, r in ipairs(bres) do
       if r.u == 0 then brisks[#brisks + 1] = r.rule .. ": missing"
       elseif r.u < 1 then brisks[#brisks + 1] = r.rule .. ": short"
-      elseif r.verification == "manual" and r.l < 1 then brisks[#brisks + 1] = r.rule .. ": not confirmed" end
+      elseif r.l < 1 and r.id:find("^boss:") then
+        brisks[#brisks + 1] = r.rule .. ": not confirmed" end
     end
+    for _, n in ipairs(enc.notes or {}) do brisks[#brisks + 1] = "watch: " .. n end
     if enc.level then
       local below, unknown = 0, 0
       for _, p in ipairs(ps) do
@@ -160,7 +168,9 @@ function As.Build(ctx)
       if unknown > 0 then brisks[#brisks + 1] = string.format("%d member level(s) unknown", unknown) end
     end
     a.bosses[#a.bosses + 1] = { name = enc.name, level = enc.level, order = enc.order, score = V.Readiness.Score(bres),
-      results = bres, risks = brisks, mine = #(rules[enc.name] or {}), mechanics = "unknown (not in the data)" }
+      results = bres, risks = brisks, mine = (function() local n = 0 for _, r in ipairs(rules[enc.name] or {}) do if r.verification == "manual" then n = n + 1 end end return n end)(),
+      mechanics = enc.factKind == "forever" and "from Forever guides" or enc.factKind == "classic" and "from Classic sources (Forever may differ)" or "unknown (not in the data)",
+      source = enc.factSource }
   end
   -- expiry: the oldest profile's freshness end, if any profile is used
   local exp

@@ -81,6 +81,7 @@ Data\MapOverlays.lua
 Data\Fishing.lua
 Data\Money.lua
 Data\Dungeons.lua
+Data\VanguardFacts.lua
 Data\Talents.lua
 Data\TalentCards.lua
 Data\Rares.lua
@@ -258,6 +259,7 @@ Vanguard\Stats.lua
 Vanguard\Adequacy.lua
 Vanguard\Utility.lua
 Vanguard\Prep.lua
+Vanguard\Facts.lua
 Vanguard\Catalog.lua
 Vanguard\Access.lua
 Vanguard\Readiness.lua
