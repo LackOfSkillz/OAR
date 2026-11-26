@@ -75,7 +75,7 @@ Hub.SUBS = {
   people    = { { "people", "Players and guilds" }, { "census", "Census" } },
   settings  = { { "settings", "Settings" }, { "modules", "Modules" }, { "tools", "Tools" }, { "overview", "Status" }, { "performance", "Performance" }, { "troubleshoot", "Fix problems" } },
   help      = { { "help", "Help" }, { "feedback", "Report or idea" }, { "commands", "All commands" } },
-  dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" }, { "dungeonmap", "Dungeon maps" }, { "vanguard", "Group check (preview)" }, { "vanguard_prep", "Prep checklist (preview)" }, { "vanguard_board", "Boss matrix (preview)" }, { "vanguard_whatif", "What-if (preview)" } },
+  dungeons  = { { "dungeonquests", "Quests and keys" }, { "dungeons", "Ready and gear" }, { "dungeonmap", "Dungeon maps" }, { "vanguard", "Group check (preview)" }, { "vanguard_prep", "Prep checklist (preview)" }, { "vanguard_board", "Boss matrix (preview)" }, { "vanguard_whatif", "What-if (preview)" }, { "vanguard_runs", "Runs (preview)" } },
   -- one Professions page (requirement 2026-11-21: combine the professions):
   -- what to make and where to get it first, then the planner, fishing, tools
   professions = { { "professions", "Your professions" }, { "crafting", "Shopping list" }, { "fishing", "Fishing" }, { "fishbook", "Fish collection" }, { "profdetails", "Trainers and tools" } },

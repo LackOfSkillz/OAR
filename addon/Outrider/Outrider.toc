@@ -265,6 +265,8 @@ Vanguard\Assess.lua
 Vanguard\Plan.lua
 Vanguard\WhatIf.lua
 Vanguard\Share.lua
+Vanguard\Runs.lua
+Vanguard\Forecast.lua
 Modules\Vanguard.lua
 Modules\NPCPack.lua
 Modules\Waypoints.lua

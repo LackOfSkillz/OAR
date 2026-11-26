@@ -43,10 +43,12 @@ end
 function M:OnEnable()
   self:On("GROUP_ROSTER_UPDATE", function(mod) mod:OnRoster() end)
   self:On("PLAYER_REGEN_DISABLED", function(mod) mod:Cancel("combat started") end)
-  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Cancel("you changed zone") mod:OnRoster() end)
+  self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Cancel("you changed zone") mod:OnRoster() mod:RunCheck() end)
   self:On("PLAYER_LOGOUT", function(mod) Cache:Clear() V.Share.Clear() end)
   self:EnableShare()
+  self:EnableRuns()
   self:ReadRoster()
+  self:RunCheck()
 end
 
 function M:OnDisable()
@@ -76,6 +78,7 @@ function M:OnRoster()
   local before = self.snap and self.snap.generation
   self:ReadRoster()
   V.Share.Sweep()
+  if before and self.snap.generation ~= before then self:RunRosterChange() end
   if self.scan and self.scan.state == "running" and self.snap.generation ~= before then
     self:Cancel("the group changed")
   end
@@ -928,5 +931,134 @@ ns.Hub:AddTab("vanguard_whatif", "What-if", function(p)
     }, plain = true },
     { "note", function() return M:NotesText() end },
     { "note", "Your own assignment notes per boss: /ride vgnote <boss> | <who> | <task>. Copy notes shows them to paste yourself; nothing is posted or sent." },
+  })
+end)
+
+-- ------------------------------------------------------------------ VG05 run history (yours, anonymous)
+local Runs = V.Runs
+
+function M:EnableRuns()
+  self:On("ZONE_CHANGED_NEW_AREA", function(mod) mod:RunCheck() end)
+  self:On("ENCOUNTER_START", function(mod, _, eid, name)
+    local store = Runs.Store()
+    if store then Runs.EncounterStart(store, C.Readable(eid) or "?", C.Readable(name), time()) end
+  end)
+  self:On("ENCOUNTER_END", function(mod, _, eid, name, _, _, success)
+    local store = Runs.Store()
+    if store then Runs.EncounterEnd(store, C.Readable(eid) or "?", C.Readable(name), C.Readable(success), time()) mod:Redraw() end
+  end)
+end
+
+-- inside a dungeon or raid: start or continue; outside: mark left, and close
+-- a run left longer than REJOIN ago
+function M:RunCheck(t)
+  t = t or time()
+  local store = Runs.Store()
+  if not store then return nil end
+  local inside, kind = C.Call("IsInInstance")
+  inside, kind = C.Readable(inside), C.Readable(kind)
+  local name = C.Readable(C.Call("GetInstanceInfo"))
+  if not self.resumed then
+    self.resumed = true
+    if store.open then Runs.Resume(store, inside and name or nil, t) end
+  end
+  if inside and (kind == "party" or kind == "raid") and type(name) == "string" then
+    local entry = V.Catalog.Find(name)
+    local info = { size = entry and entry.size, bosses = entry and #entry.encounters or 0 }
+    if not (store.open and store.open.instance == name) or store.open.left then
+      local snap = self.snap or self:ReadRoster()
+      info.features = Runs.Features(snap, function(m) return M:RoleOf(m) end)
+      local a = entry and self:Assessment(name)
+      -- the assessment as it was when you went in; the outcome never changes it
+      if a then info.assessment = { low = a.score.low, high = a.score.high, coverage = a.score.coverage, gate = a.score.gate,
+        point = a.score.point, catalog = a.catalogVersion } end
+    end
+    local run, how = Runs.Enter(store, name, info, t)
+    if how == "started" then self:Info("run started: %s", name) end
+    return run
+  end
+  local open = store.open
+  if open and not open.left then Runs.Left(store, t)
+  elseif open and open.left and t - open.left >= Runs.REJOIN then
+    local run = Runs.Close(store, "left", t)
+    if run then self:Info("run ended: %s, %s", run.instance, run.outcome) end
+  end
+  return store.open
+end
+
+function M:RunRosterChange()
+  local store = Runs.Store()
+  if store and store.open and not store.open.left then store.open.rosterChanges = (store.open.rosterChanges or 0) + 1 end
+end
+
+local function clock(s) if not s then return "?" end s = math.floor(s + 0.5) return string.format("%d:%02d", math.floor(s / 60), s % 60) end
+
+function M:RunRows()
+  local out = {}
+  local store = Runs.Store()
+  for _, r in ipairs(Runs.All(store)) do
+    out[#out + 1] = { at = r.startedAt or 0, instance = r.instance, outcome = r.outcome or "open", kills = (r.distinctKills or r.kills or 0),
+      bosses = r.bosses or 0, length = (r.endedAt and r.startedAt) and (r.endedAt - r.startedAt) or nil, censor = r.censorReason,
+      readiness = r.assessment and V.Readiness.Text({ state = r.assessment.point and "point" or "range", point = r.assessment.point,
+        low = r.assessment.low or 0, high = r.assessment.high or 100, coverage = r.assessment.coverage or 0 }) or "not assessed" }
+  end
+  if store and store.open then
+    local r = store.open
+    out[#out + 1] = { at = r.startedAt, instance = r.instance, outcome = r.left and "left (can rejoin)" or "in progress", kills = r.kills or 0,
+      bosses = r.bosses or 0, readiness = r.assessment and "kept from the start" or "not assessed" }
+  end
+  table.sort(out, function(a, b) return a.at > b.at end)
+  return out
+end
+
+function M:RatesText(instance)
+  instance = instance or self:PrepInstance()
+  if not instance then return "" end
+  local runs = Runs.All(Runs.Store())
+  local r = V.Forecast.Rates(runs, { instance = instance })
+  local lines = { string.format("|cffffd100%s|r: %d run(s), %d kill(s), %d wipe(s), %d fight(s) with no known result, %d run(s) we lost track of.",
+    instance, r.runs, r.kills, r.wipes, r.unknown, r.censoredRuns) }
+  if r.rate then
+    lines[#lines + 1] = string.format("Boss fights won so far: %d of %d (95%% range %d to %d in 100). Past results, not a forecast.",
+      r.kills, r.known, math.floor(r.low * 100 + 0.5), math.floor(r.high * 100 + 0.5))
+  else
+    lines[#lines + 1] = "No rate yet: " .. tostring(r.abstain) .. "."
+  end
+  if r.timeMedian then
+    lines[#lines + 1] = string.format("Full runs took %s (middle half %s to %s), from %d completed run(s).", clock(r.timeMedian), clock(r.timeP25), clock(r.timeP75), r.completedRuns)
+  end
+  local f = V.Forecast.Predict("full_clear", nil, {})
+  lines[#lines + 1] = "Forecast: none. " .. tostring(f.abstainReason) .. "."
+  lines[#lines + 1] = "Readiness at the start is kept as it was and the outcome never changes it; comparing them shows a pattern, not a cause."
+  return table.concat(lines, "\n")
+end
+
+ns.AddCommand("vgruns", "vgruns  your dungeon and raid runs recorded by Group check (counts)", function()
+  local rows = M:RunRows()
+  local by = {}
+  for _, r in ipairs(rows) do by[r.outcome] = (by[r.outcome] or 0) + 1 end
+  local parts = {}
+  for k, v in pairs(by) do parts[#parts + 1] = k .. " " .. v end
+  table.sort(parts)
+  ns.Print("runs: %d (%s)", #rows, #parts > 0 and table.concat(parts, ", ") or "none yet")
+end)
+
+ns.Hub:AddTab("vanguard_runs", "Runs", function(p)
+  local UI = ns.UI
+  local refresh = function() if p.Refresh then p:Refresh() end end
+  UI:FormPage(p, {
+    { "header", "Runs (preview)" },
+    { "note", "Your dungeon and raid runs, recorded while Group check is on. 1. Go into a dungeon. 2. Play. 3. Leave: the run is saved with each boss fight's result from the game's own events. Saved for you only, with group counts and classes, never names. A fight you reloaded or disconnected in shows as unknown, never as a wipe." },
+    { "buttons", { { "Next dungeon", function() M:NextInstance(1) refresh() end, 110 } }, plain = true },
+    { "table", 12, {
+      { key = "at", label = "Started", width = 110, sort = function(x) return x.at end, text = function(x) return x.at > 0 and date("%m-%d %H:%M", x.at) or "?" end },
+      { key = "instance", label = "Place", width = 0, sort = function(x) return x.instance end, text = function(x) return x.instance end },
+      { key = "outcome", label = "Outcome", width = 120, sort = function(x) return x.outcome end, text = function(x) return x.outcome .. (x.censor and " *" or "") end },
+      { key = "kills", label = "Bosses", width = 60, align = "RIGHT", sort = function(x) return x.kills end, text = function(x) return x.kills .. "/" .. (x.bosses > 0 and x.bosses or "?") end },
+      { key = "length", label = "Time", width = 60, align = "RIGHT", sort = function(x) return x.length or 0 end, text = function(x) return clock(x.length) end },
+      { key = "readiness", label = "Ready at start", width = 140, sort = function(x) return x.readiness end, text = function(x) return x.readiness end },
+    }, function() return M:RunRows() end, nil, sortKey = "at", desc = true },
+    { "note", function() return M:RatesText() end },
+    { "note", "* we lost track of that run (a reload, logout or disconnect inside), so its outcome is unknown." },
   })
 end)

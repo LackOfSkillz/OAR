@@ -684,7 +684,9 @@
       ],
       "implementation": "Define run identity, target outcomes, censoring, build/difficulty and aggregate features.",
       "acceptance": "No member identity persisted without consent; unknown/abandon not counted as confirmed wipe.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-02",
@@ -695,7 +697,9 @@
       ],
       "implementation": "Reuse PlaySession, DungeonJournal, Alts, Outcomes and permitted encounter events.",
       "acceptance": "Reload/rejoin/duplicate event and roster-change tests; no combat log.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-03",
@@ -706,7 +710,9 @@
       ],
       "implementation": "Persist anonymized run observations using existing archive; fail-safe migration/staging.",
       "acceptance": "Failure injection, content manifest, backup and restoration; zero unauthorized loss.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-04",
@@ -717,7 +723,9 @@
       ],
       "implementation": "Query active and archived history scoped to cohort/session; bounded indexing.",
       "acceptance": "Older runs remain discoverable; no silent wrong-session cap; no frame-blocking scan.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-05",
@@ -728,7 +736,9 @@
       ],
       "implementation": "Link pre-run assessment revision with outcome; report observed vs inferred.",
       "acceptance": "Outcome cannot mutate original prediction; no causal claims from correlation.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-06",
@@ -739,7 +749,9 @@
       ],
       "implementation": "Implement eligible denominator, censor counts, Wilson intervals and time quantiles.",
       "acceptance": "Sparse/unknown cases show uncertainty or abstain; hand-calculated fixtures.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-07",
@@ -750,7 +762,9 @@
       ],
       "implementation": "Pre-register outcome targets, features, minimum cohort, split and metrics.",
       "acceptance": "Leakage-free chronological/run grouped protocol; independent sign-off before fitting.",
-      "status": "pending"
+      "status": "done (plan pre-registered; independent sign-off pending before any fitting)",
+      "evidence": "docs/vanguard/VG05-07_FORECAST_PLAN.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-08",
@@ -761,7 +775,9 @@
       ],
       "implementation": "Build versioned interface and default abstention; optional model only with eligible evidence.",
       "acceptance": "Synthetic training cannot authorize displayed probabilities; unsupported build/coverage abstains.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-09",
@@ -772,7 +788,9 @@
       ],
       "implementation": "If real adequate data available, compare model to prevalence and simple baseline; report intervals and drift.",
       "acceptance": "Held-out metrics and coverage documented; otherwise mark blocked, not failed/complete model.",
-      "status": "pending"
+      "status": "blocked: no real labelled runs yet (tools built; not a failed or complete model)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-10",
@@ -783,7 +801,9 @@
       ],
       "implementation": "Present target/horizon, confidence interval, coverage, evidence and abstain reasons.",
       "acceptance": "No readiness percentage presented as win odds; full-clear distinct from individual boss forecast.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-GATE",
@@ -794,7 +814,9 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "evidence": "docs/vanguard/VG05_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-01",

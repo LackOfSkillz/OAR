@@ -420,6 +420,7 @@ local controls = {
   ["Copy notes"] = "Shows your boss assignment notes to copy yourself. Nothing is posted.",
   ["Share my prep"] = "Sends your role, level, ready and Prep checklist counts to party members who run Outrider. Off until you press it.",
   ["Stop sharing prep"] = "Stops sharing and tells the group to forget what you shared.",
+  ["Runs (preview)"] = "Your dungeon and raid runs: each boss fight's result from the game, and past results with their range.",
   ["Copy with names"] = "The same summary with the members' names, to copy yourself. Nothing is sent or saved.",
   ["Start farm timer"] = "Times outdoor farming until you press Stop and save. Dungeon runs time themselves.",
   ["Stop and save"] = "Ends the run that's timing now and saves it.",
