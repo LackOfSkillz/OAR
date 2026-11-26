@@ -52,3 +52,18 @@ VG00-03. Probe samples hold counts and shapes only. Test `leaks()` scans every s
 ## Developer recommendation (not an independent approval)
 
 VG00 is complete as documentation plus capability probes. It is ready for review, with live samples outstanding. VG01 (InspectBroker) should start only after (a) review acceptance, (b) Gary's approval, and (c) at least one live inspect sample, which tells us whether talents of other players can be read on Forever.
+
+## Addendum: review corrections (2026-11-26)
+
+ChatGPT's VG00 review (HEAD `48a4eaa`): **conditional acceptance**, with two corrections.
+
+| ID | Correction | Where | Test |
+|---|---|---|---|
+| VG00-R01 | The inspect debug line named the player; it now logs only level and class | `addon/Outrider/Modules/PlayerInfo.lua` `OnInspect` | `vanguard_probe_spec`: debug on, the whole saved file has no name outside Census, and the new line is present |
+| VG00-R02 | Probes keep allowlisted values only (`Probe.Kind`, `Probe.OneOf`, capped content names); `Probe.Shape` writes `string(n)` instead of any string | `addon/Outrider/Core/Probe.lua` | `vanguard_probe_spec` (8 tests, including the disk-wide check: no GUID, realm, gear link, item name, talent string or config name); `probe_spec` damage meter: no API string in the log |
+
+Corrected commit: `30a20c4`. CI: https://github.com/LackOfSkillz/OAR/actions/runs/45847833273, **success** (7m32s). Local: 1531 passed, 0 failed.
+
+Scope note found while fixing R02: the older Census feature saves names of players seen nearby (class, level, zone, time). It is outside Vanguard and kept under the preservation override. D27 is scoped to Vanguard and inspection data (see the ADR). Changing Census would be a separate decision for Gary.
+
+Waiting for Gary: approval of D27 and the three recommended decisions (5-minute cache; hover inspect on by default with a setting to turn it off, through one InspectBroker; named history deferred). With that, VG01 may start.
