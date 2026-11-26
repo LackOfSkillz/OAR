@@ -931,8 +931,8 @@
       ],
       "implementation": "Require separate owner approval and compatible OCC architecture; map existing companion.",
       "acceptance": "No code before approval; local-first, addon independent.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -944,8 +944,8 @@
       ],
       "implementation": "Define versioned aggregate run and approved profile contracts; player-approved exchange after game closes.",
       "acceptance": "Cross-language fixtures, consent filtering, no live bridge.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -957,8 +957,8 @@
       ],
       "implementation": "Store immutable anonymized group history and indexes in existing vault.",
       "acceptance": "Idempotent import, scoped queries, backup/restore; no source deletion.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -970,8 +970,8 @@
       ],
       "implementation": "Extend Oracle/Forge for hypothetical group simulations with verified mechanics.",
       "acceptance": "Uncertainty and model limits; no direct gameplay controls.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -983,8 +983,8 @@
       ],
       "implementation": "Implement only approved training workflow on representative consent-compatible records.",
       "acceptance": "Reproducible dataset hashes, chronological evaluation, calibrated model version and abstention.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -996,8 +996,8 @@
       ],
       "implementation": "Optional aggregate shared objectives and manual export; no public player rankings.",
       "acceptance": "Explicit consent and scope; no uploads or integrations without separate permission.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -1009,8 +1009,8 @@
       ],
       "implementation": "Clean install, export/import, malformed files, offline behavior and regression.",
       "acceptance": "Core addon remains independent; release authorized separately.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "done: code and tests (companion/outrider_companion/vanguard); live parts outstanding",
+      "evidence": "docs/vanguard/VG07_EVIDENCE.md",
       "updated": "2026-11-26"
     },
     {
@@ -1022,8 +1022,8 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
-      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "evidence": "docs/vanguard/VG_FINAL_REVIEW_PACKET.md",
       "updated": "2026-11-26"
     }
   ]

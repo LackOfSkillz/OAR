@@ -1,6 +1,6 @@
-# Vanguard independent review packet: VG01 to VG06 (combined)
+# Vanguard independent review packet: VG01 to VG07 (combined)
 
-- **Phase / gate:** VG01-GATE to VG06-GATE, reviewed together by Gary's instruction (D28, 2026-11-26: "loop through all the phases until complete"; ChatGPT reviews once at the end). VG07 (Command Center) not started: it needs Gary's separate authorization.
+- **Phase / gate:** VG01-GATE to VG07-GATE, reviewed together by Gary's instruction (D28, 2026-11-26: "loop through all the phases until complete"; ChatGPT reviews once at the end). VG07 (Command Center) not started: it needs Gary's separate authorization.
 - **Branch:** `ai/outrider-personal-intelligence` (not merged to main; nothing released or uploaded).
 - **Approved baseline:** `fefc7a8` (VG00-GATE accepted after R01/R02).
 - **Commits:**
@@ -20,7 +20,7 @@
 
 ## Microtask matrix
 
-Per-task tables with source paths, tests and limits: `VG01_EVIDENCE.md`, `VG02_EVIDENCE.md`, `VG03_EVIDENCE.md`, `VG04_EVIDENCE.md`, `VG05_EVIDENCE.md`, `VG06_EVIDENCE.md`. Machine-readable status: `vanguard_backlog.json`.
+Per-task tables with source paths, tests and limits: `VG01_EVIDENCE.md`, `VG02_EVIDENCE.md`, `VG03_EVIDENCE.md`, `VG04_EVIDENCE.md`, `VG05_EVIDENCE.md`, `VG06_EVIDENCE.md`, `VG07_EVIDENCE.md`. Machine-readable status: `vanguard_backlog.json`.
 
 | Phase | Done (code and unit tests) | Outstanding |
 |---|---|---|
@@ -30,11 +30,11 @@ Per-task tables with source paths, tests and limits: `VG01_EVIDENCE.md`, `VG02_E
 | VG04 | 01–07 | **VG04-08 live only** (two Outrider users, a raid), L07 |
 | VG05 | 01–08, 10 | **VG05-09 blocked** (no real labelled runs); L10, L11 |
 | VG06 | 01, 02, 06 (automated) | 03 real client (L12), 04 live classes/locale (L06), **05 competitor benchmark not run**, **07 live acceptance** |
-| VG07 | — | not authorized |
+| VG07 | 01–07 (authorized D29; companion code and tests) | L14 live export/import with real runs; forecast blocked on data and plan approval |
 
-## Spec tests (new for VG01–VG06)
+## Spec tests (new for VG01–VG07)
 
-`inspect_broker_spec` (9), `vanguard_spec` (11), `vanguard_load_spec` (3), `vanguard_roles_spec` (8), `vanguard_board_spec` (10), `vanguard_whatif_spec` (9), `vanguard_runs_spec` (9), `vanguard_audit_spec` (6), `vanguard_facts_spec` (6): 71 tests, negative cases included.
+`inspect_broker_spec` (9), `vanguard_spec` (11), `vanguard_load_spec` (3), `vanguard_roles_spec` (8), `vanguard_board_spec` (10), `vanguard_whatif_spec` (9), `vanguard_runs_spec` (9), `vanguard_audit_spec` (6), `vanguard_facts_spec` (6), `vanguard_desktop_spec` (3): 74 Lua tests; companion `test_vanguard_desktop.py` (21 Python tests). Negative cases included.
 
 ## API capability matrix
 
@@ -77,14 +77,14 @@ Targets, cohort floors, split and metrics pre-registered (`VG05-07_FORECAST_PLAN
 
 ## Outstanding blockers
 
-- **Live (Gary in game):** L01 party with non-users; L02 out of range/offline; L03 Inspect window during a scan; L04 combat and leaving during a scan; L05 raid roster; L06 nine classes; L07 two-user sharing and revoke; L08 a place with a key; L09 prep and Plan; L10 run outcomes with reload; L11 backup/restore with history; L12 real-client performance and taint; L13 competitors; L14 not applicable (VG07 not authorized).
+- **Live (Gary in game):** L01 party with non-users; L02 out of range/offline; L03 Inspect window during a scan; L04 combat and leaving during a scan; L05 raid roster; L06 nine classes; L07 two-user sharing and revoke; L08 a place with a key; L09 prep and Plan; L10 run outcomes with reload; L11 backup/restore with history; L12 real-client performance and taint; L13 competitors; L14 desktop export/import, scenario and guild report from real runs (VG07).
 - **Data:** researched facts in the candidate (`docs/vanguard/VANGUARD_FACTS_SOURCES.md`): boss needs for 29 dungeons, access for 30 places, Forever raid sizes and status, vendor prices and Forever enchant values, all from cited web sources and unverified in game. Still missing: recommended raid makeups (none published), most boss NPC ids.
-- **Policy/owner:** release, merge to main and CurseForge upload need Gary's approval; VG07 needs separate authorization.
+- **Policy/owner:** release, merge to main and CurseForge upload need Gary's approval. VG07 authorized (D29); the forecast plan still needs independent approval before anything is fitted.
 - **Forecast:** blocked on real data by design.
 
 ## Developer recommendation (not independent approval)
 
-Accept VG01–VG06 as engineering-complete **preview** features with the live blockers above recorded; keep everything off by default until Gary's live pass; do not release.
+Accept VG01–VG07 as engineering-complete **preview** features with the live blockers above recorded; keep everything off by default until Gary's live pass; do not release.
 
 ## Results
 

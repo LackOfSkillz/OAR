@@ -119,3 +119,24 @@ py -I -m outrider_companion.cli export   --savedvariables ... --out report.json
 Run them from the `companion` folder. They are read-only: finished sessions only, nothing written inside the WoW folder, and no network.
 
 **XP60 auto install** (`xp60_cli --install`) is off until the owner approves it in `companion/policy.json`. See `docs/companion/XP60_POLICY.md`.
+
+## Vanguard history on your PC (VG07, optional)
+
+Your dungeon and raid runs (Dungeons > Runs, Group check on) can be kept and
+studied outside the game. All local; the addon doesn't need any of this.
+Run from the `companion` folder, with the game closed:
+
+```
+py -I -m outrider_companion.vanguard.cli export   --savedvariables "<WoW>\WTF\Account\<account>\SavedVariables\Outrider.lua" --character Torrant-<Realm>
+py -I -m outrider_companion.vanguard.cli export   ... --out runs.json      (writes it; add --guild to allow a guild report)
+py -I -m outrider_companion.vanguard.cli import   --file runs.json
+py -I -m outrider_companion.vanguard.cli scenario --group group.json --instance "The Deadmines" --everyone
+py -I -m outrider_companion.vanguard.cli guild    --out report.md
+py -I -m outrider_companion.vanguard.cli vault | backup | restore --backup FILE
+```
+
+Export shows a preview first: only anonymous run records (counts of roles,
+classes and levels, boss kills and wipes), no names. The vault lives in
+`%LOCALAPPDATA%\Outrider\CommandCenter\vanguard.sqlite` and never deletes
+anything. `forecast` fits nothing until the forecast plan is approved
+(`docs/vanguard/VG05-07_FORECAST_PLAN.md`). Details: `docs/vanguard/VG07_EVIDENCE.md`.

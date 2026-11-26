@@ -1,0 +1,352 @@
+{
+ "cases": [
+  {
+   "export": "kept",
+   "import": "ok",
+   "name": "a clean run",
+   "run": {
+    "assessment": {
+     "catalog": 1,
+     "coverage": 0.6,
+     "gate": "not established",
+     "high": 70,
+     "low": 55,
+     "point": 62
+    },
+    "attempts": [
+     {
+      "encounterId": "1",
+      "end": 1764000160,
+      "id": 1,
+      "name": "Rhahk'Zor",
+      "result": "kill",
+      "start": 1764000100
+     }
+    ],
+    "bosses": 5,
+    "build": "20261126-x",
+    "difficulty": "normal",
+    "distinctKills": 5,
+    "endedAt": 1764003600,
+    "features": {
+     "classes": {
+      "HUNTER": 1,
+      "MAGE": 1,
+      "PRIEST": 1,
+      "ROGUE": 1,
+      "WARRIOR": 1
+     },
+     "damage": 3,
+     "healer": 1,
+     "levelMax": 21,
+     "levelMin": 18,
+     "members": 5,
+     "tank": 1,
+     "unknownRole": 0
+    },
+    "instance": "The Deadmines",
+    "kills": 5,
+    "outcome": "completed",
+    "revision": 6,
+    "rosterChanges": 0,
+    "runId": "The Deadmines:1764000000:1",
+    "size": 5,
+    "startedAt": 1764000000,
+    "v": 1
+   }
+  },
+  {
+   "export": "dropped",
+   "import": "refused",
+   "name": "an extra field",
+   "run": {
+    "assessment": {
+     "catalog": 1,
+     "coverage": 0.6,
+     "gate": "not established",
+     "high": 70,
+     "low": 55,
+     "point": 62
+    },
+    "attempts": [
+     {
+      "encounterId": "1",
+      "end": 1764000160,
+      "id": 1,
+      "name": "Rhahk'Zor",
+      "result": "kill",
+      "start": 1764000100
+     }
+    ],
+    "bosses": 5,
+    "build": "20261126-x",
+    "difficulty": "normal",
+    "distinctKills": 5,
+    "endedAt": 1764003600,
+    "features": {
+     "classes": {
+      "HUNTER": 1,
+      "MAGE": 1,
+      "PRIEST": 1,
+      "ROGUE": 1,
+      "WARRIOR": 1
+     },
+     "damage": 3,
+     "healer": 1,
+     "levelMax": 21,
+     "levelMin": 18,
+     "members": 5,
+     "tank": 1,
+     "unknownRole": 0
+    },
+    "instance": "The Deadmines",
+    "kills": 5,
+    "outcome": "completed",
+    "partyNames": "x",
+    "revision": 6,
+    "rosterChanges": 0,
+    "runId": "The Deadmines:1764000000:1",
+    "size": 5,
+    "startedAt": 1764000000,
+    "v": 1
+   }
+  },
+  {
+   "export": "refused",
+   "import": "refused",
+   "name": "a GUID inside",
+   "run": {
+    "assessment": {
+     "catalog": 1,
+     "coverage": 0.6,
+     "gate": "not established",
+     "high": 70,
+     "low": 55,
+     "point": 62
+    },
+    "attempts": [
+     {
+      "encounterId": "1",
+      "end": 1764000160,
+      "id": 1,
+      "name": "Rhahk'Zor",
+      "result": "kill",
+      "start": 1764000100
+     }
+    ],
+    "bosses": 5,
+    "build": "20261126-x",
+    "censorReason": "Player-1-0000BEEF",
+    "difficulty": "normal",
+    "distinctKills": 5,
+    "endedAt": 1764003600,
+    "features": {
+     "classes": {
+      "HUNTER": 1,
+      "MAGE": 1,
+      "PRIEST": 1,
+      "ROGUE": 1,
+      "WARRIOR": 1
+     },
+     "damage": 3,
+     "healer": 1,
+     "levelMax": 21,
+     "levelMin": 18,
+     "members": 5,
+     "tank": 1,
+     "unknownRole": 0
+    },
+    "instance": "The Deadmines",
+    "kills": 5,
+    "outcome": "completed",
+    "revision": 6,
+    "rosterChanges": 0,
+    "runId": "The Deadmines:1764000000:1",
+    "size": 5,
+    "startedAt": 1764000000,
+    "v": 1
+   }
+  },
+  {
+   "export": "refused",
+   "import": "refused",
+   "name": "an unknown outcome word",
+   "run": {
+    "assessment": {
+     "catalog": 1,
+     "coverage": 0.6,
+     "gate": "not established",
+     "high": 70,
+     "low": 55,
+     "point": 62
+    },
+    "attempts": [
+     {
+      "encounterId": "1",
+      "end": 1764000160,
+      "id": 1,
+      "name": "Rhahk'Zor",
+      "result": "kill",
+      "start": 1764000100
+     }
+    ],
+    "bosses": 5,
+    "build": "20261126-x",
+    "difficulty": "normal",
+    "distinctKills": 5,
+    "endedAt": 1764003600,
+    "features": {
+     "classes": {
+      "HUNTER": 1,
+      "MAGE": 1,
+      "PRIEST": 1,
+      "ROGUE": 1,
+      "WARRIOR": 1
+     },
+     "damage": 3,
+     "healer": 1,
+     "levelMax": 21,
+     "levelMin": 18,
+     "members": 5,
+     "tank": 1,
+     "unknownRole": 0
+    },
+    "instance": "The Deadmines",
+    "kills": 5,
+    "outcome": "won",
+    "revision": 6,
+    "rosterChanges": 0,
+    "runId": "The Deadmines:1764000000:1",
+    "size": 5,
+    "startedAt": 1764000000,
+    "v": 1
+   }
+  },
+  {
+   "export": "kept",
+   "import": "ok",
+   "name": "a lost run stays unknown",
+   "run": {
+    "assessment": {
+     "catalog": 1,
+     "coverage": 0.6,
+     "gate": "not established",
+     "high": 70,
+     "low": 55,
+     "point": 62
+    },
+    "attempts": [
+     {
+      "encounterId": "1",
+      "end": 1764000160,
+      "id": 1,
+      "name": "Rhahk'Zor",
+      "result": "kill",
+      "start": 1764000100
+     }
+    ],
+    "bosses": 5,
+    "build": "20261126-x",
+    "censorReason": "reload or disconnect: lost track",
+    "difficulty": "normal",
+    "distinctKills": 5,
+    "features": {
+     "classes": {
+      "HUNTER": 1,
+      "MAGE": 1,
+      "PRIEST": 1,
+      "ROGUE": 1,
+      "WARRIOR": 1
+     },
+     "damage": 3,
+     "healer": 1,
+     "levelMax": 21,
+     "levelMin": 18,
+     "members": 5,
+     "tank": 1,
+     "unknownRole": 0
+    },
+    "instance": "The Deadmines",
+    "kills": 5,
+    "outcome": "unknown",
+    "revision": 6,
+    "rosterChanges": 0,
+    "runId": "The Deadmines:1764000000:1",
+    "size": 5,
+    "startedAt": 1764000000,
+    "v": 1
+   }
+  }
+ ],
+ "classes": [
+  "WARRIOR",
+  "PALADIN",
+  "HUNTER",
+  "ROGUE",
+  "PRIEST",
+  "SHAMAN",
+  "MAGE",
+  "WARLOCK",
+  "DRUID"
+ ],
+ "fields": {
+  "assessment": [
+   "catalog",
+   "coverage",
+   "gate",
+   "high",
+   "low",
+   "point"
+  ],
+  "attempt": [
+   "encounterId",
+   "end",
+   "id",
+   "name",
+   "result",
+   "start"
+  ],
+  "features": [
+   "classes",
+   "damage",
+   "healer",
+   "levelMax",
+   "levelMin",
+   "members",
+   "tank",
+   "unknownRole"
+  ],
+  "run": [
+   "assessment",
+   "attempts",
+   "bosses",
+   "build",
+   "censorReason",
+   "difficulty",
+   "distinctKills",
+   "endedAt",
+   "features",
+   "instance",
+   "kills",
+   "outcome",
+   "revision",
+   "rosterChanges",
+   "runId",
+   "size",
+   "startedAt",
+   "v"
+  ]
+ },
+ "note": "Vanguard run record contract v1, shared by Vanguard/Runs.lua (tests/spec/vanguard_desktop_spec.lua) and companion/outrider_companion/vanguard/contract.py (companion/tests/test_vanguard_desktop.py)",
+ "outcomes": [
+  "completed",
+  "incomplete",
+  "abandoned",
+  "unknown"
+ ],
+ "results": [
+  "kill",
+  "wipe",
+  "unknown"
+ ]
+}
