@@ -827,7 +827,9 @@
       ],
       "implementation": "Review event registrations, native scan, peer messages, storage, export, diagnostics and advice actions.",
       "acceptance": "No restricted APIs, no secret computation, no identifiable nonconsenting peer persistence.",
-      "status": "pending"
+      "status": "done (automated audits); live parts outstanding",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-02",
@@ -838,7 +840,9 @@
       ],
       "implementation": "Compare full contents of original project data packs and saved migrations; inspect archive integration.",
       "acceptance": "Zero unauthorized loss; unverifiable data blocks applicable gate; legitimate corrections versioned.",
-      "status": "pending"
+      "status": "done (automated audits); live parts outstanding",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-03",
@@ -849,7 +853,9 @@
       ],
       "implementation": "Run synthetic and real-client timing/memory/taint tests and inspect conflicts.",
       "acceptance": "Meet agreed measured budgets or explicit unresolved blocker; no timer/frame leaks.",
-      "status": "pending"
+      "status": "partly done (mock budgets met); real-client measurement outstanding (L12)",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-04",
@@ -860,7 +866,9 @@
       ],
       "implementation": "Verify all supported roles, localization, resolution, keyboard focus and UI labels.",
       "acceptance": "Matrix with actual verified cases and unsupported feature states.",
-      "status": "pending"
+      "status": "partly done (matrix; classes unit-tested); live class and locale checks outstanding (L06)",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-05",
@@ -871,7 +879,9 @@
       ],
       "implementation": "Run same permitted tasks against named competitor versions where accessible.",
       "acceptance": "Evidence of accuracy/coverage/usability; untested competitors marked unknown.",
-      "status": "pending"
+      "status": "not run: no competitor tested in game (all unknown)",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-06",
@@ -882,7 +892,9 @@
       ],
       "implementation": "Run clean full suite and exact-SHA CI; document settings, limits, data handling, fallback and release notes.",
       "acceptance": "No new regression/security findings; no skipped claims; no premature superiority claim.",
-      "status": "pending"
+      "status": "done (automated audits); live parts outstanding",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-07",
@@ -893,7 +905,9 @@
       ],
       "implementation": "Complete L01-L14 as applicable, separate future raid and model gates; confirm owner authorization.",
       "acceptance": "Preview for unverified capability; release gate explicitly accepted; no unauthorized publication.",
-      "status": "pending"
+      "status": "outstanding: live acceptance L01-L14 needs Gary in game; no release",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG06-GATE",
@@ -904,7 +918,9 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "evidence": "docs/vanguard/VG06_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-01",
@@ -915,7 +931,9 @@
       ],
       "implementation": "Require separate owner approval and compatible OCC architecture; map existing companion.",
       "acceptance": "No code before approval; local-first, addon independent.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-02",
@@ -926,7 +944,9 @@
       ],
       "implementation": "Define versioned aggregate run and approved profile contracts; player-approved exchange after game closes.",
       "acceptance": "Cross-language fixtures, consent filtering, no live bridge.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-03",
@@ -937,7 +957,9 @@
       ],
       "implementation": "Store immutable anonymized group history and indexes in existing vault.",
       "acceptance": "Idempotent import, scoped queries, backup/restore; no source deletion.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-04",
@@ -948,7 +970,9 @@
       ],
       "implementation": "Extend Oracle/Forge for hypothetical group simulations with verified mechanics.",
       "acceptance": "Uncertainty and model limits; no direct gameplay controls.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-05",
@@ -959,7 +983,9 @@
       ],
       "implementation": "Implement only approved training workflow on representative consent-compatible records.",
       "acceptance": "Reproducible dataset hashes, chronological evaluation, calibrated model version and abstention.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-06",
@@ -970,7 +996,9 @@
       ],
       "implementation": "Optional aggregate shared objectives and manual export; no public player rankings.",
       "acceptance": "Explicit consent and scope; no uploads or integrations without separate permission.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-07",
@@ -981,7 +1009,9 @@
       ],
       "implementation": "Clean install, export/import, malformed files, offline behavior and regression.",
       "acceptance": "Core addon remains independent; release authorized separately.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG07-GATE",
@@ -992,7 +1022,9 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "not started: needs Gary's separate Command Center authorization (D28 does not cover VG07)",
+      "evidence": "docs/vanguard/OUTRIDER_VANGUARD_ENGINEERING_SPEC.md",
+      "updated": "2026-11-26"
     }
   ]
 }
