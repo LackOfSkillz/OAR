@@ -567,7 +567,9 @@
       ],
       "implementation": "Create immutable alternative rosters, bench, role overrides and locked positions.",
       "acceptance": "Editing hypothetical state never mutates live roster.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-02",
@@ -578,7 +580,9 @@
       ],
       "implementation": "Bounded deterministic search maximizing scoped verified coverage with constraints.",
       "acceptance": "Small exhaustive reference agreement; 40-player termination; lock rules preserved.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-03",
@@ -589,7 +593,9 @@
       ],
       "implementation": "Compare candidate compositions against boss requirements and explain marginal changes.",
       "acceptance": "No candidate falsely guarantees clear; infeasible case explained.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-04",
@@ -600,7 +606,9 @@
       ],
       "implementation": "Support reusable boss-specific manual role/utility assignments and copyable summary.",
       "acceptance": "No invitations, marks, group changes or automated messaging; preview only.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-05",
@@ -611,7 +619,9 @@
       ],
       "implementation": "Add versioned opt-in preparation payload with field preview, scope, sender validation and limits.",
       "acceptance": "Old clients compatible; malformed packets rejected; nonusers retain native-only assessment.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-06",
@@ -622,7 +632,9 @@
       ],
       "implementation": "Handle immediate revoke, leave, stale message replay and opt-out.",
       "acceptance": "Validated revoke bypasses ordinary update rate limit; late packet cannot revive data.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-07",
@@ -633,7 +645,9 @@
       ],
       "implementation": "Merge native evidence, optional peer report and manual confirmation without silent overwrite.",
       "acceptance": "Conflicts surfaced; timestamps and source retained; no inferred consent.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-08",
@@ -644,7 +658,9 @@
       ],
       "implementation": "Test one-to-many and two-peer sharing, raid roster, duplicates and manual Inspect.",
       "acceptance": "Actual evidence packet or outstanding live blocker explicitly recorded.",
-      "status": "pending"
+      "status": "outstanding: live only (two Outrider users and a raid needed)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG04-GATE",
@@ -655,7 +671,9 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "evidence": "docs/vanguard/VG04_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG05-01",

@@ -263,6 +263,8 @@ Vanguard\Access.lua
 Vanguard\Readiness.lua
 Vanguard\Assess.lua
 Vanguard\Plan.lua
+Vanguard\WhatIf.lua
+Vanguard\Share.lua
 Modules\Vanguard.lua
 Modules\NPCPack.lua
 Modules\Waypoints.lua

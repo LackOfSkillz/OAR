@@ -26,7 +26,7 @@ local M = ns:NewModule("Vanguard", {
   defaultEnabled = false,
   -- your own prep choices (VG02-08/09): activity, minutes, place, your access
   -- answers and your own checklist items. Nothing about other players.
-  defaults = { activity = "dungeon", minutes = 60, instance = nil, access = {}, custom = {} },
+  defaults = { activity = "dungeon", minutes = 60, instance = nil, access = {}, custom = {}, sharePrep = false, ready = false },
 })
 ns.VanguardModule = M
 
@@ -44,13 +44,18 @@ function M:OnEnable()
   self:On("GROUP_ROSTER_UPDATE", function(mod) mod:OnRoster() end)
   self:On("PLAYER_REGEN_DISABLED", function(mod) mod:Cancel("combat started") end)
   self:On("PLAYER_ENTERING_WORLD", function(mod) mod:Cancel("you changed zone") mod:OnRoster() end)
-  self:On("PLAYER_LOGOUT", function(mod) Cache:Clear() end)
+  self:On("PLAYER_LOGOUT", function(mod) Cache:Clear() V.Share.Clear() end)
+  self:EnableShare()
   self:ReadRoster()
 end
 
 function M:OnDisable()
   self:Cancel("turned off")
   Cache:Clear()
+  -- you stop sharing too: the group is told to forget it (VG04-06)
+  if self:Settings().sharePrep then self:Revoke() end
+  V.Share.Clear()
+  self.hypo, self.hypoSel, self.hypoInfo = nil, nil, nil
   self.snap, self.scan, self.manual, self.selected = nil, nil, {}, nil
   self.itemTimer, self.itemTries, self.itemEvent = nil, nil, nil
 end
@@ -70,6 +75,7 @@ end
 function M:OnRoster()
   local before = self.snap and self.snap.generation
   self:ReadRoster()
+  V.Share.Sweep()
   if self.scan and self.scan.state == "running" and self.snap.generation ~= before then
     self:Cancel("the group changed")
   end
@@ -219,9 +225,19 @@ function M:SetRole(key, role)
   return true
 end
 
+-- yours over the group's assigned role over what they shared over the
+-- game's guess; a disagreement is kept on the result (VG04-07)
 function M:RoleOf(member)
   local p = Cache:Get(member.key)
-  return Profile.Role(member, p and p.talents, self.manual[member.key])
+  local r = Profile.Role(member, p and p.talents, self.manual[member.key])
+  local peer = self.PeerFor and self:PeerFor(member)
+  if peer and peer.role then
+    local rec = V.Share.Reconcile("role", { { value = self.manual[member.key], source = "manual" },
+      { value = V.Obs.Value(member.role), source = "native" }, { value = peer.role, source = "peer", at = peer.at } })
+    if r.source == "tentative" or r.source == "unknown" then r = { value = peer.role, source = "peer", note = "they shared it" } end
+    if #rec.conflicts > 0 then r.conflict = rec.conflicts end
+  end
+  return r
 end
 
 -- ------------------------------------------------------------------ view (no requests)
@@ -439,6 +455,17 @@ ns.Hub:AddTab("vanguard", "Group check", function(p)
       { key = "status", label = "Status", width = 150, sort = function(x) return x.status end, text = function(x) return x.status end },
     }, function() if not on() then return {} end return M:Rows() end,
       function(x) if x and x.key then M.selected = x.key refresh() end end, sortKey = "name" },
+    { "buttons", {
+      { "Share my prep", function() local ok, why = M:SetSharePrep(true) if not ok and why then ns.Print("group check: %s", tostring(why)) end refresh() end, 120 },
+      { "Stop sharing prep", function() M:SetSharePrep(false) refresh() end, 130 },
+    }, active = function(i) return (i == 1) == (M:Settings().sharePrep == true) end },
+    { "note", function()
+      if not on() then return "" end
+      local st = M:Settings()
+      local preview = st.sharePrep and V.Share.Preview(V.Share.Payload(st, M:ShareCounts(), nil, nil, 1)) or
+        "Sharing is off. Share my prep sends only: your role, level, ready, and your Prep checklist counts, to your party or raid, for 15 minutes."
+      return preview .. "\n" .. M:SharedText()
+    end },
     { "note", function() if not on() then return "" end return M:DrillText() end },
     { "note", function() if not on() then return "" end return M:UtilityText() end },
     { "note", "Unknown means the game didn't show it, not that it's missing. \"Empty\" is a slot the game says is empty. A role marked (guess) comes from the game's answer for their talents; set it yourself if it's wrong. Rows are in group order, not a ranking." },
@@ -668,5 +695,238 @@ ns.Hub:AddTab("vanguard_board", "Boss matrix", function(p)
       return table.concat(lines, "\n")
     end },
     { "note", "Your own boss rules: /ride vgboss <boss name> <need> (for example interrupt or dispel_poison). They count only for you and show as yours." },
+  })
+end)
+
+-- ------------------------------------------------------------------ VG04 sharing (opt-in, PARTY/RAID)
+local Share = V.Share
+
+function M:EnableShare()
+  if ns.Comm and ns.Comm.KNOWN_TYPES then ns.Comm.KNOWN_TYPES[Share.TYPE] = true end
+  self:On("OTR_COMM", function(mod, _, kind, data, sender, channel)
+    if kind == Share.TYPE then Share.Receive(data, sender, channel) mod:Redraw() end
+  end)
+end
+
+function M:ShareCounts()
+  local ok, rows = pcall(function() return (self:PrepRows()) end)
+  return ok and V.Prep.Count2(rows) or nil
+end
+
+-- what would be sent (nil when sharing is off); exactly these fields
+function M:SharePayload()
+  local st = self:Settings()
+  if not st.sharePrep then return nil end
+  local me = self.snap and self.snap.members[1]
+  for _, m in ipairs(self.snap and self.snap.members or {}) do if m.self then me = m end end
+  local role = me and self:RoleOf(me).value
+  local level = me and V.Obs.Num(me.level)
+  self.shareSeq = math.max((self.shareSeq or 0) + 1, math.floor(time()))
+  return Share.Payload(st, self:ShareCounts(), role, level, self.shareSeq)
+end
+
+function M:SendShare(now)
+  now = now or time()
+  local p = self:SharePayload()
+  if not p then return false, "sharing is off" end
+  local ch = ns.Fellowship and ns.Fellowship:Channel()
+  if ch ~= "PARTY" and ch ~= "RAID" then return false, "not in a group" end
+  if self.shareOut and now - self.shareOut < Share.RATE then return false, "too soon" end
+  self.shareOut = now
+  return ns.Comm:Send(Share.TYPE, p, ch)
+end
+
+-- tell the group to forget what you shared (honoured at once on their side)
+function M:Revoke()
+  local ch = ns.Fellowship and ns.Fellowship:Channel()
+  self.shareSeq = math.max((self.shareSeq or 0) + 1, math.floor(time()))
+  self.shareOut = nil
+  if ch == "PARTY" or ch == "RAID" then return ns.Comm:Send(Share.TYPE, { v = Share.VERSION, seq = self.shareSeq, revoke = true }, ch) end
+  return false, "not in a group"
+end
+
+function M:SetSharePrep(on)
+  local st = self:Settings()
+  local was = st.sharePrep
+  st.sharePrep = on and true or false
+  if was and not on then self:Revoke() return true end
+  if on then self.shareOut = nil return self:SendShare() end
+  return true
+end
+
+function M:PeerFor(member)
+  if not (member and member.name) or member.self then return nil end
+  local key = ns.Fellowship and ns.Fellowship.Canon(member.name, member.realm) or member.name
+  local d = Share.peers[key]
+  if d and d.expiresAt and time() >= d.expiresAt then Share.peers[key] = nil return nil end
+  return d
+end
+
+function M:SharedText()
+  local lines = {}
+  for _, m in ipairs(self.snap and self.snap.members or {}) do
+    local d = self:PeerFor(m)
+    if d then
+      lines[#lines + 1] = string.format("%s: %s%s", tostring(m.name), d.prep and string.format("%d OK, %d to do, %d can't tell", d.prep.ok, d.prep.todo, d.prep.unknown) or "no checklist",
+        d.ready and ", ready" or "")
+    end
+  end
+  if #lines == 0 then return "No shared prep from the group. Members who run Outrider and turn on Share my prep show here; everyone else keeps what the game shows." end
+  return "|cffffd100Shared by members who run Outrider|r (they chose to): " .. table.concat(lines, "; ")
+end
+
+-- ------------------------------------------------------------------ VG04 what-if (memory only)
+function M:Hypo(reset)
+  if reset or not self.hypo then
+    self.hypo = V.WhatIf.From(self.snap or self:ReadRoster(), function(m) return M:RoleOf(m) end)
+    self.hypoSel, self.hypoInfo = nil, nil
+  end
+  return self.hypo
+end
+
+function M:HypoEdit(op, value)
+  local r = self:Hypo()
+  local id = self.hypoSel
+  local nr, why
+  if op == "add" then nr, why = V.WhatIf.Edit(r, "add", value)
+  elseif op == "nextgroup" or op == "nextrole" then
+    local m
+    for _, x in ipairs(r.members) do if x.id == id then m = x end end
+    if not m then return false, "pick a member first" end
+    if op == "nextgroup" then
+      local tried = 0
+      local g = m.group
+      repeat g = (g % 8) + 1 tried = tried + 1 nr, why = V.WhatIf.Edit(r, "move", id, g) until nr or tried >= 8
+    else
+      local roles = V.Roles.Roles(m.class or "") or {}
+      if #roles == 0 then return false, "class unknown" end
+      local idx = 0
+      for i, x in ipairs(roles) do if x == m.role then idx = i end end
+      nr, why = V.WhatIf.Edit(r, "role", id, roles[(idx % #roles) + 1])
+    end
+  elseif op == "lock" or op == "bench" then
+    local m
+    for _, x in ipairs(r.members) do if x.id == id then m = x end end
+    if not m then return false, "pick a member first" end
+    nr, why = V.WhatIf.Edit(r, op, id, not m[op == "lock" and "locked" or "bench"])
+  elseif op == "drop" then nr, why = V.WhatIf.Edit(r, "drop", id)
+  end
+  if not nr then return false, why end
+  self.hypo = nr
+  return true
+end
+
+function M:HypoOptimize()
+  local nr, info = V.WhatIf.Optimize(self:Hypo())
+  self.hypo, self.hypoInfo = nr, info
+  return info
+end
+
+-- ------------------------------------------------------------------ VG04 assignment notes (yours, saved)
+M.NOTES_PER_BOSS = 10
+function M:Notes(instance)
+  local st = self:Settings()
+  st.assign = ns.KeepTable and ns.KeepTable(st.assign, "Vanguard:assign") or st.assign or {}
+  st.assign[instance] = st.assign[instance] or {}
+  return st.assign[instance]
+end
+
+function M:NotesText(instance)
+  instance = instance or self:PrepInstance()
+  if not instance then return "No place picked." end
+  local notes = self:Notes(instance)
+  local bosses = {}
+  for boss in pairs(notes) do bosses[#bosses + 1] = boss end
+  table.sort(bosses)
+  local lines = { "Assignment notes: " .. instance }
+  for _, boss in ipairs(bosses) do
+    for _, n in ipairs(notes[boss]) do lines[#lines + 1] = string.format("- %s: %s: %s", boss, n.who, n.task) end
+  end
+  if #lines == 1 then lines[#lines + 1] = "(none yet: /ride vgnote <boss> | <who> | <task>)" end
+  return table.concat(lines, "\n")
+end
+
+ns.AddCommand("vgnote", "vgnote <boss> | <who> | <task>, clear <boss>, list  your own boss assignment notes (nothing is sent)", function(arg)
+  arg = tostring(arg or "")
+  local inst = M:PrepInstance()
+  if not inst then ns.Print("vgnote: pick a place on the Boss matrix first") return end
+  local notes = M:Notes(inst)
+  local clear = arg:match("^clear%s+(.+)$")
+  if clear then notes[clear] = nil ns.Print("vgnote: cleared %s", clear) return end
+  local boss, who, task = arg:match("^%s*(.-)%s*|%s*(.-)%s*|%s*(.-)%s*$")
+  if boss and boss ~= "" and who ~= "" and task ~= "" then
+    notes[boss] = notes[boss] or {}
+    if #notes[boss] >= M.NOTES_PER_BOSS then ns.Print("vgnote: %d notes per boss at most", M.NOTES_PER_BOSS) return end
+    local clean = function(s) return (s:gsub("[%c|]", "")):sub(1, 60) end
+    notes[boss][#notes[boss] + 1] = { who = clean(who), task = clean(task) }
+    ns.Print("vgnote: %s: %s: %s", boss, clean(who), clean(task))
+    return
+  end
+  for l in M:NotesText(inst):gmatch("[^\n]+") do ns.Print("%s", l) end
+end)
+
+-- VG04 page: what-if roster, alternatives, assignment notes
+local function hypoName(x)
+  if x.self then return "You" end
+  if x.candidate then return "+ " .. tostring(x.class):sub(1, 1) .. tostring(x.class):sub(2):lower() .. " (added)" end
+  return tostring(x.name or x.id)
+end
+
+ns.Hub:AddTab("vanguard_whatif", "What-if", function(p)
+  local UI = ns.UI
+  local refresh = function() if p.Refresh then p:Refresh() end end
+  local function on() return M:IsEnabled() end
+  local function say(ok, why) if not ok and why then ns.Print("what-if: %s", tostring(why)) end refresh() end
+  UI:FormPage(p, {
+    { "header", "What-if (preview)" },
+    { "note", "Try another group makeup without changing the real one. 1. Start from my group. 2. Click a member and change their role or group, lock or bench them, or add a class you could invite. 3. Find better groups spreads party-wide buffs and healers across raid groups. Nobody is invited, moved or told: it's a model." },
+    { "note", function() if not on() then return "|cffffd100Group check is off.|r Turn it on on the Group check page." end return "" end },
+    { "buttons", {
+      { "Start from my group", function() if on() then M:Hypo(true) end refresh() end, 150 },
+      { "Find better groups", function() if on() then M:HypoOptimize() end refresh() end, 140 },
+    } },
+    { "buttons", {
+      { "Next role", function() say(M:HypoEdit("nextrole")) end, 90 },
+      { "Next group", function() say(M:HypoEdit("nextgroup")) end, 90 },
+      { "Lock selected", function() say(M:HypoEdit("lock")) end, 110 },
+      { "Bench selected", function() say(M:HypoEdit("bench")) end, 120 },
+      { "Drop candidate", function() say(M:HypoEdit("drop")) end, 120 },
+    }, plain = true },
+    { "buttons", {
+      { "Add a healer", function() local e = V.Catalog.Find(M:PrepInstance() or "") say(M:HypoEdit("add", { class = "PRIEST", role = "HEALER", level = e and e.min })) end, 110 },
+      { "Add a tank", function() local e = V.Catalog.Find(M:PrepInstance() or "") say(M:HypoEdit("add", { class = "WARRIOR", role = "TANK", level = e and e.min })) end, 100 },
+      { "Add damage", function() local e = V.Catalog.Find(M:PrepInstance() or "") say(M:HypoEdit("add", { class = "MAGE", role = "DAMAGER", level = e and e.min })) end, 100 },
+    }, plain = true },
+    { "table", 10, {
+      { key = "name", label = "Member", width = 0, sort = function(x) return x.id end,
+        text = function(x) return (M.hypoSel == x.id and "|cffffd100> |r" or "") .. hypoName(x) end },
+      { key = "class", label = "Class", width = 80, sort = function(x) return x.class or "" end, text = function(x) return x.class and (x.class:sub(1, 1) .. x.class:sub(2):lower()) or "?" end },
+      { key = "role", label = "Role", width = 80, sort = function(x) return x.role or "" end, text = function(x) return x.role and x.role:lower() or "unknown" end },
+      { key = "group", label = "Group", width = 50, align = "RIGHT", sort = function(x) return x.group end, text = function(x) return x.bench and "bench" or x.group end },
+      { key = "flags", label = "", width = 70, sort = function(x) return x.locked and 1 or 0 end, text = function(x) return x.locked and "locked" or "" end },
+    }, function() if not on() then return {} end return M:Hypo().members end,
+      function(x) if x and x.id then M.hypoSel = x.id refresh() end end, sortKey = "group" },
+    { "note", function()
+      if not on() then return "" end
+      local lines = {}
+      local info = M.hypoInfo
+      if info then lines[#lines + 1] = string.format("Find better groups: %s (%d change(s)). A suggestion, not a promise.", info.note, #info.moves) end
+      local entry = V.Catalog.Find(M:PrepInstance() or "")
+      if entry then
+        local alts, base, reason = V.WhatIf.Alternatives(M:Hypo(), entry)
+        lines[#lines + 1] = string.format("|cffffd100%s|r with this makeup: readiness %s.", entry.name, V.Readiness.Text(base.score))
+        for i, a in ipairs(alts) do
+          if i > 5 then break end
+          lines[#lines + 1] = string.format("  %s: %d to %d (%s)", a.label, math.floor((a.low or 0) + 0.5), math.floor((a.high or 0) + 0.5), a.why)
+        end
+        if reason then lines[#lines + 1] = "  Nothing to try: " .. reason end
+      end
+      return table.concat(lines, "\n")
+    end },
+    { "buttons", {
+      { "Copy notes", function() ns.UI:TextDialog("Assignment notes", M:NotesText(), "copy") end, 100 },
+    }, plain = true },
+    { "note", function() return M:NotesText() end },
+    { "note", "Your own assignment notes per boss: /ride vgnote <boss> | <who> | <task>. Copy notes shows them to paste yourself; nothing is posted or sent." },
   })
 end)
