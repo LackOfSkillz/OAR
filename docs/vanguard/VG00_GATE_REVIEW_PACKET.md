@@ -1,8 +1,8 @@
 # Vanguard independent review packet: VG00-GATE
 
 - **Phase / gate:** VG00 (baseline, policy and feasibility) / VG00-GATE. Submitted 2026-11-26 for ChatGPT's independent review. Gary's approval is needed before VG01.
-- **Baseline / candidate / branch:** approved baseline `c2ef910` (Release 0.6.0). Candidate `951a9a0`: VG00-01..08 in `ca73e4a`, plus one unrelated FarmLab fix on top (`951a9a0`: loot-window drop counting and table mouse-wheel handoff in `UI/WidgetsExtra.lua`; reviewers may skip it or check it as a regression). Branch `ai/outrider-personal-intelligence`. Not merged to `main`, not released.
-- **CI:** exact-SHA run for `951a9a0`: https://github.com/LackOfSkillz/OAR/actions/runs/45826882185 (in progress when this packet was written; its result has to be read from that page, not assumed). Local: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython`, giving **1530 passed, 0 failed, 0 syntax errors; companion tests passed** on 2026-11-26 at `951a9a0` (1,521 before VG00, 7 new VG00 tests, 2 for the FarmLab fix).
+- **Baseline / candidate / branch:** approved baseline `c2ef910` (Release 0.6.0). Candidate `b4878ce` (CI-tested; the code is the same as `951a9a0`, plus this packet): VG00-01..08 in `ca73e4a`, plus one unrelated FarmLab fix on top (`951a9a0`: loot-window drop counting and table mouse-wheel handoff in `UI/WidgetsExtra.lua`; reviewers may skip it or check it as a regression). Branch `ai/outrider-personal-intelligence`. Not merged to `main`, not released.
+- **CI:** exact-SHA run for `b4878ce`: https://github.com/LackOfSkillz/OAR/actions/runs/45826953998, **success** (4m46s). The run for `951a9a0` (45826882185) was cancelled when the next push replaced it, so it is not a pass. Local: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython`, giving **1530 passed, 0 failed, 0 syntax errors; companion tests passed** on 2026-11-26 at `951a9a0` (1,521 before VG00, 7 new VG00 tests, 2 for the FarmLab fix).
 
 ## Microtask matrix
 
@@ -45,9 +45,9 @@ VG00-03. Probe samples hold counts and shapes only. Test `leaks()` scans every s
 
 ## Outstanding blockers
 
-1. **Live:** Gary in a group: join, hover each member, kill one boss, log out. This gives VG00-04/05/06 real samples. Also the long performance session.
+1. **Live:** first samples taken 2026-11-26 (see the capability matrix, live section): one non-user rogue inspected by tooltip hover and one party roster sample. Still missing: a boss-kill sample (VG00-06), a raid roster, a member with talents spent, and the long performance session.
 2. **Owner decisions:** D27 approval; inspect cache lifetime; named history with friends; whether hover inspect stays automatic.
-3. **CI:** run 45826882185 for `951a9a0` was in progress when this packet was written.
+3. **CI:** green on `b4878ce` (run 45826953998).
 
 ## Developer recommendation (not an independent approval)
 

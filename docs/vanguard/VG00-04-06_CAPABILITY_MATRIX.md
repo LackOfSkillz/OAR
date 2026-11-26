@@ -52,3 +52,13 @@ No names, realms, GUIDs or gear links of other players are stored (VG00-03). Sam
 Plain play, no commands. Join any group (dungeon finder or party), mouse over each member for a second, kill one dungeon boss, log out. If the client allows reading other players' talents, the log line `inspect (...)` will show traits nodes or an import string. Acceptance item VG00-05 ("one non-user inspected with owner present") is met by hovering any player who doesn't run Outrider.
 
 Not covered by this probe (left for VG01 live tests): out-of-range and offline members mid-scan, the Inspect window opened during a scan, roster churn during a scan, raid subgroups (needs a raid).
+
+## Live samples (2026-11-26, build 71139, Gary's play; read from the saved log)
+
+| Time | Sample | Result |
+|---|---|---|
+| 08:23:31 | **inspect**, tooltip hover, a level 7 rogue who doesn't use Outrider | answer in 0.4 s; slots: 8 with a link, 1 with an ID only, 9 empty, 0 secret; 8 item levels read; `GetInspectSpecialization` = 1488 (a spec ID); Classic `GetNumTalentTabs` = nil (missing); **`INSPECT_TRAIT_CONFIG_ID` = -1 works**: `C_Traits.GetConfigInfo(-1)` gave 1 tree, 54 nodes read, 0 ranked (expected at level 7: talents start at 10); `C_Traits.GenerateInspectImportString` gave a 35-character string |
+| 08:24:02 | **roster**, party of 2 | 1 member unit; role readable (DAMAGER = 1); `CanInspect` true; in inspect range |
+| 08:18 | FarmLab loot lines (not Vanguard, but confirms the chat format) | `You receive loot: |cnIQ1:|Hitem:...|h[Linen Cloth]|h|r` parses on Forever |
+
+What this settles: **other players' gear, spec and talent tree can be read by one installation on Forever**, through the modern Traits inspect config (-1), not the Classic talent API. VG00-05's acceptance item ("one non-user inspected with owner present") is met. Still to confirm: a player with talent points spent (ranked nodes greater than 0), a raid roster with subgroups, and a boss kill (`ENCOUNTER_END`).

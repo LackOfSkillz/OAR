@@ -48,7 +48,7 @@
       ],
       "implementation": "Verify roster/class/level/role/subgroup APIs and safe contexts on Forever.",
       "acceptance": "Real client build matrix or explicit blocked status; unknown fallback tested.",
-      "status": "tests green / needs game",
+      "status": "party sample passed 2026-11-26; raid roster pending",
       "evidence": "docs/vanguard/VG00-04-06_CAPABILITY_MATRIX.md",
       "updated": "2026-11-26"
     },
@@ -61,7 +61,7 @@
       ],
       "implementation": "Verify CanInspect/NotifyInspect/INSPECT_READY, item slots and talent interfaces; no forbidden event registration.",
       "acceptance": "One non-user inspected with owner present; range, combat, manual Inspect and failure behavior recorded.",
-      "status": "tests green / needs game",
+      "status": "live sample passed (one non-user inspected 2026-11-26); ranked talents still to see",
       "evidence": "docs/vanguard/VG00-04-06_CAPABILITY_MATRIX.md",
       "updated": "2026-11-26"
     },
