@@ -1,8 +1,8 @@
 # Vanguard independent review packet: VG00-GATE
 
 - **Phase / gate:** VG00 (baseline, policy and feasibility) / VG00-GATE. Submitted 2026-11-26 for ChatGPT's independent review. Gary's approval is needed before VG01.
-- **Baseline / candidate / branch:** approved baseline `c2ef910` (Release 0.6.0). Candidate `ca73e4a` (VG00-01..08, one commit). Branch `ai/outrider-personal-intelligence`. Not merged to `main`, not released.
-- **CI:** see the exact-SHA run on GitHub Actions for `ca73e4a` (link added on push; if the run is missing or blocked by billing, it is recorded as missing, not as a pass). Local: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython`, giving **1528 passed, 0 failed, 0 syntax errors; companion tests passed (16)** on 2026-11-26 (1,521 before VG00, plus 7 new).
+- **Baseline / candidate / branch:** approved baseline `c2ef910` (Release 0.6.0). Candidate `951a9a0`: VG00-01..08 in `ca73e4a`, plus one unrelated FarmLab fix on top (`951a9a0`: loot-window drop counting and table mouse-wheel handoff in `UI/WidgetsExtra.lua`; reviewers may skip it or check it as a regression). Branch `ai/outrider-personal-intelligence`. Not merged to `main`, not released.
+- **CI:** exact-SHA run for `951a9a0`: https://github.com/LackOfSkillz/OAR/actions/runs/45826882185 (in progress when this packet was written; its result has to be read from that page, not assumed). Local: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/test.ps1 -RequirePython`, giving **1530 passed, 0 failed, 0 syntax errors; companion tests passed** on 2026-11-26 at `951a9a0` (1,521 before VG00, 7 new VG00 tests, 2 for the FarmLab fix).
 
 ## Microtask matrix
 
@@ -47,7 +47,7 @@ VG00-03. Probe samples hold counts and shapes only. Test `leaks()` scans every s
 
 1. **Live:** Gary in a group: join, hover each member, kill one boss, log out. This gives VG00-04/05/06 real samples. Also the long performance session.
 2. **Owner decisions:** D27 approval; inspect cache lifetime; named history with friends; whether hover inspect stays automatic.
-3. **CI:** exact-SHA run status to be confirmed after push.
+3. **CI:** run 45826882185 for `951a9a0` was in progress when this packet was written.
 
 ## Developer recommendation (not an independent approval)
 
