@@ -41,6 +41,13 @@ function M:OnEnable()
     local n = mod.meterFights
     ns.Timer.After(1, function() ns.Probe:DamageMeter("after fight " .. n) end, "autocheck:meter")
   end)
+  -- Vanguard VG00-04/06: what one installation can read about the group
+  -- (a sample a few seconds after the group changes size, out of combat, at
+  -- most ROSTER_MAX per session) and what boss events carry.
+  self.rosterSamples, self.lastRosterSize = 0, nil
+  self:On("GROUP_ROSTER_UPDATE", self.OnRoster)
+  self:On("ENCOUNTER_START", function(mod, _, ...) mod:OnEncounter("ENCOUNTER_START", ...) end)
+  self:On("ENCOUNTER_END", function(mod, _, ...) mod:OnEncounter("ENCOUNTER_END", ...) end)
   self:On("PLAYER_LOGOUT", self.OnLogout)
   self:On("OTR_TESTBUTTON_CLICKED", self.OnTestClick)
   local g = ns.db.global
@@ -60,6 +67,34 @@ function M:OnTestClick(_, macro)
     self.swapped = nil
     self:Info("test button verified: macro %s set during combat ran after combat", tostring(macro))
   end
+end
+
+M.ROSTER_MAX, M.ENCOUNTER_MAX = 6, 10
+
+function M:OnRoster()
+  if self.rosterSamples >= M.ROSTER_MAX or self.rosterTimer then return end
+  local n = tonumber(ns.Compat.Readable(ns.Compat.Call("GetNumGroupMembers"))) or 0
+  if n == self.lastRosterSize or n == 0 then return end
+  self.rosterTimer = ns.Timer.After(3, function() M:SampleRoster() end, "autocheck:roster")
+end
+
+function M:SampleRoster()
+  self.rosterTimer = nil
+  if ns.Compat.InCombat() then
+    self.rosterTimer = ns.Timer.After(5, function() M:SampleRoster() end, "autocheck:roster")
+    return
+  end
+  local n = tonumber(ns.Compat.Readable(ns.Compat.Call("GetNumGroupMembers"))) or 0
+  if n == 0 or n == self.lastRosterSize then return end
+  self.lastRosterSize = n
+  self.rosterSamples = self.rosterSamples + 1
+  ns.Probe:Roster("group of " .. n)
+end
+
+function M:OnEncounter(event, ...)
+  self.encounters = (self.encounters or 0) + 1
+  if self.encounters > M.ENCOUNTER_MAX then return end
+  ns.Probe:Encounter(event, ...)
 end
 
 function M:OnLogout()

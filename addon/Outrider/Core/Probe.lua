@@ -104,7 +104,23 @@ Probe.APIS = {
   { "C_PartyInfo.InviteUnit", "P8" }, { "C_GuildInfo.Invite", "P8" }, { "CanGuildInvite", "P8" }, { "GetGuildRosterInfo", "P8" }, { "GetClassInfo", "P8" },
   { "C_BattleNet.GetFriendAccountInfo", "P8" }, { "BNGetNumFriends", "P8" }, { "IsInGuild", "P8" },
   { "IsTrialAccount", "P8" }, { "IsVeteranTrialAccount", "P8" }, { "GetGuildRosterInfo", "P8" },
+  -- Vanguard VG00-04..06: group roster, inspection and encounter reads
+  -- (presence only here; Probe:Roster/Inspect/Encounter record what they return)
+  { "IsInGroup", "VG" }, { "IsInRaid", "VG" }, { "GetRaidRosterInfo", "VG", "raid subgroup, role, online" },
+  { "UnitGroupRolesAssigned", "VG", "assigned role" }, { "UnitFullName", "VG" }, { "UnitIsConnected", "VG" },
+  { "UnitIsGroupLeader", "VG" }, { "GetNumSubgroupMembers", "VG" }, { "C_PartyInfo.GetMinLevel", "VG" },
+  { "CanInspect", "VG" }, { "NotifyInspect", "VG" }, { "ClearInspectPlayer", "VG" },
+  { "GetInventoryItemLink", "VG" }, { "GetInventoryItemID", "VG" }, { "C_Item.GetDetailedItemLevelInfo", "VG" },
+  { "GetInspectSpecialization", "VG", "inspected spec" }, { "GetTalentTabInfo", "VG", "Classic talent tabs" },
+  { "C_Traits.GenerateInspectImportString", "VG", "inspected talents (modern)" },
+  { "C_SpecializationInfo.GetSpecialization", "VG" }, { "C_SpecializationInfo.GetSpecializationInfo", "VG" },
+  { "GetInstanceInfo", "VG" }, { "GetDifficultyInfo", "VG" }, { "EJ_GetEncounterInfo", "VG", "encounter journal" },
+  { "C_EncounterJournal.GetEncountersOnMap", "VG" }, { "GetNumSavedInstances", "VG" }, { "GetSavedInstanceInfo", "VG" },
+  { "DoReadyCheck", "VG", "presence only; Outrider never calls it" }, { "GetReadyCheckStatus", "VG" },
 }
+
+-- Constants worth knowing for inspect (read, never called).
+Probe.CONSTANTS = { "Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID", "MAX_RAID_MEMBERS", "MAX_PARTY_MEMBERS" }
 
 Probe.EVENTS = {
   "NAME_PLATE_UNIT_ADDED", "UPDATE_MOUSEOVER_UNIT", "PLAYER_TARGET_CHANGED", "VIGNETTE_MINIMAP_UPDATED",
@@ -116,6 +132,11 @@ Probe.EVENTS = {
   "UNIT_COMBAT", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_THREAT_LIST_UPDATE", "PLAYER_XP_UPDATE",
   "DAMAGE_METER_COMBAT_SESSION_UPDATED", "DAMAGE_METER_CURRENT_SESSION_UPDATED", "DAMAGE_METER_RESET",
   "ENCOUNTER_TIMELINE_EVENT_ADDED", "COOLDOWN_VIEWER_DATA_LOADED",
+  -- Vanguard VG00: group, inspect and encounter events
+  "GROUP_ROSTER_UPDATE", "INSPECT_READY", "PLAYER_ROLES_ASSIGNED", "ROLE_CHANGED_INFORM",
+  "READY_CHECK", "READY_CHECK_CONFIRM", "READY_CHECK_FINISHED", "ENCOUNTER_START", "ENCOUNTER_END",
+  "BOSS_KILL", "INSTANCE_ENCOUNTER_ENGAGE_UNIT", "UPDATE_INSTANCE_INFO", "PLAYER_DIFFICULTY_CHANGED",
+  "LFG_COMPLETION_REWARD", "RAID_INSTANCE_WELCOME", "INSTANCE_LOCK_START", "SCENARIO_COMPLETED",
 }
 -- Never tested by registering: on Forever even trying makes Blizzard block
 -- Outrider and offer to disable it (seen 2026-11-11). See ns.Events.FORBIDDEN.
@@ -130,6 +151,11 @@ function Probe:Run()
   out.constants.MAX_ACCOUNT_MACROS = rawget(_G, "MAX_ACCOUNT_MACROS")
   out.constants.MAX_CHARACTER_MACROS = rawget(_G, "MAX_CHARACTER_MACROS")
   out.constants.NUM_BAG_SLOTS = rawget(_G, "NUM_BAG_SLOTS")
+  for _, path in ipairs(self.CONSTANTS) do
+    local v = ns.Compat.Resolve and ns.Compat.Resolve(path)
+    if v == nil then v = rawget(_G, path) end
+    out.constants[path] = (type(v) == "number" or type(v) == "string" or type(v) == "boolean") and v or (v ~= nil and type(v) or "missing")
+  end
 
   local present, missing = 0, 0
   for _, row in ipairs(self.APIS) do
@@ -326,6 +352,175 @@ function Probe:DamageMeter(why)
   local dmg = meterTypes.DamageDone or 0
   if guid then try("GetCombatSessionSourceFromID(newest, DamageDone, player)", dm.GetCombatSessionSourceFromID, newest, dmg, guid) end
   if petGuid then try("GetCombatSessionSourceFromID(newest, DamageDone, pet)", dm.GetCombatSessionSourceFromID, newest, dmg, petGuid) end
+end
+
+-- ------------------------------------------------------------------ Vanguard VG00
+-- What the client lets one installation read about its group, an inspected
+-- player and a boss encounter. Capability facts only: counts, types and
+-- shapes. No names, realms, GUIDs or item links of other players are kept
+-- (Vanguard spec section 4: no identifiable profiles of non-consenting
+-- players). Samples go to ns.db.global.probeGroup (newest last); older ones
+-- move to the archive, never deleted. Read only, out of combat only.
+Probe.GROUP_KEEP = 12
+
+local function readable(v) return ns.Compat.Readable(v) end
+
+-- "yes" / "no value" / "secret" / "missing api" for one call
+local function status(path, ...)
+  local fn = ns.Compat.Resolve(path)
+  if type(fn) ~= "function" then return "missing api" end
+  local ok, v = pcall(fn, ...)
+  if not ok then return "error" end
+  if ns.Compat.IsSecret(v) then return "secret" end
+  if v == nil then return "no value" end
+  return "yes"
+end
+
+local function bump(t, k) t[k] = (t[k] or 0) + 1 end
+
+function Probe:KeepGroup(sample)
+  local g = ns.db.global
+  g.probeGroup = ns.KeepTable(g.probeGroup, "Probe:g.probeGroup") or {}
+  local list = g.probeGroup
+  list[#list + 1] = sample
+  while #list > self.GROUP_KEEP do
+    if not (ns.Archive and ns.Archive:Shift("probeGroup", list, { path = "global.probeGroup" })) then break end
+  end
+  return sample
+end
+
+-- The group units, party or raid. Pure apart from reads.
+function Probe.GroupUnits()
+  local units = {}
+  local raid = readable(ns.Compat.Call("IsInRaid"))
+  local n = tonumber(readable(ns.Compat.Call("GetNumGroupMembers"))) or 0
+  if raid then
+    for i = 1, math.min(n, 40) do units[#units + 1] = "raid" .. i end
+  else
+    for i = 1, math.min(math.max(n - 1, 0), 4) do units[#units + 1] = "party" .. i end
+  end
+  return units, raid and "raid" or (n > 0 and "party" or "solo"), n
+end
+
+-- VG00-04: which roster facts are readable for each member.
+function Probe:Roster(why)
+  local C = ns.Compat
+  local units, kind, n = Probe.GroupUnits()
+  local out = { kind = "roster", at = time(), why = why, group = kind, size = n, inCombat = C.InCombat(),
+    build = select(2, C.Call("GetBuildInfo")), fields = {}, roles = {}, classes = {}, subgroups = {}, units = #units }
+  local f = out.fields
+  for i, unit in ipairs(units) do
+    if readable(C.Call("UnitExists", unit)) then
+      bump(f, "exists")
+      for _, api in ipairs({ "UnitGUID", "UnitName", "UnitLevel", "UnitIsConnected", "UnitIsDeadOrGhost" }) do
+        f[api] = f[api] or {}
+        bump(f[api], status(api, unit))
+      end
+      local _, class = C.Call("UnitClass", unit)
+      class = readable(class)
+      bump(out.classes, type(class) == "string" and class or "unreadable")
+      local role = readable(C.Call("UnitGroupRolesAssigned", unit))
+      bump(out.roles, type(role) == "string" and role or "unreadable")
+      local inRange = C.Call("CheckInteractDistance", unit, 1)
+      f.inspectRange = f.inspectRange or {}
+      bump(f.inspectRange, ns.Compat.IsSecret(inRange) and "secret" or (inRange and "in range" or "out of range"))
+      f.CanInspect = f.CanInspect or {}
+      local can = C.Call("CanInspect", unit)
+      bump(f.CanInspect, ns.Compat.IsSecret(can) and "secret" or (can and "true" or "false"))
+    else
+      bump(f, "missing unit")
+    end
+    if kind == "raid" then
+      local _, rank, sub, level, _, fileName, _, online, dead, role, ml, combatRole = C.CallAll("GetRaidRosterInfo", i)
+      f.raidInfo = f.raidInfo or {}
+      bump(f.raidInfo, sub == nil and "no value" or (ns.Compat.IsSecret(sub) and "secret" or "yes"))
+      if type(readable(sub)) == "number" then bump(out.subgroups, readable(sub)) end
+      out.raidSample = out.raidSample or { rankType = type(rank), levelType = type(level), fileType = type(fileName),
+        onlineType = type(online), deadType = type(dead), roleType = type(role), mlType = type(ml), combatRole = type(readable(combatRole)) == "string" and readable(combatRole) or type(combatRole) }
+    end
+  end
+  out.me = { role = readable(C.Call("UnitGroupRolesAssigned", "player")), leader = readable(C.Call("UnitIsGroupLeader", "player")) and true or false }
+  self:KeepGroup(out)
+  local roles = {}
+  for k, v in pairs(out.roles) do roles[#roles + 1] = k .. "=" .. v end
+  table.sort(roles)
+  ns.Log:Info("probe", "roster (%s): %s of %d, %d units, roles %s, CanInspect %s, range %s", tostring(why), kind, n, #units,
+    table.concat(roles, " "), Probe.Shape(f.CanInspect), Probe.Shape(f.inspectRange))
+  return out
+end
+
+-- VG00-05: what an inspect returned for one unit. Called right after
+-- INSPECT_READY for a unit we (PlayerInfo's hover) or Blizzard's Inspect
+-- window asked about; secs = seconds from the request, when known.
+Probe.SLOTS = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }
+function Probe:Inspect(unit, source, secs)
+  local C = ns.Compat
+  local out = { kind = "inspect", at = time(), source = source, secs = secs, inCombat = C.InCombat(),
+    build = select(2, C.Call("GetBuildInfo")), slots = { link = 0, id = 0, none = 0, secret = 0 }, talents = {} }
+  local _, class = C.Call("UnitClass", unit)
+  out.class = readable(class)
+  out.level = readable(C.Call("UnitLevel", unit))
+  local ilvls = 0
+  for _, slot in ipairs(Probe.SLOTS) do
+    local link = C.Call("GetInventoryItemLink", unit, slot)
+    local id = C.Call("GetInventoryItemID", unit, slot)
+    if ns.Compat.IsSecret(link) or ns.Compat.IsSecret(id) then out.slots.secret = out.slots.secret + 1
+    elseif link then
+      out.slots.link = out.slots.link + 1
+      local lvl = C.Call("C_Item.GetDetailedItemLevelInfo", link)
+      if type(readable(lvl)) == "number" then ilvls = ilvls + 1 end
+    elseif id then out.slots.id = out.slots.id + 1
+    else out.slots.none = out.slots.none + 1 end
+  end
+  out.slots.itemLevels = ilvls
+  local t = out.talents
+  t.spec = Probe.Shape(C.Call("GetInspectSpecialization", unit))
+  t.classicTabs = Probe.Shape(C.Call("GetNumTalentTabs", true))
+  t.classicTab1 = Probe.Shape({ C.Call("GetTalentTabInfo", 1, true) })
+  local cfg = C.Resolve("Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID")
+  t.inspectConfigID = Probe.Shape(cfg)
+  if type(cfg) == "number" then
+    local info = C.Call("C_Traits.GetConfigInfo", cfg)
+    t.configInfo = Probe.Shape(info)
+    local trees = type(info) == "table" and info.treeIDs
+    if type(trees) == "table" and trees[1] then
+      local nodes = C.Call("C_Traits.GetTreeNodes", trees[1])
+      local ranked, seen = 0, 0
+      for i = 1, math.min(type(nodes) == "table" and #nodes or 0, 120) do
+        local node = C.Call("C_Traits.GetNodeInfo", cfg, nodes[i])
+        if type(node) == "table" then
+          seen = seen + 1
+          local r = readable(node.activeRank) or readable(node.currentRank)
+          if type(r) == "number" and r > 0 then ranked = ranked + 1 end
+        end
+      end
+      t.nodes = { tree = #trees, read = seen, ranked = ranked }
+    end
+  end
+  local s = C.Call("C_Traits.GenerateInspectImportString", unit)
+  t.importString = ns.Compat.IsSecret(s) and "secret" or (type(s) == "string" and ("string, " .. #s .. " chars") or Probe.Shape(s))
+  self:KeepGroup(out)
+  ns.Log:Info("probe", "inspect (%s, %s %s, %s s): slots link=%d id=%d none=%d secret=%d ilvl=%d; spec %s; classic tabs %s; traits config %s nodes %s; import %s",
+    tostring(source), tostring(out.class), tostring(out.level), secs and string.format("%.1f", secs) or "?", out.slots.link, out.slots.id,
+    out.slots.none, out.slots.secret, ilvls, t.spec, t.classicTabs, t.inspectConfigID, Probe.Shape(t.nodes), t.importString)
+  return out
+end
+
+-- VG00-06: what an encounter event carries, and the instance around it.
+function Probe:Encounter(event, id, name, difficulty, size, success)
+  local C = ns.Compat
+  local inst = { C.CallAll("GetInstanceInfo") }
+  local out = { kind = "encounter", at = time(), event = event, build = select(2, C.Call("GetBuildInfo")),
+    id = readable(id), name = readable(name), difficulty = readable(difficulty), size = readable(size),
+    success = Probe.Shape(success), idType = type(id),
+    instance = { name = readable(inst[1]), type = readable(inst[2]), difficultyID = readable(inst[3]),
+      difficultyName = readable(inst[4]), maxPlayers = readable(inst[5]), instanceID = readable(inst[8]) },
+    group = select(2, Probe.GroupUnits()), groupSize = select(3, Probe.GroupUnits()) }
+  self:KeepGroup(out)
+  ns.Log:Info("probe", "%s: id %s (%s) %s, difficulty %s size %s success %s; instance %s id %s type %s max %s",
+    tostring(event), tostring(out.id), out.idType, tostring(out.name), tostring(out.difficulty), tostring(out.size), out.success,
+    tostring(out.instance.name), tostring(out.instance.instanceID), tostring(out.instance.type), tostring(out.instance.maxPlayers))
+  return out
 end
 
 function Probe:Summary()

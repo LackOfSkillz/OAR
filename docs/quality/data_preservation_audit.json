@@ -308,6 +308,17 @@
    "live_pending": null
   },
   {
+   "dataset": "probeGroup",
+   "saved_path": "global.probeGroup",
+   "retention_mechanism": "Probe.GROUP_KEEP",
+   "archive_destination": "global.archive.sets.probeGroup",
+   "tests": [
+    "tests/spec/vanguard_probe_spec.lua :: older samples move to the archive, none are lost"
+   ],
+   "behaviour_tested": true,
+   "live_pending": "VG00-04/05/06 in-game samples"
+  },
+  {
    "dataset": "farmRuns",
    "saved_path": "global.farmlab.runs",
    "retention_mechanism": "FarmLab.KEEP",

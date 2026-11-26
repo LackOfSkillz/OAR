@@ -1,0 +1,891 @@
+{
+  "version": "1.0",
+  "program": "VG",
+  "tasks": [
+    {
+      "id": "VG00-01",
+      "phase": 0,
+      "title": "Pin baseline and inventory",
+      "depends_on": [],
+      "implementation": "Record exact approved commit, existing tests, source contracts, data hashes and outstanding release gates.",
+      "acceptance": "Baseline manifest and dependency map; no new implementation before review.",
+      "status": "done",
+      "evidence": "docs/vanguard/VG00-01_BASELINE.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-02",
+      "phase": 0,
+      "title": "Competitive parity matrix",
+      "depends_on": [
+        "VG00-01"
+      ],
+      "implementation": "Inspect advertised features and versions for all sources in spec; plan reproducible tests.",
+      "acceptance": "Per-feature source, verification status, scenario, gap and licensing note; no unsupported exclusivity claims.",
+      "status": "done (advertised features only; no competitor tested in game)",
+      "evidence": "docs/vanguard/VG00-02_COMPETITIVE_MATRIX.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-03",
+      "phase": 0,
+      "title": "Policy and privacy ADR",
+      "depends_on": [
+        "VG00-02"
+      ],
+      "implementation": "Reconcile D18, owner override and third-party transient cache policy.",
+      "acceptance": "Threat model and explicit retention/consent matrix; unresolved decisions block relevant work.",
+      "status": "proposed; awaiting review and owner approval (D27)",
+      "evidence": "docs/vanguard/VG00-03_POLICY_PRIVACY_ADR.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-04",
+      "phase": 0,
+      "title": "Native roster capability probe",
+      "depends_on": [
+        "VG00-03"
+      ],
+      "implementation": "Verify roster/class/level/role/subgroup APIs and safe contexts on Forever.",
+      "acceptance": "Real client build matrix or explicit blocked status; unknown fallback tested.",
+      "status": "tests green / needs game",
+      "evidence": "docs/vanguard/VG00-04-06_CAPABILITY_MATRIX.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-05",
+      "phase": 0,
+      "title": "Native inspection capability probe",
+      "depends_on": [
+        "VG00-04"
+      ],
+      "implementation": "Verify CanInspect/NotifyInspect/INSPECT_READY, item slots and talent interfaces; no forbidden event registration.",
+      "acceptance": "One non-user inspected with owner present; range, combat, manual Inspect and failure behavior recorded.",
+      "status": "tests green / needs game",
+      "evidence": "docs/vanguard/VG00-04-06_CAPABILITY_MATRIX.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-06",
+      "phase": 0,
+      "title": "Encounter event feasibility",
+      "depends_on": [
+        "VG00-05"
+      ],
+      "implementation": "Verify allowed encounter/instance events, IDs, success/failure semantics, available raid content.",
+      "acceptance": "No prohibited events; unavailable outcomes explicitly unknown.",
+      "status": "tests green / needs game",
+      "evidence": "docs/vanguard/VG00-04-06_CAPABILITY_MATRIX.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-07",
+      "phase": 0,
+      "title": "Data and modeling feasibility",
+      "depends_on": [
+        "VG00-06"
+      ],
+      "implementation": "Inventory current gear, talents, role weights, Forge gaps, catalog sources and archived run records.",
+      "acceptance": "Nine-class coverage matrix and supported mechanics; no inferred missing mechanics.",
+      "status": "done",
+      "evidence": "docs/vanguard/VG00-07_DATA_MODEL_FEASIBILITY.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-08",
+      "phase": 0,
+      "title": "Performance baseline",
+      "depends_on": [
+        "VG00-07"
+      ],
+      "implementation": "Measure existing addon load, frame timing, memory and timer counts; define reference hardware.",
+      "acceptance": "Reproducible baseline and agreed provisional budgets.",
+      "status": "done (short session; long session pending)",
+      "evidence": "docs/vanguard/VG00-08_PERFORMANCE_BASELINE.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG00-GATE",
+      "phase": 0,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG00-08"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "submitted for independent review",
+      "evidence": "docs/vanguard/VG00_GATE_REVIEW_PACKET.md",
+      "updated": "2026-11-26"
+    },
+    {
+      "id": "VG01-01",
+      "phase": 1,
+      "title": "Feature lifecycle",
+      "depends_on": [
+        "VG00-GATE"
+      ],
+      "implementation": "Create preview module using existing module/events/timer conventions.",
+      "acceptance": "Disabled state makes zero scan requests; enable/disable repeatable.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-02",
+      "phase": 1,
+      "title": "Canonical roster adapter",
+      "depends_on": [
+        "VG01-01"
+      ],
+      "implementation": "Normalize party/raid membership, subgroup, identity and role evidence.",
+      "acceptance": "Mixed realms, same names, unreadable GUIDs, offline and churn fixtures.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-03",
+      "phase": 1,
+      "title": "Observation schema",
+      "depends_on": [
+        "VG01-02"
+      ],
+      "implementation": "Implement validated statuses, sources, timestamps, revisions and finite numeric fields.",
+      "acceptance": "Unknown cannot become zero; secret values rejected before computation.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-04",
+      "phase": 1,
+      "title": "Inspect broker",
+      "depends_on": [
+        "VG01-03"
+      ],
+      "implementation": "Build one-in-flight queued request state machine, deadlines and rate/backoff.",
+      "acceptance": "No overlapping requests; timeout/retry limits; cancellation deterministic.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-05",
+      "phase": 1,
+      "title": "Inspect ownership and conflicts",
+      "depends_on": [
+        "VG01-04"
+      ],
+      "implementation": "Respect native Inspect UI and competing inspection, combat and zone transitions.",
+      "acceptance": "No stolen inspection; late result cannot populate wrong member.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-06",
+      "phase": 1,
+      "title": "Slot metadata normalization",
+      "depends_on": [
+        "VG01-05"
+      ],
+      "implementation": "Resolve slot links and item data asynchronously with generation checks.",
+      "acceptance": "Empty vs unavailable distinct; delayed callbacks ignored after cancellation.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-07",
+      "phase": 1,
+      "title": "Talent and role evidence",
+      "depends_on": [
+        "VG01-06"
+      ],
+      "implementation": "Use only verified inspected talent APIs; support user-assigned role with tentative inference.",
+      "acceptance": "No fabricated spec, explicit role takes precedence, all unavailable talent paths usable.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-08",
+      "phase": 1,
+      "title": "Transient peer cache",
+      "depends_on": [
+        "VG01-07"
+      ],
+      "implementation": "Limit current-roster cache, expiration and identity lifetime.",
+      "acceptance": "No identifiable non-consenting peer data in SavedVariables, export or logs; roster leave clears view.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-09",
+      "phase": 1,
+      "title": "Scan interface",
+      "depends_on": [
+        "VG01-08"
+      ],
+      "implementation": "Show roster-only view, scan progress, refresh and cancellation.",
+      "acceptance": "One-user party works with partial data; no request from rendering or combat.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-10",
+      "phase": 1,
+      "title": "Integration and load tests",
+      "depends_on": [
+        "VG01-09"
+      ],
+      "implementation": "Exercise 5/40 roster, delayed item data, 100 cancellations and 200 roster changes.",
+      "acceptance": "Bounded timers/memory/requests, no stale member association, full regression suite.",
+      "status": "pending"
+    },
+    {
+      "id": "VG01-GATE",
+      "phase": 1,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG01-10"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-01",
+      "phase": 2,
+      "title": "Role evidence registry",
+      "depends_on": [
+        "VG01-GATE"
+      ],
+      "implementation": "Version role profiles by class, build and role; include hybrid cases.",
+      "acceptance": "All nine classes represented or explicitly unsupported; data sources and missing mechanics tracked.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-02",
+      "phase": 2,
+      "title": "Gear stat derivation",
+      "depends_on": [
+        "VG02-01"
+      ],
+      "implementation": "Reuse item data, enchant parsing and role weights; separate observed/derived values.",
+      "acceptance": "Golden fixtures for gear sets, missing slots, unknown enchants, stat units.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-03",
+      "phase": 2,
+      "title": "Tank adequacy",
+      "depends_on": [
+        "VG02-02"
+      ],
+      "implementation": "Assess verified survivability, mitigation, resistances and supported threat proxies.",
+      "acceptance": "No unsupported armor/avoidance formula; missing inputs widen range.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-04",
+      "phase": 2,
+      "title": "Healer adequacy",
+      "depends_on": [
+        "VG02-03"
+      ],
+      "implementation": "Assess verified mana, regeneration, healing and sustain proxies.",
+      "acceptance": "No invented HPS or mana endurance; model limitation visible.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-05",
+      "phase": 2,
+      "title": "DPS adequacy",
+      "depends_on": [
+        "VG02-04"
+      ],
+      "implementation": "Assess role-specific gear/talent indicators and bounded Forge outputs only when validated.",
+      "acceptance": "No numerical DPS from unsupported rotation/proc mechanics; tests for melee/ranged/caster.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-06",
+      "phase": 2,
+      "title": "Class utility registry",
+      "depends_on": [
+        "VG02-05"
+      ],
+      "implementation": "Model ability availability by level, talents, faction, scope and source.",
+      "acceptance": "Potential distinct from verified; absent only when established; no class-only skill assumption.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-07",
+      "phase": 2,
+      "title": "Stacking and scope rules",
+      "depends_on": [
+        "VG02-06"
+      ],
+      "implementation": "Implement independently verified exclusivity, party/raid scope and provider caps.",
+      "acceptance": "Duplicate/exclusive buffs do not inflate score; unknown rule stays unknown.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-08",
+      "phase": 2,
+      "title": "Personal prep profiles",
+      "depends_on": [
+        "VG02-07"
+      ],
+      "implementation": "Extend existing readiness checks for activity, role, duration and class essentials.",
+      "acceptance": "Food/reagents/ammo/consumables thresholds; carried vs bank separate; no auto-use.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-09",
+      "phase": 2,
+      "title": "Equipment and access checklist",
+      "depends_on": [
+        "VG02-08"
+      ],
+      "implementation": "Integrate enchants, empty slots, repairs, verified access/attunement and manual confirmations.",
+      "acceptance": "Missing vs unknown distinct; custom templates cannot masquerade as verified rules.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-10",
+      "phase": 2,
+      "title": "Journal and acquisition links",
+      "depends_on": [
+        "VG02-09"
+      ],
+      "implementation": "Reuse dungeon journal, quests, maps, loot and favorites; verify source/build status.",
+      "acceptance": "Missing eligible quests and possible upgrades link to existing UI; no copied proprietary data.",
+      "status": "pending"
+    },
+    {
+      "id": "VG02-GATE",
+      "phase": 2,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG02-10"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-01",
+      "phase": 3,
+      "title": "Versioned encounter catalog",
+      "depends_on": [
+        "VG02-GATE"
+      ],
+      "implementation": "Define instance and encounter IDs, sizes, ruleset, difficulty, verified requirements and source refs.",
+      "acceptance": "No assumed Classic mechanics or future unlocks; unknowns shown.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-02",
+      "phase": 3,
+      "title": "Access dependency graph",
+      "depends_on": [
+        "VG03-01"
+      ],
+      "implementation": "Model keys, quests, attunements and prerequisites using existing data.",
+      "acceptance": "AND/OR prerequisites and cycle guards; access unknown != access denied.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-03",
+      "phase": 3,
+      "title": "Coverage and readiness engine",
+      "depends_on": [
+        "VG03-02"
+      ],
+      "implementation": "Implement weighted intervals, known-only index and separate critical gates.",
+      "acceptance": "All-unknown cannot produce confident score; monotonicity, determinism and missing-critical tests.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-04",
+      "phase": 3,
+      "title": "Boss-specific risk matrix",
+      "depends_on": [
+        "VG03-03"
+      ],
+      "implementation": "Apply role and utility requirements per encounter.",
+      "acceptance": "Distinct boss risks, reasons, source/build and evidence coverage; no probability label.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-05",
+      "phase": 3,
+      "title": "Readiness improvement candidates",
+      "depends_on": [
+        "VG03-04"
+      ],
+      "implementation": "Produce bounded gap actions for self and advisory text for peers.",
+      "acceptance": "Criticality, costs, alternatives and prerequisite tests; no actions on peers.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-06",
+      "phase": 3,
+      "title": "Nexus adapters",
+      "depends_on": [
+        "VG03-05"
+      ],
+      "implementation": "Reuse validated opportunity, budget, evidence and Act boundaries.",
+      "acceptance": "Actual producer-to-planner tests; stale/disabled/invalid actions rejected.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-07",
+      "phase": 3,
+      "title": "GearROI and supply integration",
+      "depends_on": [
+        "VG03-06"
+      ],
+      "implementation": "Connect item acquisition, crafting, existing inventory, AH and travel estimates.",
+      "acceptance": "Unknown cost never free; reserve protected; enchant depends on equipment decision.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-08",
+      "phase": 3,
+      "title": "Overview and boss matrix UI",
+      "depends_on": [
+        "VG03-07"
+      ],
+      "implementation": "Integrate overview, roster, evidence, boss tabs and clear unknown/expired states.",
+      "acceptance": "5/40 layout, accessible color+text, no hidden confidence caveats.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-09",
+      "phase": 3,
+      "title": "Personal checklist and report",
+      "depends_on": [
+        "VG03-08"
+      ],
+      "implementation": "Create reusable templates, actionable checklist and aggregate copy preview.",
+      "acceptance": "User initiated copy, no auto chat, identifying details excluded by default.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-10",
+      "phase": 3,
+      "title": "Context invalidation",
+      "depends_on": [
+        "VG03-09"
+      ],
+      "implementation": "Invalidate on roster/role/profile/catalog/time and relevant goal changes.",
+      "acceptance": "Old assessment unusable immediately; UI cannot keep stale success status.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-11",
+      "phase": 3,
+      "title": "Standalone acceptance scenario",
+      "depends_on": [
+        "VG03-10"
+      ],
+      "implementation": "Exercise full flow with no peer addon, desktop or internet.",
+      "acceptance": "Roster-only and partial native inspection provide useful accurate assessment; fallback documented.",
+      "status": "pending"
+    },
+    {
+      "id": "VG03-GATE",
+      "phase": 3,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG03-11"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-01",
+      "phase": 4,
+      "title": "Hypothetical roster model",
+      "depends_on": [
+        "VG03-GATE"
+      ],
+      "implementation": "Create immutable alternative rosters, bench, role overrides and locked positions.",
+      "acceptance": "Editing hypothetical state never mutates live roster.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-02",
+      "phase": 4,
+      "title": "Subgroup optimizer",
+      "depends_on": [
+        "VG04-01"
+      ],
+      "implementation": "Bounded deterministic search maximizing scoped verified coverage with constraints.",
+      "acceptance": "Small exhaustive reference agreement; 40-player termination; lock rules preserved.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-03",
+      "phase": 4,
+      "title": "Encounter and alternatives ranking",
+      "depends_on": [
+        "VG04-02"
+      ],
+      "implementation": "Compare candidate compositions against boss requirements and explain marginal changes.",
+      "acceptance": "No candidate falsely guarantees clear; infeasible case explained.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-04",
+      "phase": 4,
+      "title": "Assignment notes",
+      "depends_on": [
+        "VG04-03"
+      ],
+      "implementation": "Support reusable boss-specific manual role/utility assignments and copyable summary.",
+      "acceptance": "No invitations, marks, group changes or automated messaging; preview only.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-05",
+      "phase": 4,
+      "title": "Fellowship protocol extension",
+      "depends_on": [
+        "VG04-04"
+      ],
+      "implementation": "Add versioned opt-in preparation payload with field preview, scope, sender validation and limits.",
+      "acceptance": "Old clients compatible; malformed packets rejected; nonusers retain native-only assessment.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-06",
+      "phase": 4,
+      "title": "Consent and expiry",
+      "depends_on": [
+        "VG04-05"
+      ],
+      "implementation": "Handle immediate revoke, leave, stale message replay and opt-out.",
+      "acceptance": "Validated revoke bypasses ordinary update rate limit; late packet cannot revive data.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-07",
+      "phase": 4,
+      "title": "Mixed-source reconciliation",
+      "depends_on": [
+        "VG04-06"
+      ],
+      "implementation": "Merge native evidence, optional peer report and manual confirmation without silent overwrite.",
+      "acceptance": "Conflicts surfaced; timestamps and source retained; no inferred consent.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-08",
+      "phase": 4,
+      "title": "Mixed installation live tests",
+      "depends_on": [
+        "VG04-07"
+      ],
+      "implementation": "Test one-to-many and two-peer sharing, raid roster, duplicates and manual Inspect.",
+      "acceptance": "Actual evidence packet or outstanding live blocker explicitly recorded.",
+      "status": "pending"
+    },
+    {
+      "id": "VG04-GATE",
+      "phase": 4,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG04-08"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-01",
+      "phase": 5,
+      "title": "Run and attempt contract",
+      "depends_on": [
+        "VG04-GATE"
+      ],
+      "implementation": "Define run identity, target outcomes, censoring, build/difficulty and aggregate features.",
+      "acceptance": "No member identity persisted without consent; unknown/abandon not counted as confirmed wipe.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-02",
+      "phase": 5,
+      "title": "Outcome adapter",
+      "depends_on": [
+        "VG05-01"
+      ],
+      "implementation": "Reuse PlaySession, DungeonJournal, Alts, Outcomes and permitted encounter events.",
+      "acceptance": "Reload/rejoin/duplicate event and roster-change tests; no combat log.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-03",
+      "phase": 5,
+      "title": "Immutable history and recovery",
+      "depends_on": [
+        "VG05-02"
+      ],
+      "implementation": "Persist anonymized run observations using existing archive; fail-safe migration/staging.",
+      "acceptance": "Failure injection, content manifest, backup and restoration; zero unauthorized loss.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-04",
+      "phase": 5,
+      "title": "Historical query and report",
+      "depends_on": [
+        "VG05-03"
+      ],
+      "implementation": "Query active and archived history scoped to cohort/session; bounded indexing.",
+      "acceptance": "Older runs remain discoverable; no silent wrong-session cap; no frame-blocking scan.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-05",
+      "phase": 5,
+      "title": "AfterAction feedback",
+      "depends_on": [
+        "VG05-04"
+      ],
+      "implementation": "Link pre-run assessment revision with outcome; report observed vs inferred.",
+      "acceptance": "Outcome cannot mutate original prediction; no causal claims from correlation.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-06",
+      "phase": 5,
+      "title": "Descriptive historical rates",
+      "depends_on": [
+        "VG05-05"
+      ],
+      "implementation": "Implement eligible denominator, censor counts, Wilson intervals and time quantiles.",
+      "acceptance": "Sparse/unknown cases show uncertainty or abstain; hand-calculated fixtures.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-07",
+      "phase": 5,
+      "title": "Forecast validation plan",
+      "depends_on": [
+        "VG05-06"
+      ],
+      "implementation": "Pre-register outcome targets, features, minimum cohort, split and metrics.",
+      "acceptance": "Leakage-free chronological/run grouped protocol; independent sign-off before fitting.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-08",
+      "phase": 5,
+      "title": "Forecast gate and model contract",
+      "depends_on": [
+        "VG05-07"
+      ],
+      "implementation": "Build versioned interface and default abstention; optional model only with eligible evidence.",
+      "acceptance": "Synthetic training cannot authorize displayed probabilities; unsupported build/coverage abstains.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-09",
+      "phase": 5,
+      "title": "Calibration evaluation",
+      "depends_on": [
+        "VG05-08"
+      ],
+      "implementation": "If real adequate data available, compare model to prevalence and simple baseline; report intervals and drift.",
+      "acceptance": "Held-out metrics and coverage documented; otherwise mark blocked, not failed/complete model.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-10",
+      "phase": 5,
+      "title": "Forecast UI and feedback",
+      "depends_on": [
+        "VG05-09"
+      ],
+      "implementation": "Present target/horizon, confidence interval, coverage, evidence and abstain reasons.",
+      "acceptance": "No readiness percentage presented as win odds; full-clear distinct from individual boss forecast.",
+      "status": "pending"
+    },
+    {
+      "id": "VG05-GATE",
+      "phase": 5,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG05-10"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-01",
+      "phase": 6,
+      "title": "Security and privacy audit",
+      "depends_on": [
+        "VG05-GATE"
+      ],
+      "implementation": "Review event registrations, native scan, peer messages, storage, export, diagnostics and advice actions.",
+      "acceptance": "No restricted APIs, no secret computation, no identifiable nonconsenting peer persistence.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-02",
+      "phase": 6,
+      "title": "Data preservation audit",
+      "depends_on": [
+        "VG06-01"
+      ],
+      "implementation": "Compare full contents of original project data packs and saved migrations; inspect archive integration.",
+      "acceptance": "Zero unauthorized loss; unverifiable data blocks applicable gate; legitimate corrections versioned.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-03",
+      "phase": 6,
+      "title": "Performance and lifecycle",
+      "depends_on": [
+        "VG06-02"
+      ],
+      "implementation": "Run synthetic and real-client timing/memory/taint tests and inspect conflicts.",
+      "acceptance": "Meet agreed measured budgets or explicit unresolved blocker; no timer/frame leaks.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-04",
+      "phase": 6,
+      "title": "Class, locale and accessibility",
+      "depends_on": [
+        "VG06-03"
+      ],
+      "implementation": "Verify all supported roles, localization, resolution, keyboard focus and UI labels.",
+      "acceptance": "Matrix with actual verified cases and unsupported feature states.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-05",
+      "phase": 6,
+      "title": "Competitive scenario benchmark",
+      "depends_on": [
+        "VG06-04"
+      ],
+      "implementation": "Run same permitted tasks against named competitor versions where accessible.",
+      "acceptance": "Evidence of accuracy/coverage/usability; untested competitors marked unknown.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-06",
+      "phase": 6,
+      "title": "Release regression and docs",
+      "depends_on": [
+        "VG06-05"
+      ],
+      "implementation": "Run clean full suite and exact-SHA CI; document settings, limits, data handling, fallback and release notes.",
+      "acceptance": "No new regression/security findings; no skipped claims; no premature superiority claim.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-07",
+      "phase": 6,
+      "title": "Live acceptance and rollout",
+      "depends_on": [
+        "VG06-06"
+      ],
+      "implementation": "Complete L01-L14 as applicable, separate future raid and model gates; confirm owner authorization.",
+      "acceptance": "Preview for unverified capability; release gate explicitly accepted; no unauthorized publication.",
+      "status": "pending"
+    },
+    {
+      "id": "VG06-GATE",
+      "phase": 6,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG06-07"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-01",
+      "phase": 7,
+      "title": "Desktop authorization and reuse assessment",
+      "depends_on": [
+        "VG06-GATE"
+      ],
+      "implementation": "Require separate owner approval and compatible OCC architecture; map existing companion.",
+      "acceptance": "No code before approval; local-first, addon independent.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-02",
+      "phase": 7,
+      "title": "Privacy-filtered import/export",
+      "depends_on": [
+        "VG07-01"
+      ],
+      "implementation": "Define versioned aggregate run and approved profile contracts; player-approved exchange after game closes.",
+      "acceptance": "Cross-language fixtures, consent filtering, no live bridge.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-03",
+      "phase": 7,
+      "title": "Knowledge Vault integration",
+      "depends_on": [
+        "VG07-02"
+      ],
+      "implementation": "Store immutable anonymized group history and indexes in existing vault.",
+      "acceptance": "Idempotent import, scoped queries, backup/restore; no source deletion.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-04",
+      "phase": 7,
+      "title": "Advanced roster and scenario analysis",
+      "depends_on": [
+        "VG07-03"
+      ],
+      "implementation": "Extend Oracle/Forge for hypothetical group simulations with verified mechanics.",
+      "acceptance": "Uncertainty and model limits; no direct gameplay controls.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-05",
+      "phase": 7,
+      "title": "Forecast offline pipeline",
+      "depends_on": [
+        "VG07-04"
+      ],
+      "implementation": "Implement only approved training workflow on representative consent-compatible records.",
+      "acceptance": "Reproducible dataset hashes, chronological evaluation, calibrated model version and abstention.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-06",
+      "phase": 7,
+      "title": "Guild preparation and reports",
+      "depends_on": [
+        "VG07-05"
+      ],
+      "implementation": "Optional aggregate shared objectives and manual export; no public player rankings.",
+      "acceptance": "Explicit consent and scope; no uploads or integrations without separate permission.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-07",
+      "phase": 7,
+      "title": "Desktop integration verification",
+      "depends_on": [
+        "VG07-06"
+      ],
+      "implementation": "Clean install, export/import, malformed files, offline behavior and regression.",
+      "acceptance": "Core addon remains independent; release authorized separately.",
+      "status": "pending"
+    },
+    {
+      "id": "VG07-GATE",
+      "phase": 7,
+      "title": "Independent review gate",
+      "depends_on": [
+        "VG07-07"
+      ],
+      "implementation": "Prepare review packet and stop.",
+      "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
+      "status": "pending"
+    }
+  ]
+}

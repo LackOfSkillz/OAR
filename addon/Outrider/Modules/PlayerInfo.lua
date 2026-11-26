@@ -204,8 +204,35 @@ function M:Read(unit, guid)
   return info
 end
 
+-- Vanguard VG00-05: record what this inspect let us read (capability facts
+-- only, no names or gear links), at most PROBE_MAX per session and once per
+-- player. Runs before ClearInspectPlayer so the data is still there.
+M.PROBE_MAX = 6
+function M:ProbeInspect(guid)
+  if not ns.Probe or not ns.Probe.Inspect or C.InCombat() then return end
+  self.probed = self.probed or { n = 0 }
+  if self.probed[guid] or self.probed.n >= M.PROBE_MAX then return end
+  local unit, source, secs
+  if guid == self.pending and self.pendingUnit and readable(C.Call("UnitGUID", self.pendingUnit)) == guid then
+    unit, source = self.pendingUnit, "tooltip hover"
+    secs = (GetTime and GetTime() or time()) - (self.lastAsk or 0)
+  elseif guid == self.pending and readable(C.Call("UnitGUID", "mouseover")) == guid then
+    unit, source = "mouseover", "tooltip hover"
+    secs = (GetTime and GetTime() or time()) - (self.lastAsk or 0)
+  else
+    for _, u in ipairs({ "target", "mouseover" }) do
+      if readable(C.Call("UnitGUID", u)) == guid then unit, source = u, "inspect window" break end
+    end
+  end
+  if not unit then return end
+  self.probed[guid] = true
+  self.probed.n = self.probed.n + 1
+  ns.Safe("PlayerInfo:ProbeInspect", ns.Probe.Inspect, ns.Probe, unit, source, secs)
+end
+
 function M:OnInspect(guid)
   guid = readable(guid)
+  if guid then self:ProbeInspect(guid) end
   if not guid or guid ~= self.pending then return end
   local unit = self.pendingUnit
   self.pending, self.pendingUnit = nil, nil

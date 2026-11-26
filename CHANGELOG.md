@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased (branch ai/outrider-personal-intelligence, not checked in game yet)
+
+- **Group checks for Vanguard (planning, nothing new on screen):** when you join a group, hover a player or pull a boss, Outrider notes what the game lets it read: roles, classes, whether inspect works and which talent reads exist, and what boss events report. It keeps counts only, never other players' names or gear.
+
 ## 0.6.0 (2026-11-26)
 
 - **FarmLab (Gold > FarmLab, `/ride farm`):** what each farm really pays. Dungeon runs time themselves; a Start/Stop timer covers outdoor farming. Each run keeps coin looted, the items you actually received (not just what a loot window showed) at vendor and auction prices from when they dropped, costs, and the real gold change. Compare farms by gold per hour (middle run, worst to best, how reliable), see rare drops with sample sizes, compare characters, revalue old loot at today's prices, and export CSV or JSON.
