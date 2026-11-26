@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Group check (preview, Dungeons > Group check):** scan your party or raid from your own install, nobody else needs Outrider. One member at a time, out of combat: class, level, role, gear slot by slot (worn, empty, unreadable, still loading), item level of what it could read, and talent points spent. Unknown stays unknown, never zero. Set a member's role yourself, or rescan one. Stops in combat, on zoning or when the group changes. Nothing about other players is saved; it's forgotten when they leave or you log out, and shown as old after 5 minutes. Off until you turn it on.
+- **One shared inspect line:** the tooltip item level and Group check ask the game through one queue, at most one request every 2 seconds, and never while Blizzard's Inspect window is open. Tooltip inspect results now last 5 minutes (was 15).
+
 ## 0.6.1 (2026-11-26)
 
 - **Fix: FarmLab recorded no drops, and pages full of tables wouldn't scroll.** Drops now also count as you take them from the loot window (the same drop never counts twice), the page updates while open, and a table that can't scroll further passes the mouse wheel to the page.

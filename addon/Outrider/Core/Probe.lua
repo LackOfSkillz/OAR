@@ -112,6 +112,7 @@ Probe.APIS = {
   { "CanInspect", "VG" }, { "NotifyInspect", "VG" }, { "ClearInspectPlayer", "VG" },
   { "GetInventoryItemLink", "VG" }, { "GetInventoryItemID", "VG" }, { "C_Item.GetDetailedItemLevelInfo", "VG" },
   { "GetInspectSpecialization", "VG", "inspected spec" }, { "GetTalentTabInfo", "VG", "Classic talent tabs" },
+  { "GetSpecializationRoleByID", "VG", "role for a spec ID (tentative role)" }, { "GetNormalizedRealmName", "VG", "realm for roster keys" },
   { "C_Traits.GenerateInspectImportString", "VG", "inspected talents (modern)" },
   { "C_SpecializationInfo.GetSpecialization", "VG" }, { "C_SpecializationInfo.GetSpecializationInfo", "VG" },
   { "GetInstanceInfo", "VG" }, { "GetDifficultyInfo", "VG" }, { "EJ_GetEncounterInfo", "VG", "encounter journal" },

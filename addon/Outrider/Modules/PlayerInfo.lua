@@ -6,9 +6,10 @@
 --   remembered  professions they linked in trade chat (Census), when and where
 --               we last saw them, "your alt"
 --   inspect     average item level, gear quality, weapon, talent build
--- Inspect: one NotifyInspect per hover, out of combat, in range, at most one
--- every few seconds, never while Blizzard's inspect window is open; results
--- cached per player for the session. NotifyInspect is a plain query (no
+-- Inspect: one request per hover, out of combat, in range, through the shared
+-- InspectBroker (VG01-04, D27: one queue for every inspect, at most one every
+-- few seconds, never while Blizzard's inspect window is open); results are
+-- kept in memory for 5 minutes (D27). NotifyInspect is a plain query (no
 -- protected action), the same one gear-score addons use. Other players'
 -- stats (strength, agility...) are not readable, so none are shown.
 -- Secret values (C6) are skipped, never guessed.
@@ -25,7 +26,7 @@ local M = ns:NewModule("PlayerInfo", {
 ns.PlayerInfo = M
 
 M.GAP = 3          -- seconds between inspect requests
-M.KEEP = 15 * 60   -- seconds an inspect result is kept
+M.KEEP = 5 * 60    -- seconds an inspect result is kept (D27, Gary 2026-11-26)
 M.SLOTS = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 }
 M.POWER = { [0] = "mana", [1] = "rage", [2] = "focus", [3] = "energy" }
 
@@ -148,8 +149,11 @@ end
 function M:Ask(unit, guid)
   if self.pending == guid then return true end
   if not self:CanAsk(unit) then return false end
-  local ok = pcall(NotifyInspect, unit)
-  if not ok then return false end
+  -- the newest hover replaces an older one still waiting in the queue
+  local token = ns.InspectBroker:Request({ owner = "PlayerInfo", unit = unit, guid = guid, replace = true,
+    onReady = function(u, g) M:OnInspect(g, u) end,
+    onFail = function(r) if M.pending == r.guid then M.pending, M.pendingUnit = nil, nil end end })
+  if not token then return false end
   self.pending, self.pendingUnit = guid, unit
   self.lastAsk = GetTime and GetTime() or time()
   return true
@@ -230,11 +234,12 @@ function M:ProbeInspect(guid)
   ns.Safe("PlayerInfo:ProbeInspect", ns.Probe.Inspect, ns.Probe, unit, source, secs)
 end
 
-function M:OnInspect(guid)
+-- Called by the broker with the unit it checked still belongs to guid.
+function M:OnInspect(guid, unit)
   guid = readable(guid)
   if guid then self:ProbeInspect(guid) end
   if not guid or guid ~= self.pending then return end
-  local unit = self.pendingUnit
+  unit = unit or self.pendingUnit
   self.pending, self.pendingUnit = nil, nil
   if not unit or readable(C.Call("UnitGUID", unit)) ~= guid then
     if readable(C.Call("UnitGUID", "mouseover")) == guid then unit = "mouseover" else return end
@@ -243,8 +248,7 @@ function M:OnInspect(guid)
   -- no name, realm or GUID in the log (VG00-R01, D27): the saved log is permanent
   local _, cls = C.Call("UnitClass", unit)
   self:Debug("inspected a level %s %s", tostring(readable(C.Call("UnitLevel", unit))), tostring(readable(cls)))
-  local frame = rawget(_G, "InspectFrame")
-  if not (frame and frame.IsShown and frame:IsShown()) and C.Resolve("ClearInspectPlayer") then pcall(ClearInspectPlayer) end
+  -- (the broker clears the inspect afterwards, never under Blizzard's window)
   -- refresh the tooltip if we're still pointing at them
   local tip = rawget(_G, "GameTooltip")
   if tip and tip:IsShown() and readable(C.Call("UnitGUID", "mouseover")) == guid and tip.SetUnit then
@@ -484,7 +488,12 @@ function M:EndFight(won)
 end
 
 function M:OnEnable()
-  self:On("INSPECT_READY", function(mod, _, guid) mod:OnInspect(guid) end)
+  -- an inspect from Blizzard's own window: sampled for the probe only; our own
+  -- requests come back through the broker
+  self:On("INSPECT_READY", function(mod, _, guid)
+    guid = readable(guid)
+    if guid and not ns.InspectBroker:Expecting(guid) then mod:ProbeInspect(guid) end
+  end)
   self:On("CHAT_MSG_SYSTEM", self.OnSystem)
   self:On("PLAYER_TARGET_CHANGED", function(mod) mod:OnTarget() end)
   self:On("PLAYER_REGEN_DISABLED", function(mod)

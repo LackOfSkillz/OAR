@@ -113,7 +113,7 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "submitted for independent review",
+      "status": "accepted (ChatGPT review 2026-11-26, R01/R02 done at 30a20c4; Gary approved 2026-11-26)",
       "evidence": "docs/vanguard/VG00_GATE_REVIEW_PACKET.md",
       "updated": "2026-11-26"
     },
@@ -126,7 +126,9 @@
       ],
       "implementation": "Create preview module using existing module/events/timer conventions.",
       "acceptance": "Disabled state makes zero scan requests; enable/disable repeatable.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-02",
@@ -137,7 +139,9 @@
       ],
       "implementation": "Normalize party/raid membership, subgroup, identity and role evidence.",
       "acceptance": "Mixed realms, same names, unreadable GUIDs, offline and churn fixtures.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-03",
@@ -148,7 +152,9 @@
       ],
       "implementation": "Implement validated statuses, sources, timestamps, revisions and finite numeric fields.",
       "acceptance": "Unknown cannot become zero; secret values rejected before computation.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-04",
@@ -159,7 +165,9 @@
       ],
       "implementation": "Build one-in-flight queued request state machine, deadlines and rate/backoff.",
       "acceptance": "No overlapping requests; timeout/retry limits; cancellation deterministic.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-05",
@@ -170,7 +178,9 @@
       ],
       "implementation": "Respect native Inspect UI and competing inspection, combat and zone transitions.",
       "acceptance": "No stolen inspection; late result cannot populate wrong member.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-06",
@@ -181,7 +191,9 @@
       ],
       "implementation": "Resolve slot links and item data asynchronously with generation checks.",
       "acceptance": "Empty vs unavailable distinct; delayed callbacks ignored after cancellation.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-07",
@@ -192,7 +204,9 @@
       ],
       "implementation": "Use only verified inspected talent APIs; support user-assigned role with tentative inference.",
       "acceptance": "No fabricated spec, explicit role takes precedence, all unavailable talent paths usable.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-08",
@@ -203,7 +217,9 @@
       ],
       "implementation": "Limit current-roster cache, expiration and identity lifetime.",
       "acceptance": "No identifiable non-consenting peer data in SavedVariables, export or logs; roster leave clears view.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-09",
@@ -214,7 +230,9 @@
       ],
       "implementation": "Show roster-only view, scan progress, refresh and cancellation.",
       "acceptance": "One-user party works with partial data; no request from rendering or combat.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-10",
@@ -225,7 +243,9 @@
       ],
       "implementation": "Exercise 5/40 roster, delayed item data, 100 cancellations and 200 roster changes.",
       "acceptance": "Bounded timers/memory/requests, no stale member association, full regression suite.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG01_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG01-GATE",

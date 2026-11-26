@@ -1,6 +1,6 @@
 # VG00-03: Policy and privacy decision record (ADR)
 
-Date: 2026-11-26. Status: **conditionally accepted by ChatGPT's VG00 review (2026-11-26); corrections R01/R02 done; awaiting Gary's approval.** Recorded as D27 in `docs/DECISIONS.md`.
+Date: 2026-11-26. Status: **accepted.** ChatGPT's VG00 review (2026-11-26) accepted it with corrections R01/R02, both done; Gary approved it and the three decisions below on 2026-11-26 and authorized VG01. Recorded as D27 in `docs/DECISIONS.md`.
 
 ## Context
 
@@ -60,11 +60,11 @@ Outrider's older Census feature (Modules/Census.lua, since P8) already saves pla
 | Cross-character leakage | per-character scope for own data; aggregates carry no names |
 | Unsafe AI output | advice stays data-only (D16); no numbers from an LLM |
 
-## Open decisions (ChatGPT's review recommendation in brackets; Gary decides)
+## Decisions (approved by Gary 2026-11-26, as ChatGPT's review recommended)
 
-1. **Inspect cache lifetime:** [review: 5 minutes, refreshed on a detected gear change, cleared on group leave, logout or reload; expired data shown as stale] Owner decision.
-2. **Named run history with consenting friends:** [review: defer until a separate consent design is approved] Not built before an owner decision.
-3. **Should the tooltip-hover inspect stay automatic?** It inspects on hover today (PlayerInfo, setting on by default), which is a single request per hover, similar to GearScore Forever. Vanguard's own scans will be user-started only. [review: keep it on by default with a setting to turn it off; route every inspect through one shared InspectBroker] Owner decision.
+1. **Inspect cache lifetime:** 5 minutes, refreshed on a detected gear change, cleared on group leave, logout or reload; expired data shown as stale.
+2. **Named run history with consenting friends:** Deferred until a separate consent design is approved.
+3. **Should the tooltip-hover inspect stay automatic?** It inspects on hover today (PlayerInfo, setting on by default), which is a single request per hover, similar to GearScore Forever. Vanguard's own scans will be user-started only. Kept on by default with a setting to turn it off; every inspect goes through one shared InspectBroker (VG01-04).
 
 ## Consequences
 

@@ -27,6 +27,7 @@ Core\Profiles.lua
 Core\Modules.lua
 Core\Conflicts.lua
 Core\Probe.lua
+Core\InspectBroker.lua
 
 # UI kit
 UI\Theme.lua
@@ -248,6 +249,11 @@ Modules\PetStatus.lua
 Modules\Ammo.lua
 Modules\BeastInfo.lua
 Modules\PlayerInfo.lua
+Vanguard\Observation.lua
+Vanguard\Roster.lua
+Vanguard\Profile.lua
+Vanguard\Cache.lua
+Modules\Vanguard.lua
 Modules\NPCPack.lua
 Modules\Waypoints.lua
 Modules\POICapture.lua
