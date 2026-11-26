@@ -2,6 +2,7 @@
 
 ## Unreleased (branch ai/outrider-personal-intelligence, not checked in game yet)
 
+- **Fix: FarmLab recorded no drops, and pages full of tables wouldn't scroll.** Drops now also count as you take them from the loot window (the same drop never counts twice), the page updates while open, and a table that can't scroll further passes the mouse wheel to the page.
 - **Group checks for Vanguard (planning, nothing new on screen):** when you join a group, hover a player or pull a boss, Outrider notes what the game lets it read: roles, classes, whether inspect works and which talent reads exist, and what boss events report. It keeps counts only, never other players' names or gear.
 
 ## 0.6.0 (2026-11-26)

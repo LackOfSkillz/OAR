@@ -46,7 +46,24 @@ function UI:ScrollList(parent, opts)
     list.rowFrames[i] = row
   end
   list:EnableMouseWheel(true)
-  list:SetScript("OnMouseWheel", function(self, delta) self:Scroll(-delta * (opts.wheelStep or 3)) end)
+  -- A list that can't move further (short list, or at its top or bottom) hands
+  -- the wheel to the page it sits on, so a page full of tables still scrolls
+  -- (FarmLab, 2026-11-26: the page wouldn't scroll with the cursor over a table).
+  list:SetScript("OnMouseWheel", function(self, delta)
+    local before = self.offset
+    self:Scroll(-delta * (opts.wheelStep or 3))
+    if self.offset ~= before then return end
+    local p = self.GetParent and self:GetParent()
+    while p do
+      local fn = p.GetScript and p:GetScript("OnMouseWheel")
+      if fn then
+        fn(p, delta)
+        if p.UpdateBar then p:UpdateBar() end -- the page's own hook isn't run by a direct call
+        return
+      end
+      p = p.GetParent and p:GetParent()
+    end
+  end)
   -- A slim gold scroll bar whenever there's more than fits (premium plan B7:
   -- All commands looked like it ended at "errands"). Drag-free: the wheel scrolls.
   list.track = list:CreateTexture(nil, "ARTWORK")

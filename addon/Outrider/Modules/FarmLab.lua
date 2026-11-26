@@ -197,11 +197,80 @@ end
 -- ------------------------------------------------------------------ booking
 local function touch(r) r.last = time() end
 
-function M:OnLootLine(_, msg)
+-- Two ways to see a drop (2026-11-26: Gary saw nothing recorded): the
+-- "You receive loot" chat line, and an item slot emptied from your loot
+-- window. Both usually fire for the same item; whichever comes second within
+-- MATCH seconds is the same drop and isn't counted again.
+M.MATCH = 3
+local function clock() return GetTime and GetTime() or time() end
+
+function M:Book(id, n, src)
   local r = self.store.active
-  if not r or r.leftAt then return end
+  if not r or r.leftAt or not id then return false end
+  local now = clock()
+  self.recent = self.recent or {}
+  local keep = {}
+  local twin
+  for _, e in ipairs(self.recent) do
+    if now - e.t <= M.MATCH + 2 then
+      keep[#keep + 1] = e
+      if not twin and not e.matched and e.src ~= src and e.id == id and e.n == n and now - e.t <= M.MATCH then twin = e end
+    end
+  end
+  self.recent = keep
+  if twin then twin.matched = true return false end
+  keep[#keep + 1] = { id = id, n = n, src = src, t = now }
+  self:AddItem(r, id, n)
+  self:Redraw()
+  return true
+end
+
+-- the FarmLab page, if it's the one open, shows new loot within half a second
+function M:Redraw()
+  local hub = ns.Hub
+  if self.redrawing or not (hub and hub.current == "farmlab" and hub.frame and hub.frame:IsShown()) then return end
+  self.redrawing = true
+  ns.Timer.After(0.5, function() M.redrawing = nil ns.Hub:Refresh() end, "farmlab:redraw")
+end
+
+-- the loot window: remember what each slot holds; a slot that empties went to you
+function M:OnLootOpened()
+  self.lootOpen = true
+  self.slots = {}
+  local num = tonumber(readable(C.Call("GetNumLootItems"))) or 0
+  for slot = 1, math.min(num, 40) do
+    local link = readable(C.Call("GetLootSlotLink", slot))
+    local id = type(link) == "string" and tonumber(link:match("item:(%d+)"))
+    if id then
+      local _, _, qty, _, _, locked = C.CallAll("GetLootSlotInfo", slot)
+      self.slots[slot] = { id = id, n = tonumber(readable(qty)) or 1, locked = readable(locked) and true or nil }
+    end
+  end
+end
+
+function M:OnSlotCleared(_, slot)
+  local s = self.slots and self.slots[readable(slot)]
+  if not s or s.locked then return end
+  self.slots[readable(slot)] = nil
+  self:Book(s.id, s.n, "window")
+end
+
+function M:OnLootLine(_, msg)
+  -- the first few loot lines a session go to the log, so the client's real
+  -- wording can be checked against the pattern
+  self.linesSeen = (self.linesSeen or 0) + 1
+  if self.linesSeen <= 3 then
+    local secret = C.IsSecret(msg)
+    local id = M.ParseLoot(msg)
+    local text = (not secret and type(msg) == "string" and msg:find("^You")) and msg:gsub("|", "||") or nil
+    self:Info("loot line %d: %s%s", self.linesSeen, secret and "secret" or (id and ("item " .. id) or "no match"),
+      text and (" (" .. text:sub(1, 120) .. ")") or "")
+  end
   local id, n = M.ParseLoot(msg)
-  if not id then return end
+  if id then self:Book(id, n, "chat") end
+end
+
+function M:AddItem(r, id, n)
   local it = r.items[id] or { n = 0 }
   r.items[id] = it
   it.n = it.n + n
@@ -217,7 +286,7 @@ function M:OnCoinLine(_, msg)
   local r = self.store.active
   if not r or r.leftAt then return end
   local c = M.ParseCoin(msg)
-  if c > 0 then r.coin = r.coin + c touch(r) end
+  if c > 0 then r.coin = r.coin + c touch(r) self:Redraw() end
 end
 
 function M:OnMoney()
@@ -508,8 +577,10 @@ function M:OnEnable()
   self:On("PLAYER_MONEY", self.OnMoney)
   self:On("PLAYER_XP_UPDATE", self.OnXP)
   self:On("CHAT_MSG_COMBAT_XP_GAIN", self.OnXPLine)
-  self:On("LOOT_OPENED", function(mod) mod.lootOpen = true end)
-  self:On("LOOT_CLOSED", function(mod) mod.lootOpen = nil end)
+  self:On("LOOT_READY", self.OnLootOpened)
+  self:On("LOOT_OPENED", self.OnLootOpened)
+  self:On("LOOT_SLOT_CLEARED", self.OnSlotCleared)
+  self:On("LOOT_CLOSED", function(mod) mod.lootOpen, mod.slots = nil, nil end)
   self:On("PLAYER_ENTERING_WORLD", function(mod, _, isLogin, isReload)
     mod.money = tonumber(C.Call("GetMoney")) or mod.money
     if not (isLogin or isReload) then return end

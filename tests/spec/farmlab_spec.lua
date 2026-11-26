@@ -161,4 +161,30 @@ T.describe("farmlab", function()
     T.ok(M.store.runs[1].stop >= last and M.store.runs[1].stop < game.now - M.RESUME)
     T.eq(#ns.Errors.list, 0)
   end)
+
+  T.it("counts items taken from the loot window when no chat line comes, and never twice", function()
+    local game, _, M = start()
+    M:StartManual("Wolves")
+    local function window(items)
+      game.loot = items
+      game:fire("LOOT_OPENED")
+      for i = 1, #items do game:fire("LOOT_SLOT_CLEARED", i) end
+      game:fire("LOOT_CLOSED")
+    end
+    -- only the loot window (the chat line didn't parse on this client)
+    window({ { id = 2589, name = "Linen Cloth", count = 2 } })
+    T.eq(M:Active().items[2589].n, 2)
+    -- chat line and loot window for the same drop: counted once
+    window({ { id = 2589, name = "Linen Cloth", count = 3 } })
+    loot(game, 2589, 3)
+    T.eq(M:Active().items[2589].n, 5)
+    -- the chat line first, then the window: still once
+    loot(game, 2592, 1)
+    window({ { id = 2592, name = "Wool Cloth", count = 1 } })
+    T.eq(M:Active().items[2592].n, 1)
+    -- a second, separate drop later is a new drop
+    game.clock = (game.clock or 0) + 10
+    window({ { id = 2592, name = "Wool Cloth", count = 1 } })
+    T.eq(M:Active().items[2592].n, 2)
+  end)
 end)
