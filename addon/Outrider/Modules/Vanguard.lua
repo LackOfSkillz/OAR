@@ -24,7 +24,9 @@ local M = ns:NewModule("Vanguard", {
   phase = "VG01",
   order = 160,
   defaultEnabled = false,
-  defaults = {},
+  -- your own prep choices (VG02-08/09): activity, minutes, place, your access
+  -- answers and your own checklist items. Nothing about other players.
+  defaults = { activity = "dungeon", minutes = 60, instance = nil, access = {}, custom = {} },
 })
 ns.VanguardModule = M
 
@@ -298,6 +300,92 @@ function M:Activity()
   return string.format("%d in the group, %d checked", s.members, s.checked)
 end
 
+-- ------------------------------------------------------------------ VG02 views (no requests)
+-- the clicked member's role indicators, from what was read
+function M:Drill(key)
+  local m = self.snap and self.snap.byKey[key or self.selected or ""]
+  if not m then return nil end
+  local p = Cache:Get(m.key)
+  local role = self:RoleOf(m).value
+  return V.Adequacy.Assess(m, p, role, nil), m
+end
+
+function M:DrillText()
+  local a, m = self:Drill()
+  if not a then return "Click a member in the list to see what their gear shows for their role." end
+  local who = m.self and "You" or (m.name or "This member")
+  if a.state == "unsupported" then return who .. ": " .. tostring(a.notes[1] or "no role set") .. ". Set their role to see what matters for it." end
+  local lines = { string.format("|cffffd100%s|r (%s):", who, a.role and a.role:lower() or "role unknown") }
+  for _, l in ipairs(V.Adequacy.Lines(a, 8)) do lines[#lines + 1] = "  " .. l end
+  for _, n in ipairs(a.notes) do lines[#lines + 1] = "  " .. n end
+  if #a.missing > 0 then lines[#lines + 1] = "  Not modeled: " .. table.concat(a.missing, "; ") end
+  return table.concat(lines, "\n")
+end
+
+-- what the group can bring (class and level only, or your own spellbook)
+M.UTILITY_SHOWN = { interrupt = true, dispel_magic = true, dispel_curse = true, dispel_poison = true, dispel_disease = true,
+  cc = true, rez = true, battle_rez = true, buff_stamina = true, buff_intellect = true, buff_wild = true }
+function M:UtilityText()
+  if not self.snap then return "" end
+  local cov = V.Utility.Coverage(self.snap.members)
+  return "|cffffd100What the group could bring|r (from class and level; trained or not, the game doesn't show): " ..
+    table.concat(V.Utility.Lines(cov, M.UTILITY_SHOWN), ", ")
+end
+
+-- your own prep (VG02-08/09/10)
+local function ranked()
+  local D = ns.DungeonGuide
+  local ok, rank = pcall(function() return D and D:Rank() end)
+  return ok and type(rank) == "table" and rank or {}
+end
+
+function M:PrepInstance()
+  local st = self:Settings()
+  if st.instance then return st.instance end
+  local top = ranked()[1]
+  return top and top.name or nil
+end
+
+function M:NextInstance(step)
+  local rank = ranked()
+  if #rank == 0 then return end
+  local cur, idx = self:PrepInstance(), 0
+  for i, r in ipairs(rank) do if r.name == cur then idx = i end end
+  idx = ((idx - 1 + (step or 1)) % #rank) + 1
+  self:Settings().instance = rank[idx].name
+end
+
+function M:PrepRows()
+  local st = self:Settings()
+  local pf = V.Prep.Profile(st.activity, nil, st.minutes)
+  local selfProfile = Profile.Collect("player", { key = "self", self = true }, 0)
+  local rows = {}
+  for _, r in ipairs(V.Prep.Supplies(pf)) do r.group = "Supplies" rows[#rows + 1] = r end
+  for _, r in ipairs(V.Prep.Equipment(pf, selfProfile, st, self:PrepInstance())) do r.group = "Gear and access" rows[#rows + 1] = r end
+  return rows, pf
+end
+
+M.PREP_WORD = { ok = "|cff66dd77OK|r", missing = "|cffff6060to do|r", unknown = "|cffffd100can't tell|r" }
+
+function M:JournalText()
+  local name = self:PrepInstance()
+  if not name then return "No dungeon in your level range in the installed data." end
+  local j = V.Prep.Journal(name)
+  if j.reason then return name .. ": " .. j.reason end
+  local lines = { string.format("|cffffd100%s|r: %d quest(s) to pick up or finish, %d upgrade(s) for you there.", name, #j.quests, #j.upgrades) }
+  for i, q in ipairs(j.quests) do
+    if i > 4 then break end
+    lines[#lines + 1] = "  Quest: " .. tostring(q.name) .. (q.active and " (in your log)" or "")
+  end
+  for i, u in ipairs(j.upgrades) do
+    if i > 4 then break end
+    lines[#lines + 1] = string.format("  Upgrade: %s from %s (+%d%%)%s", tostring(u.name), tostring(u.boss or "?"),
+      math.floor(u.pct or 0), u.later and " (later)" or "")
+  end
+  lines[#lines + 1] = "Quests and keys, and the dungeon journal, have the details."
+  return table.concat(lines, "\n")
+end
+
 -- ------------------------------------------------------------------ page
 ns.Hub:AddTab("vanguard", "Group check", function(p)
   local UI = ns.UI
@@ -350,6 +438,74 @@ ns.Hub:AddTab("vanguard", "Group check", function(p)
       { key = "status", label = "Status", width = 150, sort = function(x) return x.status end, text = function(x) return x.status end },
     }, function() if not on() then return {} end return M:Rows() end,
       function(x) if x and x.key then M.selected = x.key refresh() end end, sortKey = "name" },
+    { "note", function() if not on() then return "" end return M:DrillText() end },
+    { "note", function() if not on() then return "" end return M:UtilityText() end },
     { "note", "Unknown means the game didn't show it, not that it's missing. \"Empty\" is a slot the game says is empty. A role marked (guess) comes from the game's answer for their talents; set it yourself if it's wrong. Rows are in group order, not a ranking." },
   })
+end)
+
+-- VG02: your own prep before a dungeon or raid (works with Group check off:
+-- it reads only your own bags, gear and spellbook)
+ns.Hub:AddTab("vanguard_prep", "Prep checklist", function(p)
+  local UI = ns.UI
+  local refresh = function() if p.Refresh then p:Refresh() end end
+  local st = function() return M:Settings() end
+  UI:FormPage(p, {
+    { "header", "Prep checklist (preview)" },
+    { "note", "Get ready before a dungeon or raid. 1. Pick dungeon or raid and how long you'll play. 2. Read the list: red is something to do, yellow is something Outrider can't read. 3. Fix the red ones in town. Only what you carry counts; the bank is shown apart. Amounts are Outrider's starting points, not game rules." },
+    { "buttons", {
+      { "Prep for a dungeon", function() st().activity = "dungeon" st().minutes = 60 refresh() end, 140 },
+      { "Prep for a raid", function() st().activity = "raid" st().minutes = 180 refresh() end, 130 },
+    }, active = function(i) return (i == 1) == (st().activity ~= "raid") end },
+    { "buttons", {
+      { "1 hour", function() st().minutes = 60 refresh() end, 80 },
+      { "2 hours", function() st().minutes = 120 refresh() end, 80 },
+      { "3 hours", function() st().minutes = 180 refresh() end, 80 },
+    }, active = function(i) return ({ 60, 120, 180 })[i] == st().minutes end, plain = true },
+    { "stats", function()
+      local rows, pf = M:PrepRows()
+      local c = V.Prep.Count2(rows)
+      return {
+        { cap = "Place", value = M:PrepInstance() or "none", note = pf.activity .. ", " .. pf.minutes .. " min" },
+        { cap = "To do", value = tostring(c.missing) },
+        { cap = "Can't tell", value = tostring(c.unknown) },
+        { cap = "OK", value = tostring(c.ok) },
+      }
+    end },
+    { "buttons", {
+      { "Next place", function() M:NextInstance(1) refresh() end, 100 },
+      { "I have access", function() local n = M:PrepInstance() if n then st().access[n] = true end refresh() end, 120 },
+      { "No access yet", function() local n = M:PrepInstance() if n then st().access[n] = false end refresh() end, 120 },
+      { "Not sure", function() local n = M:PrepInstance() if n then st().access[n] = nil end refresh() end, 90 },
+    }, plain = true },
+    { "table", 12, {
+      { key = "group", label = "Kind", width = 110, sort = function(x) return x.group end, text = function(x) return x.group end },
+      { key = "text", label = "Check", width = 0, sort = function(x) return x.text end, text = function(x) return x.text end },
+      { key = "state", label = "State", width = 90, sort = function(x) return ({ missing = 1, unknown = 2, ok = 3 })[x.state] or 4 end,
+        text = function(x) return M.PREP_WORD[x.state] or x.state end },
+    }, function() return (M:PrepRows()) end, nil, sortKey = "state" },
+    { "note", function() return M:JournalText() end },
+    { "note", "Add your own items with /ride prep add <text>, tick them with /ride prep done <number>. They show as your own, never as a game rule." },
+  })
+end)
+
+ns.AddCommand("prep", "prep add <text> | done <n> | undo <n> | drop <n>  your own prep checklist items", function(arg)
+  local st = M:Settings()
+  st.custom = st.custom or {}
+  local cmd, rest = tostring(arg or ""):match("^(%S+)%s*(.*)$")
+  local n = tonumber(rest)
+  if cmd == "add" and rest ~= "" then
+    if #st.custom >= 20 then ns.Print("prep: 20 items at most") return end
+    st.custom[#st.custom + 1] = { text = (rest:gsub("[%c|]", "")):sub(1, 80), done = false }
+    ns.Print("prep: added item %d", #st.custom)
+  elseif (cmd == "done" or cmd == "undo") and n and st.custom[n] then
+    st.custom[n].done = cmd == "done"
+    ns.Print("prep: item %d %s", n, cmd == "done" and "ticked" or "unticked")
+  elseif cmd == "drop" and n and st.custom[n] then
+    table.remove(st.custom, n)
+    ns.Print("prep: item %d removed", n)
+  else
+    for i, c in ipairs(st.custom) do ns.Print("  %d. [%s] %s", i, c.done and "x" or " ", c.text) end
+    ns.Print("usage: /ride prep add <text> | done <n> | undo <n> | drop <n>")
+  end
 end)

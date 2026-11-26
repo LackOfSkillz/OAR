@@ -253,6 +253,11 @@ Vanguard\Observation.lua
 Vanguard\Roster.lua
 Vanguard\Profile.lua
 Vanguard\Cache.lua
+Vanguard\Roles.lua
+Vanguard\Stats.lua
+Vanguard\Adequacy.lua
+Vanguard\Utility.lua
+Vanguard\Prep.lua
 Modules\Vanguard.lua
 Modules\NPCPack.lua
 Modules\Waypoints.lua

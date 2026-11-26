@@ -850,7 +850,12 @@ function M.new(opts)
     local id = tonumber(tostring(link):match("item:(%d+)"))
     return game.itemStats and game.itemStats[id] or {}
   end
-  base.C_Item.GetItemCount = function(id) return game.counts and game.counts[id] or 0 end
+  -- includeBank adds game.bankCounts[id] (the real API counts bank items when asked)
+  base.C_Item.GetItemCount = function(id, includeBank)
+    local n = game.counts and game.counts[id] or 0
+    if includeBank and game.bankCounts then n = n + (game.bankCounts[id] or 0) end
+    return n
+  end
   base.C_Item.GetItemSpell = function(id) local it = game.items and game.items[id] return it and it.spell end
   local function idOf(v) return tonumber(tostring(v):match("item:(%d+)")) or v end
   base.C_Item.GetItemInfo = function(id)

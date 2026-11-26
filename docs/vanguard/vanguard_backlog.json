@@ -256,7 +256,8 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-01",
@@ -267,7 +268,9 @@
       ],
       "implementation": "Version role profiles by class, build and role; include hybrid cases.",
       "acceptance": "All nine classes represented or explicitly unsupported; data sources and missing mechanics tracked.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-02",
@@ -278,7 +281,9 @@
       ],
       "implementation": "Reuse item data, enchant parsing and role weights; separate observed/derived values.",
       "acceptance": "Golden fixtures for gear sets, missing slots, unknown enchants, stat units.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-03",
@@ -289,7 +294,9 @@
       ],
       "implementation": "Assess verified survivability, mitigation, resistances and supported threat proxies.",
       "acceptance": "No unsupported armor/avoidance formula; missing inputs widen range.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-04",
@@ -300,7 +307,9 @@
       ],
       "implementation": "Assess verified mana, regeneration, healing and sustain proxies.",
       "acceptance": "No invented HPS or mana endurance; model limitation visible.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-05",
@@ -311,7 +320,9 @@
       ],
       "implementation": "Assess role-specific gear/talent indicators and bounded Forge outputs only when validated.",
       "acceptance": "No numerical DPS from unsupported rotation/proc mechanics; tests for melee/ranged/caster.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-06",
@@ -322,7 +333,9 @@
       ],
       "implementation": "Model ability availability by level, talents, faction, scope and source.",
       "acceptance": "Potential distinct from verified; absent only when established; no class-only skill assumption.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-07",
@@ -333,7 +346,9 @@
       ],
       "implementation": "Implement independently verified exclusivity, party/raid scope and provider caps.",
       "acceptance": "Duplicate/exclusive buffs do not inflate score; unknown rule stays unknown.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-08",
@@ -344,7 +359,9 @@
       ],
       "implementation": "Extend existing readiness checks for activity, role, duration and class essentials.",
       "acceptance": "Food/reagents/ammo/consumables thresholds; carried vs bank separate; no auto-use.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-09",
@@ -355,7 +372,9 @@
       ],
       "implementation": "Integrate enchants, empty slots, repairs, verified access/attunement and manual confirmations.",
       "acceptance": "Missing vs unknown distinct; custom templates cannot masquerade as verified rules.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-10",
@@ -366,7 +385,9 @@
       ],
       "implementation": "Reuse dungeon journal, quests, maps, loot and favorites; verify source/build status.",
       "acceptance": "Missing eligible quests and possible upgrades link to existing UI; no copied proprietary data.",
-      "status": "pending"
+      "status": "done (code and unit tests; live check pending)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG02-GATE",
@@ -377,7 +398,9 @@
       ],
       "implementation": "Prepare review packet and stop.",
       "acceptance": "Independent reviewer accepts exact candidate SHA and evidence; owner authorizes next phase. Record outstanding live, policy, data and performance blockers; no false pass.",
-      "status": "pending"
+      "status": "deferred to the final combined review (D28, Gary 2026-11-26)",
+      "evidence": "docs/vanguard/VG02_EVIDENCE.md",
+      "updated": "2026-11-26"
     },
     {
       "id": "VG03-01",

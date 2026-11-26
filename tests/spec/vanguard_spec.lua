@@ -259,6 +259,17 @@ T.describe("vanguard group check (VG01)", function()
     ns.Hub:Toggle()
     ns.Hub:ShowTab("vanguard")
     ns.Hub:Refresh()
+    M.selected = "Player-1-0000BEEF"
+    ns.Hub:Refresh()
+    T.ok(M:DrillText():find("tank"), M:DrillText())
+    T.ok(M:UtilityText():find("Interrupt"), "group utility summary")
+    ns.Hub:ShowTab("vanguard_prep")
+    ns.Hub:Refresh()
+    ns.Slash:Run("prep add Bring a fire resistance cloak")
+    local rows = M:PrepRows()
+    local custom
+    for _, r in ipairs(rows) do if r.custom then custom = r end end
+    T.ok(custom and custom.state == "missing", "your own item shows as yours")
     T.eq(#game.asked, 0)
     T.eq(#ns.Errors.list, 0)
   end)
