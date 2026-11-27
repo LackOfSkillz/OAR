@@ -324,6 +324,21 @@ T.describe("every profession, gathering too (2026-11-24: only Cooking and First 
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("Recipes for sale: no chip for a profession without recipes (Herbalism); a chosen one falls back to All", function()
+    local game, ns = gatherer()
+    game:fire("AUCTION_HOUSE_SHOW")
+    ns.TrainShop:Choose("Herbalism")
+    ns.GearShop.mode = "recipes"
+    ns.TrainShop:Chips(ns.TrainShop.frame)
+    T.eq(labels(ns), "All*,Cooking,First Aid,Fishing")
+    T.eq(ns.TrainShop:Chosen(), nil)
+    ns.GearShop.mode = "training"
+    ns.TrainShop:Chips(ns.TrainShop.frame)
+    T.eq(labels(ns), "All,Cooking,First Aid,Fishing,Herbalism*", "skill-ups keep it (supplies)")
+    T.eq(ns.TrainShop.frame.chipRows, 1)
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("Fishing searches each lure, a pole and the Fishing books; results become supply cards with a Buy", function()
     local game, ns = gatherer()
     choose(game, ns, "Fishing")

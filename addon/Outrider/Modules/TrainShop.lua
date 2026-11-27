@@ -44,6 +44,7 @@ M.RECIPE_SUB = { Leatherworking = 1, Tailoring = 2, Engineering = 3, Blacksmithi
   Alchemy = 6, ["First Aid"] = 7, Enchanting = 8, Fishing = 9 }
 M.RECIPE_CLASS = 9
 M.SHOW = 8 -- recipe lines on the panel
+M.CHIP_WIDTH = 540 -- the shop window's card column (GearShopRank M.W - M.NAV - 32)
 M.WAIT = 4 -- seconds to wait for an answer before switching to one search per click
 
 local function have(id) return ns.Crafter and ns.Crafter.Have(id) or 0 end
@@ -89,10 +90,22 @@ function M:GatherInView()
   return out
 end
 
--- The chosen profession, or nil for All (a choice this character lacks = All).
+-- The professions with a chip: on Recipes for sale only those that have
+-- recipes (Skinning, Herbalism and Mining have none; Gary 2026-11-27).
+function M:ChipProfessions()
+  local recipes = ns.GearShop and ns.GearShop.mode == "recipes"
+  local out = {}
+  for _, p in ipairs(self:Professions()) do
+    if not recipes or M.RECIPE_SUB[p] then out[#out + 1] = p end
+  end
+  return out
+end
+
+-- The chosen profession, or nil for All (a choice this character lacks, or
+-- one without a chip on this page = All).
 function M:Chosen()
   local want = self:Settings().prof
-  for _, p in ipairs(self:Professions()) do if p == want then return p end end
+  for _, p in ipairs(self:ChipProfessions()) do if p == want then return p end end
   return nil
 end
 
@@ -600,9 +613,11 @@ end
 -- Chips for All and each profession (with its icon), the chosen one lit.
 function M:Chips(f)
   local list = { false }
-  for _, p in ipairs(self:Professions()) do list[#list + 1] = p end
+  for _, p in ipairs(self:ChipProfessions()) do list[#list + 1] = p end
   local chosen = self:Chosen()
-  local x = 0
+  -- wrap onto a second row instead of running past the window's edge
+  local x, y, rows = 0, 0, 1
+  local maxW = M.CHIP_WIDTH
   for i, p in ipairs(list) do
     local c = f.chips[i]
     if not c then
@@ -613,12 +628,16 @@ function M:Chips(f)
     c.label:SetText(p or "All")
     if c.icon then c.icon:SetTexture(p and profIcon(p) or "Interface\\Icons\\INV_Misc_Book_09") end
     c:ClearAllPoints()
-    c:SetPoint("TOPLEFT", x, 0)
-    x = x + (c:GetWidth() or 60) + 6
+    local w = c:GetWidth() or 60
+    if x > 0 and x + w > maxW then x, y, rows = 0, y - 30, rows + 1 end
+    c:SetPoint("TOPLEFT", x, y)
+    x = x + w + 6
     c:SetOn((p or nil) == chosen)
     c:Show()
   end
   for i = #list + 1, #f.chips do f.chips[i]:Hide() end
+  f.chipRows = rows
+  f:SetHeight(rows * 30)
 end
 
 function M:Refresh()

@@ -491,7 +491,9 @@ function M:Refresh()
   if training and t then
     t:ClearAllPoints()
     t:SetPoint("TOPLEFT", f, "TOPLEFT", M.NAV + 16, y)
-    y = y - 36
+    -- the chips follow the page (Recipes shows only professions with recipes)
+    if T.Chips then T:Chips(t) end
+    y = y - (t.chipRows or 1) * 30 - 6
   end
   -- a view's own row (search box, list chips, price box) above its cards
   local bar = prov and prov.Toolbar and prov:Toolbar(f, self.mode)
