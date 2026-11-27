@@ -62,6 +62,21 @@ T.describe("poi capture and nearest", function()
     T.ok(not N.Fits({ kind = "trainer", title = "Herbalist" }, "trainer:first aid", ctx))
     local ride = { want = "trainer", what = "riding", level = 20 }
     T.ok(N.Fits({ kind = "trainer", title = "Stablemaster and Riding Trainer" }, "trainer:riding", ride), "riding")
+    local bs = { want = "trainer", what = "blacksmithing", level = 20 }
+    T.ok(not N.Fits({ kind = "trainer", title = "Weaponsmith" }, "trainer:blacksmithing", bs), "specialization only")
+    T.ok(N.Fits({ kind = "trainer", title = "Expert Leathercrafter" }, "trainer:leatherworking:2",
+      { want = "trainer", what = "leatherworking", rank = 2, level = 30 }), "Leathercrafter, Expert covers Journeyman")
+    -- class trainers by the class word in the title
+    local priest = { want = "trainer", cls = "priest", level = 20 }
+    T.ok(N.Fits({ kind = "trainer", title = "High Priest" }, "class_trainer", priest), "High Priest")
+    T.ok(N.Fits({ kind = "trainer", title = "Priest Trainer" }, "class_trainer", priest))
+    T.ok(not N.Fits({ kind = "trainer", title = "Mage Trainer" }, "class_trainer", priest))
+    local mage = { want = "trainer", cls = "mage", level = 20 }
+    T.ok(N.Fits({ kind = "trainer", title = "Master Mage" }, "class_trainer", mage), "Master Mage")
+    T.ok(not N.Fits({ kind = "trainer", title = "Mageweaver" }, "class_trainer", mage), "whole words only")
+    T.ok(N.Fits({ kind = "trainer", title = "Grand Master Rogue" }, "class_trainer", { want = "trainer", cls = "rogue", level = 20 }))
+    T.ok(not N.Fits({ kind = "trainer", title = "Shaman Trainer", note = "teaches up to level 6" }, "class_trainer",
+      { want = "trainer", cls = "shaman", level = 20 }), "a starter trainer past its level stays out")
   end)
 
   T.it("none on this continent: the quickest one elsewhere, or names them when the way isn't known", function()

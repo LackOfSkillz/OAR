@@ -193,7 +193,8 @@ end
 -- a leatherworking arrow found nothing because only "leatherworking trainer"
 -- was looked for).
 M.TRAINER_TITLES = {
-  alchemy = { "alchemist", "alchemy trainer" }, blacksmithing = { "blacksmith", "weaponsmith", "armorsmith" },
+  -- (Weaponsmith, Armorsmith and Weapon/Armor Crafter teach only the specialization, not the ranks: left out)
+  alchemy = { "alchemist", "alchemy trainer" }, blacksmithing = { "blacksmith" },
   enchanting = { "enchanter", "enchanting trainer" },
   engineering = { "engineer" }, leatherworking = { "leatherworker", "leatherworking trainer", "leathercraft" }, tailoring = { "tailor" },
   herbalism = { "herbalis" }, mining = { "mining trainer", "miner" }, skinning = { "skinning trainer", "skinner" },
@@ -224,6 +225,13 @@ function M.NextRank(max)
   return 1
 end
 
+-- Does a (lower-case) trainer title name this class as a whole word?
+function M.TitleNamesClass(title, cls)
+  if type(title) ~= "string" or type(cls) ~= "string" or cls == "" then return false end
+  local padded = " " .. title:gsub("[^%a]", " ") .. " "
+  return padded:find(" " .. cls .. " ", 1, true) ~= nil
+end
+
 -- Does this place fit what was asked for? kind is a place kind, or
 -- "class_trainer", or "trainer:<what>[:<rank>]".
 function M.Fits(p, kind, ctx)
@@ -242,7 +250,9 @@ function M.Fits(p, kind, ctx)
   end
   local title = tostring(p.title or ""):lower()
   if ctx.cls then
-    if not title:find(ctx.cls .. " trainer", 1, true) then return false end
+    -- the class named in a trainer's title: "Priest Trainer", and the old
+    -- capital titles "High Priest", "Master Mage", "Grand Master Rogue"
+    if not M.TitleNamesClass(title, ctx.cls) then return false end
     -- a starter trainer that only teaches to level 6 (Zephras Isle) is no use later
     local cap = tonumber(tostring(p.note or ""):match("up to level (%d+)"))
     if cap and ctx.level > cap then return false end
