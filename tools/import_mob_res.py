@@ -29,6 +29,8 @@ RES_COLS = [("holy", "holy_res"), ("fire", "fire_res"), ("nature", "nature_res")
 MECH = {1: "charm", 2: "disorient", 5: "fear", 7: "root", 9: "silence", 10: "sleep",
         11: "snare", 12: "stun", 13: "freeze", 15: "bleed", 17: "polymorph", 18: "banish",
         20: "shackle", 23: "turn", 24: "horror", 26: "interrupt", 27: "daze"}
+# implicit targets that hit an enemy: single enemy, enemy areas, cone, dynamic object, chain
+HOSTILE_TARGETS = {6, 15, 16, 24, 28, 53, 77}
 DISPEL = {1: "magic", 2: "curse", 3: "disease", 4: "poison"}
 
 
@@ -66,9 +68,15 @@ def main():
 
     # newest patch row per spell / creature
     spells = {}
-    for entry, build, school, dispel, mech, name in c.execute(
-            "select entry, build, school, dispel, mechanic, name from spell_template order by entry, build"):
-        spells[entry] = (school, dispel, mech, name)
+    tcols = ",".join("effectImplicitTarget%s%d" % (ab, i) for ab in "AB" for i in (1, 2, 3))
+    for row in c.execute(
+            "select entry, build, school, dispel, mechanic, name, effect1, effect2, effect3, %s "
+            "from spell_template order by entry, build" % tcols):
+        entry, build, school, dispel, mech, name = row[:6]
+        effects, targets = row[6:9], row[9:]
+        # aimed at an enemy (you): an enemy target or enemy area, or direct damage / leech
+        hostile = any(t in HOSTILE_TARGETS for t in targets) or any(e in (2, 9) for e in effects)
+        spells[entry] = (school, dispel, mech, name, hostile)
     mobs = {}
     for row in c.execute(
             "select entry, patch, name, damage_school, holy_res, fire_res, nature_res, frost_res, shadow_res, "
@@ -109,7 +117,7 @@ def main():
                 "-- Private copy (D10), do not redistribute. 1.12 server values: verified = false;\n"
                 "-- Outrider's own fights override them.\n"
                 "-- mobs[npcID] = { res = {school = value}, imm = schoolMask, mech = mechanicMask, melee = schoolIndex, casts = {spellID...} }\n"
-                "-- spells[spellID] = { name, schoolMask, dispel (1 magic 2 curse 3 disease 4 poison), mechanic }\n"
+                "-- spells[spellID] = { name, schoolMask, dispel (1 magic 2 curse 3 disease 4 poison), mechanic, hostile (1 = aimed at you) }\n"
                 "-- schoolMask bits: 1 physical 2 holy 4 fire 8 nature 16 frost 32 shadow 64 arcane\n")
         f.write("Outrider_DataMobRes = { source = %s, verified = false, mobs = {\n" % lua_str("VMaNGOS db_latest + Forever SpellMisc"))
         for entry, name, dmg, resist, imm, mech, cast in rows:
@@ -127,9 +135,10 @@ def main():
             f.write("[%d]={%s}, -- %s\n" % (entry, ",".join(parts), name.replace("\n", " ")))
         f.write("}, spells = {\n")
         for s in sorted(used):
-            school, dispel, mechid, name = spells.get(s, (0, 0, 0, ""))
+            school, dispel, mechid, name, hostile = spells.get(s, (0, 0, 0, "", False))
             name = fname.get(s, name) or ""
-            f.write("[%d]={%s,%d,%d,%d},\n" % (s, lua_str(name), school_mask(s), dispel or 0, mechid or 0))
+            f.write("[%d]={%s,%d,%d,%d,%d},\n" % (s, lua_str(name), school_mask(s), dispel or 0, mechid or 0,
+                                                1 if hostile else 0))
         f.write("}, mechanics = {")
         f.write(",".join("[%d]=%s" % (k, lua_str(v)) for k, v in sorted(MECH.items())))
         f.write("}, dispels = {" + ",".join("[%d]=%s" % (k, lua_str(v)) for k, v in sorted(DISPEL.items())) + "} }\n")

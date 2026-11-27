@@ -76,8 +76,16 @@ local function mainHandEnchanted()
   local has = C.Call("GetWeaponEnchantInfo")
   return C.Readable(has) == true
 end
+-- the plan's imbue, then the smart loadout's pick for the target (Modules/Loadout.lua)
 local function imbueName()
-  return (level() >= 30 and twoHander() and first("Windfury Weapon")) or first("Rockbiter Weapon", "Flametongue Weapon")
+  local n = (level() >= 30 and twoHander() and first("Windfury Weapon")) or first("Rockbiter Weapon", "Flametongue Weapon")
+  if n and ns.Loadout then n = ns.Loadout:Apply(n) end
+  return n
+end
+-- the right imbue is on (no id readable: any imbue counts, as before)
+local function imbueOn(n)
+  if ns.Loadout then return ns.Loadout.ImbueOn(n) end
+  return mainHandEnchanted()
 end
 
 -- Shaman totems before the pull, after the buffs (Gary 2026-11-25: "work
@@ -91,7 +99,16 @@ F.TOTEMS = {
   { slot = 2, names = { "Strength of Earth Totem", "Stoneskin Totem" }, what = "earth" },
   { slot = 1, names = { "Searing Totem" }, what = "fire" },
   { slot = 3, names = { "Mana Spring Totem" }, what = "water" },
+  -- air: only when the target calls for one (smart loadout: Nature Resistance)
+  { slot = 4, names = {}, what = "air" },
 }
+-- the totem for a slot: the smart loadout's pick for the target (false = none
+-- here), else the best known of the plan's
+local function totemFor(t)
+  local pick = ns.Loadout and ns.Loadout:Totem(t.slot)
+  if pick == false then return nil end
+  return pick or first(unpack(t.names)), pick ~= nil
+end
 function F.TotemDown(slot)
   if type(C.Resolve("GetTotemInfo")) ~= "function" then return nil end
   -- a totem only counts as down with a name and time on it (some clients
@@ -100,12 +117,18 @@ function F.TotemDown(slot)
   name, duration = C.Readable(name), tonumber(C.Readable(duration))
   return C.Readable(have) == true and type(name) == "string" and name ~= "" and (duration or 0) > 0
 end
+-- the totem down in a slot is `name` (any rank: "Searing Totem II")
+function F.TotemIs(slot, name)
+  local _, down = C.Call("GetTotemInfo", slot)
+  down = C.Readable(down)
+  return type(down) == "string" and down:find(name, 1, true) == 1
+end
 -- what each element's totem line is doing, for the log: "earth Stoneskin
 -- Totem missing, fire not known, ..."
 function F.TotemState()
   local parts = {}
   for _, t in ipairs(F.TOTEMS) do
-    local n = first(unpack(t.names))
+    local n = totemFor(t)
     parts[#parts + 1] = t.what .. " " .. (n and (n .. (F.TotemDown(t.slot) and " down" or " missing")) or "not known")
   end
   return table.concat(parts, ", ")
@@ -114,9 +137,12 @@ function F.MissingTotems()
   local out = {}
   if type(C.Resolve("GetTotemInfo")) ~= "function" then return out end
   for _, t in ipairs(F.TOTEMS) do
-    local n = first(unpack(t.names))
-    if n and not F.TotemDown(t.slot) then
-      out[#out + 1] = { text = "/cast [nocombat] " .. n, why = "before the pull, while no " .. t.what .. " totem is down", spell = n, totem = true }
+    local n, picked = totemFor(t)
+    -- down counts only when it is this totem (a Mana Spring down while the
+    -- mob calls for Fire Resistance is the wrong one)
+    if n and not (F.TotemDown(t.slot) and F.TotemIs(t.slot, n)) then
+      out[#out + 1] = { text = "/cast [nocombat] " .. n, spell = n, totem = true, picked = picked,
+        why = picked and ("this mob calls for " .. n) or ("before the pull, while no " .. t.what .. " totem is down") }
     end
   end
   return out
@@ -131,8 +157,8 @@ function F.SelfBuffs(cls)
   local out = {}
   if cls == "SHAMAN" then
     local imbue = imbueName()
-    if imbue and not mainHandEnchanted() then
-      out[#out + 1] = { text = "/cast [nocombat] " .. imbue, why = "before the pull, while the weapon has no imbue", spell = imbue }
+    if imbue and not imbueOn(imbue) then
+      out[#out + 1] = { text = "/cast [nocombat] " .. imbue, why = "before the pull, while the weapon lacks " .. imbue, spell = imbue }
     end
   end
   buffLines(cls, function(_, text, why)
@@ -145,7 +171,8 @@ function F.SelfBuffs(cls)
 end
 F.WatchExtra = function()
   if ns.PlayerClass() ~= "SHAMAN" then return nil end
-  local s = mainHandEnchanted() and "imbue on" or "imbue off"
+  local cur = ns.Loadout and ns.Loadout.CurrentImbue()
+  local s = cur and ("imbue " .. cur) or (mainHandEnchanted() and "imbue on" or "imbue off")
   for _, t in ipairs(F.TOTEMS) do s = s .. (F.TotemDown(t.slot) and " T" or " -") end
   return s
 end

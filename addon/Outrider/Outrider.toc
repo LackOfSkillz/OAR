@@ -99,6 +99,7 @@ Modules\RankCheck.lua
 Modules\HunterFight.lua
 Modules\ClassFight.lua
 Modules\FightPlan.lua
+Modules\Loadout.lua
 Modules\MacroTree.lua
 Modules\MacroTreeModel.lua
 Modules\MacroTreePage.lua

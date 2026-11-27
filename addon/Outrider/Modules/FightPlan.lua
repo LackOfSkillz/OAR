@@ -181,7 +181,8 @@ function M:Lines(kind, add)
   local function flushExtra(list)
     for _, b in ipairs(list) do
       local text = ns.PlayerClass() == "DRUID" and M.DruidForms(b.text) or b.text
-      add(7, text, b.why)
+      -- a totem the target calls for (Tremor, Fire Resistance) outlasts a plain one when the macro is full
+      add(b.picked and 6 or 7, text, b.why)
       casts = casts + 1
     end
     for i = #list, 1, -1 do list[i] = nil end
@@ -190,12 +191,19 @@ function M:Lines(kind, add)
     local skip = false
     if sl.kind == "buff" then
       -- a buff already up is left out (the line comes back when it drops)
-      for _, sp in ipairs(sl.spells or {}) do if F.AuraOn(sp:gsub("^!", "")) then skip = true end end
+      -- (smart loadout: the swapped spell is the one checked; a weapon imbue is no aura)
+      for _, sp in ipairs(sl.spells or {}) do
+        local n = sp:gsub("^!", "")
+        if ns.Loadout then n = ns.Loadout:Apply(n) end
+        if F.AuraOn(n) or (ns.Loadout and ns.Loadout.ImbueOn(n)) then skip = true end
+      end
     end
     -- a clause for a spell not learned yet drops out of the line (the rogue
     -- Strike key's Pick Pocket before level 4); a line with nothing left is skipped
     local text = not skip and M.KnownLine(sl.line)
     if not text then skip = true end
+    -- smart loadout: this mob's better imbue / shock / nuke (Modules/Loadout.lua)
+    if text and ns.Loadout then text = ns.Loadout:Apply(text) end
     if text and ns.PlayerClass() == "DRUID" then text = M.DruidForms(text) end
     -- self-buffs go in before the first line that isn't targeting or swinging
     local aiming = (sl.line or ""):find("^/targetenemy") or (sl.line or ""):find("^/startattack")

@@ -396,7 +396,8 @@ function M.new(opts)
     if name then return true, name, 0, 60, "" end
     return false, "", 0, 0, ""
   end
-  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return game.mhEnchant or false end
+  base.GetWeaponEnchantInfo = function() if game.lureMs then return true, game.lureMs, 0, 0 end return game.mhEnchant or false, 0, 0, game.mhEnchantID end
+  base.UnitCanAttack = function(_, unit) local u = game.units and game.units[unit] return u and u.canAttack end
   -- druid forms: game.forms = { spellID, ... } in stance-bar order
   base.GetNumShapeshiftForms = function() return #(game.forms or {}) end
   base.GetShapeshiftFormInfo = function(i) local id = (game.forms or {})[i] if id then return 0, false, true, id end end
