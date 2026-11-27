@@ -36,6 +36,23 @@ M.IMBUE_WORD = { ["Frostbrand Weapon"] = "Frostbrand", ["Flametongue Weapon"] = 
   ["Rockbiter Weapon"] = "Rockbiter", ["Windfury Weapon"] = "Windfury" }
 
 local function known(name) return ns.Spellbook and ns.Spellbook:Known(name) ~= nil end
+
+-- counter buffs and auras going on or off rewrite the fight keys (HunterFight watch)
+do
+  local F = ns.HunterFight
+  if F and F.WATCH then
+    for _, cls in ipairs({ "MAGE", "PRIEST", "PALADIN", "HUNTER" }) do
+      F.WATCH[cls] = F.WATCH[cls] or {}
+      local seen = {}
+      for _, n in ipairs(F.WATCH[cls]) do seen[n] = true end
+      for _, c in ipairs(({ MAGE = { { "Fire Ward" }, { "Frost Ward" } }, PRIEST = { { "Shadow Protection" } },
+        PALADIN = { { "Fire Resistance Aura" }, { "Frost Resistance Aura" }, { "Shadow Resistance Aura" } },
+        HUNTER = { { "Aspect of the Wild" } } })[cls]) do
+        if not seen[c[1]] then table.insert(F.WATCH[cls], c[1]) end
+      end
+    end
+  end
+end
 local function level() return tonumber(C.Call("UnitLevel", "player")) or 1 end
 
 -- ------------------------------------------------------------------ the data
@@ -162,8 +179,46 @@ M.GROUPS = {
     imbue = { { "Rockbiter Weapon", "physical" }, { "Windfury Weapon", "physical" },
       { "Flametongue Weapon", "fire" }, { "Frostbrand Weapon", "frost" } },
     shock = { { "Earth Shock", "nature" }, { "Flame Shock", "fire" }, { "Frost Shock", "frost" } },
+    -- Lava Burst has a cooldown: only wins when nature does next to nothing
+    nuke = { { "Lightning Bolt", "nature" }, { "Lava Burst", "fire" } },
+  },
+  MAGE = {
+    nuke = { { "Frostbolt", "frost" }, { "Fireball", "fire" }, { "Arcane Missiles", "arcane" } },
+  },
+  WARLOCK = {
+    nuke = { { "Shadow Bolt", "shadow" }, { "Searing Pain", "fire" } },
+    dot = { { "Corruption", "shadow" }, { "Immolate", "fire" } },
+  },
+  PRIEST = {
+    filler = { { "Smite", "holy" }, { "Mind Flay", "shadow" } },
+    dot = { { "Shadow Word: Pain", "shadow" }, { "Holy Fire", "holy" } },
+  },
+  PALADIN = {
+    seal = { { "Seal of Righteousness", "holy" }, { "Seal of Command", "physical" }, { "Seal of the Crusader", "physical" } },
+  },
+  DRUID = {
+    nuke = { { "Wrath", "nature" }, { "Starfire", "arcane" } },
+  },
+  HUNTER = {
+    sting = { { "Serpent Sting", "nature" }, { "Arcane Shot", "arcane" } },
   },
 }
+
+-- What the mob throws at you, countered: `swap` replaces those spells (an
+-- aura), otherwise it is one more pre-pull buff while it is missing.
+-- Classic spells; each only when this character knows it.
+M.COUNTERS = {
+  MAGE = { { "Fire Ward", "fire" }, { "Frost Ward", "frost" } },
+  PRIEST = { { "Shadow Protection", "shadow" } },
+  PALADIN = {
+    { "Fire Resistance Aura", "fire", swap = { "Devotion Aura", "Retribution Aura" } },
+    { "Frost Resistance Aura", "frost", swap = { "Devotion Aura", "Retribution Aura" } },
+    { "Shadow Resistance Aura", "shadow", swap = { "Devotion Aura", "Retribution Aura" } },
+  },
+  HUNTER = { { "Aspect of the Wild", "nature", swap = { "Aspect of the Monkey" } } },
+}
+-- Fears that do nothing on a mob that can't be feared: left out of the keys.
+M.FEARS = { "Fear", "Psychic Scream", "Howl of Terror", "Intimidating Shout", "Scare Beast", "Turn Undead" }
 
 -- Shaman totems by slot (1 fire, 2 earth, 3 water, 4 air): the totem this mob
 -- calls for, false for "drop no totem here", nil for the plan's own.
@@ -192,7 +247,7 @@ end
 -- why = {lines}, sig = "...", P = profile }. Empty picks when nothing is known.
 function M:Picks(P)
   local cls = ns.PlayerClass()
-  local out = { swaps = {}, totems = {}, why = {}, P = P }
+  local out = { swaps = {}, totems = {}, why = {}, drops = {}, buffs = {}, P = P }
   if not P then out.sig = "" return out end
   for gname, group in pairs(M.GROUPS[cls] or {}) do
     for _, o in ipairs(group) do
@@ -202,6 +257,20 @@ function M:Picks(P)
         out.why[#out.why + 1] = string.format("%s instead of %s (%s x%.2f vs x%.2f)", best, o[1], gname, bm or 0, cm or 0)
       end
     end
+  end
+  for _, c in ipairs(M.COUNTERS[cls] or {}) do
+    if (P.casts[c[2]] or 0) > 0 and known(c[1]) then
+      if c.swap then
+        for _, from in ipairs(c.swap) do if not out.swaps[from] then out.swaps[from] = c[1] end end
+        out.why[#out.why + 1] = string.format("%s (casts %s)", c[1], c[2])
+      elseif #out.buffs == 0 then -- one counter buff: the macro has room for one
+        out.buffs[#out.buffs + 1] = c[1]
+        out.why[#out.why + 1] = string.format("%s before the pull (casts %s)", c[1], c[2])
+      end
+    end
+  end
+  if P.fearImmune then
+    for _, f in ipairs(M.FEARS) do if known(f) then out.drops[f] = true out.why[#out.why + 1] = f .. " left out (can't be feared)" end end
   end
   if cls == "SHAMAN" then
     for slot = 1, 4 do
@@ -215,6 +284,8 @@ function M:Picks(P)
   local keys = {}
   for a, b in pairs(out.swaps) do keys[#keys + 1] = a .. ">" .. b end
   for s = 1, 4 do if out.totems[s] ~= nil then keys[#keys + 1] = s .. "=" .. tostring(out.totems[s]) end end
+  for d in pairs(out.drops) do keys[#keys + 1] = "-" .. d end
+  for _, b in ipairs(out.buffs) do keys[#keys + 1] = "+" .. b end
   table.sort(keys)
   out.sig = table.concat(keys, ",")
   return out
@@ -223,18 +294,74 @@ end
 -- -------------------------------------------------- used by the macro builder
 function M:Current() return self.enabled and self:Settings().on and self.picks or nil end
 
--- Swap the spells of one fight line. Plain text replacement of whole spell names.
-function M:Apply(text)
-  local p = self:Current()
-  if not p or type(text) ~= "string" or not next(p.swaps) then return text end
-  for from, to in pairs(p.swaps) do
-    local a, b = text:find(from, 1, true)
-    while a do
+-- A whole spell name at a..b: not part of a longer name ("Wrath" in "Hammer of Wrath")
+-- (a spell starts after the command, a ] ; , or !, and ends at , ; or the line's end)
+local function whole(text, a, b)
+  local pre = text:sub(1, a - 1):gsub("%s+$", "")
+  local okBefore = pre == "" or pre:find("[%];,!]$") or pre:find("/cast$") or pre:find("/castsequence$")
+    or pre:find("reset=%S+$") or pre:find("/use$")
+  local post = text:sub(b + 1):gsub("^ +", "")
+  local okAfter = post == "" or post:find("^[,;\n]")
+  return okBefore and okAfter
+end
+
+local function replaceAll(text, from, to)
+  local a, b = text:find(from, 1, true)
+  while a do
+    if whole(text, a, b) then
       text = text:sub(1, a - 1) .. to .. text:sub(b + 1)
       a, b = text:find(from, a + #to, true)
+    else
+      a, b = text:find(from, b + 1, true)
     end
   end
   return text
+end
+
+-- "/castsequence [x] reset=combat/target A,B,C" -> head, { "A", "B", "C" }
+local function splitSequence(text)
+  if not text:find("^/castsequence") then return nil end
+  local head, list = text:match("^(/castsequence.-reset=%S+%s+)(.+)$")
+  if not head then head, list = text:match("^(/castsequence%s*%b[]%s*)(.+)$") end
+  if not head then head, list = text:match("^(/castsequence%s+)(.+)$") end
+  if not head then return nil end
+  local items = {}
+  for it in (list .. ","):gmatch("([^,]*),") do items[#items + 1] = it end
+  return head, items
+end
+
+-- Swap the spells of one fight line for this mob's better ones; false when
+-- the line casts nothing useful any more (a fear on a mob that can't be feared).
+-- In a cast sequence a swap into a spell that is already there drops the old
+-- one instead (Corruption -> Immolate when Immolate is in the sequence).
+function M:Apply(text)
+  local p = self:Current()
+  if not p or type(text) ~= "string" then return text end
+  if not next(p.swaps) and not next(p.drops) then return text end
+  local head, items = splitSequence(text)
+  if head then
+    local had = {}
+    for _, it in ipairs(items) do had[it] = true end
+    local out = {}
+    for _, it in ipairs(items) do
+      local to = p.swaps[it]
+      if p.drops[it] or (to and had[to]) then -- left out
+      else out[#out + 1] = to or it end
+    end
+    if #out == 0 then return false end
+    return head .. table.concat(out, ",")
+  end
+  -- a /cast line that casts only a dropped spell
+  local only = text:match("^/cast%s*%b[]%s*([^;]+)$") or text:match("^/cast%s+([^;%[]+)$")
+  if only and p.drops[(only:gsub("%s+$", ""))] then return false end
+  for from, to in pairs(p.swaps) do text = replaceAll(text, from, to) end
+  return text
+end
+
+-- Counter buffs for this mob (Fire Ward, Shadow Protection), for the pre-pull lines
+function M:Buffs()
+  local p = self:Current()
+  return p and p.buffs or {}
 end
 
 -- totem override for a slot: name, false (no totem), or nil (the plan's own)

@@ -171,6 +171,21 @@ unverified until they're checked against Gary's own hits.
 | SL-05 | The other eight classes, one at a time, each with its own in-game check | Both |
 | SL-06 | The cited starter pack, plus guild sharing of profiles (opt-in) | Claude |
 
+## Status (2026-11-27)
+
+- SL-00 data pack: done (see above).
+- SL-03 shaman: built (`Modules/Loadout.lua`, `tests/spec/loadout_spec.lua`). Imbue,
+  shock, Lightning Bolt to Lava Burst, all four totems, and a wrong imbue on the
+  weapon (Forever enchant ids 7566-7569) counts as missing. Deployed; waiting on
+  Gary's in-game check.
+- SL-05 other classes: built from the same tables (`M.GROUPS`, `M.COUNTERS`,
+  `M.FEARS`). Mage nuke and wards, warlock nuke and DoT, priest filler, DoT and
+  Shadow Protection, paladin seal and resistance auras, druid nuke, hunter sting
+  and Aspect of the Wild, fears dropped on fear-immune mobs. Warrior and rogue
+  have nothing to swap.
+- SL-01/02 learning from fights: not built. It waits on Gary's answer about UNIT_COMBAT.
+- SL-04 hint icon: not built. The tooltip line and the log line are there.
+
 ## Questions for Gary
 
 1. How did you see the 3x fire: hit numbers, a tooltip line, or something else? And

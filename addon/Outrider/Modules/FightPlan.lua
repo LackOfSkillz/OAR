@@ -203,7 +203,10 @@ function M:Lines(kind, add)
     local text = not skip and M.KnownLine(sl.line)
     if not text then skip = true end
     -- smart loadout: this mob's better imbue / shock / nuke (Modules/Loadout.lua)
-    if text and ns.Loadout then text = ns.Loadout:Apply(text) end
+    if text and ns.Loadout then
+      text = ns.Loadout:Apply(text)
+      if not text then skip = true end -- a fear on a mob that can't be feared
+    end
     if text and ns.PlayerClass() == "DRUID" then text = M.DruidForms(text) end
     -- self-buffs go in before the first line that isn't targeting or swinging
     local aiming = (sl.line or ""):find("^/targetenemy") or (sl.line or ""):find("^/startattack")

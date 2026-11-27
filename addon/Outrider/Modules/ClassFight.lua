@@ -65,6 +65,8 @@ end
 local function buffLines(cls, add, keep)
   for _, b in ipairs(BUFFS[cls] or {}) do
     local n = first(unpack(b[1]))
+    -- smart loadout: Fire Resistance Aura for Devotion Aura on a fire caster
+    if n and ns.Loadout then n = ns.Loadout:Apply(n) end
     if n and not F.AuraOn(n) then
       add(keep or 7, string.format("/cast [nocombat,%s@player] %s", b[2] or "", n), "before the pull, while " .. n .. " is missing")
     end
@@ -164,6 +166,12 @@ function F.SelfBuffs(cls)
   buffLines(cls, function(_, text, why)
     out[#out + 1] = { text = text, why = why, spell = text:match("%] (.+)$") }
   end)
+  -- smart loadout: a counter for what the target throws at you (Fire Ward, Shadow Protection)
+  for _, n in ipairs(ns.Loadout and ns.Loadout:Buffs() or {}) do
+    if not F.AuraOn(n) then
+      out[#out + 1] = { text = "/cast [nocombat] " .. n, why = "this mob calls for " .. n, spell = n, picked = true }
+    end
+  end
   if cls == "SHAMAN" then
     for _, t in ipairs(F.MissingTotems()) do out[#out + 1] = t end
   end
