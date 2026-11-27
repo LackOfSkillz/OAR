@@ -204,6 +204,14 @@ local function reqMet(state, e, ranks)
   return true
 end
 
+-- Forever's renames (shared with the macro tree, Modules/MacroTreeModel.lua):
+-- the new name, or nil
+function M.Renamed(name)
+  local t = ns.MacroTree and ns.MacroTree.RENAMED
+  local r = t and t[name]
+  return type(r) == "table" and r.to or nil
+end
+
 -- Walks the build against what is spent. Returns
 --   { steps = { { point, level, name, rank, max, done, next, locked, missing, tab, index } },
 --     next = { step, ... } (learnable now, up to the unspent points), offPlan = { {name, extra} },
@@ -216,9 +224,15 @@ function M:Plan(state, build)
   for t, tab in ipairs(state.tabs) do tabSpent[t] = tab.spent end
   local planned, budget, blocked, seenMissing = {}, state.unspent or 0, false, {}
   for p, name in ipairs(M.Expand(build)) do
+    -- a guide written for Classic may use the old name of a talent Forever renamed
+    local was
+    if not state.byName[name] then
+      local to = M.Renamed(name)
+      if to and state.byName[to] then was, name = name, to end
+    end
     planned[name] = (planned[name] or 0) + 1
     local e = state.byName[name]
-    local step = { point = p, level = M.FIRST_LEVEL + p - 1, name = name, rank = planned[name] }
+    local step = { point = p, level = M.FIRST_LEVEL + p - 1, name = name, rank = planned[name], renamedFrom = was }
     if not e then
       step.missing = true
       if not seenMissing[name] then seenMissing[name] = true plan.missing[#plan.missing + 1] = name end
@@ -415,7 +429,9 @@ function M:Check()
   end
   if #plan.missing > 0 and not self.missingLogged then
     self.missingLogged = true
-    self:Warn("talent build names this client doesn't have: %s", table.concat(plan.missing, ", "))
+    -- log only: a data note for the build's author, nothing the player can act on
+    -- (the Talent Lab card already shows "N talents not found")
+    self:Info("talent build names this client doesn't have: %s", table.concat(plan.missing, ", "))
   end
   -- one chat line per level with points waiting
   if s.notify and (state.unspent or 0) > 0 and #plan.next > 0 and (s.toldLevel or 0) < (state.level or 0) then

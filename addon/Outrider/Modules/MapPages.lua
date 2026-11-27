@@ -235,6 +235,21 @@ function P.DungeonList()
   return out
 end
 
+-- The dungeon to open first: one for your level, else the next one up, else
+-- the highest below. Battlegrounds (no level range, 0-0) only as a last resort.
+function P.Pick(items, level)
+  local best, below
+  for _, e in ipairs(items) do
+    if (e.max or 0) > 0 then
+      if level >= e.min and level <= e.max then return e.name end
+      if e.min > level and (not best or e.min < best.min) then best = e end
+      if e.max < level and (not below or e.max > below.max) then below = e end
+    end
+  end
+  local e = best or below or items[1]
+  return e and e.name
+end
+
 ns.Hub:AddTab("dungeonmap", "Dungeon maps", function(p)
   local view = UI:MapView(p, { draw = true })
   view:SetPoint("TOPLEFT", P.LEFT + 12, 0)
@@ -290,10 +305,7 @@ ns.Hub:AddTab("dungeonmap", "Dungeon maps", function(p)
         local m = P.DungeonMap(e.name, e.zone)
         if m and m == here then P.dungeon = e.name break end
       end
-      if not P.dungeon then
-        for _, e in ipairs(items) do if level >= e.min and level <= e.max then P.dungeon = e.name break end end
-      end
-      P.dungeon = P.dungeon or (items[1] and items[1].name)
+      P.dungeon = P.dungeon or P.Pick(items, level)
       if P.dungeon then P.ShowDungeon(p, P.dungeon) return end
     end
     if #items == 0 then view.empty:SetText("The dungeon data pack (Outrider_Data_Dungeons) isn't installed.") view.empty:Show() end

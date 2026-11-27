@@ -228,12 +228,55 @@ function M:BossPins(mapID)
         local wish = ns.BagExtras and ns.BagExtras:Wishlist()[b[6][i]] and "  |cff66d980(wish list)|r" or ""
         lines[#lines + 1] = string.format("%s  %.0f%%%s", it and it.name or ("item " .. b[6][i]), b[6][i + 1] / 100, wish)
       end
+      local needs = M.BossNeeds(b[2])
+      if needs then table.insert(lines, 1, needs) end
       out[#out + 1] = { id = "boss-" .. b[1], kind = "boss", mapID = mapID, x = x, y = y, name = b[2], npcID = b[1],
         poi = { kind = "boss", name = b[2], title = "drops", note = table.concat(lines, "\n"), source = "ForeverDB, unchecked" } }
     end
   end
-  self:Debug("dungeon map %d (instance %s): %d of %d bosses placed", mapID, tostring(inst), #out, #list)
+  -- once per map: what the client gave us (the in-game check reads this)
+  self:Info("dungeon map %d (instance %s): %d of %d bosses placed", mapID, tostring(inst), #out, #list)
   return out
+end
+
+-- What a boss needs from the group, from the researched guides
+-- (Data/VanguardFacts.lua, verified = false), as tooltip lines; nil if none.
+local function factsIndex()
+  if M.factsByBoss then return M.factsByBoss end
+  local idx = {}
+  local facts = ns.VanguardFacts
+  for inst, b in pairs(facts and facts.bosses or {}) do
+    for _, boss in ipairs(b.list or {}) do
+      if type(boss.name) == "string" then idx[boss.name:lower()] = { boss = boss, kind = b.kind, inst = inst } end
+    end
+  end
+  M.factsByBoss = idx
+  return idx
+end
+
+M.NEED_LABEL = { interrupt = "interrupt", interrupt_heal = "interrupt its heal", dispel_magic = "remove magic",
+  dispel_curse = "remove curse", dispel_poison = "remove poison", dispel_disease = "remove disease",
+  purge = "remove its buffs", cc = "crowd control", enrage = "remove enrage" }
+
+function M.BossNeeds(name)
+  if type(name) ~= "string" then return nil end
+  local e = factsIndex()[name:lower()]
+  if not e then return nil end
+  local need, watch = {}, {}
+  local notes = ns.Vanguard and ns.Vanguard.Facts and ns.Vanguard.Facts.TAG_NOTE or {}
+  for tag in pairs(e.boss.tags or {}) do
+    if M.NEED_LABEL[tag] then need[#need + 1] = M.NEED_LABEL[tag]
+    elseif notes[tag] then watch[#watch + 1] = notes[tag] end
+  end
+  table.sort(need)
+  table.sort(watch)
+  if #need == 0 and #watch == 0 then return nil end
+  local out = {}
+  if #need > 0 then out[#out + 1] = "|cffffd27fBring:|r " .. table.concat(need, ", ") end
+  if #watch > 0 then out[#out + 1] = "|cffffd27fWatch:|r " .. table.concat(watch, ", ") end
+  out[#out + 1] = "|cff888888" .. (e.kind == "classic" and "from a Classic guide, Forever may differ" or "from a Forever guide")
+    .. ", not checked in game|r"
+  return table.concat(out, "\n")
 end
 
 -- ------------------------------------------------------------ wish list drops

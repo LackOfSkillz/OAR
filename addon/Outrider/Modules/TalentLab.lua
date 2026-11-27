@@ -342,6 +342,7 @@ function M.RanksFor(model, card, level)
   for _, name in ipairs(M.Order(model, card)) do
     if M.Total(r) >= budget then break end
     local t = model.byName[name]
+    if not t and ns.Talents and ns.Talents.Renamed then t = model.byName[ns.Talents.Renamed(name) or ""] end -- Forever renamed it
     if not t then
       if not seen[name] then seen[name] = true missing[#missing + 1] = name end
     else
@@ -349,7 +350,8 @@ function M.RanksFor(model, card, level)
     end
   end
   for name in pairs(card.points or {}) do
-    if not model.byName[name] and not seen[name] then seen[name] = true missing[#missing + 1] = name end
+    local to = ns.Talents and ns.Talents.Renamed and ns.Talents.Renamed(name)
+    if not model.byName[name] and not (to and model.byName[to]) and not seen[name] then seen[name] = true missing[#missing + 1] = name end
   end
   table.sort(missing)
   return r, missing

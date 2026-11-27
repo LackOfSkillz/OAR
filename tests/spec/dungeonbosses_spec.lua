@@ -25,6 +25,42 @@ T.describe("bosses on dungeon maps", function()
   end)
 end)
 
+T.describe("boss tips and the first dungeon shown", function()
+  T.it("a boss skull's tip says what the boss needs, from the researched guides, marked unchecked", function()
+    local game = mock.new({ mapID = 1413, x = 0.5, y = 0.5 })
+    game.maps = { [279] = { name = "Wailing Caverns", mapType = 4 } }
+    game.mapWorld = { [279] = { 43, -500, -500 } }
+    rawset(game.env, "Outrider_DataTravel", { source = "spec", taxi = {}, flights = {}, docks = {}, rides = {}, portals = {},
+      bosses = { [43] = { { 3671, "Lady Anacondra", 1, 46, 184, {} }, { 3669, "Nobody Known", 1, 47, 185, {} } } } })
+    local ns = game:loadAddon()
+    game:login()
+    ns.VanguardFacts = { bosses = { ["Wailing Caverns"] = { kind = "classic", source = "x", list = {
+      { name = "Lady Anacondra", tags = { interrupt_heal = "heals", dispel_magic = "sleep", fear = "x" } } } } } }
+    ns.DungeonJournal.factsByBoss = nil
+    ns.Travel.pack = nil
+    local pins = ns.DungeonJournal:BossPins(279)
+    local tip = {}
+    for _, p in ipairs(pins) do tip[p.name] = p.poi.note end
+    T.contains(tip["Lady Anacondra"], "Bring:|r interrupt its heal, remove magic")
+    T.contains(tip["Lady Anacondra"], "Watch:|r fears players")
+    T.contains(tip["Lady Anacondra"], "Classic guide, Forever may differ, not checked in game")
+    T.ok(not tip["Nobody Known"]:find("Bring"), "no researched needs: no made-up line")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
+  T.it("opens a dungeon for your level, else the next one up; battlegrounds last", function()
+    local game = mock.new()
+    local ns = game:loadAddon()
+    local items = { { name = "Alterac Valley", min = 0, max = 0 }, { name = "Ragefire Chasm", min = 13, max = 18 },
+      { name = "The Deadmines", min = 18, max = 23 }, { name = "Scholomance", min = 58, max = 60 } }
+    T.eq(ns.MapPages.Pick(items, 8), "Ragefire Chasm", "level 8: the next one up, not the battleground")
+    T.eq(ns.MapPages.Pick(items, 20), "The Deadmines")
+    T.eq(ns.MapPages.Pick(items, 40), "Scholomance", "between: the next one up")
+    T.eq(ns.MapPages.Pick(items, 62), "Scholomance", "above all: the highest")
+    T.eq(ns.MapPages.Pick({ items[1] }, 8), "Alterac Valley", "only a battleground: that")
+  end)
+end)
+
 T.describe("wish list drops", function()
   T.it("a wish list item in a roll or a loot window gets one toast, and getting it is noted", function()
     local game = mock.new()

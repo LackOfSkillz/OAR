@@ -92,6 +92,28 @@ T.describe("talent advisor", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("a talent Forever renamed follows its new name; a missing one goes to the log, not chat", function()
+    local game, ns = session(17, { ["Endurance Training"] = 5 }, 1)
+    -- pretend Forever renamed Improved Aspect of the Monkey
+    ns.MacroTree.RENAMED["Improved Aspect of the Monkey"] = { to = "Monkey Training", note = "test" }
+    game.talents[1].talents[3].name = "Monkey Training"
+    game.talents[1].talents[2].name = "Deadly Drills" -- not in the build anyway
+    local plan = ns.Talents:Current()
+    for _, n in ipairs(plan.missing) do T.ok(n ~= "Improved Aspect of the Monkey", "the renamed talent is found") end
+    T.eq(names(plan.next), "Monkey Training 1")
+    T.eq(plan.next[1].renamedFrom, "Improved Aspect of the Monkey")
+    ns.MacroTree.RENAMED["Improved Aspect of the Monkey"] = nil
+    -- a name with no rename: logged once, never printed
+    game.talents[1].talents[1].name = "Endurance Drills"
+    ns.Talents.missingLogged = nil
+    local before = #game.chat
+    ns.Talents:Check()
+    local printed = false
+    for i = before + 1, #game.chat do if tostring(game.chat[i]):find("doesn't have") then printed = true end end
+    T.ok(not printed, "no chat warning")
+    T.ok(ns.Talents.missingLogged, "logged")
+  end)
+
   T.it("tooltip line, one chat line per level, and the command", function()
     local game, ns = session(17, { ["Endurance Training"] = 5 }, 3)
     T.eq(ns.Talents:TooltipLine(1, 3), "Outrider plan: spend here next (#1)")
