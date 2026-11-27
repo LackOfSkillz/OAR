@@ -63,17 +63,23 @@ function M:Scan() return ns.Prices and ns.Prices.lastScan end
 -- item details are still loading, they are worked out again at most every
 -- M.RECHECK seconds.
 M.RECHECK = 10
+M.STUCK = 2 -- rechecks in a row with no item newly loaded before it stops trying
 function M:Cached(kind, fn)
   local scan = self:Scan()
   if not scan then return fn(self) end
   self.cache = self.cache or {}
   local c = self.cache[kind]
   local now = time()
-  if c and c.scan == scan and not (c.loading and c.loading > 0 and now - c.at >= M.RECHECK) then
+  -- items that never load (gone from Forever's client) kept this walking
+  -- thousands of items every 10 s after a scan (lag spikes, Gary 2026-11-27):
+  -- recheck only while the count still drops, at most M.STUCK times without progress
+  if c and c.scan == scan and not (c.loading and c.loading > 0 and now - c.at >= M.RECHECK and (c.stuck or 0) < M.STUCK) then
     return c.out, c.loading
   end
   local out, loading = fn(self)
-  self.cache[kind] = { scan = scan, at = now, out = out, loading = loading }
+  local stuck = 0
+  if c and c.scan == scan and (loading or 0) >= (c.loading or 0) then stuck = (c.stuck or 0) + 1 end
+  self.cache[kind] = { scan = scan, at = now, out = out, loading = loading, stuck = stuck }
   return out, loading
 end
 
@@ -349,7 +355,7 @@ end
 function M:OnItemInfo()
   if not (self:Scan() and self.cache) then return end
   local waiting = false
-  for _, c in pairs(self.cache) do if c.loading and c.loading > 0 then waiting = true end end
+  for _, c in pairs(self.cache) do if c.loading and c.loading > 0 and (c.stuck or 0) < M.STUCK then waiting = true end end
   if not waiting then return end
   ns.Throttle("deals:loaded", M.RECHECK + 1, function()
     local flips, lf = M:VendorFlips()

@@ -151,7 +151,7 @@ function M:Elsewhere(level, faction, mapID)
   local key = tostring(level) .. ":" .. tostring(mapID)
   local now = C.Call("GetTime") or 0
   local ec = self.elsewhereCache
-  if ec and ec.key == key and now - ec.at < ((ec.missing or 0) > 0 and 4 or 20) then return ec.list end
+  if ec and ec.key == key and now - ec.at < ((ec.missing or 0) > 0 and (self.stuck or 0) < 2 and 4 or 20) then return ec.list end
   local here = M.Continent(mapID)
   local best, missing = {}, 0
   for id, it in pairs(self.pack or {}) do
@@ -326,6 +326,11 @@ function M:Candidates(opts)
     if pa ~= pb then return pa > pb end
     return (M.EFFORT[a.kind] or 9) < (M.EFFORT[b.kind] or 9)
   end)
+  -- items the client never loads kept a full gear-pack rescan going every
+  -- few seconds (lag spikes, 2026-11-27): retry only while the count drops
+  if missing > 0 and missing >= (self.prevMissing or math.huge) then self.stuck = (self.stuck or 0) + 1
+  else self.stuck = 0 end
+  self.prevMissing = missing
   self.missing = missing
   return out
 end
@@ -385,11 +390,11 @@ end
 
 function M:OnEnable()
   self:On("ZONE_CHANGED_NEW_AREA", function(mod) ns.Throttle("nearby:scan", 5, function() mod:Scan("zone") end) end)
-  self:On("PLAYER_EQUIPMENT_CHANGED", function(mod) mod.elsewhereCache = nil mod:ForgetScores() end)
+  self:On("PLAYER_EQUIPMENT_CHANGED", function(mod) mod.elsewhereCache, mod.stuck, mod.prevMissing = nil, 0, nil mod:ForgetScores() end)
   self:On("PLAYER_LEVEL_UP", function(mod) mod:ForgetScores() ns.Throttle("nearby:scan", 5, function() mod:Scan("level") end) end)
   self:On("PLAYER_TALENT_UPDATE", function(mod) mod:ForgetScores() end)
   self:On("GET_ITEM_INFO_RECEIVED", function(mod)
-    if (mod.missing or 0) > 0 then ns.Throttle("nearby:scan", 3, function() mod:Scan() end) end
+    if (mod.missing or 0) > 0 and (mod.stuck or 0) < 2 then ns.Throttle("nearby:scan", 3, function() mod:Scan() end) end
   end)
 end
 

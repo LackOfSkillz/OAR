@@ -32,7 +32,11 @@ function M:OnEnable()
   self:On("PLAYER_ENTERING_WORLD", function(mod, _, login, reload) if login or reload then mod:Scan() end end)
   -- items not cached at login: one more scan when the client has loaded them
   self:On("GET_ITEM_INFO_RECEIVED", function(mod)
-    if mod.missing and time() - (mod.scannedAt or 0) >= 5 then mod:Scan() end
+    -- at most 3 more scans: an alt's item the client never loads kept this going every 5 s
+    if mod.missing and (mod.retries or 0) < 3 and time() - (mod.scannedAt or 0) >= 5 then
+      mod.retries = (mod.retries or 0) + 1
+      mod:Scan()
+    end
   end)
   self:On("MAIL_SHOW", self.OnMail)
 end

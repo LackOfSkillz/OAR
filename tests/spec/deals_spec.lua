@@ -227,3 +227,18 @@ T.describe("auction deals", function()
     T.eq(#cards, 0, "91 of 200 at 35c would have to compete with the other 109")
   end)
 end)
+
+T.describe("item details that never load (lag spikes after a scan, 2026-11-27)", function()
+  T.it("the lists stop being worked out again once no item loads between rechecks", function()
+    local _, ns = session()
+    local D, calls = ns.Deals, 0
+    local function walk() calls = calls + 1 return {}, 7 end -- 7 items still loading, forever
+    D.cache = nil
+    for _ = 1, 10 do
+      D:Cached("test", walk)
+      D.cache.test.at = D.cache.test.at - D.RECHECK -- pretend the recheck time passed
+    end
+    T.eq(calls, 1 + D.STUCK, "one walk, then STUCK rechecks without progress, then it stops")
+    T.eq(#ns.Errors.list, 0)
+  end)
+end)
