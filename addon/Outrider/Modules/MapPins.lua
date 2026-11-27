@@ -786,6 +786,9 @@ function M:ShowCard(data)
       M:ShowCard(d)
     end)
     card.watch:SetPoint("LEFT", card.way, "RIGHT", 6, 0)
+    card.shut = UI:Button(c, "Close", 64, function() card:Hide() end)
+    card.shut:SetPoint("BOTTOMRIGHT", 0, 0)
+    UI.Tip(card.shut, "Close", "Close this card (Escape or the x at the top also close it).")
     ns.db.char.pinCard = ns.db.char.pinCard or {}
     self.card = card
   end

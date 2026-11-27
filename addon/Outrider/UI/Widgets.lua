@@ -149,6 +149,10 @@ function UI:Window(globalName, title, width, height, pos)
   close:SetScript("OnEnter", function() close.label:SetTextColor(Theme:Color("bad")) end)
   close:SetScript("OnLeave", function() close.label:SetTextColor(Theme:Color("muted")) end)
   f.close = close
+  -- a long title stops short of the close button instead of covering it
+  f.title:SetPoint("RIGHT", close, "LEFT", -4, 0)
+  if f.title.SetJustifyH then f.title:SetJustifyH("LEFT") end
+  if f.title.SetWordWrap then f.title:SetWordWrap(false) end
 
   f:SetScript("OnDragStart", function(self) self:StartMoving() end)
   f:SetScript("OnDragStop", function(self)

@@ -29,12 +29,45 @@ local function norm(s)
 end
 P.Norm = norm
 
--- The dungeon's own map (inside), found by name below the entrance zone, then
--- below the continent. Cached; logged once. nil when the client has none.
+-- Every dungeon map the client has (mapType 4 dungeon, 5 micro-dungeon),
+-- found by asking C_Map.GetMapInfo for each map id once per session. The
+-- result is logged (the in-game check reads it) and used as a name index, so
+-- a dungeon is found wherever the client files it. Returns { [norm name] = mapID }.
+P.SCAN_MAX = 3000
+function P.ScanDungeonMaps()
+  if P.scan then return P.scan end
+  local byName, list, n = {}, {}, 0
+  for id = 1, P.SCAN_MAX do
+    local info = C.Call("C_Map.GetMapInfo", id)
+    if type(info) == "table" and (info.mapType == 4 or info.mapType == 5) and type(info.name) == "string" then
+      n = n + 1
+      local k = norm(info.name)
+      -- the first id per name is the dungeon's main map; later ids are usually extra floors
+      if k ~= "" and not byName[k] then byName[k] = id end
+      list[#list + 1] = string.format("%d %s", id, info.name)
+    end
+  end
+  P.scan = byName
+  ns.Log:Info("mappages", "client dungeon maps: %d found (ids 1-%d)", n, P.SCAN_MAX)
+  for i = 1, #list, 25 do
+    ns.Log:Info("mappages", "dungeon maps: %s", table.concat(list, ", ", i, math.min(i + 24, #list)))
+  end
+  return byName
+end
+
+-- The dungeon's own map (inside): by name from the client's list of dungeon
+-- maps, else below the entrance zone, then below the continent. Cached;
+-- logged once. nil when the client has none.
 P.dungeonMaps = {}
 function P.DungeonMap(name, zoneMap)
   if P.dungeonMaps[name] ~= nil then return P.dungeonMaps[name] or nil end
   local want = norm(name)
+  local direct = P.ScanDungeonMaps()[want]
+  if direct then
+    P.dungeonMaps[name] = direct
+    ns.Log:Info("mappages", "dungeon map for %s: %s (client list)", tostring(name), tostring(direct))
+    return direct
+  end
   local function search(top)
     local kids = C.Call("C_Map.GetMapChildrenInfo", top, nil, true)
     if type(kids) ~= "table" then return nil end

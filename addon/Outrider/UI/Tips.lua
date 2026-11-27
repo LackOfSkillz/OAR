@@ -299,6 +299,7 @@ local controls = {
   ["Sound with rare alerts"] = "Play a sound when a rare alert pops.",
   ["Only rares on your watch list"] = "Alert only for rares you're watching, not every rare.",
   ["Watch"] = "Alert this character when this NPC (name or id) is near.",
+  ["Close"] = "Close this window (Escape works too).",
   ["Recent alerts"] = "The latest rare alerts, newest first.",
   ["Rares and hunter tools"] = "Rare alerts, the nameplate star, pet panel and tame helper.",
 

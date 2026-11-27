@@ -48,6 +48,23 @@ T.describe("boss tips and the first dungeon shown", function()
     T.eq(#ns.Errors.list, 0)
   end)
 
+  T.it("finds a dungeon's inside map from the client's own list, wherever it is filed, and logs the list", function()
+    local game = mock.new()
+    game.maps = { [279] = { name = "Wailing Caverns", mapType = 4 }, [280] = { name = "Wailing Caverns", mapType = 4 },
+      [213] = { name = "Ragefire Chasm", mapType = 4 }, [1413] = { name = "The Barrens", mapType = 3 } }
+    local ns = game:loadAddon()
+    game:login()
+    local P = ns.MapPages
+    P.scan, P.dungeonMaps = nil, {}
+    T.eq(P.DungeonMap("Wailing Caverns", 1413), 279, "found with no parent link, first id wins")
+    T.eq(P.DungeonMap("Ragefire Chasm", nil), 213, "found with no zone at all")
+    T.eq(P.DungeonMap("Alterac Valley", 1416), nil, "none: the zone is shown instead")
+    local logged = false
+    for _, l in ipairs(ns.Log:Tail(50)) do if tostring(ns.Log:FormatLine(l) or l):find("213 Ragefire Chasm") then logged = true end end
+    T.ok(logged, "the list is in the log")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("opens a dungeon for your level, else the next one up; battlegrounds last", function()
     local game = mock.new()
     local ns = game:loadAddon()
