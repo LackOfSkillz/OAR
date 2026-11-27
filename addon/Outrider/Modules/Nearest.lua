@@ -193,11 +193,14 @@ end
 -- a leatherworking arrow found nothing because only "leatherworking trainer"
 -- was looked for).
 M.TRAINER_TITLES = {
-  alchemy = { "alchemist", "alchemy trainer" }, blacksmithing = { "blacksmith" }, enchanting = { "enchanter", "enchanting trainer" },
-  engineering = { "engineer" }, leatherworking = { "leatherworker", "leatherworking trainer" }, tailoring = { "tailor" },
+  alchemy = { "alchemist", "alchemy trainer" }, blacksmithing = { "blacksmith", "weaponsmith", "armorsmith" },
+  enchanting = { "enchanter", "enchanting trainer" },
+  engineering = { "engineer" }, leatherworking = { "leatherworker", "leatherworking trainer", "leathercraft" }, tailoring = { "tailor" },
   herbalism = { "herbalis" }, mining = { "mining trainer", "miner" }, skinning = { "skinning trainer", "skinner" },
-  cooking = { "cooking trainer", "chef", "cook" }, ["first aid"] = { "first aid trainer", "physician", "surgeon" },
-  fishing = { "fishing trainer", "fisher", "angler" }, -- Forever: "<Fisher>" riding = { "riding trainer", "riding instructor" },
+  -- Forever's Zephras Isle titles its first aid trainers "<Medic>" (NPC pack, 2026-11-26)
+  cooking = { "cooking trainer", "chef", "cook" }, ["first aid"] = { "first aid trainer", "physician", "surgeon", "medic" },
+  fishing = { "fishing trainer", "fisher", "angler" }, -- Forever: "<Fisher>", "<Fisherman>"
+  riding = { "riding trainer", "riding instructor" },
   ["weapon master"] = { "weapon master" }, ["pet trainer"] = { "pet trainer" },
 }
 -- the highest rank a trainer teaches, from its title or a guide note
@@ -297,26 +300,51 @@ function M:Find(kind)
     end
   end
   local best, bestD
+  local away = {} -- fits, but on another continent (an island start, say)
   for _, p in ipairs(candidates) do
     if M.Fits(p, kind, ctx) and (p.faction == nil or p.faction == faction) then
       local cont, wx, wy = W.WorldPos(p.mapID, p.x, p.y)
       if wx and cont == here then
         local d = math.sqrt((wx - px) ^ 2 + (wy - py) ^ 2)
         if not bestD or d < bestD then best, bestD = p, d end
+      elseif wx then
+        away[#away + 1] = p
       end
     end
   end
-  if not best then
-    local label = ctx.cls and (ctx.cls .. " trainer") or what and (what .. (what:find("trainer") or what:find("master") and "" or " trainer")) or kind:gsub("_", " ")
-    return nil, "no " .. label .. " known on this continent yet"
+  if best then return best, bestD end
+  local label = ctx.cls and (ctx.cls .. " trainer") or what and (what .. (what:find("trainer") or what:find("master") and "" or " trainer")) or kind:gsub("_", " ")
+  if #away == 0 then return nil, "no " .. label .. " known for your faction yet" end
+  -- none here: the one quickest to reach by the boats, flights and portals Outrider knows
+  local T = ns.Travel
+  local prep = T and T.enabled and T:Prepare()
+  local quick, quickT
+  for _, p in ipairs(away) do
+    local t = prep and T:TimeTo(prep, T.Point(p.mapID, p.x, p.y, p.name))
+    if t and (not quickT or t < quickT) then quick, quickT = p, t end
   end
-  return best, bestD
+  if quick then return quick, nil, { seconds = quickT, label = label } end
+  -- no known way there yet: name a few, never "none"
+  table.sort(away, function(a, b) return tostring(a.name) < tostring(b.name) end)
+  local names = {}
+  for i = 1, math.min(3, #away) do
+    local z = T and T.ZoneName and T.ZoneName(away[i].mapID) or ("map " .. tostring(away[i].mapID))
+    names[#names + 1] = string.format("%s (%s)", tostring(away[i].name), tostring(z))
+  end
+  return nil, string.format("no %s here; known elsewhere: %s. Outrider doesn't know the way off this area yet (it learns boats and portals as you use them)",
+    label, table.concat(names, ", "))
 end
 
 function M:Go(kind)
-  local p, d = self:Find(kind)
+  local p, d, away = self:Find(kind)
   if not p then return false, d end
   ns.Waypoints:Set(p.mapID, p.x, p.y, p.name or kind)
+  if away then
+    local zone = ns.Travel and ns.Travel.ZoneName and ns.Travel.ZoneName(p.mapID) or "another zone"
+    self:Info("nearest %s: %s in %s, about %s away (another continent)", kind, tostring(p.name), tostring(zone), ns.Travel.Minutes(away.seconds))
+    return true, string.format("No %s here. Nearest: %s in %s, about %s away. Waypoint set (open Travel for the way).",
+      away.label, p.name or kind, tostring(zone), ns.Travel.Minutes(away.seconds))
+  end
   self:Info("nearest %s: %s %.0f yards", kind, tostring(p.name), d)
   return true, string.format("%s, %d yards. Waypoint set.", p.name or kind, math.floor(d + 0.5))
 end

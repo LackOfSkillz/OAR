@@ -53,6 +53,44 @@ T.describe("poi capture and nearest", function()
     T.contains(game:chatText(), "Near Healer, 71 yards")
   end)
 
+  T.it("Forever's trainer titles: a Medic teaches first aid, riding trainers are found", function()
+    local _, ns = session()
+    local N = ns.Nearest
+    local ctx = { want = "trainer", what = "first aid", level = 8 }
+    T.ok(N.Fits({ kind = "trainer", title = "Medic", name = "Melasa Fairmend" }, "trainer:first aid", ctx), "Medic")
+    T.ok(N.Fits({ kind = "trainer", title = "First Aid Trainer" }, "trainer:first aid", ctx))
+    T.ok(not N.Fits({ kind = "trainer", title = "Herbalist" }, "trainer:first aid", ctx))
+    local ride = { want = "trainer", what = "riding", level = 20 }
+    T.ok(N.Fits({ kind = "trainer", title = "Stablemaster and Riding Trainer" }, "trainer:riding", ride), "riding")
+  end)
+
+  T.it("none on this continent: the quickest one elsewhere, or names them when the way isn't known", function()
+    local game, ns = session()
+    ns.db.global.pois["far"] = { kind = "trainer", title = "Medic", name = "Far Medic", mapID = 1, x = 0.5, y = 0.5, faction = "Horde" }
+    local here = ns.Waypoints.WorldPos
+    ns.Waypoints.WorldPos = function(mapID, x, y)
+      local c, wx, wy = here(mapID, x, y)
+      if mapID == 1 then return 99, 100, 100 end -- another continent
+      return c, wx, wy
+    end
+    ns.Travel.enabled = true
+    ns.Travel.Prepare = function() return {} end
+    ns.Travel.TimeTo = function() return nil end
+    local p, msg = ns.Nearest:Find("trainer:first aid")
+    T.eq(p, nil)
+    T.contains(msg, "known elsewhere: Far Medic")
+    T.contains(msg, "doesn't know the way")
+    ns.Travel.TimeTo = function() return 600 end
+    local ok, text = ns.Nearest:Go("trainer:first aid")
+    T.ok(ok)
+    T.contains(text, "No first aid trainer here. Nearest: Far Medic")
+    T.contains(text, "about 10 min away")
+    T.eq(ns.Waypoints.current.title, "Far Medic")
+    ns.Waypoints.WorldPos = here
+    T.eq(#ns.Errors.list, 0)
+    T.ok(game)
+  end)
+
   T.it("other-faction places are skipped; unknown kinds say so", function()
     local game, ns = session()
     talk(game, 6021, "Ally Flyer", "TAXIMAP_OPENED", 0.5, 0.5)
