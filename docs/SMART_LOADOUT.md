@@ -24,7 +24,33 @@ Command, Frostbolt instead of Fireball, and so on. This works for every class.
   Outrider never casts anything on its own (hard rule 1).
 - **No combat log.** COMBAT_LOG_EVENT_UNFILTERED is off limits (hard rule 4).
 
-## Where the knowledge comes from
+## Known from day one: databases (added 2026-11-27, Gary: "it already knows")
+
+Outrider should already know most mobs on the first pull. Learning from fights only
+fills in Forever's changes.
+
+| Source | What it gives | Licence / rule |
+|---|---|---|
+| VMaNGOS and cMaNGOS `creature_template` (ForeverDB already merges both) | Per mob: resistance to each school (holy, fire, nature, frost, shadow, arcane), schools it is immune to, mechanics it is immune to (fear, stun, root, bleed, poison...), creature type | GPL. Private pack (D10) |
+| VMaNGOS and cMaNGOS `creature_spells` / AI scripts | The spells each mob casts at you, which gives the totem, aura or ward to bring, and whether it fears, poisons or heals | GPL |
+| Forever client tables on wago.tools (`SpellMisc`: SchoolMask) | The exact school of every spell, ours and the mobs', from Forever's own client | Blizzard game data, the same way ForeverDB already uses it |
+| Wowhead Forever pages | Not scraped (their terms forbid it). When Gary looks up one mob and tells us, the row goes in with that page as its source | per row |
+
+This becomes a load-on-demand pack, `Outrider_Data_Mobs` (it already holds every
+mob's id, name and level), with an extra `res` field per mob:
+`{ fire = 75, immune = { "fire" }, mech = { "fear" }, casts = { "fire", "frost" } }`.
+It stays `verified = false`.
+
+The server databases are 1.12 data. Forever's own mobs, and changes like a 3x fire
+weakness, aren't in them. So the order is: **own fights > Wowhead row Gary checked >
+server databases**. Learning becomes a correction layer on top of the pack instead
+of the only way in.
+
+Needs Gary's OK (hard rule 10): downloading the VMaNGOS world database dump
+(GitHub, tens of MB) and `SpellMisc.csv` from wago.tools, the same place as the
+CSVs already in `private/wago-source`.
+
+## Learned in game (corrections)
 
 Most trustworthy first. Every learned fact starts as `verified = false`.
 
@@ -125,6 +151,7 @@ unverified until they're checked against Gary's own hits.
 
 | Id | What | Who |
 |---|---|---|
+| SL-00 | Mob resistance pack from VMaNGOS/cMaNGOS plus Forever spell schools from SpellMisc (needs the download OK) | Claude |
 | SL-01 | Capture only: UNIT_COMBAT on the target (readable or secret, in and out of combat), whether the damage meter splits by spell or school, the target's casts and the debuffs it puts on you, tooltip lines, and the enchant id on the weapon (which imbue is on). Everything goes to the log. | Both |
 | SL-02 | Mob profiles plus the multiplier math, with specs for baselines, minimum hits and immune flags | Claude |
 | SL-03 | The shaman chooser: imbue, the four totem elements, shock. Rewrite on target change. | Both |
