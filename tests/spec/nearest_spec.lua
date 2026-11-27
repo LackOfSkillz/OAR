@@ -79,6 +79,17 @@ T.describe("poi capture and nearest", function()
       { want = "trainer", cls = "shaman", level = 20 }), "a starter trainer past its level stays out")
   end)
 
+  T.it("an NPC you bought from is still found as a trainer (Nyalah Brightfire, Cook, 2026-11-27)", function()
+    local _, ns = session()
+    local mapID, x, y = ns.Compat.PlayerPosition("player")
+    ns.db.global.pois["npc-257006-vendor"] = { kind = "vendor", title = "Cook", name = "Nyalah Brightfire", mapID = mapID, x = x, y = y }
+    ns.NPCPack.raw = { [mapID] = { { 257006, "trainer", x, y, "Nyalah Brightfire", "Cook", nil, nil } } }
+    local p = ns.Nearest:Find("trainer:cooking")
+    T.ok(p, "found")
+    T.eq(p and p.name, "Nyalah Brightfire")
+    T.eq(#ns.Errors.list, 0)
+  end)
+
   T.it("none on this continent: the quickest one elsewhere, or names them when the way isn't known", function()
     local game, ns = session()
     ns.db.global.pois["far"] = { kind = "trainer", title = "Medic", name = "Far Medic", mapID = 1, x = 0.5, y = 0.5, faction = "Horde" }

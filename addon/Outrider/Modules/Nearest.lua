@@ -288,25 +288,29 @@ function M:Find(kind)
   -- Measured 2026-11-21 against 238 NPCs Gary stood next to (docs/POI_AUDIT.md):
   -- the pack was wrong 1% of the time, the guides 7%. The guides fill gaps
   -- (Forever's new and redrawn zones) where the pack has no such NPC.
+  -- one NPC can be several places (Nyalah Brightfire, Cook: vendor and
+  -- trainer): a place you recorded hides the pack's row of the same kind only
+  -- (bug 2026-11-27: her recorded vendor spot hid her as a cooking trainer)
   local candidates, named = {}, {}
+  local function key(name, k) return tostring(name) .. "|" .. tostring(k) end
   for _, p in pairs(ns.db.global.pois or {}) do
     candidates[#candidates + 1] = p
-    if p.name then named[p.name] = true end
+    if p.name then named[key(p.name, p.kind)] = true end
   end
   if ns.NPCPack then
     for _, p in ipairs(ns.NPCPack:OfKind(ctx.want)) do
-      if not named[p.name] then
+      if not named[key(p.name, ctx.want)] then
         candidates[#candidates + 1] = { kind = ctx.want, mapID = p.mapID, x = p.x, y = p.y, name = p.name, title = p.title, faction = p.faction, npcID = p.npcID }
-        named[p.name] = true
+        named[key(p.name, ctx.want)] = true
       end
     end
   end
   for _, g in ipairs(ns.Data:All("place")) do
-    local gm = g.kind == ctx.want and not named[g.name] and ns.Travel and ns.Travel:MapByName(g.zone)
+    local gm = g.kind == ctx.want and not named[key(g.name, ctx.want)] and ns.Travel and ns.Travel:MapByName(g.zone)
     if gm then
       candidates[#candidates + 1] = { kind = ctx.want, mapID = gm, x = g.x, y = g.y, name = g.name, title = g.title,
         faction = g.faction, note = g.note, guide = true }
-      named[g.name] = true
+      named[key(g.name, ctx.want)] = true
     end
   end
   local best, bestD
