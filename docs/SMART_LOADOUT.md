@@ -50,6 +50,18 @@ Needs Gary's OK (hard rule 10): downloading the VMaNGOS world database dump
 (GitHub, tens of MB) and `SpellMisc.csv` from wago.tools, the same place as the
 CSVs already in `private/wago-source`.
 
+**SL-00 data built (2026-11-27).** `tools/import_mob_res.py` read the VMaNGOS dump
+(db_latest 6a1409d, 42.5 MB SQLite, in `private/vmangos-source`) and Forever's
+SpellMisc and SpellName tables (build 1.60.1.71037). It wrote
+`private/Outrider_Data_Mobs/Res.lua` (325 KB, loaded on demand). That covers 4,385
+mobs: 1,098 with a resistance, 224 immune to a whole school, 1,237 immune to fear,
+and 3,510 that cast spells, plus 2,074 spells with their Forever school. For
+example, Fire Elemental is immune to fire, and Kobold Geomancer casts Fireball
+(fire) and Frost Armor. Nothing in the addon reads it yet.
+
+**Wowhead:** there is no public API, and their terms forbid scraping. Single rows
+only, when Gary looks up a mob himself.
+
 ## Learned in game (corrections)
 
 Most trustworthy first. Every learned fact starts as `verified = false`.
