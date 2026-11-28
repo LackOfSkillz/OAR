@@ -94,4 +94,22 @@ T.describe("layers", function()
     T.eq(ns.Layers:Current(), nil)
     T.contains(ns.InfoBar:Text("layer"), "Layer —")
   end)
+
+  T.it("WoW Forever's random zone ids (since 2026-11-21): no fake layer, the bar item steps aside", function()
+    local game, ns = session()
+    -- 7-8 digit zone ids, a different one per creature, as in Gary's saved discoveries
+    for _, z in ipairs({ 5760232, 12759664, 1333230, 13423101 }) do see(game, z) end
+    T.eq(ns.Layers:Current(), nil)
+    T.ok(ns.Layers.hidden, "the server hides the layer")
+    T.eq(ns.InfoBar:Text("layer"), nil, "no 'Layer —' forever")
+    T.contains(ns.Layers:Activity(), "hides the layer")
+    T.eq(#ns.Layers:History(1412), 0, "nothing saved")
+    T.eq(ns.Compat.LayerOf({ zoneUID = 5760232 }), nil)
+    T.eq(ns.Compat.LayerOf({ zoneUID = 13 }), 13)
+    -- real layer numbers again (a server change back): detection resumes
+    for _ = 1, 20 do see(game, 13) end
+    T.eq(ns.Layers:Current(), 13)
+    T.ok(not ns.Layers.hidden)
+    T.eq(#ns.Errors.list, 0)
+  end)
 end)

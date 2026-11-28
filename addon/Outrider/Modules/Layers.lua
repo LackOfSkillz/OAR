@@ -28,6 +28,7 @@ function M:Reset()
   self.seen, self.window = {}, {}
   self.current, self.confidence = nil, 0
   self.mapID = nil
+  self.hidden = nil
 end
 
 function M:OnEnable()
@@ -55,7 +56,8 @@ function M:Observe(unit)
   if self.seen[g.spawnUID] then return end
   self.seen[g.spawnUID] = true
   local w = self.window
-  w[#w + 1] = { uid = g.zoneUID, spawn = g.spawnUID }
+  -- false = a zone UID that names no layer (WoW Forever since 2026-11-21)
+  w[#w + 1] = { uid = C.LayerOf(g) or false, spawn = g.spawnUID, server = g.server, instance = g.instance }
   while #w > self.WINDOW do
     local old = table.remove(w, 1)
     self.seen[old.spawn] = nil
@@ -101,11 +103,34 @@ end
 function M:Evaluate()
   local w = self.window
   if #w < self.MIN then return end
-  local counts, best, bestN = {}, nil, 0
+  local counts, best, bestN, scrambled = {}, nil, 0, 0
   for _, o in ipairs(w) do
-    counts[o.uid] = (counts[o.uid] or 0) + 1
-    if counts[o.uid] > bestN then best, bestN = o.uid, counts[o.uid] end
+    if o.uid then
+      counts[o.uid] = (counts[o.uid] or 0) + 1
+      if counts[o.uid] > bestN then best, bestN = o.uid, counts[o.uid] end
+    else
+      scrambled = scrambled + 1
+    end
   end
+  -- The server hides the layer: say so instead of "learning" forever. Kept
+  -- across zones (it is server-wide); a real layer number clears it.
+  if scrambled / #w >= self.SHARE then
+    self.current, self.confidence = nil, 0
+    if not self.hidden then
+      self.hidden = true
+      local servers, instances = {}, {}
+      for _, o in ipairs(w) do
+        servers[tostring(o.server)] = true
+        instances[tostring(o.instance)] = true
+      end
+      local function keys(t) local out = {} for k in pairs(t) do out[#out + 1] = k end table.sort(out) return table.concat(out, ",") end
+      -- the other GUID fields, in case the layer moved there (server node, instance)
+      self:Info("layer hidden by the server: %d of %d creatures carry no layer number (servers %s, instances %s, map %s)",
+        scrambled, #w, keys(servers), keys(instances), tostring(self.mapID))
+    end
+    return
+  end
+  self.hidden = nil
   local share = bestN / #w
   if share < self.SHARE then self.confidence = 0 return end
   self.confidence = share
@@ -131,6 +156,7 @@ end
 -- Current layer id, confidence 0..1, display label.
 function M:Current()
   if C.Call("IsInInstance") then return nil, 0, "?" end
+  if self.hidden then return nil, 0, "hidden" end
   local mapID = C.PlayerPosition("player")
   if mapID and self.mapID and mapID ~= self.mapID then return nil, 0, "?" end
   if not self.current or self.confidence < self.SHARE then return nil, self.confidence, "?" end
@@ -144,6 +170,7 @@ end
 
 function M:Activity()
   local id, conf, label = self:Current()
+  if self.hidden then return "the server hides the layer (WoW Forever, since 2026-11-21)" end
   if not id then return string.format("learning (%d of %d mobs seen)", #self.window, self.MIN) end
   return string.format("you are on %s (%.0f%% sure)", label, conf * 100)
 end

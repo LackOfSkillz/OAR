@@ -100,7 +100,7 @@ function M:Text(id)
   end
   if id == "layer" then
     local layers = ns.Layers
-    if not (layers and layers.enabled) or C.Call("IsInInstance") then return nil end
+    if not (layers and layers.enabled) or C.Call("IsInInstance") or layers.hidden then return nil end
     local id, _, label = layers:Current()
     if not id then return "|cff8f96a6Layer —|r" end
     return label

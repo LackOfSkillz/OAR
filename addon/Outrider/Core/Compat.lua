@@ -166,6 +166,17 @@ function C.ParseGUID(guid)
   }
 end
 
+-- The layer a creature GUID names, or nil. Until 2026-11-21 the zone UID was a
+-- small layer number (1..30) shared by every creature on a layer; since then
+-- WoW Forever puts a random 7-8 digit number there per creature (seen in
+-- Gary's saved discoveries), which names no layer.
+C.LAYER_MAX = 100000
+function C.LayerOf(g)
+  local z = type(g) == "table" and g.zoneUID
+  if type(z) == "number" and z > 0 and z < C.LAYER_MAX then return z end
+  return nil
+end
+
 function C.UnitNpcID(unit)
   local guid = C.Call("UnitGUID", unit)
   local g = C.ParseGUID(guid)

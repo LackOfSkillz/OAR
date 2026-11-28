@@ -106,7 +106,7 @@ function M:Capture(unit, how, role)
   -- the NPC's own faction, so suggestions never send an Alliance character to a Horde NPC (2026-11-13)
   local fac = C.Readable(C.Call("UnitFactionGroup", unit))
   if fac == "Alliance" or fac == "Horde" then e.faction = fac elseif fac then e.faction = "Neutral" end
-  if g.zoneUID and not inInstance() then e.layer = g.zoneUID end
+  if C.LayerOf(g) and not inInstance() then e.layer = C.LayerOf(g) end
 
   -- close enough to touch: a sure position, out of combat only (the range
   -- check is restricted in combat on the modern client)

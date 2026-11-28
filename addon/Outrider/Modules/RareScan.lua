@@ -77,7 +77,7 @@ end
 function M:FromVignette(vg, v, g, mapID)
   local now = GetTime and GetTime() or time()
   local inside = C.Call("IsInInstance")
-  local layer = (not inside) and g.zoneUID or nil
+  local layer = (not inside) and C.LayerOf(g) or nil
   local prev = self.last[g.id]
   if prev and (now - prev.t) < (self:Settings().dedupe or 60) and not prev.dead and prev.layer == layer then return end
   self.last[g.id] = { t = now, dead = false, layer = layer }
@@ -163,7 +163,7 @@ function M:Check(unit, how)
   if not npcID then return nil end
   local dead = C.Readable(C.Call("UnitIsDead", unit)) and true or false
   local inside = C.Call("IsInInstance")
-  local layer = (not inside) and g.zoneUID or nil
+  local layer = (not inside) and C.LayerOf(g) or nil
   local now = GetTime and GetTime() or time()
 
   local prev = self.last[npcID]
